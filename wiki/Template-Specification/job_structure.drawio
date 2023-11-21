@@ -1,0 +1,237 @@
+<mxfile host="Electron" modified="2023-08-29T19:55:33.890Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.6.8 Chrome/114.0.5735.289 Electron/25.5.0 Safari/537.36" etag="87qfPra_clyJy8jRW9Tc" version="21.6.8" type="device">
+  <diagram id="WBDGY5x0JgAei5BrbO27" name="Page-1">
+    <mxGraphModel dx="1114" dy="1893" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-82" value="&lt;b&gt;&lt;i&gt;Job Entities Created within the Render Management System&lt;/i&gt;&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;" parent="1" vertex="1">
+          <mxGeometry x="500" width="560" height="730" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-81" value="&lt;b&gt;&lt;i&gt;Passed to the Render Management System to Create a Job&lt;/i&gt;&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;" parent="1" vertex="1">
+          <mxGeometry width="470" height="730" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-1" value="&lt;b&gt;Job Template&lt;br&gt;&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;dashed=1;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;fontColor=#333333;strokeColor=#666666;" parent="1" vertex="1">
+          <mxGeometry x="20" y="50" width="310" height="550" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-2" value="&lt;b&gt;Step Template [multiple of these]&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;dashed=1;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry x="30" y="200" width="290" height="390" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-3" value="name: JobName&lt;br&gt;parameterDefinitions:&lt;br&gt;&amp;nbsp; &amp;nbsp; - name: End&lt;br&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; type: INT&lt;br&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; default: 1000&lt;br&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;labelPosition=center;verticalLabelPosition=middle;" parent="1" vertex="1">
+          <mxGeometry x="30" y="60" width="210" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-4" value="&lt;b&gt;Step Script&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;dashed=1;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;strokeColor=#d79b00;" parent="1" vertex="1">
+          <mxGeometry x="35" y="260" width="275" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-5" value="script:&lt;br&gt;&amp;nbsp; &amp;nbsp; embeddedFiles:&lt;br&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; - name: Foo&lt;br&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; type: TEXT&lt;br&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; body: &quot;#!/bin/bash\necho $1&quot;&lt;br&gt;&amp;nbsp; &amp;nbsp; actions:&lt;br&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; onRun:&lt;br&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; command: {{ Task.File.Foo }}&lt;br&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; args:&lt;br&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; - Hello World" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;" parent="1" vertex="1">
+          <mxGeometry x="40" y="260" width="280" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-6" value="name: HelloWorld&lt;br&gt;dependencies: &lt;br&gt;&amp;nbsp; &amp;nbsp; - ..." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;" parent="1" vertex="1">
+          <mxGeometry x="35" y="210" width="260" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-7" value="&lt;b&gt;Parameter Space&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;dashed=1;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;strokeColor=#82b366;" parent="1" vertex="1">
+          <mxGeometry x="32.5" y="440" width="265" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-8" value="parameterSpace:&lt;br&gt;&amp;nbsp; &amp;nbsp; taskParameterDefinitions:&lt;br&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; - name: Frame&lt;br&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; type: INT&lt;br&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; range: &quot;1-{{ Param.End }}:10&quot;&lt;br&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; - name: Camera&lt;br&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; type: STRING&lt;br&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; range: [ &quot;top&quot;, &quot;left&quot;, &quot;right&quot;, &quot;left&quot; ]&lt;br&gt;&amp;nbsp; &amp;nbsp;combination: &quot;Frame * Camera&quot;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;" parent="1" vertex="1">
+          <mxGeometry x="37.5" y="450" width="260" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-9" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;dashed=1;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;" parent="1" vertex="1">
+          <mxGeometry x="50" y="477.5" width="240" height="82.5" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-43" value="&lt;b&gt;Job Parameters&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;fillColor=#bac8d3;strokeColor=#23445d;" parent="1" vertex="1">
+          <mxGeometry x="350" y="50" width="110" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-45" value="{&lt;br&gt;&amp;nbsp; &amp;nbsp; &quot;End&quot;: 400&lt;br&gt;}" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;" parent="1" vertex="1">
+          <mxGeometry x="360" y="60" width="90" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-51" value="&lt;b&gt;Job&lt;br&gt;&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;dashed=1;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;fontColor=#333333;strokeColor=#666666;" parent="1" vertex="1">
+          <mxGeometry x="510" y="40" width="500" height="650" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-52" value="name: JobName&lt;br&gt;parameters: { &quot;End&quot;: 400 }" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;labelPosition=center;verticalLabelPosition=middle;" parent="1" vertex="1">
+          <mxGeometry x="515" y="40" width="210" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-53" value="&lt;b&gt;Step&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;" parent="1" vertex="1">
+          <mxGeometry x="520" y="120" width="470" height="400" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-54" value="&lt;b&gt;Step Script&lt;/b&gt;&lt;br&gt;&amp;nbsp;- embeddedFiles&lt;br&gt;&amp;nbsp;- actions" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;labelPosition=center;verticalLabelPosition=middle;align=left;verticalAlign=middle;" parent="1" vertex="1">
+          <mxGeometry x="530" y="150" width="130" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-55" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;dashed=1;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;" parent="1" vertex="1">
+          <mxGeometry x="540" y="247.5" width="430" height="262.5" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-56" value="&lt;b&gt;Task&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;" parent="1" vertex="1">
+          <mxGeometry x="550" y="290" width="110" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-57" value="{ &lt;br&gt;&amp;nbsp; &quot;Frame&quot;: 1,&lt;br&gt;&amp;nbsp; &quot;Camera&quot;: &quot;top&quot;&lt;br&gt;}" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="555" y="295" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-58" value="&lt;b&gt;Task&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;" parent="1" vertex="1">
+          <mxGeometry x="670" y="290" width="110" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-59" value="{ &lt;br&gt;&amp;nbsp; &quot;Frame&quot;: 1,&lt;br&gt;&amp;nbsp; &quot;Camera&quot;: &quot;left&quot;&lt;br&gt;}" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="675" y="295" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-60" value="&lt;b&gt;Task&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;" parent="1" vertex="1">
+          <mxGeometry x="790" y="290" width="110" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-61" value="{ &lt;br&gt;&amp;nbsp; &quot;Frame&quot;: 1,&lt;br&gt;&amp;nbsp; &quot;Camera&quot;: &quot;right&quot;&lt;br&gt;}" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="795" y="295" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-62" value="&lt;b&gt;Task&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;" parent="1" vertex="1">
+          <mxGeometry x="550" y="380" width="110" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-63" value="{ &lt;br&gt;&amp;nbsp; &quot;Frame&quot;: 11,&lt;br&gt;&amp;nbsp; &quot;Camera&quot;: &quot;top&quot;&lt;br&gt;}" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="555" y="385" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-64" value="&lt;b&gt;Task&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;" parent="1" vertex="1">
+          <mxGeometry x="670" y="380" width="110" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-65" value="{ &lt;br&gt;&amp;nbsp; &quot;Frame&quot;: 11,&lt;br&gt;&amp;nbsp; &quot;Camera&quot;: &quot;left&quot;&lt;br&gt;}" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="675" y="385" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-66" value="&lt;b&gt;Task&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;" parent="1" vertex="1">
+          <mxGeometry x="790" y="380" width="110" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-67" value="{ &lt;br&gt;&amp;nbsp; &quot;Frame&quot;: 11,&lt;br&gt;&amp;nbsp; &quot;Camera&quot;: &quot;right&quot;&lt;br&gt;}" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="795" y="385" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-68" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;" parent="1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="910" y="320" as="sourcePoint" />
+            <mxPoint x="960" y="320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-69" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;" parent="1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="910" y="414.5" as="sourcePoint" />
+            <mxPoint x="960" y="414.5" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-70" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;" parent="1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="460" as="sourcePoint" />
+            <mxPoint x="600" y="500" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-71" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;" parent="1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="720" y="460" as="sourcePoint" />
+            <mxPoint x="720" y="500" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-72" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;" parent="1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="840" y="460" as="sourcePoint" />
+            <mxPoint x="840" y="500" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-73" value="" style="endArrow=classic;html=1;rounded=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" parent="1" source="ILg9kZDkX3ERjYSPc_mh-55" target="ILg9kZDkX3ERjYSPc_mh-54" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="560" y="340" as="sourcePoint" />
+            <mxPoint x="610" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-74" value="Each Task&amp;nbsp;references&lt;br&gt;the Step Script" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=none;" parent="ILg9kZDkX3ERjYSPc_mh-73" vertex="1" connectable="0">
+          <mxGeometry x="0.1689" y="-2" relative="1" as="geometry">
+            <mxPoint x="54" y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-75" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="ILg9kZDkX3ERjYSPc_mh-77" target="ILg9kZDkX3ERjYSPc_mh-78" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-76" value="[Optional]&lt;br&gt;Dependencies" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="ILg9kZDkX3ERjYSPc_mh-75" vertex="1" connectable="0">
+          <mxGeometry x="-0.5394" y="-1" relative="1" as="geometry">
+            <mxPoint x="37" y="-1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-77" value="&lt;b&gt;Step&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;" parent="1" vertex="1">
+          <mxGeometry x="522.5" y="570" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-78" value="&lt;b&gt;Step&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;" parent="1" vertex="1">
+          <mxGeometry x="837.5" y="570" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-79" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jumpStyle=arc;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;dashed=1;" parent="1" source="ILg9kZDkX3ERjYSPc_mh-53" target="ILg9kZDkX3ERjYSPc_mh-53" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-14" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;dashed=1;jumpStyle=arc;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="520" y="195" as="targetPoint" />
+            <mxPoint x="310" y="290" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-15" value="Copy Verbatim" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="ILg9kZDkX3ERjYSPc_mh-14" vertex="1" connectable="0">
+          <mxGeometry x="-0.2656" y="-3" relative="1" as="geometry">
+            <mxPoint x="7" y="-14" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-34" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;" parent="1" source="ILg9kZDkX3ERjYSPc_mh-8" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="539" y="380" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-35" value="&lt;b&gt;Create Tasks&lt;/b&gt;&lt;br&gt;Parameter Space maps a&lt;br&gt;Step Script to a set of&lt;br&gt;Tasks." style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=default;" parent="ILg9kZDkX3ERjYSPc_mh-34" vertex="1" connectable="0">
+          <mxGeometry x="-0.4293" y="-5" relative="1" as="geometry">
+            <mxPoint x="40" y="27" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-46" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jumpStyle=arc;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;" parent="1" source="ILg9kZDkX3ERjYSPc_mh-6" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="740" y="660" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="10" y="230" />
+              <mxPoint x="10" y="720" />
+              <mxPoint x="740" y="720" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-47" value="Created from dependency info on Step Template" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="ILg9kZDkX3ERjYSPc_mh-46" vertex="1" connectable="0">
+          <mxGeometry x="0.0559" y="2" relative="1" as="geometry">
+            <mxPoint x="-16" y="-8" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-49" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="1" source="ILg9kZDkX3ERjYSPc_mh-2" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="295" y="408.85694214876037" as="sourcePoint" />
+            <mxPoint x="519" y="320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-50" value="&lt;b&gt;Create Step&lt;/b&gt;&lt;br&gt;Evaluate the Step Template&#39;s&lt;br&gt;Parameter Space with the&lt;br&gt;Job Parameters." style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=default;" parent="ILg9kZDkX3ERjYSPc_mh-49" vertex="1" connectable="0">
+          <mxGeometry x="-0.1779" y="1" relative="1" as="geometry">
+            <mxPoint x="19" y="-37" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-42" value="Input To" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;jumpStyle=arc;" parent="1" source="ILg9kZDkX3ERjYSPc_mh-43" edge="1">
+          <mxGeometry x="-0.6342" y="-6" relative="1" as="geometry">
+            <mxPoint x="538" y="284" as="targetPoint" />
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ILg9kZDkX3ERjYSPc_mh-44" style="edgeStyle=none;rounded=0;jumpStyle=arc;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;" parent="1" source="ILg9kZDkX3ERjYSPc_mh-45" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="505" y="86.40243902439022" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="vYmHWNoR-nmZn-W2XQTe-7" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#000000;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;dashed=1;" parent="1" vertex="1">
+          <mxGeometry x="796" y="295" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="vYmHWNoR-nmZn-W2XQTe-10" value="Task Parameter" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="811" y="150" width="100" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="vYmHWNoR-nmZn-W2XQTe-11" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.486;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="vYmHWNoR-nmZn-W2XQTe-10" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="932.4263445050663" y="240" as="sourcePoint" />
+            <mxPoint x="824" y="311" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="vYmHWNoR-nmZn-W2XQTe-12" value="&lt;b&gt;Job Parameter&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="701" y="50" width="100" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="vYmHWNoR-nmZn-W2XQTe-13" value="" style="endArrow=classic;html=1;rounded=0;exitX=-0.023;exitY=0.55;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="vYmHWNoR-nmZn-W2XQTe-12" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="869.5999999999999" y="180" as="sourcePoint" />
+            <mxPoint x="616" y="66" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
