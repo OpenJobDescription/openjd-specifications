@@ -1,0 +1,35 @@
+name: Publish to Wiki
+
+on:
+  push:
+    paths:
+      - wiki/**
+    branches:
+      - mainline
+
+jobs:
+  PublishToWiki:
+    name: Publish to Wiki
+    runs-on: ubuntu-latest
+    environment: release
+    env:
+        WIKI_REPO: "https://${{ secrets.CI_TOKEN }}@github.com/xxyggoqtpcmcofkc/openjd-specifications.wiki.git"
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Clone wiki contents"
+        run: |
+          git config --global user.email ${{ secrets.EMAIL }}
+          git config --global user.name ${{ secrets.USER }}
+          git clone ${{ env.WIKI_REPO }} tmp_wiki
+      - name: "Push new content to wiki"
+        run: |
+          rsync -av --delete wiki/ tmp_wiki/ --exclude .git
+          cd tmp_wiki
+          git add .
+          git commit -m "${{ github.event.head_commit.message }}"
+          git push origin master
+          rm -rf tmp_wiki
+          
+    
+
+
