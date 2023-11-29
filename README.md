@@ -1,4 +1,4 @@
-## My Project
+## Open Job Description Specifications
 
 TODO: Fill this README out!
 
@@ -14,5 +14,5 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 
 ## License
 
-This library is licensed under the LICENSE NAME HERE License.
+This library is licensed under the CC-BY-ND 4.0 License.
 
