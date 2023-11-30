@@ -10,7 +10,7 @@ specific parameterized action to perform — rendering the frames of a shot, enc
 combination with a concrete set of values for its parameterization defines a ***Task***; the ***Task*** is the unit of
 schedule-able work run on  by the workers in the render management system.
 
-![Job Structure](./job_structure.png)
+[[job_structure.png|Job Structure]]
 
 The action performed by a Step is defined by the ***Step Script***. This consists of a command to run, and a set of optional
 embedded files that can be used to include the contents of a text file (shell script, python script, json document, etc) within the

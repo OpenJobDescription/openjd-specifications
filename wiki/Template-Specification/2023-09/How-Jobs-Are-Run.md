@@ -32,7 +32,7 @@ that the Session entered or attempted to enter, and then be terminated itself.
 
 The following diagram provides an overview of the steps taken to run a Session.
 
-![Actions Run in a Session](./how_jobs_are_run.png)
+[[how_jobs_are_run.png|Actions Run in a Session]]
 
 ## Host Requirements
 
