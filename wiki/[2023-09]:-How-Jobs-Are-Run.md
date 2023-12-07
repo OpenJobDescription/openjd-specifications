@@ -2,7 +2,7 @@
 
 Concepts introduced: **Session**, **Environment**, **Action**, **Working Directory**, **Host Requirements**, **Stdout/Stderr Handlers**, and **Path Mapping**.
 
-Pre-requisite reading: [Job Structure](../Job-Structure.md)
+Pre-requisite reading: [[Job Structure]]
 
 ## Sessions
 
@@ -32,7 +32,7 @@ that the Session entered or attempted to enter, and then be terminated itself.
 
 The following diagram provides an overview of the steps taken to run a Session.
 
-![Actions Run in a Session](./how_jobs_are_run.png)
+![Actions Run in a Session](./images/2023-09:how_jobs_are_run.png)
 
 ## Host Requirements
 
@@ -104,7 +104,7 @@ The format for the path mapping rules is:
 ```
 
 The location of this file and whether or not there are path mapping rules defined are available as value references for
-use in [Format Strings](./Format-Strings.md) within a Job Template. The value references available are:
+use in [[[2023-09] Format Strings|[2023-09]: Format Strings]] within a Job Template. The value references available are:
 
 1. `Session.HasPathMappingRules` -- Has the string value `true` or `false`.
     * `true` — means that the path mapping JSON contains path mapping rules.
