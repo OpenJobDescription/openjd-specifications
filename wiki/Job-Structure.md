@@ -10,7 +10,7 @@ specific parameterized action to perform — rendering the frames of a shot, enc
 combination with a concrete set of values for its parameterization defines a ***Task***; the ***Task*** is the unit of
 schedule-able work run on  by the workers in the render management system.
 
-![Job Structure](./job_structure.png)
+![Job Structure](./images/job_structure.png)
 
 The action performed by a Step is defined by the ***Step Script***. This consists of a command to run, and a set of optional
 embedded files that can be used to include the contents of a text file (shell script, python script, json document, etc) within the
@@ -25,5 +25,3 @@ that can be used to create many Jobs in a render management system that all perf
 values. To create a Job you provide both a Job Template and a set of values for all of the **Job Parameters** defined in the Job
 Template. The render management system can then use the provided Job Parameter values to instantiate the Job Template to create a
 Job.
-
-TODO/QQ - This may benefit from showing a concrete example of a job template.

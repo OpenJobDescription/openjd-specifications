@@ -1198,3 +1198,7 @@ for the symbol `Param.Name` of "Bob", the resulting resolved string is
   and [C1](https://www.unicode.org/charts/PDF/U0080.pdf) characters.
   * This is a category of 65 non-printable characters such as NUL, BEL, Backspace, DEL,
      tab, newline, carriage return, and form feed.
+
+## 9. License
+
+This work is licensed under CC BY-ND 4.0. To view a copy of this license, visit [http://creativecommons.org/licenses/by-nd/4.0/](http://creativecommons.org/licenses/by-nd/4.0/).

@@ -31,7 +31,7 @@ The Job Template is expressed as a UTF-8 document in either
 
 For more information, see:
 
-* [Job Structure](Job-Structure.md)
+* [[Job Structure]]
 * Version 2023-09:
-  * [How Jobs Are Run](2023-09/How-Jobs-Are-Run.md)
-  * [Template Schemas](2023-09/Template-Schema.md)
+  * [[How Jobs Are Run|[2023-09]: How Jobs Are Run]]
+  * [[Template Schema|[2023-09]: Template Schema]]
