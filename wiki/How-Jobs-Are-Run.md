@@ -1,8 +1,8 @@
-# Open Job Description: How Jobs Are Run [Version: 2023-09]
+# Open Job Description: How Jobs Are Run
 
 Concepts introduced: **Session**, **Environment**, **Action**, **Working Directory**, **Host Requirements**, **Stdout/Stderr Handlers**, and **Path Mapping**.
 
-Pre-requisite reading: [[Job Structure]]
+Pre-requisite reading: [How Jobs Are Constructed](How-Jobs-Are-Constructed)
 
 ## Sessions
 
@@ -104,7 +104,7 @@ The format for the path mapping rules is:
 ```
 
 The location of this file and whether or not there are path mapping rules defined are available as value references for
-use in [[[2023-09] Format Strings|[2023-09]: Format Strings]] within a Job Template. The value references available are:
+use in [Format Strings](How-Jobs-Are-Constructed#format-strings) within a Job Template. The value references available are:
 
 1. `Session.HasPathMappingRules` -- Has the string value `true` or `false`.
     * `true` — means that the path mapping JSON contains path mapping rules.

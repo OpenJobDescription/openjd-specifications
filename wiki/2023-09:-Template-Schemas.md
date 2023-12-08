@@ -1,4 +1,4 @@
-# Open Job Description: Template Schemas [Version: 2023-09]
+# Template Schemas [Version: 2023-09]
 
 This document contains the formal specifications for the Open Job Description Template schemas. There are two schemas
 defined in this document:
@@ -16,6 +16,8 @@ Both Templates are expressed as UTF-8 documents in either
 Notations used in this document to annotate aspects of the schema definition:
 
 * `@fmtstring` - The value of the annotated property is a Format String. See [Format Strings](#73-format-strings).
+   * `@fmtstring[host]` - The value is evaluated at runtime on the worker host on which the job is running. The value is otherwise
+     evaluated when the job template is submitted and the render manager is constructing a job.
 * `@optional` - The annotated property is optional.
 
 ## 1. Root elements
@@ -940,7 +942,7 @@ onExit: <Action> # optional
 An `<EnvironmentVariables>` is a map from `<EnvironmentVariableNameString>`s to `<EnvironmentVariableValueString>`s:
 
 ```yaml
-<EnvironmentVariableNameString>: <EnvironmentVariableValueString>, # @fmtstring
+<EnvironmentVariableNameString>: <EnvironmentVariableValueString>, # @fmtstring[host]
 ...
 ```
 
@@ -968,8 +970,8 @@ A string value subject to the following constraints:
 An Action is a specific command with arguments that is run on a host. An `<Action>` is the object:
 
 ```yaml
-command: <CommandString> # @fmtstring
-args: [ <ArgString>, ... ] # @optional @fmtstring
+command: <CommandString> # @fmtstring[host]
+args: [ <ArgString>, ... ] # @optional @fmtstring[host]
 timeout: <posinteger> # @optional
 cancelation: <CancelationMethod> # @optional
 ```
@@ -1099,7 +1101,7 @@ name: <Identifier>
 type: "TEXT"
 filename: <Filename> # @optional
 runnable: <bool> # @optional
-data: <DataString> # @fmtstring
+data: <DataString> # @fmtstring[host]
 ```
 
 * *name* — The name of the embeded file. This value is used in Format String references to this file.
