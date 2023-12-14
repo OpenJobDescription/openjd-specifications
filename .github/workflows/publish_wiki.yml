@@ -23,7 +23,7 @@ jobs:
           git clone ${{ env.WIKI_REPO }} tmp_wiki
       - name: "Push new content to wiki"
         run: |
-          rsync -av --delete wiki/ tmp_wiki/ --exclude .git --exclude *.drawio
+          rsync -av --delete wiki/ tmp_wiki/ --exclude .git --exclude '*.drawio' --exclude README.md
           cd tmp_wiki
           git add .
           git commit -m "${{ github.event.head_commit.message }}"
