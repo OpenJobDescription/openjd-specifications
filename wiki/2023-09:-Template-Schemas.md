@@ -1207,3 +1207,7 @@ for the symbol `Param.Name` of "Bob", the resulting resolved string is
 ## 9. License
 
 This work is licensed under CC BY-ND 4.0. To view a copy of this license, visit [http://creativecommons.org/licenses/by-nd/4.0/](http://creativecommons.org/licenses/by-nd/4.0/).
+
+For more info see the [LICENSE file].
+
+[LICENSE FILE]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/blob/mainline/LICENSE
