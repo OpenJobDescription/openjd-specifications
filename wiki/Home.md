@@ -10,7 +10,7 @@ We created Open Job Description after hearing frequently from AWS Thinkbox Deadl
 choice of render farm management tools to be daunting due to the effort required to update or replace their tooling 
 around the render farm. We also heard from software developers that they were unable to realistically release render
 farm plugins for their own applications despite being the most qualified to do so, as the render farm landscape was 
-fractured and releasing multiple plugins for different render farm solutions would quickly siphon all of their
+fractured and releasing multiple plugins for different render farm solutions would quickly siphon all their
 development capacity away from improving their software. A standard way of defining render jobs, or really any type 
 of work suited for completion on a render farm, makes tools and plugins portable and increases interoperability. 
 
@@ -40,9 +40,4 @@ We want your input! Please see our [Contributing Guidelines](https://github.com/
   to report bugs. 
 * [Pull Requests](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/pulls): We welcome pull requests to improve this wiki
   documentation. Simply make your changes in our [GitHub Repository](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/tree/mainline/wiki)
-  and post a pull request. 
-
-## Getting Help
-
-* [Discussions](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/discussions): Seek help via our GitHub
-  Discussions forum.
+  and post a pull request.
