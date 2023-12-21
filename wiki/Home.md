@@ -24,7 +24,8 @@ We want your input! Please see our [Contributing Guidelines](https://github.com/
 * [Discussions](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/discussions): We encourage you to post about what you
    would like to see in future revisions of the specification, share and brag about how you are using Open Job Description, and
    engage with us and the community.
-* [Changes] (TODO): Propose additions or changes to the specification for inclusion in a future revision!
+* [RFC Process](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/tree/mainline/rfcs): Propose additions or changes to the
+  specification for inclusion in a future revision!
 * [Issues](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/issues): We encourage you to use the GitHub issue tracker
   to report bugs or suggest features. 
 * [Pull Requests](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/pulls): We welcome pull requests to improve this wiki
