@@ -26,7 +26,7 @@ benefits of using a templated approach to creating jobs include:
       * Attribute requirements such as the operating system, CPU architecture, or software.
 4. **Runtime Environments**
     * Dynamically modify the Environment that **Tasks** run within on the **Worker Host**.
-    * Run multiple **Tasks** from the same **Job** in a single Environment, front-loading expensive setup operations for
+    * Run multiple **Tasks** from the same **Job** in a single Environment, sharing expensive setup operations for
       **Steps** or **Tasks** run on the same **Worker Host**.
 
 ## Job Structure
