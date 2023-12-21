@@ -12,7 +12,7 @@ assignees:
 * **Pull Request**: (Add the URL to the pull request here.)
 * **Discussion Thread(s)**: 
     * (If there are discussion forum threads where this RFC has been discussed, then
-       add URLs to those here. Otherwise, remove this bullet point.)
+       please add URLs to those here. You can remove this bullet point otherwise.)
 
 ## Description
 

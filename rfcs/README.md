@@ -6,8 +6,7 @@ changes to the formal specification. The process is intended to provide a consis
 path for changes to the specification. 
 
 RFCs can be created by anyone in the community. If you have an idea, a kernel of an idea, or a
-problem to solve, and you think that an addition or a modification of the Open Job Description
-specification is the way to go then we encourage you to engage in this process.
+problem to solve then we encourage you to engage in this process.
 
 **Jump to**: [RFC Process](#rfc-process) | [RFC Process Stages](#rfc-process-stages)
 
@@ -19,7 +18,7 @@ This section describes each state of the RFC process.
 
 Before you start along the path of proposing your idea as an RFC, please take some time
 to search through our [issues tracker] and [discussion forum] for similar or compatible
-proposals. It is possible that your idea has previously been proposed or that it might fit
+proposals. It is possible that your idea has previously been proposed, or it might fit
 in nicely as an enhancement to an RFC that is in the works.
 
 [issues tracker]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/issues
@@ -27,7 +26,7 @@ in nicely as an enhancement to an RFC that is in the works.
 
 ### 2. Post in GitHub Discussions
 
-As an informal starting point, we suggest that you use our discussion forums to have
+As an informal starting point, we suggest that you try our discussion forums to have
 some preliminary discussions on your proposal. These discussions can help find like-minded members of
 the community to collaborate with, and test the idea with the community before commiting
 to filling out an RFC template with the details of your proposal.
@@ -43,7 +42,7 @@ Each RFC has a GitHub issue which tracks it from start to finish. The issue is
 the hub for conversations, community signal (+1s) and the issue number is used
 as the unique identifier of this RFC.
 
-> Before creating a tracking issue, please search for similar or related ideas 
+Before creating a tracking issue, please search for similar or related ideas 
 in the issue list and discussion forum of this repo. If there is a relevant
 RFC, collaborate on that existing RFC, based on its current stage.
 
@@ -57,19 +56,21 @@ the correct label to on the RFC throughout the process.
 
 The next step is to write the first revision of the RFC document itself.
 
-Create a file under `rfcs/NNNN-name.md` based off of the [0000-template.md] in
-this repository; `NNNN` in the filename is your tracking issue
-number, and `name` should be a one or two word summary of the proposal.
-Follow the template. It includes useful guidance and tips on how to
-write a good RFC.
+1. First, [fork this repository]
+2. Then, in your fork:
+    1. Create a file under `rfcs/NNNN-name.md` based off of the [0000-template.md] file.
+       `NNNN` in the filename is your tracking issue number, and `name` should be a one
+       or two word summary of the proposal.
+    2. Please follow the template; it includes useful guidance and tips on how to write a good RFC.
 
+[fork this repository]: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo
 [0000-template.md]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/blob/mainline/rfcs/0000-template.md
 
 ### 5. Feedback
 
 Once you have an initial version of your RFC document (it is completely fine to
-submit an unfinished RFC to get initial feedback), submit it as a pull request
-against this repository and start collecting feedback.
+submit an unfinished RFC to get initial feedback), [submit it as a pull request]
+against this repository to start collecting feedback.
 
 This is the likely going to be the longest part of your RFC process, and where
 most of the feedback is collected.
@@ -88,6 +89,8 @@ A few tips:
   some things to resolve later. Make sure to capture them clearly and have an
   agreement about that. An RFC document may be updated/modified as new information
   comes to light at any time before it it published in a revision of Open Job Description.
+
+[submit it as a pull request]: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork
 
 ### 6. Final Comments Period
 
@@ -117,7 +120,7 @@ one.
 
 The team will contact you through your RFCs tracking issue when it is time to include
 the proposal in the current draft specification. When that happens, we ask that you
-prepare pull requests to that modify the draft specification, user documentation, and
+prepare pull requests that modify the draft specification, user documentation, and
 so on to include your proposed changes.
 
 ## RFC Process Stages
@@ -135,7 +138,7 @@ An RFC's tracking ticket is tagged to indicate what stage of the process it is i
 | [6 - Released](#Released) | [rfc/released] | The proposal has been included in a published revision of the Open Job Description specification. |
 
 There are two additional statuses for RFCs that will not move forward:
-- **[Abandoned](#Abandoned)** (lebel: [rfc/abandoned]) - The RFC's author(s) have ceased to engage in the process, and the RFC's process is
+- **[Abandoned](#Abandoned)** (label: [rfc/abandoned]) - The RFC's author(s) have ceased to engage in the process, and the RFC's process is
   stalled. RFCs leave this state when the author(s) reengage, or a new champion from the community or team takes on
   advocating for the proposal.
 - **[Closed](#Closed)** - The RFC was closed by the author, or the review process determined that the proposal will
