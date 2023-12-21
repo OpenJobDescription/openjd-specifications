@@ -31,6 +31,10 @@ What are the specific changes that are being proposed?
 Please write this in a form similar to the official formal specification documents as though
 it could just be dropped in to the existing documentation as-is.
 
+We suggest keeping our [design tenets] in mind while writing this part.
+
+[design tenets]: https://github.com/OpenJobDescription/openjd-specifications/wiki/Design-Tenets
+
 ## Prior Art
 
 Discuss prior art, both the good and the bad, in relation to the proposal. Does a feature
