@@ -1,12 +1,13 @@
 # Open Job Description RFCs
 
-This directory is the place to propose and track upcoming changes to the Open Job Description standard.
+This directory is the place to propose upcoming changes to the Open Job Description standard.
 The RFC ("Request For Comment") process is how Open Job Description achieves consensus on proposed
 changes to the formal specification. The process is intended to provide a consistent and controlled
 path for changes to the specification. 
 
-RFCs can be created by anyone in the community. If you have an idea, a kernel of an idea, or a
-problem to solve then we encourage you to engage in this process.
+RFCs can be created by anyone in the community, and is the process that the Open Job Description team
+uses to propose changes. If you have an idea, a kernel of an idea, a problem to solve, or want to
+provide your point of view on proposals then we encourage you to engage in this process.
 
 **Jump to**: [RFC Process](#rfc-process) | [RFC Process Stages](#rfc-process-stages)
 
