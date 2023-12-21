@@ -14,7 +14,7 @@ benefits of using a templated approach to creating jobs include:
      render, file conversion, or video file encoding.
    * Dependencies added between **Steps** can control the execution order. For example, adding dependencies can ensure 
      that all the frames of an image sequence have been rendered before the video file encoding **Step** is run. If
-     dependencies are not added, **Steps** are run in parallel.
+     dependencies are not added, **Steps** are free to run in parallel.
    * Each **Step** is stamped out to one or more **Tasks** through the **Step**'s parameterization. **Tasks** are the 
      exact unit of work that a render management system schedules to its **Worker Hosts**. For example, a stereoscopic 
      render **Step** can be parameterized on the frame number and the left/right camera choice. Each combination of a 
@@ -25,9 +25,9 @@ benefits of using a templated approach to creating jobs include:
       * Quantifiable requirements such as amount of memory, and the number of CPU cores.
       * Attribute requirements such as the operating system, CPU architecture, or software.
 4. **Runtime Environments**
-    * Dynamically modify the environment that **Tasks** run within on the **Worker Host**.
-    * Spread expensive setup operations over multiple **Steps** or **Tasks** from the same **Job** that are run on the 
-      same **Worker Host**.
+    * Dynamically modify the Environment that **Tasks** run within on the **Worker Host**.
+    * Run multiple **Tasks** from the same **Job** in a single Environment, front-loading expensive setup operations for
+      **Steps** or **Tasks** run on the same **Worker Host**.
 
 ## Job Structure
 

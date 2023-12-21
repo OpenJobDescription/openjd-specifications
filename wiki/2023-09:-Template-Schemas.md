@@ -801,8 +801,8 @@ Subject to the following constraints:
 3. Maximum length: 1280 characters.
 4. Each `<Identifier>` in the expression must be the name of a defined task parameter, and each task parameter must occur
    exactly once in the entire expression.
-5. Every comma-separated expression within an associative operator must All the listed task parameters must have the
-   exact same number of values defined in their range.
+5. Every comma-separated expression within an associative operator must have the exact same number of values defined 
+   in their range.
 
 For example, given the four Task Parameters named "A", "B", "C", and "D" with values:
 
