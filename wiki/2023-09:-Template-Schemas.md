@@ -3,11 +3,14 @@
 This document contains the formal specifications for the Open Job Description Template schemas. There are two schemas
 defined in this document:
 
-1. The Job Template describes the shape of a Job, its runtime environment, and all of the processes that will run as part
+1. The Job Template describes the shape of a Job, its runtime environment, and all the processes that will run as part
 of it. Jobs are created from Job Templates by providing a value for each of the Job Parameters defined in the Template,
 and instantiating the template with those values.
-2. The Environment Template describes an Environment that is defined outside of a Job. This can be used in render management
+2. The Environment Template describes an Environment that is defined outside a Job. This can be used in render management
 systems to allow users to define Environments that are automatically applied to Job Templates that are submitted for rendering.
+
+Reading the broad overviews in [How Jobs Are Constructed](How-Jobs-Are-Constructed) and [How Jobs Are Run](How-Jobs-Are-Run)
+might provide an easier introduction and broader context prior to reading the schema in entirety.
 
 Both Templates are expressed as UTF-8 documents in either
 [ECMA-404 JavaScript Object Notation (JSON)](https://www.json.org/json-en.html) or
@@ -36,12 +39,12 @@ steps: [<StepTemplate>, ...]
 
 Where:
 
-1. *specificationVersion* - A literal that identifies the document as adhering to this schema.
-2. *$schema* - Ignored. This property is allowed for compatibility with JSON-editing IDEs.
-3. *name* - The name to give to a Job that is created from the template. See: [&lt;JobName&gt;](#111-jobname).
-4. *description* - A description to apply to all Jobs that are created from the template. It has no functional purpose,
+1. *specificationVersion* — A literal that identifies the document as adhering to this schema.
+2. *$schema* — Ignored. This property is allowed for compatibility with JSON-editing IDEs.
+3. *name* — The name to give to a Job that is created from the template. See: [&lt;JobName&gt;](#111-jobname).
+4. *description* — A description to apply to all Jobs that are created from the template. It has no functional purpose,
    but may appear in UI elements. See: [&lt;Description&gt;](#72-description).
-5. *parameterDefinitions* -  A list of the Job Parameters that are available within the Job Template. Values
+5. *parameterDefinitions* — A list of the Job Parameters that are available within the Job Template. Values
    for Job Parameters are defined when submitting the Job Template to create a Job to a render management system.
    The values of Job Parameters can be referenced in Format Strings.
    See: [&lt;JobParameterDefinition&gt;](#2-jobparameterdefinition).
@@ -71,8 +74,8 @@ parameterDefinitions: [ <JobParameterDefinition>, ... ] # @optional
 environment: <Environment>
 ```
 
-1. *specificationVersion* - A literal that identifies the document as adhering to this schema.
-2. *parameterDefinitions* -  A list of the Job Parameters that are available within the Environment Template. Values
+1. *specificationVersion* — A literal that identifies the document as adhering to this schema.
+2. *parameterDefinitions* — A list of the Job Parameters that are available within the Environment Template. Values
    for Job Parameters are defined when submitting a Job Template to create a Job to a render management system.
    When submitting a job using a Job Template when one or more Environment Templates are applied, the job parameter
    definitions defined in the Job Template are compared against those defined in the Environment Template(s). Both the
@@ -83,7 +86,7 @@ environment: <Environment>
    See: [&lt;JobParameterDefinition&gt;](#2-jobparameterdefinition).
       * Minimum number of elements: If provided, then this list must contain at least one element.
       * Maximum number of elements: The list must not contain more than 50 elements.
-3. *environment* - The definition of the Environment that the Environment Template defines. 
+3. *environment* — The definition of the Environment that the Environment Template defines. 
    See [&lt;Environment&gt;](#4-environment).
 
 ## 2. `<JobParameterDefinition>`
@@ -140,7 +143,7 @@ Where:
         3. “DROPDOWN_LIST” — This is a dropdown list, for selecting from a fixed set of values. It requires that
            *allowedValues* is also provided.
         4. “CHECK_BOX” — This is a checkbox control. It requires that *allowedValues* is also provided, and contains two
-           values, case insensitive, one representing true and another representing false.
+           values, case-insensitive, one representing true and another representing false.
             * Valid pairs are [“true”, “false”], [“yes”, “no”], [“on”, “off”], and [“1”, “0”].
         5. “HIDDEN” — This hides the parameter from the user interface.
     2. *label* — The user interface label to use when displaying the parameter’s edit control. If not provided, the
@@ -328,10 +331,10 @@ base-10, and:
     3. *groupLabel* — Parameters with the same *groupLabel* value should be placed together in a grouping control with the
        value of *groupLabel* as its label.
        See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
-    4. *decimals* — This is the number of places editable after the decimal point. If d*ecimals* is not provided then an
+    4. *decimals* — This is the number of places editable after the decimal point. If *decimals* is not provided then an
        adaptive decimal mode will be used.
     5. *singleStepDelta* — How much the value changes for a single step modification, such as selecting an up or down
-       arrow in the user interface control. If d*ecimals* is provided, this is an absolute value, otherwise it is the
+       arrow in the user interface control. If *decimals* is provided, this is an absolute value, otherwise it is the
        fraction of the current value to use as an adaptive step.
 
 ### 2.5. `<JobParameterStringValue>`
@@ -395,11 +398,11 @@ script: <StepScript>
 
 Where:
 
-1. *name* - The name to identify the Step within the Job. Each Step within a Job Template must have name that differs from
+1. *name* — The name to identify the Step within the Job. Each Step within a Job Template must have name that differs from
    the names of all other Steps in the same Job Template. See: [&lt;StepName&gt;](#31-stepname).
 2. *description* — A description to apply to the step. It has no functional purpose, but may appear in UI elements.
    See: [&lt;Description&gt;](#72-description).
-3. *dependencies* - A list of the dependencies of this Step. These dependencies must be resolved before the Tasks of the
+3. *dependencies* — A list of the dependencies of this Step. These dependencies must be resolved before the Tasks of the
    Step may be scheduled. See: [&lt;StepDependency&gt;](#32-stepdependency)
     * Minimum number of elements: If provided, then this list must contain at least one element.
     * Maximum number of elements: There is no maximum defined, though implementations may choose to constrain the number of
@@ -414,10 +417,10 @@ Where:
            Job Template.
 5. *hostRequirements* — Describes the requirements on Worker host's capabilities that must be satisfied for the Task(s) of
    the Step to be scheduled to the host. See: [&lt;HostRequirements&gt;](#33-hostrequirements).
-6. *parameterSpace* - Defines the parameterization of the Step's action; the available parameters, the values that they
+6. *parameterSpace* — Defines the parameterization of the Step's action; the available parameters, the values that they
    take on, and how those parameters' values are combined to produce the Tasks of the Step. Absent this property the Step
    is run a single time.
-7. *script* - The action that is taken by this Step's Tasks when they are run on a Worker host.
+7. *script* — The action that is taken by this Step's Tasks when they are run on a Worker host.
 
 ### 3.1. `<StepName>`
 
@@ -464,9 +467,9 @@ attributes: [ <AttributeRequirement>, ... ] # @optional
 
 Where:
 
-1. *amounts* - Defines a set of quantifiable requirements on the host that must be met and reserved for a Session running
+1. *amounts* — Defines a set of quantifiable requirements on the host that must be met and reserved for a Session running
    Tasks from this Step to be scheduled to the host. See: [&lt;AmountRequirement&gt;](#331-amountrequirement).
-2. *attributes* - Defines a set of attributes that a host must have for a Session running Tasks from this Step to be
+2. *attributes* — Defines a set of attributes that a host must have for a Session running Tasks from this Step to be
    scheduled to the host. See: [&lt;AttributeRequirement&gt;](#332-attributerequirement).
 
 With the constraints:
@@ -497,11 +500,11 @@ max: <positivefloat> # @optional
 
 Where:
 
-1. *name* - Is a dotted name that identifies the specific host capability that is being required.
-2. *min* - If provided, then the host must have at least the given amount of the named capability available and reserved
+1. *name* — Is a dotted name that identifies the specific host capability that is being required.
+2. *min* — If provided, then the host must have at least the given amount of the named capability available and reserved
    for a Session running Tasks from this Step to be scheduled to the host. If not provided, then the default is 0 unless
    the specific host capability defines a minimum.
-3. *max* - If provided, then the host must have at least the given amount of the named capability available and reserved
+3. *max* — If provided, then the host must have at least the given amount of the named capability available and reserved
    for a Session running Tasks from this Step to be scheduled to the host.
 
 Subject to the constraint that at least one of *min* or *max* must be provided.
@@ -516,7 +519,7 @@ A string subject to the following constraints.
    1. `[<Identifier>:]` denotes an optional vendor-specific prefix.
    2. This specification has reserved specific values of the first `<Identifier>` after "amount." for use in this and
       future revisions. The reserved values are: "worker", "job", "step", and "task"
-4. The value is not case sensitive - All comparisons between strings of this type must be case insensitive comparisons.
+4. The value is not case-sensitive - All comparisons between strings of this type must be case-insensitive comparisons.
 
 See [&lt;Identifier&gt;](#71-identifier) for information on the `<Identifier>` substring.
 
@@ -533,7 +536,7 @@ users to define their own custom capabilities.
 
 #### 3.3.2. `<AttributeRequirement>`
 
-Attribute requirements are the mechanism for defining an abstract or concrete attribute/property the host must to have for
+Attribute requirements are the mechanism for defining an abstract or concrete attribute/property the host must have for
 a Step to run. They are always defined on a host as a set of strings. A Step can assert that it requires that a host have
 specific value(s) of the attribute for it to be scheduled to the host.
 
@@ -547,13 +550,13 @@ allOf: [ <AttributeCapabilityValue>, ... ] # @optional @fmtstring
 
 Where:
 
-1. *name* - Is a dotted name that identifies the specific host capability that is being required.
-2. *anyOf* - For the Step to be scheduled to it, the host's value for the named capability must have **at least one** of
-   the given values. This comparison is case insensitive.
+1. *name* — Is a dotted name that identifies the specific host capability that is being required.
+2. *anyOf* — For the Step to be scheduled to it, the host's value for the named capability must have **at least one** of
+   the given values. This comparison is case-insensitive.
     * Minimum number of elements: If provided, then this list must contain at least one element.
     * Maximum number of elements: The list must not contain more than 50 elements.
-3. *allOf* - For the Step to be scheduled to it, the host's value for the named capability must have **all** of the given
-   values. This comparison is case insensitive.
+3. *allOf* — For the Step to be scheduled to it, the host's value for the named capability must have **all** the given
+   values. This comparison is case-insensitive.
     * Minimum number of elements: If provided, then this list must contain at least one element.
     * Maximum number of elements: The list must not contain more than 50 elements.
 
@@ -569,7 +572,7 @@ A string subject to the following constraints.
    1. `[<Identifier>:]` denotes an optional vendor-specific prefix.
    2. This specification has reserved specific values of the first `<Identifier>` after "amount." for use in this and
       future revisions. The reserved values are: "worker", "job", "step", and "task"
-4. The value is not case sensitive - All comparisons between strings of this type must be case insensitive comparisons.
+4. The value is not case-sensitive - All comparisons between strings of this type must be case-insensitive comparisons.
 
 See [&lt;Identifier&gt;](#71-identifier) for information on the `<Identifier>` substring.
 
@@ -640,7 +643,7 @@ Where `<intstring>` is a string whose value is the string representation of an i
 string representation of an integer value in base-10, and:
 
 1. *name* — The name of the parameter.
-2. *type* - The literal "INT", defining this parameter as integer valued.
+2. *type* — The literal "INT", defining this parameter as integer valued.
 3. *range* — The list of values that the parameter takes on to define Tasks of the Step.
 4. `<IntRangeList>` is subject to the constraints:
    * Minimum number of elements: If provided, then this list must contain at least one element.
@@ -649,7 +652,7 @@ string representation of an integer value in base-10, and:
 The value of a task parameter of this type can be referenced in format strings that will be evaluated when running a Task
 using the following names:
 
-1. `Task.Param.<name>`; and
+1. `Task.Param.<name>` and
 2. `Task.RawParam.<name>`
 
 ###### 3.4.1.1.1. `<IntRangeExpr>`
@@ -693,7 +696,7 @@ For example:
 
 ##### 3.4.1.2. `<FloatTaskParameterDefinition>`
 
-An floating point valued task parameter. An `<FloatTaskParameterDefinition>` is the object:
+A floating point valued task parameter. An `<FloatTaskParameterDefinition>` is the object:
 
 ```yaml
 name: <Identifier>
@@ -712,7 +715,7 @@ Where `<floatstring>` is a string whose value is the string representation of a 
 string representation of a floating point value in base-10, and:
 
 1. *name* — The name of the parameter.
-2. *type* - The literal "FLOAT", defining this parameter as floating point valued.
+2. *type* — The literal "FLOAT", defining this parameter as floating point valued.
 3. *range* — The list of values that the parameter takes on to define Tasks of the Step.
 4. `<FloatRangeList>` is subject to the constraints:
    * Minimum number of elements: If provided, then this list must contain at least one element.
@@ -721,7 +724,7 @@ string representation of a floating point value in base-10, and:
 The value of a task parameter of this type can be referenced in format strings that will be evaluated when running a Task
 using the following names:
 
-1. `Task.Param.<name>`; and
+1. `Task.Param.<name>` and
 2. `Task.RawParam.<name>`
 
 ##### 3.4.1.3. `<StringTaskParameterDefinition>`
@@ -744,7 +747,7 @@ range: [ <TaskParameterStringValue>, ... ] # @fmtstring
 The value of a task parameter of this type can be referenced in format strings that will be evaluated when running a Task
 using the following names:
 
-1. `Task.Param.<name>`; and
+1. `Task.Param.<name>` and
 2. `Task.RawParam.<name>`
 
 ##### 3.4.1.4. `<PathTaskParameterDefinition>`
@@ -759,7 +762,7 @@ range: [ <TaskParameterStringValue>, ... ] # @fmtstring
 ```
 
 1. *name* — The name of the parameter.
-2. *type* - The literal "PATH", defining this parameter as string valued path parameter.
+2. *type* — The literal "PATH", defining this parameter as string valued path parameter.
 3. *range* — The list of values that the parameter takes on to define tasks of the step.
    See: [&lt;TaskParameterStringValue&gt;](#342-taskparameterstringvalue).
     1. Minimum list length: One element
@@ -798,8 +801,8 @@ Subject to the following constraints:
 3. Maximum length: 1280 characters.
 4. Each `<Identifier>` in the expression must be the name of a defined task parameter, and each task parameter must occur
    exactly once in the entire expression.
-5. Every comma-separated expression within an associative operator must All of the listed task parameters must have the
-   exact same number of values defined in their range.
+5. Every comma-separated expression within an associative operator must have the exact same number of values defined 
+   in their range.
 
 For example, given the four Task Parameters named "A", "B", "C", and "D" with values:
 
@@ -856,7 +859,7 @@ onRun: <Action>
 
 Where:
 
-1. *onRun* - The action that is run when a Task for the Step is run on a host. See: [&lt;Action&gt;](#5-action).
+1. *onRun* — The action that is run when a Task for the Step is run on a host. See: [&lt;Action&gt;](#5-action).
 
 ## 4. `<Environment>`
 
@@ -875,7 +878,7 @@ variables: <EnvironmentVariables> # @optional
 
 Where:
 
-1. *name* - An identifier given to the environment that is unique within the Environment's defined scope.
+1. *name* — An identifier given to the environment that is unique within the Environment's defined scope.
 2. *description* — A description to apply to the environment. It has no functional purpose, but may appear in UI elements.
    See: [&lt;Description&gt;](#72-description).
 3. *script* — The action that is taken by this Environment when it is run on a Worker host.
@@ -1011,7 +1014,7 @@ A [Format String](#73-format-strings) subject to the following constraints:
 
 ### 5.3. `<CancelationMethod>`
 
-The cancelation method defines the process by which an action is canceled.
+The cancellation method defines the process by which an action is canceled.
 
 ```bnf
 <CancelationMethod> ::= <CancelationMethodTerminate> | <CancelationMethodNotifyThenTerminate>
@@ -1030,12 +1033,12 @@ mode: "TERMINATE"
 The signal sent to the command is:
 
 1. On Posix systems — Send SIGKILL to the entire process tree when a cancel is requested.
-2. On Windows systems - Terminate the entire process tree when a cancel is requested.
+2. On Windows systems — Terminate the entire process tree when a cancel is requested.
 
 #### 5.3.2. `<CancelationMethodNotifyThenTerminate>`
 
 An action defined to cancel by this method cancels the running command by sending it a notification signal that it should
-gracefully shutdown, waiting for a period of time for the command to exit, and then sending it a terminal signal if it has
+gracefully shut down, waiting for a period of time for the command to exit, and then sending it a terminal signal if it has
 not exited by the end of the waiting period.
 
 A `<CancelationMethodNotifyThenTerminate>` is the object:
@@ -1076,7 +1079,7 @@ Implementation notes:
 1. The application that runs the action must watch for the process exit after SIGTERM to detect whether and when the
    cancelation was successful.
 2. A process may receive more than one SIGTERM signal with this mode of cancelation. This can occur when the
-   application running the action receives a signal of its own that indicates that it must shutdown (near)immediately
+   application running the action receives a signal of its own that indicates that it must shut down (near)immediately
    while it is waiting for the grace period of a cancel to elapse. These subsequent signals will be accompanied by a
    change to the `cancel_info.json` file in the working directory.
 
@@ -1107,7 +1110,7 @@ data: <DataString> # @fmtstring[host]
 * *name* — The name of the embeded file. This value is used in Format String references to this file.
 * *filename* — The filename for the written file. This must strictly be the basename of the filename, and not contain any
   directory pathing. (i.e. `foo.txt` not `dir/foo.txt`). Defaults to a random filename if not provided.
-* *runnable* — A boolean `True` value indicates that the file written to disk should be have its execute-permissions set
+* *runnable* — A boolean `True` value indicates that the file written to disk should have its execute-permissions set
   to true. Defaults to `False` if not provided.
 * *data* — The string data that will be written to the file exactly as it appears.
 
