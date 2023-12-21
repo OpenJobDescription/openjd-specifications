@@ -77,6 +77,12 @@ messages to convey information about the **Action** to the render management sys
   `"dohickying the whatsits."`
 * `openjd_fail: <message>` where `<message>` is any string. This provides a human-readable message that indicates why 
   an **Action** has failed.
+* `openjd_env: <var>=<value>` where `<var>` is the string name of an environment variable, and `<value>` is a string. This
+  can only be emitted by the **Action** for entering an **Environment**. It defines the value of an environment variable for
+  all subsequent **Action**s in the **Session** until the defining **Environment** is exited.
+* `openjd_unset_env: <var>` where `<var>` is the string name of an environment variable. This can only be emitted by the
+  **Action** for entering an **Environment**. This unsets the given environment variable for all subsequent **Action**s
+  in the **Session** until the **Environment** that emitted it is exited.
 
 ## Path Mapping
 
