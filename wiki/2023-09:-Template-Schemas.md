@@ -77,17 +77,37 @@ environment: <Environment>
 1. *specificationVersion* — A literal that identifies the document as adhering to this schema.
 2. *parameterDefinitions* — A list of the Job Parameters that are available within the Environment Template. Values
    for Job Parameters are defined when submitting a Job Template to create a Job to a render management system.
-   When submitting a job using a Job Template when one or more Environment Templates are applied, the job parameter
-   definitions defined in the Job Template are compared against those defined in the Environment Template(s). Both the
-   Job Template and Environment Template(s) are allowed to contain definitions for the same job parameter, but the
-   submission is rejected if any of the definitions of the same job parameter are in conflict (e.g. they define different
-   default values, different minimum lengths/values, or different userInterfaces).
+   Both the Job Template and Environment Template(s) for a submission are allowed to contain definitions for the same
+   job parameter name, but the submission must be rejected if any of the definitions of the same job parameter name 
+   have unresolvable conflicts 
+   (See: [Merging Environment Template Parameter Definitions](#121-merging-environment-template-parameter-definitions)).
    The values of Job Parameters can be referenced in Format Strings.
    See: [&lt;JobParameterDefinition&gt;](#2-jobparameterdefinition).
       * Minimum number of elements: If provided, then this list must contain at least one element.
       * Maximum number of elements: The list must not contain more than 50 elements.
 3. *environment* — The definition of the Environment that the Environment Template defines. 
    See [&lt;Environment&gt;](#4-environment).
+
+#### 1.2.1. Merging Environment Template Parameter Definitions
+
+When submitting a job using a Job Template and one or more Environment Templates, then two or more of the given Templates
+may contain job parameter definitions with the same job parameter name. This section describes how we determine whether
+those definitions are in conflict, and how the constraints that they define are merged to derive the constraints on the
+job parameters' values.
+
+Job Parameter Definitions for the same parameter name are in conflict if:
+
+1. They have differing values for the `type` property of the job parameter definition; or
+2. The parameter type is "PATH" and either the `objectType` or `dataFlow` properties are defined with different values.
+
+Properties in a Job Parameter Definition such as the `minLength` and `allowedValues` define constraints on
+the value for the job parameter. These constraints do not need to be identical in every Job Parameter Definition for the same
+parameter name, but each constraint must become more constrained as a subsequent definition is merged with the previous
+ones in processing order -- the Environment Templates are processed in an order defined by the render management system
+or submission, and the Job Template is always processed last. The exception to this rule is the `default` property of a
+Job Parameter Definition; the default value for a job parameter is always the last `default` value defined in the template
+processing order. The merged job parameter definition that results from this process must be internally consistent to be considered
+valid -- for example, the value of the `default` property must adhere to the constraints in the definition.
 
 ## 2. `<JobParameterDefinition>`
 
