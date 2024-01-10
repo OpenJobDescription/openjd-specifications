@@ -1210,4 +1210,4 @@ This work is licensed under CC BY-ND 4.0. To view a copy of this license, visit 
 
 For more info see the [LICENSE file].
 
-[LICENSE FILE]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/blob/mainline/LICENSE
+[LICENSE FILE]: https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/LICENSE

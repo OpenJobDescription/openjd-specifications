@@ -6,13 +6,13 @@ and to drive updates from the community.
 
 Jump to:
 
-* [Wiki Home](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/wiki)
+* [Wiki Home](https://github.com/OpenJobDescription/openjd-specifications/wiki)
 * [RFC Readme](rfcs/README.md)
 
 ## Getting Started
 
-The fastest way to understand the bones of Open Job Description is to understand both [How Jobs Are Constructed](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/wiki/How-Jobs-Are-Constructed)
-and [How Jobs Are Run](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/wiki/How-Jobs-Are-Run).
+The fastest way to understand the bones of Open Job Description is to understand both [How Jobs Are Constructed](https://github.com/OpenJobDescription/openjd-specifications/wiki/How-Jobs-Are-Constructed)
+and [How Jobs Are Run](https://github.com/OpenJobDescription/openjd-specifications/wiki/How-Jobs-Are-Run).
 
 ## What is Open Job Description?
 
@@ -47,7 +47,7 @@ contribute, and the [RFC Readme](rfcs/README.md) for how to contribute an RFC.
 
 We look forward to your input.
 
-* [Discussions](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/discussions): 
+* [Discussions](https://github.com/OpenJobDescription/openjd-specifications/discussions): 
   We encourage you to post about what you would like to see in future revisions 
   of the specification, share, and brag about how you are using Open Job 
   Description, and engage with us and the community.
@@ -55,16 +55,16 @@ We look forward to your input.
   This repository exists because we want your comments on the specification. 
   Please consider submitting an RFC if you have thoughts on how the 
   specification could be improved.
-* [Issues](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/issues): 
+* [Issues](https://github.com/OpenJobDescription/openjd-specifications/issues): 
   We encourage you to use the GitHub issue tracker to report bugs. 
-* [Pull Requests](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/pulls): 
+* [Pull Requests](https://github.com/OpenJobDescription/openjd-specifications/pulls): 
   We welcome pull requests to improve this wiki documentation. Simply make your 
-  changes in our [GitHub Repository](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/tree/mainline/wiki)
+  changes in our [GitHub Repository](https://github.com/OpenJobDescription/openjd-specifications/tree/mainline/wiki)
   and post a pull request.
 
 ## Getting Help
 
-* [Discussions](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/discussions): 
+* [Discussions](https://github.com/OpenJobDescription/openjd-specifications/discussions): 
   Seek help via our GitHub Discussions forum.
 
 ## Security

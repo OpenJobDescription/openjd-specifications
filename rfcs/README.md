@@ -22,8 +22,8 @@ to search through our [issues tracker] and [discussion forum] for similar or com
 proposals. It is possible that your idea has previously been proposed, or it might fit
 in nicely as an enhancement to an RFC that is in the works.
 
-[issues tracker]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/issues
-[discussion forum]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/discussions/categories/ideas
+[issues tracker]: https://github.com/OpenJobDescription/openjd-specifications/issues
+[discussion forum]: https://github.com/OpenJobDescription/openjd-specifications/discussions/categories/ideas
 
 ### 2. Post in GitHub Discussions
 
@@ -35,7 +35,7 @@ to filling out an RFC template with the details of your proposal.
 Simply create a new discussion thread in the [Ideas category] of the discussion forum to
 get started.
 
-[Ideas category]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/discussions/categories/ideas
+[Ideas category]: https://github.com/OpenJobDescription/openjd-specifications/discussions/categories/ideas
 
 ### 3. Tracking Issue
 
@@ -51,7 +51,7 @@ Our [tracking issue template] includes a checklist of all the steps an RFC goes
 through and it's the driver's responsibility to update the checklist and assign
 the correct label to on the RFC throughout the process.
 
-[tracking issue template]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/blob/master/.github/ISSUE_TEMPLATE/rfc.yml
+[tracking issue template]: https://github.com/OpenJobDescription/openjd-specifications/blob/master/.github/ISSUE_TEMPLATE/rfc.yml
 
 ### 4. RFC Document
 
@@ -65,7 +65,7 @@ The next step is to write the first revision of the RFC document itself.
     2. Please follow the template; it includes useful guidance and tips on how to write a good RFC.
 
 [fork this repository]: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo
-[0000-template.md]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/blob/mainline/rfcs/0000-template.md
+[0000-template.md]: https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0000-template.md
 
 ### 5. Feedback
 
@@ -145,14 +145,14 @@ There are two additional statuses for RFCs that will not move forward:
 - **[Closed](#Closed)** - The RFC was closed by the author, or the review process determined that the proposal will
   not be accepted. The tracking issue and pull request are closed in this stage.
 
-[rfc/proposed]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/labels/rfc%2Fproposed
-[rfc/exploring]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/labels/rfc%2Fexploring
-[rfc/final-comments]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/labels/rfc%2Ffinal-comments
-[rfc/accepted-future]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/labels/rfc%2Faccepted-future
-[rfc/accepted-draft]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/labels/rfc%2Faccepted-draft
-[rfc/accepted-staged]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/labels/rfc%2Faccepted-staged
-[rfc/released]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/labels/rfc%2Freleased
-[rfc/abandoned]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/labels/rfc%2Fabandoned
+[rfc/proposed]: https://github.com/OpenJobDescription/openjd-specifications/labels/rfc%2Fproposed
+[rfc/exploring]: https://github.com/OpenJobDescription/openjd-specifications/labels/rfc%2Fexploring
+[rfc/final-comments]: https://github.com/OpenJobDescription/openjd-specifications/labels/rfc%2Ffinal-comments
+[rfc/accepted-future]: https://github.com/OpenJobDescription/openjd-specifications/labels/rfc%2Faccepted-future
+[rfc/accepted-draft]: https://github.com/OpenJobDescription/openjd-specifications/labels/rfc%2Faccepted-draft
+[rfc/accepted-staged]: https://github.com/OpenJobDescription/openjd-specifications/labels/rfc%2Faccepted-staged
+[rfc/released]: https://github.com/OpenJobDescription/openjd-specifications/labels/rfc%2Freleased
+[rfc/abandoned]: https://github.com/OpenJobDescription/openjd-specifications/labels/rfc%2Fabandoned
 
 ---
 
