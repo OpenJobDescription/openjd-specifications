@@ -1226,7 +1226,34 @@ for the symbol `Param.Name` of "Bob", the resulting resolved string is
 
 ## 9. License
 
-This work is licensed under CC BY-ND 4.0. To view a copy of this license, visit [http://creativecommons.org/licenses/by-nd/4.0/](http://creativecommons.org/licenses/by-nd/4.0/).
+Copyright ©2023 Amazon.com Inc. or Affiliates (“Amazon”).  
+
+This Agreement sets forth the terms under which Amazon is making the Open Job Description
+Specification (“the Specification”) available to you.
+
+### 9.1. Copyrights
+
+This Specification is licensed under [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/deed.en). 
+
+### 9.2. Patents
+
+Subject to the terms and conditions of this Agreement, Amazon hereby grants to
+you a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+(except as stated in this section) patent license to make, have made, use, offer
+to sell, sell, import, and otherwise transfer implementations of the
+Specification that implement and are compliant with all relevant portions of the
+Specification (“Compliant Implementations”). Notwithstanding the foregoing, no
+patent license is granted to any technologies that may be necessary to make or
+use any product or portion thereof that complies with the Specification but are
+not themselves expressly set forth in the Specification.
+
+If you institute patent litigation against any entity (including a cross-claim
+or counterclaim in a lawsuit) alleging that Compliant Implementations of the
+Specification constitute direct or contributory patent infringement, then any
+patent licenses granted to You under this Agreement shall terminate as of the
+date such litigation is filed.
+
+### 9.3. Additional Information
 
 For more info see the [LICENSE file].
 
