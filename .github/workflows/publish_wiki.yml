@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: release
     env:
-        WIKI_REPO: "https://${{ secrets.CI_TOKEN }}@github.com/xxyggoqtpcmcofkc/openjd-specifications.wiki.git"
+        WIKI_REPO: "https://${{ secrets.CI_TOKEN }}@github.com/OpenJobDescription/openjd-specifications.wiki.git"
     steps:
       - uses: actions/checkout@v4
       - name: "Clone wiki contents"

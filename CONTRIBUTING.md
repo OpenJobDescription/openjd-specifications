@@ -7,16 +7,16 @@ Open Job Description is under active development. We're releasing this because w
 as we move forward, together, in defining and implementing a specification that solves the problems in the space. We 
 know that, as currently specified, Open Job Description is not a cure-all for any and all workflows.
 
-* [Discussions](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/discussions): 
+* [Discussions](https://github.com/OpenJobDescription/openjd-specifications/discussions): 
   We encourage you to post about what you would like to see in future revisions of the specification, share, and brag 
   about how you are using Open Job Description, and engage with us and the community.
-* [Request for Comment](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/tree/mainline/rfcs/README.md): 
+* [Request for Comment](https://github.com/OpenJobDescription/openjd-specifications/tree/mainline/rfcs/README.md): 
   This repository exists because we want your comments on the specification. Please consider submitting an RFC if you 
   have thoughts on how the specification could be improved.
-* [Issues](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/issues): 
+* [Issues](https://github.com/OpenJobDescription/openjd-specifications/issues): 
   We encourage you to use the GitHub issue tracker to report bugs. 
-* [Pull Requests](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/pulls): 
-  We welcome pull requests to improve this wiki documentation. Simply make your changes in our [GitHub Repository](https://github.com/xxyggoqtpcmcofkc/openjd-specifications/tree/mainline/wiki)
+* [Pull Requests](https://github.com/OpenJobDescription/openjd-specifications/pulls): 
+  We welcome pull requests to improve this wiki documentation. Simply make your changes in our [GitHub Repository](https://github.com/OpenJobDescription/openjd-specifications/tree/mainline/wiki)
   and post a pull request.
 
 Please read through this document before submitting any issues or pull requests to ensure we have all the necessary
@@ -37,7 +37,7 @@ provide your point of view on proposals then we encourage you to engage in this 
 
 See the [RFC Process] README for information on this process.
 
-[RFC process]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/tree/mainline/rfcs
+[RFC process]: https://github.com/OpenJobDescription/openjd-specifications/tree/mainline/rfcs
 
 ## Contributing via Pull Requests
 

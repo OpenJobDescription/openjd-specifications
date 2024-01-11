@@ -1257,4 +1257,4 @@ date such litigation is filed.
 
 For more info see the [LICENSE file].
 
-[LICENSE FILE]: https://github.com/xxyggoqtpcmcofkc/openjd-specifications/blob/mainline/LICENSE
+[LICENSE FILE]: https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/LICENSE
