@@ -57,14 +57,16 @@ the correct label to on the RFC throughout the process.
 
 The next step is to write the first revision of the RFC document itself.
 
-1. First, [fork this repository]
-2. Then, in your fork:
+1. We suggest reading our [design tenets] before you start.
+2. [Fork this repository]
+3. Then, in your fork:
     1. Create a file under `rfcs/NNNN-name.md` based off of the [0000-template.md] file.
        `NNNN` in the filename is your tracking issue number, and `name` should be a one
        or two word summary of the proposal.
     2. Please follow the template; it includes useful guidance and tips on how to write a good RFC.
 
-[fork this repository]: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo
+[design tenets]: https://github.com/OpenJobDescription/openjd-specifications/wiki/Design-Tenets
+[Fork this repository]: https://help.github.com/articles/fork-a-repo/
 [0000-template.md]: https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0000-template.md
 
 ### 5. Feedback
@@ -91,7 +93,7 @@ A few tips:
   agreement about that. An RFC document may be updated/modified as new information
   comes to light at any time before it it published in a revision of Open Job Description.
 
-[submit it as a pull request]: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork
+[submit it as a pull request]: https://help.github.com/articles/creating-a-pull-request/
 
 ### 6. Final Comments Period
 
