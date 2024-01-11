@@ -1,4 +1,4 @@
-# Open Job Description: How Jobs Are Run
+# How Jobs Are Run
 
 Before reading this we recommend diving into [How Jobs Are Constructed](How-Jobs-Are-Constructed).
 
