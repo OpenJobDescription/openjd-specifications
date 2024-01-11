@@ -1,7 +1,7 @@
 # Open Job Description Specifications
 
 This repository provides the specification for Open Job Description, a flexible 
-open-source specification for portable render jobs, both as a point of reference 
+open specification for portable render jobs, both as a point of reference 
 and to drive updates from the community.
 
 Jump to:
@@ -16,7 +16,7 @@ and [How Jobs Are Run](https://github.com/xxyggoqtpcmcofkc/openjd-specifications
 
 ## What is Open Job Description?
 
-Open Job Description is a flexible open-source specification for defining render 
+Open Job Description is a flexible open specification for defining render 
 jobs which are portable between studios and render solutions. 
 
 We created Open Job Description after hearing frequently from studios that they 

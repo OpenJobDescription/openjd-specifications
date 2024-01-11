@@ -1,6 +1,6 @@
 # Open Job Description Documentation
 
-Open Job Description is a flexible open-source specification initially developed by the team behind AWS Thinkbox
+Open Job Description is a flexible open specification initially developed by the team behind AWS Thinkbox
 Deadline for defining render jobs which are portable between studios and render solutions. Making render jobs portable 
 across pipelines allows technical pipeline developers to more easily and flexibly test, adapt, and deploy the best
 render farm solutions for their projects, eliminating the need for studios and developers to recreate every render
