@@ -1,0 +1,60 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# ----
+# Demonstrates
+# ----
+# Using an Environment Template to create a Python virtual environment
+# for your Session to use. Notably, this demonstrates using the `openjd_env`
+# stdout message to automatically have the virtual environment activated
+# in subsequent actions.
+#
+# ----
+# Requirements
+# ----
+# - bash shell
+# - python3 compatible Python installed
+#
+# -----
+# Contributors to this template:
+#   Daniel Neilson (https://github.com/ddneilson)
+
+specificationVersion: environment-2023-09
+environment:
+  name: PythonVenv
+  description: >
+    Creates a Python virtual environment in the Session Working directory, and
+    ensures that actions that are run while this Environment is active will automatically
+    be using the virtual environment.
+  script:
+    actions:
+      onEnter:
+        command: bash
+        args: [ "{{Env.File.Enter }}" ]
+      onExit:
+        command: bash
+        args: [ "{{Env.File.Exit}}" ]
+    embeddedFiles:
+    - name: Enter
+      type: TEXT
+      runnable: True
+      data: |
+        python3 -m venv .venv
+        source .venv/bin/activate
+        pip install --upgrade pip
+
+        # Export the environment variables required to have an activated virtual env.
+        # Open Job Description intercepts the stdout of all running processes and looks for
+        # lines starting in "openjd_<something>" as an instruction to the runtime.
+        # These environment variables will no longer be applied once this environment is exited.
+
+        echo "openjd_env: PATH=${PATH}"
+        echo "openjd_env: VIRTUAL_ENV=${VIRTUAL_ENV}"
+        echo "openjd_env: VIRTUAL_ENV_PROMPT=${VIRTUAL_ENV_PROMPT}"
+    - name: Exit
+      type: TEXT
+      runnable: True
+      data: |
+        # Delete the virtual environment.
+        # Not strictly required since the Session Working Directory will be deleted
+        # at the end of the Session, but included for demonstration.
+        rm -rf .venv

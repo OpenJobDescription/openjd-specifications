@@ -1,0 +1,75 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# ----
+# Demonstrates
+# ----
+# The use of host requirements in a Step to restrict which host(s) the Step
+# can be run on.
+#
+# See: https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09%3A-Template-Schemas#33-hostrequirements
+#
+# ----
+# Requirements
+# ----
+# - python
+#
+# -----
+# Contributors to this template:
+#   Daniel Neilson (https://github.com/ddneilson)
+
+specificationVersion: jobtemplate-2023-09
+name: DemoHostRequirements
+
+steps:
+- name: StepOne
+  script:
+    actions:
+      onRun:
+        command: python
+        args: [ "-c", "print('This is StepOne - it is light on resources')" ]
+  hostRequirements:
+    amounts:
+    - name: amount.worker.vcpu
+      min: 1
+      max: 1
+    - name: amount.worker.memory
+      min: 256
+      max: 1024
+    attributes:
+    - name: attr.worker.os.family
+      anyOf:
+      - linux
+      - macos
+    # A studio-specific attribute that is defined in your render management
+    # system. The idea being to abstract away the specific details of how
+    # a host has been configured (e.g. linux distribution installed; specific
+    # software & versions installed; etc).
+    - name: attr.custom.host_config
+      anyOf:
+      - "HostConfigA"
+      - "HostConfigC"
+
+- name: StepTwo
+  script:
+    actions:
+      onRun:
+        command: python
+        args: [ "-c", "print('This is StepTwo - pretend it is heavier on resources')" ]
+  hostRequirements:
+    amounts:
+    - name: amount.worker.vcpu
+      min: 4
+      max: 16
+    - name: amount.worker.memory
+      min: 8192
+    attributes:
+    - name: attr.worker.os.family
+      anyOf:
+      - linux
+    # A studio-specific attribute that is defined in your render management
+    # system. The idea being to abstract away the specific details of how
+    # a host has been configured (e.g. linux distribution installed; specific
+    # software & versions installed; etc).
+    - name: attr.custom.host_config
+      anyOf:
+      - "HostConfigB"

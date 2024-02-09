@@ -1111,7 +1111,7 @@ written prior to every one of the corresponding actions each time that they are 
 are read-only by only the user under which the task will be run on the worker host.
 
 ```bnf
-<EmbeddedFiles> ::= <EmbeddedFileText>
+<EmbeddedFile> ::= <EmbeddedFileText>
 ```
 
 ### 6.1. `<EmbeddedFileText>`

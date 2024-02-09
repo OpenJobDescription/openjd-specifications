@@ -24,7 +24,9 @@ by Pauline Koh, Senior Product Manager at Amazon Web Services, titled *Portable 
 ## Getting Started
 
 The fastest way to understand the bones of Open Job Description is to understand both [How Jobs Are Constructed](How-Jobs-Are-Constructed)
-and [How Jobs Are Run](How-Jobs-Are-Run).
+and [How Jobs Are Run](How-Jobs-Are-Run). You may also find it beneficial to look through the provided
+[sample templates](https://github.com/OpenJobDescription/openjd-specifications/tree/mainline/samples) in this GitHub
+repository.
 
 ## Contributing
 
@@ -41,3 +43,21 @@ We want your input! Please see our [Contributing Guidelines](https://github.com/
 * [Pull Requests](https://github.com/OpenJobDescription/openjd-specifications/pulls): We welcome pull requests to improve this wiki
   documentation. Simply make your changes in our [GitHub Repository](https://github.com/OpenJobDescription/openjd-specifications/tree/mainline/wiki)
   and post a pull request.
+
+## Open Job Description Projects
+
+*If you have an Open Job Description project that you would like to advertise here then please
+submit a pull request.*
+
+### Tools
+
+* [openjd-cli](https://github.com/OpenJobDescription/openjd-cli) - Provides a command-line
+  interface for working with Open Job Description templates.
+
+### Libraries
+
+* [openjd-model](https://github.com/OpenJobDescription/openjd-model-for-python) - A Python
+  implementation of the data model for Open Job Description's template schemas.
+* [openjd-sessions](https://github.com/OpenJobDescription/openjd-sessions-for-python) - A Python
+  library that can be used to build a runtime that is able to run Jobs in a Session as defined
+  by Open Job Description.

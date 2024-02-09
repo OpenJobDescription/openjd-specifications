@@ -1,0 +1,236 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# ----
+# Demonstrates
+# ----
+# A showcase of all of the different kinds of UI metadata that can be associated
+# with the definition of a Job Parameter in a job template.
+#
+# ----
+# Requirements
+# ----
+# - bash shell
+#
+# -----
+# Contributors to this template:
+#   Mark Wiebe (https://github.com/mwiebe)
+
+specificationVersion: 'jobtemplate-2023-09'
+name: Job Template GUI Control Showcase
+parameterDefinitions:
+  - name: LineEditControl
+    type: STRING
+    userInterface:
+      control: LINE_EDIT
+      label: Line Edit Control
+      groupLabel: Text Controls
+    description: "Unrestricted line of text!"
+    default: Default line edit value.
+  - name: MultiLineEditControl
+    type: STRING
+    userInterface:
+      control: MULTILINE_EDIT
+      label: Multi-line Edit Control
+      groupLabel: Text Controls
+    description: "Unrestricted text file"
+    default: |
+      This is a
+      text file with
+      multiple lines.
+  - name: IntSpinner
+    type: INT
+    userInterface:
+      control: SPIN_BOX
+      label: Default Int Spinner
+      groupLabel: Int Spinners
+    description: A default integer spinner.
+    default: 42
+  - name: BigStepIntSpinner
+    type: INT
+    userInterface:
+      control: SPIN_BOX
+      label: Big Step Int Spinner
+      groupLabel: Int Spinners
+      singleStepDelta: 30
+    description: A default integer spinner.
+    default: 123
+  - name: BoundedIntSpinner
+    type: INT
+    userInterface:
+      control: SPIN_BOX
+      label: Bounded Int Spinner
+      groupLabel: Int Spinners
+    description: A bounded integer spin box.
+    minValue: -100
+    maxValue: 100
+    default: 25
+  - name: FloatSpinner
+    type: FLOAT
+    userInterface:
+      control: SPIN_BOX
+      label: Default Float Spinner
+      groupLabel: Float Spinners
+    description: A default float spinner.
+    default: 1234.56789
+  - name: FloatSpinnerOneDecimal
+    type: FLOAT
+    userInterface:
+      control: SPIN_BOX
+      label: Float Spinner One Decimal
+      groupLabel: Float Spinners
+      decimals: 1
+    description: A float spinner with one decimal of precision.
+    default: 100000.01
+  - name: FloatSpinnerFixedStep
+    type: FLOAT
+    userInterface:
+      control: SPIN_BOX
+      label: Float Spinner Fixed Step
+      groupLabel: Float Spinners
+      singleStepDelta: 0.875
+    default: 0.0
+    description: A float spinner with a fixed step of .875
+  - name: StringDropdown
+    type: STRING
+    userInterface:
+      control: DROPDOWN_LIST
+      label: String Dropdown
+      groupLabel: Dropdown Controls
+    description: A dropdown with string values.
+    default: WEDNESDAY
+    allowedValues: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+  - name: IntDropdown
+    type: INT
+    userInterface:
+      control: DROPDOWN_LIST
+      label: Int Dropdown
+      groupLabel: Dropdown Controls
+    description: A dropdown with integer values.
+    default: 7
+    allowedValues: [3, 8, 7, 2, 9, 1]
+  - name: HiddenFieldOne
+    type: INT
+    userInterface:
+      control: HIDDEN
+    description: A hidden field that won't show on the UI
+    default: 10
+  - name: FloatDropdown
+    type: FLOAT
+    userInterface:
+      control: DROPDOWN_LIST
+      label: Float Dropdown
+      groupLabel: Dropdown Controls
+    description: A dropdown with floating point values.
+    default: 3.26
+    allowedValues: [1.23, 3.26, 9.9, 1.2345]
+  - name: InputFilePicker
+    type: PATH
+    objectType: FILE
+    dataFlow: IN
+    userInterface:
+      control: CHOOSE_INPUT_FILE
+      label: Input File Picker
+      groupLabel: Picker Controls
+      fileFilters:
+      - label: Scene Files
+        patterns: ["*.blend", "*.mb", "*.ma", "*.nk"]
+      - label: Any Files
+        patterns: ["*"]
+    description: Choose the input scene file.
+  - name: OutputFilePicker
+    type: PATH
+    objectType: FILE
+    dataFlow: OUT
+    userInterface:
+      control: CHOOSE_OUTPUT_FILE
+      label: Output File Picker
+      groupLabel: Picker Controls
+      fileFilters:
+      - label: EXR Files
+        patterns: ["*.exr"]
+      - label: JPEG Files
+        patterns: ["*.jpg", "*.jpeg"]
+      - label: PNG Files
+        patterns: ["*.png"]
+      - label: All Files
+        patterns: ["*"]
+    description: Choose the output image file.
+  - name: DirectoryPicker
+    type: PATH
+    objectType: DIRECTORY
+    dataFlow: INOUT
+    userInterface:
+      control: CHOOSE_DIRECTORY
+      label: Directory Picker
+      groupLabel: Picker Controls
+    description: Choose a directory.
+  - name: CheckBox
+    type: STRING
+    userInterface:
+      control: CHECK_BOX
+      label: Check Box "Boolean"
+    default: "True"
+    allowedValues: ["True", "False"]
+    description: Set a true/false value.
+  - name: HiddenFieldTwo
+    type: STRING
+    userInterface:
+      control: HIDDEN
+      label: This won't show
+    description: A hidden field that won't show on the UI
+    default: This is a hidden string parameter
+steps:
+- name: CliScript
+  script:
+    actions:
+      onRun:
+        command: bash
+        args: ['{{Task.File.runScript}}']
+    embeddedFiles:
+      - name: runScript
+        type: TEXT
+        data: |
+          #!/usr/bin/env bash
+
+          echo 'LineEditControl value:'
+          echo '{{Param.LineEditControl}}'
+
+          echo 'MultiLineEditControl value:'
+          echo '{{Param.MultiLineEditControl}}'
+
+          echo 'IntSpinner value:'
+          echo '{{Param.IntSpinner}}'
+
+          echo 'BigStepIntSpinner value:'
+          echo '{{Param.BigStepIntSpinner}}'
+
+          echo 'FloatSpinner value:'
+          echo '{{Param.FloatSpinner}}'
+
+          echo 'FloatSpinnerOne value:'
+          echo '{{Param.FloatSpinnerOneDecimal}}'
+
+          echo 'StringDropdown value:'
+          echo '{{Param.StringDropdown}}'
+
+          echo 'IntDropdown value:'
+          echo '{{Param.IntDropdown}}'
+
+          echo 'FloatDropdown value:'
+          echo '{{Param.FloatDropdown}}'
+
+          echo 'InputFilePicker raw value:'
+          echo '{{RawParam.InputFilePicker}}'
+          echo 'InputFilePicker value mapped locally:'
+          echo '{{Param.InputFilePicker}}'
+
+          echo 'OutputFilePicker raw value:'
+          echo '{{RawParam.OutputFilePicker}}'
+          echo 'OutputFilePicker value mapped locally:'
+          echo '{{Param.OutputFilePicker}}'
+
+          echo 'DirectoryPicker raw value:'
+          echo '{{RawParam.DirectoryPicker}}'
+          echo 'DirectoryPicker value mapped locally:'
+          echo '{{Param.DirectoryPicker}}'
+
