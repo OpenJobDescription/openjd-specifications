@@ -12,20 +12,20 @@
 #
 # You can see a summary of what this template will do by running:
 #
-#   openjd summary blender_render.yaml
+#   openjd summary blender-ffmpeg.yaml
 #
 # To Run with default parameters use:
 #
-#   openjd run blender_render.yaml --step CreateVideoFromRender --run-dependencies
+#   openjd run blender-ffmpeg.yaml --step CreateVideoFromRender --run-dependencies
 #
 # This first renders frames from blender and then runs ffmpeg to create a video.  If you want to just render frames
 # use this command:
 #
-#   openjd run blender_render.yaml --step RenderScene
+#   openjd run blender-ffmpeg.yaml --step RenderScene
 #
 # to override the default parameters, use this command line version:
 #
-#   openjd run blender_render.yaml \
+#   openjd run blender-ffmpeg.yaml \
 #      --job-param BlenderFile=./scene/your_scene_file.blend \
 #      --job-param Format=JPEG \
 #      --job-param EndFrame="100" \
