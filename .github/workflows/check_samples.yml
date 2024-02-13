@@ -1,0 +1,58 @@
+name: Validate Samples
+
+on:
+  pull_request:
+    branches: [ mainline ]
+    paths:
+      - samples/**
+
+jobs:
+  CopyrightHeader:
+    name: Copyright Header
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Check Header
+      run: |
+        set -eou pipefail
+        EXPECTED_HEADER="# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved."
+        for f in $(find samples/ -name '*.yaml')
+        do
+          echo "Checking: $f"
+          if test "$(head -n 1 $f)" != "${EXPECTED_HEADER}"
+          then
+            echo "ERROR: Copyright header missing on file: $f"
+            exit 1
+          fi
+        done
+
+  TemplateValidation:
+    name: Check template syntax
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install openjd-cli
+      run: |
+        pip install --upgrade pip
+        pip install openjd-cli
+
+    - name: Run check
+      run: |
+        set -eou pipefail
+        for f in $(find samples/v2023-09/ -name '*.yaml')
+        do
+          echo "Checking: $f"
+          openjd check $f
+          if test $? -ne 0
+          then
+            echo "Failed check"
+            exit 1
+          fi
+        done

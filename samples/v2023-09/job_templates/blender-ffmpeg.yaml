@@ -1,0 +1,148 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# ----
+# Demonstrates
+# ----
+# This demonstrates a Job that will render a series of animation frames
+# from the Blender CLI for a given scene.  It assumes you have Blender installed, accessible from
+# your path and that you've downloaded the Red Autumn Forest sample here:
+# https://cloud.blender.org/p/gallery/5fbd186ec57d586577c57417 and named ./scene/blender_scene.blend
+#     Robin Tran is the artist, https://www.artstation.com/robin_tran
+#     Licensed under Creative Commons: https://creativecommons.org/licenses/by-sa/3.0/
+#
+# You can see a summary of what this template will do by running:
+#
+#   openjd summary blender_render.yaml
+#
+# To Run with default parameters use:
+#
+#   openjd run blender_render.yaml --step CreateVideoFromRender --run-dependencies
+#
+# This first renders frames from blender and then runs ffmpeg to create a video.  If you want to just render frames
+# use this command:
+#
+#   openjd run blender_render.yaml --step RenderScene
+#
+# to override the default parameters, use this command line version:
+#
+#   openjd run blender_render.yaml \
+#      --job-param BlenderFile=./scene/your_scene_file.blend \
+#      --job-param Format=JPEG \
+#      --job-param EndFrame="100" \
+#      --step CreateVideoFromRender --run-dependencies
+#
+# ----
+# Requirements (tested with Blender 4.0.2 and ffmpeg 6.1.1)
+# ----
+# - bash shell
+# - Blender
+# - ffmpeg
+#
+# -----
+# Contributors to this template:
+#   Mark Stephens (https://github.com/zoomerkind)
+
+specificationVersion: 'jobtemplate-2023-09'
+name: '{{Param.JobName}}'
+description: |
+  An example of how to render a blender animation sequence to the command line and optionally create a video.
+parameterDefinitions:
+- name: JobName
+  type: STRING
+  userInterface:
+    control: LINE_EDIT
+    label: Job Name
+  default: Blender Scene Renderer
+- name: EndFrame
+  type: INT
+  default: 100
+- name: BlenderFile
+  type: PATH
+  objectType: FILE
+  dataFlow: IN
+  userInterface:
+    control: CHOOSE_INPUT_FILE
+    label: Blender File
+  default: "./scene/blender_scene.blend"
+  description: Choose the Blender scene you want to render.
+- name: OutputDir
+  type: PATH
+  objectType: DIRECTORY
+  dataFlow: OUT
+  userInterface:
+    control: CHOOSE_DIRECTORY
+    label: Output Directory
+  default: "./output"
+  description: Choose the render output directory.
+- name: OutputPattern
+  type: STRING
+  userInterface:
+    control: LINE_EDIT
+    label: Output File Pattern
+  default: "render-####"
+  description: Enter the output filename pattern (without extension).
+- name: Format
+  type: STRING
+  userInterface:
+    control: DROPDOWN_LIST
+    label: Output File Format
+  description: Choose the file format to render as.
+  default: PNG
+  allowedValues: [TGA, RAWTGA, JPEG, IRIS, IRIZ, PNG, HDR, TIFF, OPEN_EXR, OPEN_EXR_MULTILAYER, CINEON, DPX, DDS, JP2, WEBP]
+steps:
+- name: RenderScene
+  # Uncomment the following to render in parallel on a distributed cluster,
+  # and change the line '--render-frame "1..{{Param.EndFrame}}"' below
+  # to '--render-frame {{Task.Param.Frame}}'
+  # parameterSpace:
+  #   taskParameterDefinitions:
+  #   - name: Frame
+  #     type: INT
+  #     range: "1-{{Param.EndFrame}}"
+  script:
+    actions:
+      onRun:
+        command: bash
+        args: ['{{ Task.File.run }}']
+    embeddedFiles:
+      - name: run
+        type: TEXT
+        data: |
+          #!/bin/env bash
+
+          set -xeuo pipefail
+
+          mkdir -p {{Param.OutputDir}}
+
+          blender --background "{{Param.BlenderFile}}" \
+                  --render-output "{{Param.OutputDir}}/{{Param.OutputPattern}}" \
+                  --render-format "{{Param.Format}}" \
+                  --use-extension 1 \
+                  --render-frame "1..{{Param.EndFrame}}"
+
+- name: CreateVideoFromRender
+  dependencies:
+  - dependsOn: RenderScene
+  script:
+    actions:
+      onRun:
+        command: bash
+        args: [ "{{Task.File.Encode}}"]
+    embeddedFiles:
+    - name: Encode
+      type: TEXT
+      runnable: True
+      data: |
+        #!/bin/env bash
+
+        set -xeuo pipefail
+
+        # Reference: https://academysoftwarefoundation.github.io/EncodingGuidelines/Quickstart.html
+        FILE_PREFIX=`mktemp blend-video-XXXXX`
+        echo `pwd`
+        echo $FILE_PREFIX
+        ffmpeg -y -r 10 -start_number 1 -i {{Param.OutputDir}}/render-%04d.{{Param.Format}} -pix_fmt yuv420p \
+          -vf "scale=in_color_matrix=bt709:out_color_matrix=bt709" \
+          -frames:v 300 -c:v libx264 -preset fast \
+          -color_range tv -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1 \
+          -movflags faststart "{{Param.OutputDir}}/../${FILE_PREFIX}.mp4"

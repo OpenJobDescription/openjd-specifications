@@ -1,0 +1,23 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# ----
+# Demonstrates
+# ----
+# A brief description of what this sample is demonstrating that you want to draw
+# attention to.
+#
+# ----
+# Requirements
+# ----
+# What, if any, requirements must be met by the host environment to be able
+# to run this template. Provide this as a bulleted list. For example
+# - Software package X, version x.y.z or higher
+# - linux
+# - ... etc
+#
+# -----
+# Contributors to this template:
+#   <add your name here, if desired>
+
+name: Brief-Descriptive-Title
+# ... and so on

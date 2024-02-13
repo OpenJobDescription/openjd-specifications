@@ -1,0 +1,210 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# ----
+# Demonstrates
+# ----
+#
+# This demonstrates a Job that will take an input image sequence and output an
+# initial h264 movie via FFMPEG conversion, then take that h264 movie and
+# generate a webm. This should should be considered a work in progress, as I
+# aim to increase the complexity and document the process.
+#
+# You can see a summary of what this template will do by running:
+#
+#   openjd summary ffmpeg.yaml
+#
+# To Run with default parameters use:
+#
+#   openjd run ffmpeg.yaml -p InputFile=./image_sequence.%04d.exr \
+#       -p H264OutputFile=./h264Movie.mp4 -p WebMOutputFile=./WebMMovie.webm \
+#       --step webm --run-dependencies
+#
+# If you want to just run the h264 encode, use this command:
+#
+#   openjd run ffmpeg.yaml -p InputFile=./image_sequence.%04d.exr \
+#       -p H264OutputFile=./h264Movie.mp4 -p WebMOutputFile=./WebMMovie.webm \
+#       --step h264
+#
+# ----
+# Requirements (tested with ffmpeg 6.1.1)
+# ----
+# - bash shell
+# - ffmpeg with vpx library
+#
+# -----
+# Contributors to this template:
+#   Sean Wallitsch (https://github.com/shidarin)
+#
+specificationVersion: 'jobtemplate-2023-09'
+name: Job Bundle - FFMPEG H264/WebM Example
+
+parameterDefinitions:
+  - name: InputFile
+    type: PATH
+    objectType: FILE
+    dataFlow: IN
+    userInterface:
+      control: CHOOSE_INPUT_FILE
+      label: Input File
+      groupLabel: Files
+      fileFilters:
+      - label: Image Sequence Files
+        patterns: ["*.exr", "*.png", "*.dpx"]
+      - label: Any Files
+        patterns: ["*"]
+    # In a GUI, this would only "kinda" work right now, because what we
+    # really need to provide to FFMPEG for an image sequence is something with
+    # frame padding. If this were using a GUI, a GUI would tell openjd-cli
+    # the literal value of the file we selected, frame number and all.
+    # We should probably be using a script to change this value and add the
+    # frame padding.
+    description: Choose the input image sequence.
+  - name: H264OutputFile
+    description: Choose the output h264 file.
+    type: PATH
+    objectType: FILE
+    dataFlow: OUT
+    userInterface:
+      control: CHOOSE_OUTPUT_FILE
+      label: Output File
+      groupLabel: Files
+      fileFilters:
+      - label: MP4
+        patterns: ["*.mp4"]
+      - label: All Files
+        patterns: ["*"]
+  - name: WebMOutputFile
+    description: Choose the output webm file.
+    type: PATH
+    objectType: FILE
+    dataFlow: OUT
+    userInterface:
+      control: CHOOSE_OUTPUT_FILE
+      label: Output File
+      groupLabel: Files
+      fileFilters:
+      - label: WebM
+        patterns: ["*.webm"]
+      - label: All Files
+        patterns: ["*"]
+  - name: FPS
+    type: INT
+    userInterface:
+      control: DROPDOWN_LIST
+      label: FPS
+      groupLabel: FrameInfo
+    description: What FPS (Frames Per Second) the movie should be encoded at.
+    default: 24
+    allowedValues: [1, 12, 24, 30, 48, 60, 90, 96, 120, 144, 165, 240]
+  - name: StartFrame
+    type: INT
+    userInterface:
+      control: SPIN_BOX
+      label: Start Frame
+      groupLabel: FrameInfo
+    description: What frame to start the encode on
+    default: 1
+  - name: StopFrame
+    type: INT
+    userInterface:
+      control: SPIN_BOX
+      label: Stop Frame
+      groupLabel: FrameInfo
+    description: What frame to end the encode on
+    default: 100
+
+# Uncomment the following for debugging
+# jobEnvironments:
+#   - name: debug
+#     # This makes it easier to tell why ffmpeg hates your command.
+#     # It will result in the openjd runtime echo'ing the tempfile it's writing
+#     description: Helps debug the commands being run
+#     script:
+#       actions:
+#         onEnter:
+#           command: "echo"
+#           args:
+#             - "openjd_session_runtime_loglevel: DEBUG"
+
+steps:
+  - name: h264
+    script:
+      actions:
+        onRun:
+          command: "ffmpeg"
+          args:
+            # Every argument, and its value, must be a seperate list item. If
+            # you combine the argument and the value, FFMPEG (and most other
+            # CLI tools) will treat them as one combined arg and have no idea
+            # how to handle this. This is a side result of how openjd is
+            # formatting those args, as each item on this list will be
+            # enclosed in single quotes after being its values being
+            # formatted.
+            - "-r"
+            - "{{Param.FPS}}"
+            - "-start_number"
+            - "{{Param.StartFrame}}"
+            - "-i"
+            - "{{Param.InputFile}}"
+            - "-pix_fmt"
+            - "yuv422p"
+            - "-vf"
+            - "scale=in_color_matrix=bt709:out_color_matrix=bt709"
+            - "-frames:v"
+            - "{{Param.StopFrame}}"
+            - "-c:v"
+            - "libx264"
+            - "-preset"
+            - "slower"
+            - "-color_range"
+            - "tv"
+            - "-colorspace"
+            - "bt709"
+            - "-color_primaries"
+            - "bt709"
+            - "-color_trc"
+            - "iec61966-2-1"
+            - "-movflags"
+            - "faststart"
+            - "{{Param.H264OutputFile}}"
+  - name: webm
+    dependencies:
+      - dependsOn: 'h264'
+    script:
+      actions:
+        onRun:
+          command: "ffmpeg"
+          args:
+          - "-r"
+          - "{{Param.FPS}}"
+          - "-i"
+          - "{{Param.H264OutputFile}}"
+          - "-c:v"
+          - "libvpx-vp9"
+          - "-pix_fmt"
+          - "yuv420p10le"
+          - "-crf"
+          - "22"
+          - "-speed"
+          - "2"
+          - "-row-mt"
+          - "1"
+          - "-quality"
+          - "good"
+          - "-b:v"
+          - "0"
+          - "-sws_flags"
+          - "spline+accurate_rnd+full_chroma_int"
+          - "-vf"
+          - "scale=in_range=full:in_color_matrix=bt709:out_range=tv:out_color_matrix=bt709"
+          - "-color_range"
+          - "tv"
+          - "-colorspace"
+          - "bt709"
+          - "-color_primaries"
+          - "bt709"
+          - "-color_trc"
+          - "iec61966-2-1"
+          - "-y"
+          - "{{Param.WebMOutputFile}}"
+

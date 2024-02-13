@@ -1,0 +1,55 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# ----
+# Demonstrates
+# ----
+# This demonstrates Open Job Description's "stdout messages." These are special messages
+# that can be emitted on stdout or stderr as a single line by an Action when it is running
+# within a Session. The application that is running the Action may intercept these messages
+# to convey information about the Action to the render management system.
+#
+# Reference: https://github.com/OpenJobDescription/openjd-specifications/wiki/How-Jobs-Are-Run#stdoutstderr-messages
+#
+# ----
+# Requirements
+# ----
+# - python
+#
+# -----
+# Contributors to this template:
+#   Daniel Neilson (https://github.com/ddneilson)
+
+specificationVersion: jobtemplate-2023-09
+name: ShowOffStdoutMessages
+
+steps:
+- name: Demo
+  script:
+    actions:
+      onRun:
+        command: python
+        args: [ "{{Task.File.Run}}"]
+    embeddedFiles:
+    - name: Run
+      type: TEXT
+      runnable: True
+      data: |
+        #!/usr/bin/env python
+
+        # Inform the system about our progress to be passed-on to the user.
+        print("openjd_progress: 0.0")
+
+        # Inform the system what we're doing so that it can be communicated to the user.
+        print("openjd_status: Loading the things")
+
+        print("openjd_progress: 50.0")
+
+        print("openjd_status: Processing the things")
+
+        if 1+1 != 2:
+          # If the process fails then we can tell the system *why* we failed so that
+          # it can be presented to the user without forcing them to dig through logs.
+          print("openjd_fail: The rules of mathematics have been violated!")
+          raise RuntimeError("The rules of mathematics have been violated!")
+
+        print("openjd_progress: 100")

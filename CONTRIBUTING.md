@@ -16,8 +16,8 @@ know that, as currently specified, Open Job Description is not a cure-all for an
 * [Issues](https://github.com/OpenJobDescription/openjd-specifications/issues): 
   We encourage you to use the GitHub issue tracker to report bugs. 
 * [Pull Requests](https://github.com/OpenJobDescription/openjd-specifications/pulls): 
-  We welcome pull requests to improve this wiki documentation. Simply make your changes in our [GitHub Repository](https://github.com/OpenJobDescription/openjd-specifications/tree/mainline/wiki)
-  and post a pull request.
+  We welcome pull requests to improve the wiki documentation and add sample templates. Simply make your changes in
+  our [GitHub Repository](https://github.com/OpenJobDescription/openjd-specifications/tree/mainline/wiki) and post a pull request.
 
 Please read through this document before submitting any issues or pull requests to ensure we have all the necessary
 information to effectively respond to your bug report or contribution.
