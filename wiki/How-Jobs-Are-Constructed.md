@@ -83,7 +83,7 @@ The time when a **Format String** in a **Job Template** is evaluated is determin
 is being defined. For example, the string `"1-{{Param.End}}:10"` in the previous section's example is evaluated by the 
 render management system when the **Job Template** is submitted to create a **Job**, and the string 
 `"{{ Task.File.Foo }}"` is evaluated on the **Worker Host** when running a **Task**. You can see when a **Format String** is 
-evaluated in the [job template specification](2023-09:-Template-Schemas), but the general rule of thumb is that values 
+evaluated in the [job template specification](2023-09-Template-Schemas), but the general rule of thumb is that values 
 that are used on the **Worker Host** to run a command are evaluated on the **Worker Host** and all others are evaluated 
 in the render management system.
 

@@ -35,7 +35,7 @@ within. A failed Task will result in a failed **Session**, which will subsequent
 
 The following diagram provides an overview of the steps taken to run a Session.
 
-![Actions Run in a Session](./images/2023-09:how_jobs_are_run.png)
+![Actions Run in a Session](./images/2023-09_how_jobs_are_run.png)
 
 ## Host Requirements
 
