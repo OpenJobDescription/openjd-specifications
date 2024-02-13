@@ -6,7 +6,7 @@
 # The use of host requirements in a Step to restrict which host(s) the Step
 # can be run on.
 #
-# See: https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09%3A-Template-Schemas#33-hostrequirements
+# See: https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#33-hostrequirements
 #
 # ----
 # Requirements
