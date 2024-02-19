@@ -5,9 +5,11 @@
 # ----
 #
 # This demonstrates a Job that will take an input image sequence and output an
-# initial h264 movie via FFMPEG conversion, then take that h264 movie and
-# generate a webm. This should should be considered a work in progress, as I
-# aim to increase the complexity and document the process.
+# initial h264 movie via FFmpeg conversion, then take that h264 movie and
+# generate a hq and proxy ProRes, along with a webm suitable for web review.
+#
+# Encoding settings from the Academy Software Foundation's Encoding Guidelines
+# Project: https://academysoftwarefoundation.github.io/EncodingGuidelines/
 #
 # You can see a summary of what this template will do by running:
 #
@@ -16,33 +18,31 @@
 # To Run with default parameters use:
 #
 #   openjd run ffmpeg.yaml -p InputFile=./image_sequence.%04d.exr \
-#       -p H264OutputFile=./h264Movie.mp4 -p WebMOutputFile=./WebMMovie.webm \
-#       --step webm --run-dependencies
+#       -p StartFrame=1 -p EndFrame=1 -p FPS=24 --step webm --run-dependencies
 #
 # If you want to just run the h264 encode, use this command:
 #
 #   openjd run ffmpeg.yaml -p InputFile=./image_sequence.%04d.exr \
-#       -p H264OutputFile=./h264Movie.mp4 -p WebMOutputFile=./WebMMovie.webm \
-#       --step h264
+#       -p StartFrame=1 -p EndFrame=1 -p FPS=24 --step h264
 #
 # ----
 # Requirements (tested with ffmpeg 6.1.1)
 # ----
 # - bash shell
-# - ffmpeg with vpx library
+# - FFmpeg with vpx library
 #
 # -----
 # Contributors to this template:
 #   Sean Wallitsch (https://github.com/shidarin)
 #
 specificationVersion: 'jobtemplate-2023-09'
-name: Job Bundle - FFMPEG H264/WebM Example
-
+name: Job Bundle - FFmpeg Review Media
 parameterDefinitions:
   - name: InputFile
     type: PATH
     objectType: FILE
     dataFlow: IN
+    description: The input image sequence, with %04d style padding.
     userInterface:
       control: CHOOSE_INPUT_FILE
       label: Input File
@@ -53,40 +53,12 @@ parameterDefinitions:
       - label: Any Files
         patterns: ["*"]
     # In a GUI, this would only "kinda" work right now, because what we
-    # really need to provide to FFMPEG for an image sequence is something with
-    # frame padding. If this were using a GUI, a GUI would tell openjd-cli
-    # the literal value of the file we selected, frame number and all.
-    # We should probably be using a script to change this value and add the
-    # frame padding.
-    description: Choose the input image sequence.
-  - name: H264OutputFile
-    description: Choose the output h264 file.
-    type: PATH
-    objectType: FILE
-    dataFlow: OUT
-    userInterface:
-      control: CHOOSE_OUTPUT_FILE
-      label: Output File
-      groupLabel: Files
-      fileFilters:
-      - label: MP4
-        patterns: ["*.mp4"]
-      - label: All Files
-        patterns: ["*"]
-  - name: WebMOutputFile
-    description: Choose the output webm file.
-    type: PATH
-    objectType: FILE
-    dataFlow: OUT
-    userInterface:
-      control: CHOOSE_OUTPUT_FILE
-      label: Output File
-      groupLabel: Files
-      fileFilters:
-      - label: WebM
-        patterns: ["*.webm"]
-      - label: All Files
-        patterns: ["*"]
+    # really need to provide to FFmpeg for an image sequence is something with
+    # frame padding. If this were using an OpenJD GUI, a GUI would tell
+    # openjd-cli the literal value of the file we selected, frame number and
+    # all. If you need to use a straight OpenJD GUI here which directly passes
+    # the result of this to the OpenJD template, you should be using a script
+    # to change this value and add the frame padding.
   - name: FPS
     type: INT
     userInterface:
@@ -104,15 +76,18 @@ parameterDefinitions:
       groupLabel: FrameInfo
     description: What frame to start the encode on
     default: 1
-  - name: StopFrame
+  - name: EndFrame
     type: INT
     userInterface:
       control: SPIN_BOX
-      label: Stop Frame
+      label: End Frame
       groupLabel: FrameInfo
     description: What frame to end the encode on
-    default: 100
-
+    # It'd be great to have EndFrame be completely optional- where if a value is
+    # not given, a default value results in the argument not being given to
+    # FFmpeg at all. You wouuld need to set up an embedded script do handle
+    # that, and it might not even be desirable as the first missing frame
+    # would result in the end of the encode.
 # Uncomment the following for debugging
 # jobEnvironments:
 #   - name: debug
@@ -125,37 +100,39 @@ parameterDefinitions:
 #           command: "echo"
 #           args:
 #             - "openjd_session_runtime_loglevel: DEBUG"
-
 steps:
   - name: h264
+    # This step encodes a high quality h264 mp4 for downstream
     script:
       actions:
         onRun:
           command: "ffmpeg"
           args:
-            # Every argument, and its value, must be a seperate list item. If
-            # you combine the argument and the value, FFMPEG (and most other
+            # Every argument and its value, must be a separate list item. If
+            # you combine the argument and the value, FFmpeg (and most other
             # CLI tools) will treat them as one combined arg and have no idea
             # how to handle this. This is a side result of how openjd is
             # formatting those args, as each item on this list will be
             # enclosed in single quotes after being its values being
             # formatted.
-            - "-r"
+            - "-r"  # Framerate
             - "{{Param.FPS}}"
             - "-start_number"
             - "{{Param.StartFrame}}"
+            - "-frames:v"
+            - "{{Param.EndFrame}}"
             - "-i"
             - "{{Param.InputFile}}"
             - "-pix_fmt"
-            - "yuv422p"
+            - "yuv444p10le"  # YUV 4:4:4 10-bit to use as input to other encodes
+            - "-crf"
+            - "18"  # Lower numbers better, 0 is uncompressed
             - "-vf"
             - "scale=in_color_matrix=bt709:out_color_matrix=bt709"
-            - "-frames:v"
-            - "{{Param.StopFrame}}"
             - "-c:v"
             - "libx264"
             - "-preset"
-            - "slower"
+            - "slower"  # 'slow' runs slightly faster.
             - "-color_range"
             - "tv"
             - "-colorspace"
@@ -165,9 +142,10 @@ steps:
             - "-color_trc"
             - "iec61966-2-1"
             - "-movflags"
-            - "faststart"
-            - "{{Param.H264OutputFile}}"
+            - "faststart"  # Reorgs mp4 for better streaming performance
+            - "h264_hq_output.mp4"
   - name: webm
+    # For web review
     dependencies:
       - dependsOn: 'h264'
     script:
@@ -175,14 +153,18 @@ steps:
         onRun:
           command: "ffmpeg"
           args:
-          - "-r"
+          - "-r"  # Framerate
           - "{{Param.FPS}}"
+          - "-start_number"
+          - "{{Param.StartFrame}}"
+          - "-frames:v"
+          - "{{Param.EndFrame}}"
           - "-i"
-          - "{{Param.H264OutputFile}}"
+          - "h264_hq_output.mp4"
           - "-c:v"
           - "libvpx-vp9"
           - "-pix_fmt"
-          - "yuv420p10le"
+          - "yuv420p10le"  # YUV 4:2:0 10-bit
           - "-crf"
           - "22"
           - "-speed"
@@ -206,5 +188,49 @@ steps:
           - "-color_trc"
           - "iec61966-2-1"
           - "-y"
-          - "{{Param.WebMOutputFile}}"
-
+          - "webm_output.webm"
+  - name: prores
+    # For editorial
+    dependencies:
+      - dependsOn: "h264"
+    parameterSpace:
+      # Setting a taskParameter will result in multiple tasks being broken out
+      taskParameterDefinitions:
+      - name: Quality
+        type: STRING
+        range: ["0", "3"]
+    script:
+      actions:
+        onRun:
+          command: "ffmpeg"
+          args:
+            - "-r"  # Framerate
+            - "{{Param.FPS}}"
+            - "-start_number"
+            - "{{Param.StartFrame}}"
+            - "-frames:v"
+            - "{{Param.EndFrame}}"
+            - "-i"
+            - "h264_hq_output.mp4"
+            - "-pix_fmt"
+            - "yuv422p10le"  # YUV 4:2:2 10-bit
+            - "-vf"
+            - "scale=in_color_matrix=bt709:out_color_matrix=bt709"
+            - "-c:v"
+            - "prores_ks"  # For Apple Silicon, use prores_videotoolbox
+            - "-profile:v"
+            - "{{Task.Param.Quality}}"
+            - "-vendor"
+            - "apl0"
+            - "-qscale:v"
+            - "11"  # between values of 9-13 give a good result, w/ 0 being best
+            - "-color_range"
+            - "tv"
+            - "-colorspace"
+            - "bt709"
+            - "-color_primaries"
+            - "bt709"
+            - "-color_trc"
+            - "iec61966-2-1"
+            - "-y"
+            - "prores_{{Task.Param.Quality}}_output.mov"
