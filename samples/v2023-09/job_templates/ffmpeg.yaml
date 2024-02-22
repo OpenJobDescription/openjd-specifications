@@ -6,7 +6,7 @@
 #
 # This demonstrates a Job that will take an input image sequence and output an
 # initial h264 movie via FFmpeg conversion, then take that h264 movie and
-# generate a hq and proxy ProRes, along with a webm suitable for web review.
+# generate a hq and proxy Prores, along with a webm suitable for web review.
 #
 # Encoding settings from the Academy Software Foundation's Encoding Guidelines
 # Project: https://academysoftwarefoundation.github.io/EncodingGuidelines/
@@ -18,12 +18,13 @@
 # To Run with default parameters use:
 #
 #   openjd run ffmpeg.yaml -p InputFile=./image_sequence.%04d.exr \
-#       -p StartFrame=1 -p EndFrame=1 -p FPS=24 --step webm --run-dependencies
+#       -p OutputDir=. -p StartFrame=1 -p EndFrame=100 -p FPS=24 --step webm \
+#       --run-dependencies
 #
 # If you want to just run the h264 encode, use this command:
 #
 #   openjd run ffmpeg.yaml -p InputFile=./image_sequence.%04d.exr \
-#       -p StartFrame=1 -p EndFrame=1 -p FPS=24 --step h264
+#       -p OutputDir=. -p StartFrame=1 -p EndFrame=100 -p FPS=24 --step h264
 #
 # ----
 # Requirements (tested with ffmpeg 6.1.1)
@@ -59,6 +60,15 @@ parameterDefinitions:
     # all. If you need to use a straight OpenJD GUI here which directly passes
     # the result of this to the OpenJD template, you should be using a script
     # to change this value and add the frame padding.
+  - name: OutputDir
+    type: PATH
+    objectType: DIRECTORY
+    dataFlow: OUT
+    description: The output directory to put all generated movies in
+    userInterface:
+      control: CHOOSE_DIRECTORY
+      label: Output Directory
+      groupLabel: Files
   - name: FPS
     type: INT
     userInterface:
@@ -88,18 +98,6 @@ parameterDefinitions:
     # FFmpeg at all. You wouuld need to set up an embedded script do handle
     # that, and it might not even be desirable as the first missing frame
     # would result in the end of the encode.
-# Uncomment the following for debugging
-# jobEnvironments:
-#   - name: debug
-#     # This makes it easier to tell why ffmpeg hates your command.
-#     # It will result in the openjd runtime echo'ing the tempfile it's writing
-#     description: Helps debug the commands being run
-#     script:
-#       actions:
-#         onEnter:
-#           command: "echo"
-#           args:
-#             - "openjd_session_runtime_loglevel: DEBUG"
 steps:
   - name: h264
     # This step encodes a high quality h264 mp4 for downstream
@@ -119,8 +117,6 @@ steps:
             - "{{Param.FPS}}"
             - "-start_number"
             - "{{Param.StartFrame}}"
-            - "-frames:v"
-            - "{{Param.EndFrame}}"
             - "-i"
             - "{{Param.InputFile}}"
             - "-pix_fmt"
@@ -129,6 +125,8 @@ steps:
             - "18"  # Lower numbers better, 0 is uncompressed
             - "-vf"
             - "scale=in_color_matrix=bt709:out_color_matrix=bt709"
+            - "-frames:v"  # End Frame options need to happen after the input
+            - "{{Param.EndFrame}}"
             - "-c:v"
             - "libx264"
             - "-preset"
@@ -143,7 +141,7 @@ steps:
             - "iec61966-2-1"
             - "-movflags"
             - "faststart"  # Reorgs mp4 for better streaming performance
-            - "h264_hq_output.mp4"
+            - "{{Param.OutputDir}}/h264_hq_output.mp4"
   - name: webm
     # For web review
     dependencies:
@@ -155,12 +153,8 @@ steps:
           args:
           - "-r"  # Framerate
           - "{{Param.FPS}}"
-          - "-start_number"
-          - "{{Param.StartFrame}}"
-          - "-frames:v"
-          - "{{Param.EndFrame}}"
           - "-i"
-          - "h264_hq_output.mp4"
+          - "{{Param.OutputDir}}/h264_hq_output.mp4"
           - "-c:v"
           - "libvpx-vp9"
           - "-pix_fmt"
@@ -188,7 +182,7 @@ steps:
           - "-color_trc"
           - "iec61966-2-1"
           - "-y"
-          - "webm_output.webm"
+          - "{{Param.OutputDir}}/webm_output.webm"
   - name: prores
     # For editorial
     dependencies:
@@ -206,12 +200,8 @@ steps:
           args:
             - "-r"  # Framerate
             - "{{Param.FPS}}"
-            - "-start_number"
-            - "{{Param.StartFrame}}"
-            - "-frames:v"
-            - "{{Param.EndFrame}}"
             - "-i"
-            - "h264_hq_output.mp4"
+            - "{{Param.OutputDir}}/h264_hq_output.mp4"
             - "-pix_fmt"
             - "yuv422p10le"  # YUV 4:2:2 10-bit
             - "-vf"
@@ -233,4 +223,4 @@ steps:
             - "-color_trc"
             - "iec61966-2-1"
             - "-y"
-            - "prores_{{Task.Param.Quality}}_output.mov"
+            - "{{Param.OutputDir}}/prores_{{Task.Param.Quality}}_output.mov"
