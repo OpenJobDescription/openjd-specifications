@@ -36,9 +36,9 @@ defining render jobs, or really any type of work suited for completion on a
 render farm, makes tools and plugins portable and increases interoperability.
 
 For deeper insight into our thought process and goals, we recommend
-[this Academy Software Foundation talk](https://www.youtube.com/watch?v=3AM3L6P-cAw&list=PL9dZxafYCWmxDFGc2CEq4SgCkZWKYW1m5&index=14)
-by Pauline Koh, Senior Product Manager at Amazon Web Services, titled
-*Portable Jobs for Open Source Content Production*.
+[this Academy Software Foundation talk](https://www.youtube.com/watch?v=2umfqGX844Y)
+by Pauline Koh, Senior Product Manager - Technical at Amazon Web Services, titled
+*Portable and Open Render Job Specifications*.
 
 ## Open Job Description Projects
 
