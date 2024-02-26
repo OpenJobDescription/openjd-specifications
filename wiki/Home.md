@@ -20,6 +20,10 @@ the space. We know that, as currently specified, Open Job Description is not a c
 
 For deeper insight into our thought process and goals, we recommend [this Academy Software Foundation talk](https://www.youtube.com/watch?v=3AM3L6P-cAw&list=PL9dZxafYCWmxDFGc2CEq4SgCkZWKYW1m5&index=14)
 by Pauline Koh, Senior Product Manager at Amazon Web Services, titled *Portable Jobs for Open Source Content Production*.
+If you want to keep going, [this follow-up talk](https://www.youtube.com/watch?v=2umfqGX844Y), also by Pauline Koh, at 
+the subsequent Academy Software Foundation gathering titled *Portable and Open Render Job Specifications* is a gentle 
+introduction into what you can accomplish with OpenJD. If you've already watched the first talk, you can [start here](https://www.youtube.com/watch?v=2umfqGX844Y&t=383)
+on the second talk.
 
 ## Getting Started
 
