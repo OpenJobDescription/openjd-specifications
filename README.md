@@ -57,6 +57,9 @@ submit a pull request.*
 * [openjd-sessions](https://github.com/OpenJobDescription/openjd-sessions-for-python) - A Python
   library that can be used to build a runtime that is able to run Jobs in a Session as defined
   by Open Job Description.
+* [openjd-adaptor-runtime](https://github.com/OpenJobDescription/openjd-adaptor-runtime-for-python) - A Python library
+  for creating a command-line Adaptor to assist with integrating an existing application, such as a rendering
+  application, into batch computing systems that run Jobs in a way that is compatible with Open Job Description Sessions.
 
 ## Contributing
 
