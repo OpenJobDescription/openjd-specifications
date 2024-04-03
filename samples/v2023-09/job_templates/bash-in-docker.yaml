@@ -1,0 +1,101 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# ----
+# Demonstrates
+# ----
+# This demonstrates a way that Tasks can be run inside of a docker container.
+#
+# Run with:
+#  openjd run bash-in-docker.yaml --step RunInDocker
+#
+# ----
+# Requirements
+# ----
+# - linux (tested on Amazon Linux 2)
+# - docker (tested wth version 20.10.25)
+# - openssl (tested with version 1.0.2k-fips)
+#
+# -----
+# Contributors to this template:
+#    Daniel Neilson (https://github.com/ddneilson)
+
+name: DockerExample
+specificationVersion: jobtemplate-2023-09
+
+steps:
+- name: RunInDocker
+
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Phrase
+      type: STRING
+      range:
+      - "Hello"
+      - "Greetings"
+      - "Hi"
+
+  stepEnvironments:
+  - name: DockerContainer
+    script:
+      actions:
+        onEnter:
+          command: bash
+          args: ["{{Env.File.Enter}}"]
+        onExit:
+          command: bash
+          args: ["{{Env.File.Exit}}"]
+      embeddedFiles:
+      - name: Enter
+        type: TEXT
+        data: |
+          #!/bin/bash
+
+          # Any command failure in the script fails the whole thing
+          set -xeou pipefail
+
+          # Start the docker container running in the background with a randomly determined container name
+          # The random name enabled running multiple of this same Job on the same host at the same time.
+          CONTAINER_NAME="container-$(openssl rand -hex 16)"
+          echo $CONTAINER_NAME > .docker_container_name.txt
+          docker run --rm -d --name $CONTAINER_NAME ubuntu:24.04  /bin/bash -c "while true; do sleep 10; done"
+      - name: Exit
+        type: TEXT
+        data: |
+          #!/bin/bash
+
+          # Any command failure in the script fails the whole thing
+          set -xeou pipefail
+
+          # Get the name of the container, and stop it.
+          CONTAINER_NAME=$(cat .docker_container_name.txt)
+          docker stop $CONTAINER_NAME
+    
+  script:
+    actions:
+      onRun:
+        command: bash
+        args: [ "{{Task.File.Run}}" ]
+    embeddedFiles:
+    - name: Run
+      type: TEXT
+      data: |
+        #!/bin/bash
+
+        # Any command failure in the script fails the whole thing
+        set -eou pipefail
+    
+        # Get the name of the container.
+        CONTAINER_NAME=$(cat .docker_container_name.txt)
+
+        # Copy the script into the container
+        docker container cp {{Task.File.ScriptToRun}} $CONTAINER_NAME:/tmp/script.sh
+
+        # Run the script in the container
+        docker exec $CONTAINER_NAME bash /tmp/script.sh
+    - name: ScriptToRun
+      type: TEXT
+      filename: script.sh
+      data: |
+        #!/bin/bash
+
+        echo "{{Task.Param.Phrase}} from inside the container!"

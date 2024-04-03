@@ -24,6 +24,7 @@ Please see the [CONTRIBUTING guide](../CONTRIBUTING.md) for additional informati
 | Job Template | Concepts Demonstrated |
 | ------ | --------------------- |
 | [algorithmic-art](./v2023-09/job_templates/algorithmic-art.yaml) | step environment, step dependencies, task parameter combination, job parameters, path mapping, embedded files, openjd_env, animated video |
+| [bash-in-docker](./v2023-09/job_templates/bash-in-docker.yaml) | step environment, embedded files, docker |
 | [blender-ffmpeg](./v2023-09/job_templates/blender-ffmpeg.yaml) | step dependencies, embedded files, job parameters, ui metadata |
 | [ffmpeg](./v2023-09/job_templates/ffmpeg.yaml) | command arguments, debugging environment, step dependencies, job parameters, ui metadata |
 | [host-requirements](./v2023-09/job_templates/host-requirements.yaml) | host requirements |
