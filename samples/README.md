@@ -33,6 +33,7 @@ Please see the [CONTRIBUTING guide](../CONTRIBUTING.md) for additional informati
 
 | Environment Template | Concepts Demonstrated |
 | ------ | --------------------- |
+| [powershell-script](./v2023-09/environment_templates/powershell-script.yaml) | environment, calling embedded file with PowerShell |
 | [python-venv](./v2023-09/environment_templates/python-venv.yaml) | environment, openjd_env, embedded file |
 
 ## License
