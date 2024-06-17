@@ -1,0 +1,50 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# ----
+# Demonstrates
+# ----
+# Using an Environment Template to call powershell scripts on Windows
+# Notably this adds the `filename: script.ps1` setting and shows how 
+# to call Powershell correctly.
+#
+# ----
+# Requirements
+# ----
+# - powershell
+#
+# -----
+# Contributors to this template:
+#   Alex Hughes (https://github.com/Ahuge)
+
+specificationVersion: environment-2023-09
+environment:
+  name: PowershellScript
+  description: >
+    Executes a simple powershell script showing correctly how to call it without errors.
+  script:
+    actions:
+      onEnter:
+        # Need to specify the `-File <script>` args for Powershell instead of just passing the `<script>
+        command: powershell
+        args:
+            - "-File"
+            - "{{Env.File.Enter}}"
+      onExit:
+        command: powershell
+        args:
+            - "-File"
+            - "{{Env.File.Exit}}"
+    embeddedFiles:
+    - name: Enter
+      type: TEXT
+      # Required to name our powershell script a name that ends with ".ps1"
+      # See: https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_scripts?view=powershell-7.4#long-description
+      filename: enter.ps1
+      data: |
+        Write-Output "Powershell Enter"
+        echo "openjd_env: ENVIRONMENT_VARIABLE=ENVIRONMENT_VALUE"
+    - name: Exit
+      type: TEXT
+      filename: exit.ps1
+      data: |
+        Write-Output "Powershell Exit"
