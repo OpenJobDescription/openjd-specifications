@@ -35,6 +35,7 @@ Please see the [CONTRIBUTING guide](../CONTRIBUTING.md) for additional informati
 | ------ | --------------------- |
 | [powershell-script](./v2023-09/environment_templates/powershell-script.yaml) | environment, calling embedded file with PowerShell |
 | [python-venv](./v2023-09/environment_templates/python-venv.yaml) | environment, openjd_env, embedded file |
+| [environment-variables](./v2023-09/environment_templates/environment-variables.yaml) | environment, variables section |
 
 ## License
 

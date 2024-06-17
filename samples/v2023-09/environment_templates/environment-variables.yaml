@@ -1,0 +1,25 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# ----
+# Demonstrates
+# ----
+# Setting static environment variables using the `variables` section 
+# of your environment template.
+#
+# ----
+# Requirements
+# ----
+#
+# -----
+# Contributors to this template:
+#   Alex Hughes (https://github.com/Ahuge)
+
+specificationVersion: environment-2023-09
+environment:
+  name: StaticEnvironmentVariables
+  description: >
+    Sets two static environment variables easily in the environment template.
+  variables:
+    ADSKFLEX_LICENSE_FILE: "@192.168.1.1"
+    foundry_LICENSE: "4101@192.168.1.1"
+
