@@ -551,7 +551,7 @@ users to define their own custom capabilities.
 |amount.worker.vcpu        |1|A number of vCPUs/CPU-cores available on the host.|
 |amount.worker.memory      |0|An amount of system memory available on the host. Units: MiB. |
 |amount.worker.gpu         |0|A number of GPUs available on the host.|
-|amount.worker.gpu.memory  |0|An amount of memory available in GPUs on the host. Units: MiB.|
+|amount.worker.gpu.memory  |0|The lower bound of total memory provided by each GPU on the host. For example, if a host has one GPU with 4096 and one GPU with 2048, this value would be 2048. Units: MiB.|
 |amount.worker.disk.scratch|0|A static amount of disk storage installed on the host for use as scratch space. Units: GiB.|
 
 #### 3.3.2. `<AttributeRequirement>`
