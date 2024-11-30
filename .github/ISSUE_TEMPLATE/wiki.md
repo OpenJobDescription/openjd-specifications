@@ -1,6 +1,6 @@
 ---
 name: "Wiki Documentation"
-description: "Suggest a change or improvement to the wiki contents."
+about: "Suggest a change or improvement to the wiki contents."
 title: "Wiki: (short description)"
 labels:
 - wiki

@@ -2,6 +2,7 @@
 * Feature Name: (fill in with a unique one or two word identifier. e.g. my_feature)
 * RFC Tracking Issue: (fill in with the URL for the tracking issue in this repository)
 * Start Date: (fill in with today's date: YYYY-MM-DD)
+* Specification Version: 2023-09 extension (fill in with a chosen extension name as per RFC 0002)
 * Accepted On: (fill in with the date that the proposal was accepted: YYYY-MM-DD)
 
 ## Summary
@@ -34,6 +35,13 @@ it could just be dropped in to the existing documentation as-is.
 We suggest keeping our [design tenets] in mind while writing this part.
 
 [design tenets]: https://github.com/OpenJobDescription/openjd-specifications/wiki/Design-Tenets
+
+## Design Choice Rationale
+
+### Title of Design Choice
+
+For each choice you made between specific options, such as including or postponing some functionality,
+briefly provide the rationale you used for the choice.
 
 ## Prior Art
 

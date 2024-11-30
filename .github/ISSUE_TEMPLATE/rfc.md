@@ -1,6 +1,6 @@
 ---
 name: "Request for Comment (RFC)"
-description: "Create a tracking issue for an RFC."
+about: "Create a tracking issue for an RFC."
 title: "RFC: (short description)"
 labels:
 - rfc/proposed
@@ -10,7 +10,7 @@ assignees:
 ---
 
 * **Pull Request**: (Add the URL to the pull request here.)
-* **Discussion Thread(s)**: 
+* **Discussion Thread(s)**:
     * (If there are discussion forum threads where this RFC has been discussed, then
        please add URLs to those here. You can remove this bullet point otherwise.)
 

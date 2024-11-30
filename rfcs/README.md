@@ -3,7 +3,7 @@
 This directory is the place to propose upcoming changes to the Open Job Description standard.
 The RFC ("Request For Comment") process is how Open Job Description achieves consensus on proposed
 changes to the formal specification. The process is intended to provide a consistent and controlled
-path for changes to the specification. 
+path for changes to the specification.
 
 RFCs can be created by anyone in the community, and is the process that the Open Job Description team
 uses to propose changes. If you have an idea, a kernel of an idea, a problem to solve, or want to
@@ -43,7 +43,7 @@ Each RFC has a GitHub issue which tracks it from start to finish. The issue is
 the hub for conversations, community signal (+1s) and the issue number is used
 as the unique identifier of this RFC.
 
-Before creating a tracking issue, please search for similar or related ideas 
+Before creating a tracking issue, please search for similar or related ideas
 in the issue list and discussion forum of this repo. If there is a relevant
 RFC, collaborate on that existing RFC, based on its current stage.
 
@@ -51,7 +51,7 @@ Our [tracking issue template] includes a checklist of all the steps an RFC goes
 through and it's the driver's responsibility to update the checklist and assign
 the correct label to on the RFC throughout the process.
 
-[tracking issue template]: https://github.com/OpenJobDescription/openjd-specifications/blob/master/.github/ISSUE_TEMPLATE/rfc.yml
+[tracking issue template]: https://github.com/OpenJobDescription/openjd-specifications/blob/master/.github/ISSUE_TEMPLATE/rfc.md
 
 ### 4. RFC Document
 
@@ -119,7 +119,7 @@ members of the Open Job Description team.
 
 After merging the pull request, it may take some time for the core team to identify
 which draft of the specification to include the proposal in; it may not be the current/next
-one. 
+one.
 
 The team will contact you through your RFCs tracking issue when it is time to include
 the proposal in the current draft specification. When that happens, we ask that you
