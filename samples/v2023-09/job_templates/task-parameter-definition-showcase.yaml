@@ -1,0 +1,274 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# ----
+# Demonstrates
+# ----
+# This is a showcase of the sorts of value ranges that you can express with
+# task parameters.
+#
+# Run with:
+#  PATH_MAPPING_RULES="{\"version\":\"pathmapping-1.0\", \"path_mapping_rules\": [{\"source_path_format\": \"POSIX\", \"source_path\": \"/mnt/drive\", \"destination_path\": \"/mnt/remapped_drive\"}]}"
+#  openjd run task-parameter-definition-showcase.yaml -p PathValue=/mnt/drive/dir/path_file --step "List of path values" --path-mapping-rules "$PATH_MAPPING_RULES"
+#
+# ----
+# Requirements
+# ----
+# - Any POSIX-compliant system to run the sample.
+#
+# -----
+# Contributors to this template:
+#   Daniel Neilson (https://github.com/ddneilson)
+
+name: Showcase of value definitions for task parameters
+specificationVersion: jobtemplate-2023-09
+parameterDefinitions:
+- name: IntRange
+  type: STRING
+  default: "1-100"
+- name: IntValue
+  type: INT
+  default: 10
+- name: FloatValue
+  type: FLOAT
+  default: 10.4
+- name: PathValueAsString
+  type: STRING
+  default: "/mnt/drive/dir/string_file"
+- name: PathValue
+  type: PATH
+
+steps:
+
+## INTEGER task parameter value samples
+- name: Basic integer range expression
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Foo
+      type: INT
+      # Values: 1, 2, 3, 4, ..., 100
+      range: "1-100"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "{{ Task.Param.Foo }}"
+  
+- name: Range is a format string
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Foo
+      type: INT
+      # Values: 1, 2, 3, 4, ..., 100
+      range: "{{Param.IntRange}}"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "{{ Task.Param.Foo }}"
+
+- name: Integer range expression with a skip value
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Foo
+      type: INT
+      # Values: 1, 11, 21, ..., 91
+      # Note: 100 is not included because (100-1)/10 is not an integer.
+      range: "1-100:10"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "{{ Task.Param.Foo }}"
+
+- name: Compound integer range expression
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Foo
+      type: INT
+      # Use commas to create a compound range.
+      # Values: 1,2,3,...,10,50,60,65,...,100
+      # Notes:
+      #  * 100 is in the list this time because (100-60)/5 is an integer.
+      #  * The order of the values in the compound expression is irrelevant. 
+      #    There is no guarantee regarding the order in which Tasks will be run.
+      range: "50, 60-100:5, 1-10"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "{{ Task.Param.Foo }}"
+
+- name: List of integer values
+  parameterSpace:
+    taskParameterDefinitions:
+      - name: Foo
+        type: INT
+        range:
+        - 1
+        - 2
+        - "3" # Can be a string that converts to an integer
+        - "{{Param.IntValue}}" # Each element is a format string
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "{{ Task.Param.Foo }}"
+
+## FLOAT task parameter value samples
+- name: List of float values
+  parameterSpace:
+    taskParameterDefinitions:
+      - name: Foo
+        type: FLOAT
+        range:
+        - 1
+        - 2.2
+        - "3" # Can be a string that converts to an integer
+        - "4.5" # Can be a string that converts to a float
+        - "{{Param.FloatValue}}" # Each element is a format string
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "{{ Task.Param.Foo }}"
+
+
+## STRING task parameter value samples
+- name: List of string values
+  parameterSpace:
+    taskParameterDefinitions:
+      - name: Foo
+        type: STRING
+        range:
+        - "one"
+        - two, three, four
+        - "{{Param.IntRange}}" # Each element is a format string
+  script:
+    actions:
+      onRun:
+        # Values printed are: "one", "two, three, four", and "1-100"
+        command: echo
+        args:
+        - "{{ Task.Param.Foo }}"
+
+## PATH task parameter value samples
+- name: List of path values
+  parameterSpace:
+    taskParameterDefinitions:
+      - name: Foo
+        type: PATH
+        range:
+        - "/mnt/drive/dir/file1"
+        - "{{Param.PathValueAsString}}"
+        - "{{RawParam.PathValue}}" # Note: Param.PathValue does not exist at this scope
+  script:
+    actions:
+      onRun:
+        # Values printed are:
+        #  "Mapped Path: /mnt/remapped_drive/dir/file1 -- Raw Value: /mnt/drive/dir/file1"
+        #  "Mapped Path: /mnt/remapped_drive/dir/string_file -- Raw Value: /mnt/drive/dir/string_file"
+        #  "Mapped Path: /mnt/remapped_drive/dir/path_file -- Raw Value: /mnt/drive/dir/path_file"
+        command: echo
+        args:
+        - "Mapped Path: {{ Task.Param.Foo }}"
+        - " -- "
+        - "Raw Value: {{ Task.RawParam.Foo }}"
+
+## Multidimensional task parameter spaces
+- name: Cartesian product
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Foo
+      type: INT
+      range: "1-2"
+    - name: Bar
+      type: STRING
+      range: ["one", "two", "three"]
+    # Values (Foo,Bar): (1,"one"), (1,"two"), (1,"three"), (2,"one"), (2,"two"), (2,"three")
+    combination: "Foo * Bar"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "Foo={{ Task.Param.Foo }}"
+        - " -- "
+        - "Bar={{ Task.Param.Bar }}"
+
+- name: Association
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Foo
+      type: INT
+      range: "1-3"
+    - name: Bar
+      type: STRING
+      range: ["one", "two", "three"]
+    # Note: The number of elements in each argument of an association must have exactly the same number of elements.
+    # Values (Foo,Bar): (1,"one"), (2,"two"), (3,"three")
+    combination: "(Foo, Bar)"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "Foo={{ Task.Param.Foo }}"
+        - " -- "
+        - "Bar={{ Task.Param.Bar }}"
+
+- name: Mix of operators
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Foo
+      type: INT
+      range: "1-3"
+    - name: Bar
+      type: STRING
+      range: ["one", "two", "three"]
+    - name: Buz
+      type: STRING
+      range: ["Buz1", "Buz2"]
+    # Values (Foo,Bar,Buz): (1,"one","Buz1"), (2,"two","Buz1"), (3,"three","Buz1"), (1,"one","Buz2"), (2,"two","Buz2"), (3,"three","Buz2")
+    combination: "(Foo, Bar) * Buz"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "Foo={{ Task.Param.Foo }}"
+        - " -- "
+        - "Bar={{ Task.Param.Bar }}"
+        - " -- "
+        - "Buz={{ Task.Param.Buz }}"
+
+- name: Mix of operators two
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Foo
+      type: INT
+      range: "1-4"
+    - name: Bar
+      type: STRING
+      range: ["one", "two"]
+    - name: Buz
+      type: STRING
+      range: ["Buz1", "Buz2"]
+    # Note: The number of elements in each argument of an association must have the same number of elements.
+    # Values (Foo,Bar,Buz): (1,"one","Buz1"), (2,"two","Buz1"), (3,"one","Buz1"), (4,"two","Buz2")
+    combination: "(Foo, Bar*Buz)"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "Foo={{ Task.Param.Foo }}"
+        - " -- "
+        - "Bar={{ Task.Param.Bar }}"
+        - " -- "
+        - "Buz={{ Task.Param.Buz }}"

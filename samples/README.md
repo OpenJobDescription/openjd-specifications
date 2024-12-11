@@ -30,6 +30,7 @@ Please see the [CONTRIBUTING guide](../CONTRIBUTING.md) for additional informati
 | [host-requirements](./v2023-09/job_templates/host-requirements.yaml) | host requirements |
 | [path-mapping](./v2023-09/job_templates/path-mapping.yaml) | path mapping |
 | [stdout-messages](./v2023-09/job_templates/stdout-messages.yaml) | stdout messages, embedded files |
+| [task-parameter-definition-showcase](./v2023-09/job_templates/task-parameter-definition-showcase.yaml) | task parameters, task parameter combination operators |
 | [ui-controls-showcase](./v2023-09/job_templates/ui-controls-showcase.yaml) | job parameters, ui metadata, embedded file |
 
 | Environment Template | Concepts Demonstrated |
