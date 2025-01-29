@@ -15,7 +15,7 @@ jobs:
 
     - name: Check Header
       run: |
-        set -eou pipefail
+        set -euo pipefail
         EXPECTED_HEADER="# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved."
         for f in $(find samples/ -name '*.yaml')
         do
@@ -45,7 +45,7 @@ jobs:
 
     - name: Run check
       run: |
-        set -eou pipefail
+        set -euo pipefail
         for f in $(find samples/v2023-09/ -name '*.yaml')
         do
           echo "Checking: $f"

@@ -51,7 +51,7 @@ steps:
           #!/bin/bash
 
           # Any command failure in the script fails the whole thing
-          set -xeou pipefail
+          set -xeuo pipefail
 
           # Start the docker container running in the background with a randomly determined container name
           # The random name enabled running multiple of this same Job on the same host at the same time.
@@ -64,12 +64,12 @@ steps:
           #!/bin/bash
 
           # Any command failure in the script fails the whole thing
-          set -xeou pipefail
+          set -xeuo pipefail
 
           # Get the name of the container, and stop it.
           CONTAINER_NAME=$(cat .docker_container_name.txt)
           docker stop $CONTAINER_NAME
-    
+
   script:
     actions:
       onRun:
@@ -82,8 +82,8 @@ steps:
         #!/bin/bash
 
         # Any command failure in the script fails the whole thing
-        set -eou pipefail
-    
+        set -euo pipefail
+
         # Get the name of the container.
         CONTAINER_NAME=$(cat .docker_container_name.txt)
 

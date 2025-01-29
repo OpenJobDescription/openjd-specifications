@@ -66,7 +66,7 @@ openjd schema --version jobtemplate-2023-09 > openjobdescription-jobtemplate-202
 openjd schema --version environment-2023-09 > openjobdescription-environment-2023-09.json
 ```
 
-Then install the official [Red Hat YAML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) extension, and 
+Then install the official [Red Hat YAML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) extension, and
 modify your [Visual Studio Code settings](https://code.visualstudio.com/docs/languages/json#_json-schemas-and-settings)
 to apply the Open Job Description schemas to your Job and Environment Templates. The following is an example of settings to
 automatically apply the schemas to all JSON and YAML files on a workstation:
@@ -74,7 +74,7 @@ automatically apply the schemas to all JSON and YAML files on a workstation:
 ```json
     "json.schemas": [
         {"fileMatch": ["/**/*.json"], "url": "/Users/<username>/openjd-schemas/openjobdescription-jobtemplate-2023-09.json"},
-        {"fileMatch": ["/**/*.json"], "url": "/Users/<username>/openjd-schemas/openjobdescription-environment-2023-09.json"}           
+        {"fileMatch": ["/**/*.json"], "url": "/Users/<username>/openjd-schemas/openjobdescription-environment-2023-09.json"}
     ],
     "yaml.schemas": {
         "/Users/<username>/json-schemas/openjobdescription-jobtemplate-2023-09.json": [
@@ -94,15 +94,15 @@ fields, or select a field to auto-complete it:
 | ![Autocomplete menu](images/template_autocomplete_menu.png) | ![Autocomplete template](images/template_autocomplete_entity.png) | ![Autocomplete field](images/template_autocomplete_field.png) |
 
 Note that if you prefer to programmatically generate Open Job Description templates, in a pipeline for instance,
-then the [openjd-model](https://pypi.org/project/openjd-model/) Python package 
-[supports that use case](https://github.com/OpenJobDescription/openjd-model-for-python?tab=readme-ov-file#converting-a-template-model-to-a-dictionary). 
+then the [openjd-model](https://pypi.org/project/openjd-model/) Python package
+[supports that use case](https://github.com/OpenJobDescription/openjd-model-for-python?tab=readme-ov-file#converting-a-template-model-to-a-dictionary).
 
 
 ## 2. Walkthrough
 
 To demonstrate one way that you could develop a Job for Open Job Description this walkthrough will guide
 you through creating a Job Template that generates frames of an animation using [Blender](https://www.blender.org/),
-and then encodes those rendered frames into an mp4 video using [FFmpeg](https://ffmpeg.org/). We illustrate 
+and then encodes those rendered frames into an mp4 video using [FFmpeg](https://ffmpeg.org/). We illustrate
 an approach to developing a Job that aims to keep your inner development loop fast by leveraging
 the Open Job Description CLI to test the Job on your workstation. We also demonstrates making small incremental changes to make
 it easier to narrow in on the root cause of an error. This process has faster iterations than submitting the Job
@@ -135,7 +135,7 @@ we created the following as a starting point for our Blender script:
 #!/bin/bash
 
 # Return an error code if any command in the script fails.
-set -eou pipefail
+set -euo pipefail
 
 # Use Blender's scripting interface to reduce the scene resolution and sampling rate to speed up testing.
 # See https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Here-Documents
@@ -185,7 +185,7 @@ script such that the scene file, output directory, and frames to render can all 
 #!/bin/bash
 
 # Return an error code if any command in the script fails.
-set -eou pipefail
+set -euo pipefail
 
 # Use Blender's scripting interface to reduce the scene resolution and sampling rate to speed up testing.
 # See https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Here-Documents
@@ -234,7 +234,7 @@ on how to run FFmpeg:
 ```bash
 #!/bin/bash
 
-set -eou pipefail
+set -euo pipefail
 
 ffmpeg -y -r 10 -start_number 1 -i output_frames/frame-%03d.png -pix_fmt yuv420p \
     -vf "scale=in_color_matrix=bt709:out_color_matrix=bt709" \
@@ -246,7 +246,7 @@ ffmpeg -y -r 10 -start_number 1 -i output_frames/frame-%03d.png -pix_fmt yuv420p
 Then, as with the Blender script, save it to a file (`encode.sh`), set its execute bits, and then test it:
 
 ```bash
-% ./encode.sh 
+% ./encode.sh
 ffmpeg version 6.1.1-tessus  https://evermeet.cx/ffmpeg/  Copyright (c) 2000-2023 the FFmpeg developers
 ...
 ```
@@ -256,7 +256,7 @@ Then modify it so that it accepts arguments from the command line:
 ```bash
 #!/bin/bash
 
-set -eou pipefail
+set -euo pipefail
 
 INPUT_DIR="$1"
 OUTPUT_FILENAME="$2"
@@ -272,7 +272,7 @@ ffmpeg -y -r 10 -start_number "$START_FRAME" -i "$INPUT_DIR"/frame-%03d.png -pix
 and then test it again:
 
 ```bash
-% ./encode.sh output_frames animation.mp4 1                                           
+% ./encode.sh output_frames animation.mp4 1
 ffmpeg version 6.1.1-tessus  https://evermeet.cx/ffmpeg/  Copyright (c) 2000-2023 the FFmpeg developers
 ...
 ```
@@ -290,13 +290,13 @@ Starting with a skeleton of the minimal required properties of a Job Template:
 
 ```yaml
 specificationVersion: jobtemplate-2023-09
-name: 
+name:
 steps:
-  - name: 
+  - name:
     script:
       actions:
         onRun:
-          command: 
+          command:
 ```
 
 Fill in the names for the Job that you're going to create, and the first Step that will run the Blender
@@ -310,11 +310,11 @@ steps:
     script:
       actions:
         onRun:
-          command: 
+          command:
 ```
 
 The way to think about a Step in Open Job Description is that it is defining a command to run and the collection of inputs
-to run the command with. The command is defined in the `onRun` Action in the skeleton above. An Action in the 2023-09 
+to run the command with. The command is defined in the `onRun` Action in the skeleton above. An Action in the 2023-09
 revision of the specification [is defined as](2023-09-Template-Schemas#5-action):
 
 ```yaml
@@ -375,7 +375,7 @@ steps:
             #!/bin/bash
 
             # Return an error code if any command in the script fails.
-            set -eou pipefail
+            set -euo pipefail
 
             # Use Blender's scripting interface to reduce the scene resolution and sampling rate to speed up testing.
             # See https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Here-Documents
@@ -432,7 +432,7 @@ Then, you can run it using the CLI's `run` command to make sure that it runs:
 
 ```bash
 % openjd run --step BlenderRender job.template.yaml
-Fri Jul  5 09:33:02 2024	
+Fri Jul  5 09:33:02 2024
 Fri Jul  5 09:33:02 2024	==============================================
 Fri Jul  5 09:33:02 2024	--------- Running Task
 Fri Jul  5 09:33:02 2024	==============================================
@@ -445,13 +445,13 @@ Fri Jul  5 09:33:02 2024	Command started as pid: 85706
 Fri Jul  5 09:33:02 2024	Output:
 Fri Jul  5 09:33:03 2024	Blender 4.1.1 (hash e1743a0317bc built 2024-04-16 00:06:22)
 Fri Jul  5 09:33:03 2024	Error: Cannot read file "/private/var/folders/93/p7mk/T/OpenJD/sample_session0bd5l1au/3d/pavillon_barcelone_v1.2.blend": No such file or directory
-Fri Jul  5 09:33:03 2024	
+Fri Jul  5 09:33:03 2024
 Fri Jul  5 09:33:03 2024	Blender quit
 ...
 ```
 
 Uh-oh, there's an error! The error means that Blender couldn't find the input file. This is because all actions in a Session are always
-run with their current working directory being the Session's temporary working directory, which was 
+run with their current working directory being the Session's temporary working directory, which was
 `/private/var/folders/93/p7mk/T/OpenJD/sample_session0bd5l1au` in this case. In our script, we've been using a relative path relative
 path to the current working directory, and the scene file isn't in the Session's temporary
 working directory; it's actually in `/Users/myusername/blender_demo/3d/pavillon_barcelone_v1.2.blend` on this workstation.
@@ -475,10 +475,10 @@ the `output_frames` directory, so we'll preemptively fix that as well):
 Then check the template syntax and try to run it again:
 
 ```bash
-% openjd check job.template.yaml            
+% openjd check job.template.yaml
 Template at 'job.template.yaml' passes validation checks.
 % openjd run --step BlenderRender job.template.yaml
-Fri Jul  5 09:42:01 2024	
+Fri Jul  5 09:42:01 2024
 Fri Jul  5 09:42:01 2024	==============================================
 Fri Jul  5 09:42:01 2024	--------- Running Task
 Fri Jul  5 09:42:01 2024	==============================================
@@ -499,7 +499,7 @@ Tasks run: 1
 Success! Also verify that the output are where we expect them to be:
 
 ```bash
-% ls /Users/myusername/blender_demo/output_frames 
+% ls /Users/myusername/blender_demo/output_frames
 frame-001.png	frame-002.png
 ```
 
@@ -529,7 +529,7 @@ Then run the change:
 
 ```bash
 % openjd run --step BlenderRender job.template.yaml
-Fri Jul  5 09:59:28 2024	
+Fri Jul  5 09:59:28 2024
 Fri Jul  5 09:59:28 2024	==============================================
 Fri Jul  5 09:59:28 2024	--------- Running Task
 Fri Jul  5 09:59:28 2024	==============================================
@@ -539,7 +539,7 @@ Fri Jul  5 09:59:30 2024	Canceling subprocess 88373 via termination method at 20
 ...
 ```
 
-As expected, a timeout of 2 seconds is too short to allow the Blender render to complete, and the Job is cancelled. 
+As expected, a timeout of 2 seconds is too short to allow the Blender render to complete, and the Job is cancelled.
 
 Make sure to modify the timeout to a larger value before going forward.
 
@@ -570,7 +570,7 @@ steps:
             #!/bin/bash
 
             # Return an error code if any command in the script fails.
-            set -eou pipefail
+            set -euo pipefail
 
             # Use Blender's scripting interface to reduce the scene resolution and sampling rate to speed up testing.
             # See https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Here-Documents
@@ -617,7 +617,7 @@ steps:
           data: |
             #!/bin/bash
 
-            set -eou pipefail
+            set -euo pipefail
 
             INPUT_DIR="$1"
             OUTPUT_FILENAME="$2"
@@ -633,11 +633,11 @@ steps:
 
 Notice that the EncodeVideo Step differs from the BlenderRender Step in that it includes the definition of the Step's
 [dependencies](2023-09-Template-Schemas#32-stepdependency). This ensures that when you submit the Job to a compute cluster
-to run that the `BlenderRender` Step will run successfully to completion before the `EncodeVideo` Step is started. 
+to run that the `BlenderRender` Step will run successfully to completion before the `EncodeVideo` Step is started.
 
 If your shell scripts in your actual Jobs are large then you may prefer to host them on a shared network fileshare
 instead of embedding them directly within a Job Template. If you do so, then to avoid a potential command-injection attack on your
-Jobs we remind you to ensure that no unauthorized users (including any running Job on the cluster) can possibly overwrite your scripts. 
+Jobs we remind you to ensure that no unauthorized users (including any running Job on the cluster) can possibly overwrite your scripts.
 
 ### 2.2.2. Parameterizing the template
 
@@ -742,7 +742,7 @@ steps:
             #!/bin/bash
 
             # Return an error code if any command in the script fails.
-            set -eou pipefail
+            set -euo pipefail
 
             # Use Blender's scripting interface to reduce the scene resolution and sampling rate to speed up testing.
             # See https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Here-Documents
@@ -789,7 +789,7 @@ steps:
           data: |
             #!/bin/bash
 
-            set -eou pipefail
+            set -euo pipefail
 
             INPUT_DIR="$1"
             OUTPUT_FILENAME="$2"
@@ -810,7 +810,7 @@ Finally, running it with the CLI:
   -p FramesDirectory=$(pwd)/output_frames \
   -p AnimationFile=$(pwd)/animation.mp4 \
   -p FrameStart=1 -p FrameEnd=2
-Fri Jul  5 14:28:30 2024	
+Fri Jul  5 14:28:30 2024
 Fri Jul  5 14:28:30 2024	==============================================
 Fri Jul  5 14:28:30 2024	--------- Running Task
 Fri Jul  5 14:28:30 2024	==============================================
@@ -841,7 +841,7 @@ rather than STRING types for parameters that are files and directories. The PATH
 rules applied to them when resolving the value in a template.
 
 For the example, you ultimately want the job to use the files in the current directory when running. To demonstrate path mapping,
-let's pretend that you're submitting from a different workstation where the files are located in the `/mnt/shared/demo` directory. 
+let's pretend that you're submitting from a different workstation where the files are located in the `/mnt/shared/demo` directory.
 You'll run the job with parameter values that say that the files are located in `/mnt/shared/demo` and create a path mapping rule that
 tells Open Job Description to remap `/mnt/shared/demo` to the current working directory.
 
@@ -904,7 +904,7 @@ available in the Session's temporary working directory while your job is running
   ]
 }"
 % openjd run --step PrintRules path-mapping.yaml --path-mapping-rules "$PATH_MAPPING_RULES"
-Mon Jul  8 15:02:42 2024	
+Mon Jul  8 15:02:42 2024
 Mon Jul  8 15:02:42 2024	==============================================
 Mon Jul  8 15:02:42 2024	--------- Running Task
 Mon Jul  8 15:02:42 2024	==============================================
@@ -915,7 +915,7 @@ Mon Jul  8 15:02:43 2024	{"version": "pathmapping-1.0", "path_mapping_rules": [{
 ```
 
 You may have to write custom scripting in your Job to translate these path mapping rules into the format that your application expects;
-such as to the format for the  
+such as to the format for the
 [`--remap` option for Foundry's Nuke](https://learn.foundry.com/nuke/content/comp_environment/configuring_nuke/command_line_operations.html).
 
 At this point, if you have access to a compute cluster orchestrater that supports Open Job Description then you can test your Job
@@ -947,7 +947,7 @@ a single frame at a time looks like:
 #!/bin/bash
 
 # Return an error code if any command in the script fails.
-set -eou pipefail
+set -euo pipefail
 
 # Use Blender's scripting interface to reduce the scene resolution and sampling rate to speed up testing.
 # See https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Here-Documents
@@ -1009,7 +1009,7 @@ That's it. You're ready to check the syntax of the template, and use the CLI to 
 from the Step:
 
 ```bash
-% openjd check job.template.yaml 
+% openjd check job.template.yaml
 Template at 'job.template.yaml' passes validation checks.
 
 % openjd run --step BlenderRender job.template.yaml \
@@ -1018,7 +1018,7 @@ Template at 'job.template.yaml' passes validation checks.
   -p FramesDirectory=$(pwd)/output_frames \
   -p AnimationFile=$(pwd)/animation.mp4 \
   -p FrameStart=1 -p FrameEnd=380
-Mon Jul  8 10:08:24 2024	
+Mon Jul  8 10:08:24 2024
 Mon Jul  8 10:08:24 2024	==============================================
 Mon Jul  8 10:08:24 2024	--------- Running Task
 Mon Jul  8 10:08:24 2024	==============================================
@@ -1027,7 +1027,7 @@ Mon Jul  8 10:08:24 2024	Frame(INT) = 100
 ...
 ```
 
-If you were to run the CLI without the `-tp` argument, then it would have rendered all 380 frames of the animation. 
+If you were to run the CLI without the `-tp` argument, then it would have rendered all 380 frames of the animation.
 To demonstrate, run the CLI without `-tp` but set the value of `FrameEnd` to 3 instead of 380:
 
 ```bash
@@ -1036,7 +1036,7 @@ To demonstrate, run the CLI without `-tp` but set the value of `FrameEnd` to 3 i
   -p FramesDirectory=$(pwd)/output_frames \
   -p AnimationFile=$(pwd)/animation.mp4 \
   -p FrameStart=1 -p FrameEnd=3
-Mon Jul  8 10:13:05 2024	
+Mon Jul  8 10:13:05 2024
 Mon Jul  8 10:13:05 2024	==============================================
 Mon Jul  8 10:13:05 2024	--------- Running Task
 Mon Jul  8 10:13:05 2024	==============================================
@@ -1111,7 +1111,7 @@ steps:
             #!/bin/bash
 
             # Return an error code if any command in the script fails.
-            set -eou pipefail
+            set -euo pipefail
 
             # Use Blender's scripting interface to reduce the scene resolution and sampling rate to speed up testing.
             # See https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Here-Documents
@@ -1157,7 +1157,7 @@ steps:
           data: |
             #!/bin/bash
 
-            set -eou pipefail
+            set -euo pipefail
 
             INPUT_DIR="$1"
             OUTPUT_FILENAME="$2"
@@ -1202,7 +1202,7 @@ parameterSpace:
     - 'C'
 ```
 
-Then the default combination expression `Num * Letter` produces a parameter space with the nine values 
+Then the default combination expression `Num * Letter` produces a parameter space with the nine values
 `{Num=1, Letter=A}, {Num=1, Letter=B}, ... {Num=3, Letter=B}, {Num=3, Letter=C}`. However, a combination expression using the
 association operator, `(Num,Letter)`, produces a parameter space with only three values:
 `{Num=1,Letter=A}, {Num=2,Letter=B}, {Num=3,Letter=C}`.
@@ -1273,7 +1273,7 @@ steps:
 Then check the syntax for the template, and test it locally using the CLI:
 
 ```bash
-% openjd check job.template.yaml                     
+% openjd check job.template.yaml
 Template at 'job.template.yaml' passes validation checks.
 
 % openjd run --step BlenderRender job.template.yaml \
@@ -1283,7 +1283,7 @@ Template at 'job.template.yaml' passes validation checks.
   -p FrameStart=1 -p FrameEnd=380 -p FrameEndMinusOne=379 \
   -p FramesPerTask=11 \
   --tasks '[{"RangeStart": 1, "RangeEnd": 11}]'
-Mon Jul  8 12:23:56 2024	
+Mon Jul  8 12:23:56 2024
 Mon Jul  8 12:23:56 2024	==============================================
 Mon Jul  8 12:23:56 2024	--------- Running Task
 Mon Jul  8 12:23:56 2024	==============================================
@@ -1359,7 +1359,7 @@ steps:
             #!/bin/bash
 
             # Return an error code if any command in the script fails.
-            set -eou pipefail
+            set -euo pipefail
 
             # Use Blender's scripting interface to reduce the scene resolution and sampling rate to speed up testing.
             # See https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Here-Documents
@@ -1405,7 +1405,7 @@ steps:
           data: |
             #!/bin/bash
 
-            set -eou pipefail
+            set -euo pipefail
 
             INPUT_DIR="$1"
             OUTPUT_FILENAME="$2"
@@ -1421,7 +1421,7 @@ steps:
 ##### 2.2.4.2.2 As STRING Type
 
 This option is only suitable for cases where you will be writing or programmatically generating a Job Template for a specific input
-because the `FrameStart` and `FrameEnd` values need to be known when defining the set of values for the Task parameter. To create the 
+because the `FrameStart` and `FrameEnd` values need to be known when defining the set of values for the Task parameter. To create the
 parameter space, decide how many frames you want in each Task (we picked 40 in this case to cut down on typing) and then write out
 the frame expressions that Blender requires as the values of the Task parameter
 
@@ -1499,7 +1499,7 @@ steps:
             #!/bin/bash
 
             # Return an error code if any command in the script fails.
-            set -eou pipefail
+            set -euo pipefail
 
             # Use Blender's scripting interface to reduce the scene resolution and sampling rate to speed up testing.
             # See https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Here-Documents
@@ -1545,7 +1545,7 @@ steps:
           data: |
             #!/bin/bash
 
-            set -eou pipefail
+            set -euo pipefail
 
             INPUT_DIR="$1"
             OUTPUT_FILENAME="$2"
@@ -1561,7 +1561,7 @@ steps:
 As usual, you can check the syntax of the template and then try it out locally using the CLI:
 
 ```bash
-% openjd check job.template.yaml                     
+% openjd check job.template.yaml
 Template at 'job.template.yaml' passes validation checks.
 
 % openjd run --step BlenderRender job.template.yaml \
@@ -1569,7 +1569,7 @@ Template at 'job.template.yaml' passes validation checks.
   -p SceneFile=$(pwd)/3d/pavillon_barcelone_v1.2.blend \
   -p FramesDirectory=$(pwd)/output_frames \
   -p AnimationFile=$(pwd)/animation.mp4
-Mon Jul  8 10:48:30 2024	
+Mon Jul  8 10:48:30 2024
 Mon Jul  8 10:48:30 2024	==============================================
 Mon Jul  8 10:48:30 2024	--------- Running Task
 Mon Jul  8 10:48:30 2024	==============================================
@@ -1593,7 +1593,7 @@ embedded file so that it becomes:
 #!/bin/bash
 
 # Return an error code if any command in the script fails.
-set -eou pipefail
+set -euo pipefail
 
 SCENE="$1"
 OUTDIR="$2"
@@ -1618,7 +1618,7 @@ For this case, modify the `render.sh` embedded file so that the testing code is 
 #!/bin/bash
 
 # Return an error code if any command in the script fails.
-set -eou pipefail
+set -euo pipefail
 
 # Use Blender's scripting interface to reduce the scene resolution and sampling rate to speed up testing.
 # See https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Here-Documents
@@ -1684,12 +1684,12 @@ When you run this template, notice that the log now shows that the Session is en
 before running the Task:
 
 ```bash
-Mon Jul  8 14:23:44 2024	
+Mon Jul  8 14:23:44 2024
 Mon Jul  8 14:23:44 2024	==============================================
 Mon Jul  8 14:23:44 2024	--------- Entering Environment: ToggleTesting
 Mon Jul  8 14:23:44 2024	==============================================
 Mon Jul  8 14:23:44 2024	Setting: TESTING_TEMPLATE=true
-Mon Jul  8 14:23:44 2024	
+Mon Jul  8 14:23:44 2024
 Mon Jul  8 14:23:44 2024	==============================================
 Mon Jul  8 14:23:44 2024	--------- Running Task
 Mon Jul  8 14:23:44 2024	==============================================
@@ -1727,7 +1727,7 @@ steps:
     script:
 ...
 ```
- 
+
  The Open Job Description CLI does not currently support enforcing the constraints defined by host requirements, so you can
  validate the template syntax using the CLI but you will have to test the constraints on your compute cluster.
 
@@ -1832,7 +1832,7 @@ steps:
             #!/bin/bash
 
             # Return an error code if any command in the script fails.
-            set -eou pipefail
+            set -euo pipefail
 
             # Use Blender's scripting interface to reduce the scene resolution and sampling rate to speed up testing.
             # See https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Here-Documents
@@ -1879,7 +1879,7 @@ steps:
           data: |
             #!/bin/bash
 
-            set -eou pipefail
+            set -euo pipefail
 
             INPUT_DIR="$1"
             OUTPUT_FILENAME="$2"
