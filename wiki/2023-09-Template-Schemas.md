@@ -30,6 +30,7 @@ Notations used in this document to annotate aspects of the schema definition:
 ```yaml
 specificationVersion: "jobtemplate-2023-09"
 $schema: <string> # @optional
+extensions: [ <ExtensionName>, ... ] # @optional
 name: <JobName> # @fmtstring
 description: <Description> # @optional
 parameterDefinitions:  [ <JobParameterDefinition>, ... ] # @optional
@@ -41,22 +42,24 @@ Where:
 
 1. *specificationVersion* — A literal that identifies the document as adhering to this schema.
 2. *$schema* — Ignored. This property is allowed for compatibility with JSON-editing IDEs.
-3. *name* — The name to give to a Job that is created from the template. See: [&lt;JobName&gt;](#111-jobname).
-4. *description* — A description to apply to all Jobs that are created from the template. It has no functional purpose,
+3. *extensions* — If provided, is a non-empty list of extensions to the schema. Introduced in [RFC 0002](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0002-model-extensions.md).
+      * Extensions available for specification version 2023-09: [TASK_CHUNKING](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0001-task-chunking.md)
+4. *name* — The name to give to a Job that is created from the template. See: [&lt;JobName&gt;](#111-jobname).
+5. *description* — A description to apply to all Jobs that are created from the template. It has no functional purpose,
    but may appear in UI elements. See: [&lt;Description&gt;](#72-description).
-5. *parameterDefinitions* — A list of the Job Parameters that are available within the Job Template. Values
+6. *parameterDefinitions* — A list of the Job Parameters that are available within the Job Template. Values
    for Job Parameters are defined when submitting the Job Template to create a Job to a render management system.
    The values of Job Parameters can be referenced in Format Strings.
    See: [&lt;JobParameterDefinition&gt;](#2-jobparameterdefinition).
       * Minimum number of elements: If provided, then this list must contain at least one element.
       * Maximum number of elements: The list must not contain more than 50 elements.
-6. *jobEnvironments* — An ordered list of the environments that are required to run Tasks in the Jobs created by this Job
+7. *jobEnvironments* — An ordered list of the environments that are required to run Tasks in the Jobs created by this Job
    Template. These are entered in the order provided at the start of every Session for Tasks in the Job, and exited in the
    reverse order at the end of those Sessions. See: [&lt;Environment&gt;](#4-environment). Constraints:
       1. No two Environments in this list may have the same value for the `name` property.
       2. The Environments defined in this list must not have the same `name` as an Environment
          defined in any Step within the same Job Template.
-7. *steps* — A list of the Steps in the Job. See: [&lt;StepTemplate&gt;](#3-steptemplate).
+8. *steps* — A list of the Steps in the Job. See: [&lt;StepTemplate&gt;](#3-steptemplate).
 
 #### 1.1.1. `<JobName>`
 
@@ -65,6 +68,10 @@ A [Format String](#73-format-strings) subject to the following constraints:
 1. Allowed characters: Any unicode character except those in the Cc unicode character category.
 2. Minimum length: 1 character.
 3. Maximum length: 128 characters, after the format string has been resolved.
+
+#### 1.1.2. `<ExtensionName>`
+
+A literal string matching the following character regex: `[A-Z_0-9]{3,128}`.
 
 ### 1.2. Environment Template
 
@@ -78,14 +85,14 @@ environment: <Environment>
 2. *parameterDefinitions* — A list of the Job Parameters that are available within the Environment Template. Values
    for Job Parameters are defined when submitting a Job Template to create a Job to a render management system.
    Both the Job Template and Environment Template(s) for a submission are allowed to contain definitions for the same
-   job parameter name, but the submission must be rejected if any of the definitions of the same job parameter name 
-   have unresolvable conflicts 
+   job parameter name, but the submission must be rejected if any of the definitions of the same job parameter name
+   have unresolvable conflicts
    (See: [Merging Environment Template Parameter Definitions](#121-merging-environment-template-parameter-definitions)).
    The values of Job Parameters can be referenced in Format Strings.
    See: [&lt;JobParameterDefinition&gt;](#2-jobparameterdefinition).
       * Minimum number of elements: If provided, then this list must contain at least one element.
       * Maximum number of elements: The list must not contain more than 50 elements.
-3. *environment* — The definition of the Environment that the Environment Template defines. 
+3. *environment* — The definition of the Environment that the Environment Template defines.
    See [&lt;Environment&gt;](#4-environment).
 
 #### 1.2.1. Merging Environment Template Parameter Definitions
@@ -112,8 +119,8 @@ valid -- for example, the value of the `default` property must adhere to the con
 ## 2. `<JobParameterDefinition>`
 
 ```bnf
-<JobParameterDefinition> ::= <JobStringParameterDefinition> | <JobPathParameterDefinition> | 
-                             <JobIntParameterDefinition> | <JobFloatParameterDefinition> 
+<JobParameterDefinition> ::= <JobStringParameterDefinition> | <JobPathParameterDefinition> |
+                             <JobIntParameterDefinition> | <JobFloatParameterDefinition>
 ```
 
 ### 2.1. `<JobStringParameterDefinition>`
@@ -821,7 +828,7 @@ Subject to the following constraints:
 3. Maximum length: 1280 characters.
 4. Each `<Identifier>` in the expression must be the name of a defined task parameter, and each task parameter must occur
    exactly once in the entire expression.
-5. Every comma-separated expression within an associative operator must have the exact same number of values defined 
+5. Every comma-separated expression within an associative operator must have the exact same number of values defined
    in their range.
 
 For example, given the four Task Parameters named "A", "B", "C", and "D" with values:
@@ -1226,14 +1233,14 @@ for the symbol `Param.Name` of "Bob", the resulting resolved string is
 
 ## 9. License
 
-Copyright ©2023 Amazon.com Inc. or Affiliates (“Amazon”).  
+Copyright ©2023 Amazon.com Inc. or Affiliates (“Amazon”).
 
 This Agreement sets forth the terms under which Amazon is making the Open Job Description
 Specification (“the Specification”) available to you.
 
 ### 9.1. Copyrights
 
-This Specification is licensed under [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/deed.en). 
+This Specification is licensed under [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/deed.en).
 
 ### 9.2. Patents
 
