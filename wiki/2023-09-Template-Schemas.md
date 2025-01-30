@@ -22,6 +22,8 @@ Notations used in this document to annotate aspects of the schema definition:
    * `@fmtstring[host]` - The value is evaluated at runtime on the worker host on which the job is running. The value is otherwise
      evaluated when the job template is submitted and the render manager is constructing a job.
 * `@optional` - The annotated property is optional.
+* `@extension EXTENSION_NAME` - The annotated property is available only when extension EXTENSION_NAME is requested
+  in the `extensions` list of the template. Implementations can choose which extensions to support.
 
 ## 1. Root elements
 
@@ -645,8 +647,11 @@ Where:
 Definition of a single task parameter; its name, type, and the range of values that it takes.
 
 ```bnf
-<TaskParameterDefinition> ::= <IntTaskParameterDefinition> | <FloatTaskParameterDefinition> |
-                              <StringTaskParameterDefinition> | <PathTaskParameterDefinition>
+<TaskParameterDefinition> ::= <IntTaskParameterDefinition> |
+                              <FloatTaskParameterDefinition> |
+                              <StringTaskParameterDefinition> |
+                              <PathTaskParameterDefinition> |
+                              <ChunkIntTaskParameterDefinition> # @extension TASK_CHUNKING
 ```
 
 ##### 3.4.1.1. `<IntTaskParameterDefinition>`
@@ -801,6 +806,46 @@ using the following names:
 1. `Task.Param.<name>` — the value of the parameter with relevant path mapping rules applied to it; and
 2. `Task.RawParam.<name>` — the value of the parameter as it was defined, with no path mapping rules applied.
 
+##### 3.4.1.5. `<ChunkIntTaskParameterDefinition>` `# @extension TASK_CHUNKING`
+
+An integer valued task parameter, processed as chunks instead of as individual elements.
+A `<ChunkIntTaskParameterDefinition>` is the object:
+
+```yaml
+  name: <Identifier>
+  type: "CHUNK[INT]"
+  range: <IntRangeList> | <IntRangeExpr>
+  chunks:
+    defaultTaskCount: <integer> | <intstring> # @fmtstring
+    targetRuntimeSeconds: <integer> | <intstring> # @optional @fmtstring
+    rangeConstraint: "CONTIGUOUS" | "NONCONTIGUOUS"
+```
+
+See section `<IntTaskParameterDefinition>` for the definitions of `<IntRangeExpr>` and `<intstring>`.
+
+1. *name* — The name of the parameter.
+2. *type* — The literal "CHUNK[INT]", defining this parameter as integer valued and processed
+    as chunks.
+3. *range* — The list of values that the parameter takes on to define Tasks of the Step.
+4. *chunks* — Specifies how to form sets of values into chunks.
+    1. *defaultTaskCount* — How many tasks to combine into a single chunk by default.
+    2. *targetRuntimeSeconds* — If provided, the number of seconds to aim for when forming chunks.
+        A scheduler can ignore this, or dynamically adjust the chunk task count to be closer
+        to this value once some chunks have completed.
+    3. *rangeConstraint* — If CONTIGUOUS, a chunk must always be a contiguous range
+        of integers with two integers separated by "-" like a single "5-5" or interval "1-10".
+        If NONCONTIGUOUS, a chunk can be an arbitrary set of integers following the
+        `<IntRangeExpr>` syntax like "1,3,7-10:2".
+5. `<IntRangeList>` is subject to the constraints:
+   * Minimum number of elements: If provided, then this list must contain at least one element.
+   * Maximum number of elements: The list must not contain more than 1024 elements.
+
+The value of a task parameter of this type can be referenced in format strings that will be evaluated when running a Task
+using the following names:
+
+1. `Task.Param.<name>` and
+2. `Task.RawParam.<name>`
+
 #### 3.4.2. `<TaskParameterStringValue>`
 
 A [Format String](#73-format-strings) subject to the following constraints:
@@ -830,6 +875,9 @@ Subject to the following constraints:
    exactly once in the entire expression.
 5. Every comma-separated expression within an associative operator must have the exact same number of values defined
    in their range.
+6. If a task parameter is chunked, for example it has type `CHUNK[INT]`, it must not be
+   combined with any other task parameter using the associative operator. For example if
+   `A` is chunked, then `A * B` is permitted but `(A, B)` is an error.
 
 For example, given the four Task Parameters named "A", "B", "C", and "D" with values:
 
@@ -850,6 +898,14 @@ The following table lists some expressions and the resulting parameter space.
 |(A,B,D)   |(A=1,B=10,D=a), (A=2,B-11,D=b), (A=3,B=10,D=c)|
 |(A,C)     |Error: length mismatch (A and C have differing numbers of values)|
 |(A,B,A)   |Error: each parameter may only appear once in the expression.|
+
+If `A` has type `CHUNK[INT]`, the parameter space is the same as if it had type `INT`,
+but each chunk provided to the `onRun` action specifies an integer range expression for
+`A` instead of a single value. The scheduler might select the following chunks when
+`rangeConstraint` is set to `CONTIGUOUS`:
+
+(A="1-1", B=10), (A="2-2", B=10), (A="3-3", B=10),
+(A="1-2", B=11), (A="3-3", B=11), (A="1-3", B=12)
 
 ### 3.5. `<StepScript>`
 

@@ -934,7 +934,7 @@ the Step's definition. You use this property to define the collection of inputs 
 In this case, you can create Tasks that either each render a single frame or each render a contiguous group of frames.
 Let's go over both.
 
-#### 2.2.4.1. One Frame per Task
+#### 2.2.4.1. Running One Frame at a Time
 
 The `render.sh` embedded script that you're using in the Job currently renders a sequence of frames rather than a single frame, so
 to render a single frame in each Task you'll first need to modify and test the `render.sh` embedded script.
@@ -974,7 +974,7 @@ blender --background "$SCENE" \
 rm -f $TMPFILE
 ```
 
-After copying that into the Job Template, create the Step's parameter space to define a single [`INT` type Task parameter](2023-09-Template-Schemas#3411-inttaskparameterdefinition) called `Frame` with a range of values from the `StartFrame` to the `EndFrame`:
+After copying that into the Job Template, create the Step's parameter space to define a single [`INT` type Task parameter](2023-09-Template-Schemas#3411-inttaskparameterdefinition) called `Frame` with a range of values from the `FrameStart` to the `FrameEnd`:
 
 ```yaml
 ...
@@ -1171,19 +1171,206 @@ steps:
 
 ```
 
-#### 2.2.4.2. Multiple Frames Per Task
+#### 2.2.4.2. Running Multiple Frames at a Time
 
 Some rendering applications may take a significant amount of time to startup and load the data that it needs to work. In this case,
-you may wish to render multiple contiguous frames of the animation in each Task. There are two ways that you can accomplish this
+you may wish to render multiple contiguous frames of the animation in each Task. There are several ways that you can accomplish this
 with Open Job Description:
 
-1. Define Task parameters for the start and end of the range of frames to render in each Task and leverage a
+1. If the implementation you're using supports the
+   [TASK_CHUNKING](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0001-task-chunking.md) extension,
+   enable that extension and then use the `CHUNK[INT]` type in place of `INT` for the `Frame` Task parameter.
+2. Define Task parameters for the start and end of the range of frames to render in each Task and leverage a
    [combination expression](2023-09-Template-Schemas#343-combinationexpr) to combine them; or
-2. Define Task parameter as a `STRING` type and hardcode the range of frames that we want to render in each Task.
+3. Define Task parameter as a `STRING` type and hardcode the range of frames that we want to render in each Task.
 
-We'll go through both options.
+We'll go through each of these options.
 
-##### 2.2.4.2.1. With a Combination Expression
+##### 2.2.4.2.1. With the TASK_CHUNKING extension
+
+This option is not implemented in the `openjd` command and libraries yet. This section will be updated when it is available.
+
+If the implementation you're using supports the
+[TASK_CHUNKING](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0001-task-chunking.md) extension,
+you can enable it by adding the `extensions` list to your template so it starts like:
+
+```yaml
+specificationVersion: 'jobtemplate-2023-09'
+extensions:
+- TASK_CHUNKING
+```
+
+With this extension, you can structure your template to input a general range expression instead of using `FrameStart`
+and `FrameEnd` job parameters. You'll also want a `ChunkSize` parameter, so delete the `FrameStart` and `FrameEnd`
+definitions and add the following:
+
+```yaml
+  - name: Frames
+    type: STRING
+    default: "1-2"
+  - name: ChunkSize
+    type: INT
+    minValue: 1
+    default: 10
+```
+
+The benefit to using a `Frames` job parameter this way is that ranges like "1-100" and lists
+of pickup frames like "3,7,20-25,83" are both easy to support with the same syntax.
+
+Next, change the parameter space from type `INT` to `CHUNK[INT]` and wire the `ChunkSize` parameter in:
+
+```yaml
+    parameterSpace:
+      taskParameterDefinitions:
+        - name: Frame
+          type: CHUNK[INT]
+          range: "{{Param.Frames}}"
+          chunks:
+            defaultTaskCount: "{{Param.ChunkSize}}"
+            rangeConstraint: CONTIGUOUS
+```
+
+Because we asked for contiguous chunks, the `{{Task.Param.Frame}}` value will always have a start and end value like `1-5`.
+If there's just one frame it will look like `1-1`. Because Blender uses a ".." instead of "-" to specify an interval
+of frames, the script needs to convert the syntax. Edit the script so the variable extraction and blender command
+look like this:
+
+```bash
+            SCENE="$1"
+            OUTDIR="$2"
+            FRAME_RANGE="$3"
+            FRAME_START="${FRAME_RANGE%%-*}"
+            FRAME_END="${FRAME_RANGE##*-}"
+
+            blender --background "$SCENE" \
+              --python "$TMPFILE" \
+              --render-output "$OUTDIR"/frame-### \
+              --render-format PNG --use-extension 1 \
+              --render-frame "${FRAME_START}..${FRAME_END}"
+```
+
+The complete template at this point looks like:
+
+```yaml
+specificationVersion: jobtemplate-2023-09
+extensions:
+- TASK_CHUNKING
+name: "{{Param.JobName}}"
+parameterDefinitions:
+  - name: SceneFile
+    type: PATH
+    dataFlow: IN
+    objectType: FILE
+  - name: FramesDirectory
+    type: PATH
+    dataFlow: OUT
+    objectType: DIRECTORY
+  - name: AnimationFile
+    type: PATH
+    dataFlow: OUT
+    objectType: FILE
+  - name: Frames
+    type: STRING
+    default: "1-2"
+  - name: ChunkSize
+    type: INT
+    minValue: 1
+    default: 10
+  - name: JobName
+    type: STRING
+    minLength: 1
+    default: "DemoJob"
+steps:
+  - name: BlenderRender
+    parameterSpace:
+      taskParameterDefinitions:
+        - name: Frame
+          type: CHUNK[INT]
+          range: "{{Param.Frames}}"
+          chunks:
+            defaultTaskCount: "{{Param.ChunkSize}}"
+            rangeConstraint: CONTIGUOUS
+    script:
+      actions:
+        onRun:
+          command: "{{Task.File.Render}}"
+          args:
+            - "{{Param.SceneFile}}"
+            - "{{Param.FramesDirectory}}"
+            - "{{Task.Param.Frame}}"
+          timeout: 60
+      embeddedFiles:
+        - name: Render
+          type: TEXT
+          filename: render.sh
+          runnable: true
+          data: |
+            #!/bin/bash
+
+            # Return an error code if any command in the script fails.
+            set -euo pipefail
+
+            # Use Blender's scripting interface to reduce the scene resolution and sampling rate to speed up testing.
+            # See https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Here-Documents
+            # Remove this and the lines below, `  --python "$TMPFILE" \` and `rm -f $TMPFILE`, after testing is complete.
+            TMPFILE=$(mktemp)
+            cat > "$TMPFILE" << EOF
+            import bpy
+            for s in bpy.data.scenes:
+              s.render.resolution_x = 480
+              s.render.resolution_y = 270
+            bpy.context.scene.cycles.samples = 100
+            EOF
+
+            SCENE="$1"
+            OUTDIR="$2"
+            FRAME_RANGE="$3"
+            FRAME_START="${FRAME_RANGE%%-*}"
+            FRAME_END="${FRAME_RANGE##*-}"
+
+            blender --background "$SCENE" \
+              --python "$TMPFILE" \
+              --render-output "$OUTDIR"/frame-### \
+              --render-format PNG --use-extension 1 \
+              --render-frame "${FRAME_START}..${FRAME_END}"
+
+            rm -f $TMPFILE
+
+  - name: EncodeVideo
+    dependencies:
+      - dependsOn: BlenderRender
+    script:
+      actions:
+        onRun:
+          command: "{{Task.File.Encode}}"
+          args:
+            - "{{Param.FramesDirectory}}"
+            - "{{Param.AnimationFile}}"
+            - "{{Param.FrameStart}}"
+          timeout: 60
+      embeddedFiles:
+        - name: Encode
+          type: TEXT
+          runnable: true
+          filename: encode.sh
+          data: |
+            #!/bin/bash
+
+            set -euo pipefail
+
+            INPUT_DIR="$1"
+            OUTPUT_FILENAME="$2"
+            START_FRAME="$3"
+
+            ffmpeg -y -r 10 -start_number "$START_FRAME" -i "$INPUT_DIR"/frame-%03d.png -pix_fmt yuv420p \
+                -vf "scale=in_color_matrix=bt709:out_color_matrix=bt709" \
+                -frames:v 300 -c:v libx264 -preset fast \
+                -color_range tv -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1 \
+                -movflags faststart "$OUTPUT_FILENAME"
+
+```
+
+##### 2.2.4.2.2. With a Combination Expression
 
 The combination expression in a Step's parameter space gives you a way to choose how the Task parameters are combined to create
 the collection of Task values for the Step. For example, if you have a parameter space like:
@@ -1418,7 +1605,7 @@ steps:
                 -movflags faststart "$OUTPUT_FILENAME"
 ```
 
-##### 2.2.4.2.2 As STRING Type
+##### 2.2.4.2.3. As STRING Type
 
 This option is only suitable for cases where you will be writing or programmatically generating a Job Template for a specific input
 because the `FrameStart` and `FrameEnd` values need to be known when defining the set of values for the Task parameter. To create the

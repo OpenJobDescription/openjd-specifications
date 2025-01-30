@@ -3,7 +3,7 @@
 * RFC Tracking Issue: https://github.com/OpenJobDescription/openjd-specifications/issues/53
 * Start Date: 2024-11-27
 * Specification Version: 2023-09 extension TASK_CHUNKING
-* Accepted On: in draft
+* Accepted On: 2025-01-17
 * Depends On: RFC 0002 (https://github.com/OpenJobDescription/openjd-specifications/issues/57)
 
 ## Summary
