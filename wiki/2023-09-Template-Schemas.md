@@ -1023,6 +1023,11 @@ onExit: <Action> # optional
 1. *onEnter* — The action run when the environment is being entered on a host.
 2. *onExit* — The action run when the environment is being exited on a host.
 
+   >   **NOTE:** When *onExit* action does not define a *timeout* the action will default to 300
+   seconds, or five minutes. Job schedulers may provide the ability to cancel jobs/steps/tasks. A
+   reasonable default expectation should be that OpenJobDescription sessions are able to end and
+   cleanup within a bound amount of time.
+
 ### 4.4. `<EnvironmentVariables>`
 
 An `<EnvironmentVariables>` is a map from `<EnvironmentVariableNameString>`s to `<EnvironmentVariableValueString>`s:
@@ -1067,8 +1072,20 @@ cancelation: <CancelationMethod> # @optional
 2. *args* — An array of [Format Strings](#73-format-strings) that will be passed as arguments to the **command** when the
    command is run on the host.
 3. *timeout* — The positive number of seconds that the command is given to successfully run to completion. A command that
-   does not return before the timeout is canceled and is treated as a failed run. Default, if not provided, is that the
-   command does not have a limited timeout.
+   does not return before the timeout is canceled and is treated as a failed run.
+   
+   The default timeout, if not provided, depends on the action:
+
+   | Action container | Action | Default |
+   | --- | --- | --- |
+   | `<StepActions>` | `onRun` | *no timeout* |
+   | `<EnvironmentActions>` | `onEnter` | *no timeout* |
+   | `<EnvironmentActions>` | `onExit` | 300 seconds (five minutes) <sup>1</sup> |
+
+   <sup>1</sup> Environment exit actions are treated specially. Job schedulers may provide the
+   ability to cancel jobs, steps, and tasks. A reasonable default expectation should be that
+   OpenJobDescription sessions are able to end and cleanup within a bound duration of time.
+
 4. *cancelation* — If defined, provides details regarding how this action should be canceled. If not provided, then it is
    treated as though provided with `<CancelationMethodTerminate>`.
 
