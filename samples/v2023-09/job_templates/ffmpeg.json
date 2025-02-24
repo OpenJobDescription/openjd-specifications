@@ -1,0 +1,219 @@
+{
+  "specificationVersion": "jobtemplate-2023-09",
+  "name": "Job Bundle - FFmpeg Review Media",
+  "description": "A job template written in JSON to compare with the ffmpeg template written in YAML",
+  "parameterDefinitions": [
+    {
+      "name": "InputFile",
+      "type": "PATH",
+      "objectType": "FILE",
+      "dataFlow": "IN",
+      "description": "The input image sequence, with %04d style padding.",
+      "userInterface": {
+        "control": "CHOOSE_INPUT_FILE",
+        "label": "Input File",
+        "groupLabel": "Files",
+        "fileFilters": [
+          {
+            "label": "Image Sequence Files",
+            "patterns": ["*.exr", "*.png", "*.dpx"]
+          },
+          {
+            "label": "Any Files",
+            "patterns": ["*"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "OutputDir",
+      "type": "PATH",
+      "objectType": "DIRECTORY",
+      "dataFlow": "OUT",
+      "description": "The output directory to put all generated movies in",
+      "userInterface": {
+        "control": "CHOOSE_DIRECTORY",
+        "label": "Output Directory",
+        "groupLabel": "Files"
+      }
+    },
+    {
+      "name": "FPS",
+      "type": "INT",
+      "userInterface": {
+        "control": "DROPDOWN_LIST",
+        "label": "FPS",
+        "groupLabel": "FrameInfo"
+      },
+      "description": "What FPS (Frames Per Second) the movie should be encoded at.",
+      "default": 24,
+      "allowedValues": [1, 12, 24, 30, 48, 60, 90, 96, 120, 144, 165, 240]
+    },
+    {
+      "name": "StartFrame",
+      "type": "INT",
+      "userInterface": {
+        "control": "SPIN_BOX",
+        "label": "Start Frame",
+        "groupLabel": "FrameInfo"
+      },
+      "description": "What frame to start the encode on",
+      "default": 1
+    },
+    {
+      "name": "EndFrame",
+      "type": "INT",
+      "userInterface": {
+        "control": "SPIN_BOX",
+        "label": "End Frame",
+        "groupLabel": "FrameInfo"
+      },
+      "description": "What frame to end the encode on"
+    }
+  ],
+  "steps": [
+    {
+      "name": "h264",
+      "description": "Generate high quality H.264 MP4",
+      "script": {
+        "actions": {
+          "onRun": {
+            "command": "ffmpeg",
+            "args": [
+              "-r",
+              "{{Param.FPS}}",
+              "-start_number",
+              "{{Param.StartFrame}}",
+              "-i",
+              "{{Param.InputFile}}",
+              "-pix_fmt",
+              "yuv444p10le",
+              "-crf",
+              "18",
+              "-vf",
+              "scale=in_color_matrix=bt709:out_color_matrix=bt709",
+              "-frames:v",
+              "{{Param.EndFrame}}",
+              "-c:v",
+              "libx264",
+              "-preset",
+              "slower",
+              "-color_range",
+              "tv",
+              "-colorspace",
+              "bt709",
+              "-color_primaries",
+              "bt709",
+              "-color_trc",
+              "iec61966-2-1",
+              "-movflags",
+              "faststart",
+              "{{Param.OutputDir}}/h264_hq_output.mp4"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "webm",
+      "dependencies": [
+        {
+          "dependsOn": "h264"
+        }
+      ],
+      "script": {
+        "actions": {
+          "onRun": {
+            "command": "ffmpeg",
+            "args": [
+              "-r",
+              "{{Param.FPS}}",
+              "-i",
+              "{{Param.OutputDir}}/h264_hq_output.mp4",
+              "-c:v",
+              "libvpx-vp9",
+              "-pix_fmt",
+              "yuv420p10le",
+              "-crf",
+              "22",
+              "-speed",
+              "2",
+              "-row-mt",
+              "1",
+              "-quality",
+              "good",
+              "-b:v",
+              "0",
+              "-sws_flags",
+              "spline+accurate_rnd+full_chroma_int",
+              "-vf",
+              "scale=in_range=full:in_color_matrix=bt709:out_range=tv:out_color_matrix=bt709",
+              "-color_range",
+              "tv",
+              "-colorspace",
+              "bt709",
+              "-color_primaries",
+              "bt709",
+              "-color_trc",
+              "iec61966-2-1",
+              "-y",
+              "{{Param.OutputDir}}/webm_output.webm"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "prores",
+      "dependencies": [
+        {
+          "dependsOn": "h264"
+        }
+      ],
+      "parameterSpace": {
+        "taskParameterDefinitions": [
+          {
+            "name": "Quality",
+            "type": "STRING",
+            "range": ["0", "3"]
+          }
+        ]
+      },
+      "script": {
+        "actions": {
+          "onRun": {
+            "command": "ffmpeg",
+            "args": [
+              "-r",
+              "{{Param.FPS}}",
+              "-i",
+              "{{Param.OutputDir}}/h264_hq_output.mp4",
+              "-pix_fmt",
+              "yuv422p10le",
+              "-vf",
+              "scale=in_color_matrix=bt709:out_color_matrix=bt709",
+              "-c:v",
+              "prores_ks",
+              "-profile:v",
+              "{{Task.Param.Quality}}",
+              "-vendor",
+              "apl0",
+              "-qscale:v",
+              "11",
+              "-color_range",
+              "tv",
+              "-colorspace",
+              "bt709",
+              "-color_primaries",
+              "bt709",
+              "-color_trc",
+              "iec61966-2-1",
+              "-y",
+              "{{Param.OutputDir}}/prores_{{Task.Param.Quality}}_output.mov"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

@@ -8,6 +8,10 @@ concepts that you can incorporate in to your own templates.
 All samples are provided AS-IS. We strongly recommend that you test all samples thoroughly
 before use, and customize the samples as required by your individual needs.
 
+### YAML vs. JSON
+
+The majority of the samples included are written in YAML to allow us to write inline comments and have readable multi-line embedded files. Writing templates in JSON is also supported and a sample is included for comparison/illustrative purposes.
+
 ## Contributing
 
 We encourage and welcome your contributions to this repository. Simply open a pull
