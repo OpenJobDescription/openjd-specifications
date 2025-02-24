@@ -238,8 +238,10 @@ and is left for future work.
 ### 3.4.1.5. `<ChunkIntTaskParameterDefinition>`
 
 ```diff
-+  An integer valued task parameter, processed as chunks instead of as individual elements.
-+  A `<ChunkIntTaskParameterDefinition>` is the object:
++ An integer valued task parameter, processed as chunks instead of as individual elements.
++ At most one `CHUNK[INT]` parameter can be specified in a step parameter space. When forming
++ a chunk to run, all the non-chunked dimensions take on a single value, and the chunked dimension
++ takes a set of values that satisfies the range constraint. A `<ChunkIntTaskParameterDefinition>` is the object:
 +
 + ```yaml
 +   name: <Identifier>
@@ -259,9 +261,11 @@ and is left for future work.
 + 3. *range* — The list of values that the parameter takes on to define Tasks of the Step.
 + 4. *chunks* — Specifies how to form sets of values into chunks.
 +     1. *defaultTaskCount* — How many tasks to combine into a single chunk by default.
-+     2. *targetRuntimeSeconds* — If provided, the number of seconds to aim for when forming chunks.
-+         A scheduler can ignore this, or dynamically adjust the chunk task count to be closer
-+         to this value once some chunks have completed.
++        1. Minimum value: 1
++     2. *targetRuntimeSeconds* — If provided and its value is greater than 0, the number of seconds
++         to aim for when forming chunks. A scheduler can ignore this, or dynamically adjust
++         the chunk task count to be closer to this value once some chunks have completed.
++         1. Minimum value: 0
 +     3. *rangeConstraint* — If CONTIGUOUS, a chunk must always be a contiguous range
 +         of integers with two integers separated by "-" like a single "5-5" or interval "1-10".
 +         If NONCONTIGUOUS, a chunk can be an arbitrary set of integers following the

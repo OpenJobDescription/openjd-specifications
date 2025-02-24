@@ -625,7 +625,8 @@ A [Format String](#73-format-strings) subject to the following constraints:
 
 ### 3.4. `<StepParameterSpaceDefinition>`
 
-A `<StepParameterSpaceDefinition>` is the object:
+The step parameter space defines the task parameters that are substituted into the `<StepScript>`
+to produce all the tasks to run. A `<StepParameterSpaceDefinition>` is the object:
 
 ```yaml
 taskParameterDefinitions: [ <TaskParameterDefinition>, ... ]
@@ -636,6 +637,7 @@ Where:
 
 1. *taskParameterDefinitions* — This is a list that defines the task parameters over which the Step's script is
    parameterized. Each task parameter defines its name, type, and the range of values that it takes.
+   When the `TASK_CHUNKING` is used, only one `CHUNK[INT]` parameter may be included.
     1. Minimum number of elements: If provided, then this array must have at least one element in the list.
     2. Maximum number of elements: The list must contain no more than 16 elements in the list.
 2. *combination* — An expression that defines how the task parameters are combined to produce the parameter space that
@@ -809,7 +811,9 @@ using the following names:
 ##### 3.4.1.5. `<ChunkIntTaskParameterDefinition>` `# @extension TASK_CHUNKING`
 
 An integer valued task parameter, processed as chunks instead of as individual elements.
-A `<ChunkIntTaskParameterDefinition>` is the object:
+At most one `CHUNK[INT]` parameter can be specified in a step parameter space. When forming
+a chunk to run, all the non-chunked dimensions take on a single value, and the chunked dimension
+takes a set of values that satisfies the range constraint. A `<ChunkIntTaskParameterDefinition>` is the object:
 
 ```yaml
   name: <Identifier>
@@ -825,13 +829,15 @@ See section `<IntTaskParameterDefinition>` for the definitions of `<IntRangeExpr
 
 1. *name* — The name of the parameter.
 2. *type* — The literal "CHUNK[INT]", defining this parameter as integer valued and processed
-    as chunks.
+     as chunks.
 3. *range* — The list of values that the parameter takes on to define Tasks of the Step.
 4. *chunks* — Specifies how to form sets of values into chunks.
     1. *defaultTaskCount* — How many tasks to combine into a single chunk by default.
-    2. *targetRuntimeSeconds* — If provided, the number of seconds to aim for when forming chunks.
-        A scheduler can ignore this, or dynamically adjust the chunk task count to be closer
-        to this value once some chunks have completed.
+        1. Minimum value: 1
+    2. *targetRuntimeSeconds* — If provided and its value is greater than 0, the number of seconds
+        to aim for when forming chunks. A scheduler can ignore this, or dynamically adjust
+        the chunk task count to be closer to this value once some chunks have completed.
+        1. Minimum value: 0
     3. *rangeConstraint* — If CONTIGUOUS, a chunk must always be a contiguous range
         of integers with two integers separated by "-" like a single "5-5" or interval "1-10".
         If NONCONTIGUOUS, a chunk can be an arbitrary set of integers following the
