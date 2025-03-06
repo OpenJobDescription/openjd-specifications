@@ -36,8 +36,8 @@ steps:
       data: |
         #!/bin/bash
 
-        if test "{{Session.HasPathMappingRules}}" = "true"; then
-          cat {{Session.PathMappingRulesFile}}
+        if test '{{Session.HasPathMappingRules}}' = "true"; then
+          cat '{{Session.PathMappingRulesFile}}'
         else
           echo "No path mapping rules defined for this Session"
         fi
