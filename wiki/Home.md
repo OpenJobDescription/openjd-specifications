@@ -57,8 +57,7 @@ We want your input! Please see our [Contributing Guidelines](https://github.com/
 
 ## Open Job Description Projects
 
-*If you have an Open Job Description project that you would like to advertise here then please
-submit a pull request.*
+*If you have an Open Job Description project that you would like to advertise here then please submit a pull request.*
 
 ### Tools
 
