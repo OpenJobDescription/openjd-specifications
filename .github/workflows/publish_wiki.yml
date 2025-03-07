@@ -26,10 +26,13 @@ jobs:
           rsync -av --delete wiki/ tmp_wiki/ --exclude .git --exclude '*.drawio' --exclude README.md
           cd tmp_wiki
           git add .
-          git commit -m "${{ github.event.head_commit.message }}"
+          cat > .commit_message << EOF
+          ${{ github.event.head_commit.message }}
+          EOF
+          git commit -F .commit_message
           git push origin master
           rm -rf tmp_wiki
-          
-    
+
+
 
 
