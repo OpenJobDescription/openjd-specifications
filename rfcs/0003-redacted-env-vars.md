@@ -2,7 +2,7 @@
 - RFC Tracking Issue: https://github.com/OpenJobDescription/openjd-specifications/issues/85
 - Start Date: 2025-04-09
 - Specification Version: 2023-09 extension REDACTED_ENV_VARS
-- Accepted On: (fill in with the date that the proposal was accepted: YYYY-MM-DD)
+- Accepted On: 2025-05-15
 
 ## Summary
 

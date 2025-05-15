@@ -84,6 +84,9 @@ messages to convey information about the **Action** to the render management sys
 * `openjd_env: <var>=<value>` where `<var>` is the string name of an environment variable, and `<value>` is a string. This
   can only be emitted by the **Action** for entering an **Environment**. It defines the value of an environment variable for
   all subsequent **Action**s in the **Session** until the defining **Environment** is exited.
+* `openjd_redacted_env: <var>=<value>` has identical behavior to openjd_env except `<value>` shall be redacted by the
+  application running the action in the emitted stdout line and in any future lines. Requires the REDACTED_ENV_VARS
+  extension, however supporting applications must honor the redaction even when the extension is not specified.
 * `openjd_unset_env: <var>` where `<var>` is the string name of an environment variable. This can only be emitted by the
   **Action** for entering an **Environment**. This unsets the given environment variable for all subsequent **Action**s
   in the **Session** until the **Environment** that emitted it is exited.

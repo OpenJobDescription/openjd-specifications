@@ -989,7 +989,11 @@ Implementations of this specfication must watch STDOUT when running the `onEnter
 1. The regular expression `^openjd_env: (.*)$`. The captured value must be of the form `<varname>=<value>` where
    `varname` is the name of an environment variable, and `value` is the value to assign to it. The defined value of the
    given variable will be set for all actions that are run with the environment active.
-2. The regular expression `^openjd_unset_env: (.*)$`. The captured value must be of the form `<varname>` where
+2. The regular expression `^openjd_redacted_env: (.*)$`. The captured value must be interpreted identically to
+   openjd_env, and `<value>` shall be redacted with a fixed length string for this and any future occurrences from the
+   emitted STDOUT message. Requires the REDACTED_ENV_VARS extension, however supporting applications must honor the
+   redaction even when the extension is not specified.
+3. The regular expression `^openjd_unset_env: (.*)$`. The captured value must be of the form `<varname>` where
    `varname` is the name of an environment variable. The given environment variable will be unset as long as this
    environment is active. If an environment both sets and unsets a particular environment variable, then the unset takes
    precedence.
