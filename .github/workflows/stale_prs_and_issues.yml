@@ -4,6 +4,11 @@ on:
     # Run every hour on the hour
     - cron: '0 * * * *'
 
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
 jobs:
     check-for-stales:
         uses: OpenJobDescription/.github/.github/workflows/reusable_stale_prs_and_issues.yml@mainline
