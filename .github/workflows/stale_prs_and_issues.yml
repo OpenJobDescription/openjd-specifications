@@ -5,7 +5,7 @@ on:
     - cron: '0 * * * *'
 
 jobs:
-    label-new-prs:
+    check-for-stales:
         uses: OpenJobDescription/.github/.github/workflows/reusable_stale_prs_and_issues.yml@mainline
         secrets:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
