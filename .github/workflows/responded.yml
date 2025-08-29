@@ -3,11 +3,6 @@ on:
     issue_comment:
         types: [created, edited]
 
-permissions:
-  issues: write
-  pull-requests: write
-  contents: read
-
 jobs:
     check-for-response:
         uses: OpenJobDescription/.github/.github/workflows/reusable_responded.yml@mainline
