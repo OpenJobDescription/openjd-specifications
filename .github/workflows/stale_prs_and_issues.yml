@@ -7,4 +7,5 @@ on:
 jobs:
     label-new-prs:
         uses: OpenJobDescription/.github/.github/workflows/reusable_stale_prs_and_issues.yml@mainline
-        secrets: inherit
+        secrets:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
