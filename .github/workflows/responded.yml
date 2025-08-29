@@ -1,0 +1,9 @@
+name: Contributor Responded
+on:
+    issue_comment:
+        types: [created, edited]
+
+jobs:
+    label-new-prs:
+        uses: OpenJobDescription/.github/.github/workflows/reusable_responded.yml@mainline
+        secrets: inherit

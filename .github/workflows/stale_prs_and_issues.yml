@@ -1,0 +1,10 @@
+name: 'Check stale issues/PRs.'
+on: 
+  schedule:
+    # Run every hour on the hour
+    - cron: '0 * * * *'
+
+jobs:
+    label-new-prs:
+        uses: OpenJobDescription/.github/.github/workflows/reusable_stale_prs_and_issues.yml@mainline
+        secrets: inherit
