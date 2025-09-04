@@ -14,6 +14,7 @@ jobs:
     environment: release
     env:
         WIKI_REPO: "https://${{ secrets.CI_TOKEN }}@github.com/OpenJobDescription/openjd-specifications.wiki.git"
+        COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
     steps:
       - uses: actions/checkout@v4
       - name: "Clone wiki contents"
@@ -27,7 +28,7 @@ jobs:
           cd tmp_wiki
           git add .
           cat > .commit_message << EOF
-          ${{ github.event.head_commit.message }}
+          "${COMMIT_MESSAGE}"
           EOF
           git commit -F .commit_message
           git push origin master
