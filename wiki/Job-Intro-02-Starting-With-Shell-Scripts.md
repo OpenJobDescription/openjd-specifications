@@ -155,8 +155,8 @@ Then modify it so that it accepts arguments from the command line:
 
 set -euo pipefail
 
-INPUT_DIR="$(realpath $1)"
-OUTPUT_FILENAME="$(realpath $2)"
+INPUT_DIR="$1"
+OUTPUT_FILENAME="$2"
 START_FRAME="$3"
 
 ffmpeg -y -r 10 -start_number "$START_FRAME" -i "$INPUT_DIR"/frame-%03d.png -pix_fmt yuv420p \
