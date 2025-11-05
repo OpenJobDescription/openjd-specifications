@@ -19,11 +19,13 @@ Both Templates are expressed as UTF-8 documents in either
 Notations used in this document to annotate aspects of the schema definition:
 
 * `@fmtstring` - The value of the annotated property is a Format String. See [Format Strings](#73-format-strings).
-   * `@fmtstring[host]` - The value is evaluated at runtime on the worker host on which the job is running. The value is otherwise
+  * `@fmtstring[host]` - The value is evaluated at runtime on the worker host on which the job is running. The value is otherwise
      evaluated when the job template is submitted and the render manager is constructing a job.
 * `@optional` - The annotated property is optional.
 * `@extension EXTENSION_NAME` - The annotated property is available only when extension EXTENSION_NAME is requested
   in the `extensions` list of the template. Implementations can choose which extensions to support.
+* `@incompatible PROPERTY_NAME` - The annotated property cannot be used in
+combination with PROPERTY_NAME.
 
 ## 1. Root elements
 
@@ -55,7 +57,8 @@ Where:
    The values of Job Parameters can be referenced in Format Strings.
    See: [&lt;JobParameterDefinition&gt;](#2-jobparameterdefinition).
       * Minimum number of elements: If provided, then this list must contain at least one element.
-      * Maximum number of elements: The list must not contain more than 50 elements.
+      * Maximum number of elements: The list must not contain more than 50
+      elements or 100 elements with the `FEATURE_BUNDLE_1` extension.
 7. *jobEnvironments* — An ordered list of the environments that are required to run Tasks in the Jobs created by this Job
    Template. These are entered in the order provided at the start of every Session for Tasks in the Job, and exited in the
    reverse order at the end of those Sessions. See: [&lt;Environment&gt;](#4-environment). Constraints:
@@ -71,6 +74,8 @@ A [Format String](#73-format-strings) subject to the following constraints:
 1. Allowed characters: Any unicode character except those in the Cc unicode character category.
 2. Minimum length: 1 character.
 3. Maximum length: 128 characters, after the format string has been resolved.
+512 characters, after the format string has been resolved if using the
+`FEATURE_BUNDLE_1` extension.
 
 #### 1.1.2. `<ExtensionName>`
 
@@ -458,7 +463,8 @@ A string subject to the following constraints:
 
 1. Allowed characters: Any unicode character except those in the Cc unicode character category.
 2. Minimum length: 1 character.
-3. Maximum length: 64 characters.
+3. Maximum length: 64 characters. 512 characters if using the
+`FEATURE_BUNDLE_1` extension.
 
 ### 3.2. `<StepDependency>`
 
@@ -525,17 +531,24 @@ An `<AmountRequirement>` is the object:
 ```yaml
 name: <AmountCapabilityName>
 min: <nonnegativefloat> # @optional
+min: <nonnegativefloat> | <nonnegativefloatstring>  # @optional @fmtstring @extension FEATURE_BUNDLE_1
 max: <positivefloat> # @optional
+max: <positivefloat> | <positivefloatstring> # @optional @fmtstring @extension FEATURE_BUNDLE_1
 ```
 
-Where:
+Where:`<nonnegativefloatstring>` is a string whose value is the string
+representation of a non-zero and positive floating point or integer value in
+base-10, `<positivefloatstring>` is a string whose value is the string
+representation of a positive floating point or integer value in base-10, and:
 
 1. *name* — Is a dotted name that identifies the specific host capability that is being required.
 2. *min* — If provided, then the host must have at least the given amount of the named capability available and reserved
    for a Session running Tasks from this Step to be scheduled to the host. If not provided, then the default is 0 unless
-   the specific host capability defines a minimum.
+   the specific host capability defines a minimum. Can only be a
+   `<nonnegativefloatstring>` when using the extension `FEATURE_BUNDLE_1`.
 3. *max* — If provided, then the host must have at least the given amount of the named capability available and reserved
-   for a Session running Tasks from this Step to be scheduled to the host.
+   for a Session running Tasks from this Step to be scheduled to the host. Can
+   only be a `<positivefloatstring>` when using the extension `FEATURE_BUNDLE_1`.
 
 Subject to the constraint that at least one of *min* or *max* must be provided.
 
@@ -1005,7 +1018,8 @@ A string value subject to the following constraints:
 
 1. Allowable characters: Any unicode character except those in the Cc unicode character category.
 2. Minimum length: 1 characters.
-3. Maximum length: 64 characters.
+3. Maximum length: 64 characters. 512 characters if using the
+`FEATURE_BUNDLE_1` extension.
 
 ### 4.2. `<EnvironmentScript>`
 
@@ -1072,19 +1086,25 @@ A string value subject to the following constraints:
 An Action is a specific command with arguments that is run on a host. An `<Action>` is the object:
 
 ```yaml
-command: <CommandString> # @fmtstring[host]
+command: <CommandString> # @fmtstring[host] @incompatible python | bash | cmd | powershell | node
 args: [ <ArgString>, ... ] # @optional @fmtstring[host]
 timeout: <posinteger> # @optional
+timeout: <posinteger> | <posintstring> # @optional @fmtstring @extension FEATURE_BUNDLE_1
 cancelation: <CancelationMethod> # @optional
+python | bash | cmd | powershell | node: <DataString> # @optional @fmtstring[host] @incompatible command @extension FEATURE_BUNDLE_1
 ```
 
+Where `<posintstring>` is a string whose value is the string representation of a
+positive integer value in base-10, and:
+
 1. *command* — A [Format String](#73-format-strings) containing the name of a runnable command that is run on a Worker
-   host.
+   host. Cannot be used when *python | bash | cmd | powershell | node* is provided.
 2. *args* — An array of [Format Strings](#73-format-strings) that will be passed as arguments to the **command** when the
    command is run on the host.
 3. *timeout* — The positive number of seconds that the command is given to successfully run to completion. A command that
-   does not return before the timeout is canceled and is treated as a failed run.
-   
+   does not return before the timeout is canceled and is treated as a failed
+   run. Can only be a `<posintstring>` when using the extension `FEATURE_BUNDLE_1`.
+
    The default timeout, if not provided, depends on the action:
 
    | Action container | Action | Default |
@@ -1099,6 +1119,141 @@ cancelation: <CancelationMethod> # @optional
 
 4. *cancelation* — If defined, provides details regarding how this action should be canceled. If not provided, then it is
    treated as though provided with `<CancelationMethodTerminate>`.
+5. *bash | cmd | node | powershell | python* - Syntactic sugar for scripts,
+removes some commonly needed boilerplate for the given script interpreter.
+Removes the need for the `command` property. Implicitly prefixes the `args` property.
+Removes the need for the `embeddedFiles` property.
+Cannot be used when `command` is provided. Requires the `FEATURE_BUNDLE_1` extension.
+   1. *bash* - Implicitly creates a Bash embedded file,
+   `command` becomes `bash`, and `args` get prefixed with the implicitly
+   generated file. The file extension is `.sh`. `bash` (all lowercase) is
+   expected to be available in the runtime environment.
+
+      ```yaml
+      actions:
+        onRun:
+            args: ["--additional-argument"] # optional
+            bash:
+                # bash code here
+
+      ### syntax sugar equivalent to:
+
+      actions:
+          onRun:
+              command: bash
+              args: ["{{Task.File.<implicitly generated file>}}", "--additional-argument"]
+      embeddedFiles:
+          - name: <implicitly generated file>
+            filename: "<implicitly generated file>.sh"
+            type: TEXT
+            data:
+                # bash code here
+      ```
+
+   2. *cmd* - Implicitly creates a Batch embedded file,
+   `command` becomes `cmd`, and `args` get prefixed with
+   `["/C", "{{Task.File.<implicitly generated file>}}"]`. The file extension is `.bat`.
+   `cmd` (all lowercase) is expected to be available in the runtime environment.
+
+      ```yaml
+      actions:
+        onRun:
+            args: ["--additional-argument"] # optional
+            cmd:
+                # batch code here
+
+      ### syntax sugar equivalent to:
+
+      actions:
+          onRun:
+              command: cmd
+              args: ["/C", "{{Task.File.<implicitly generated file>}}", "--additional-argument"]
+      embeddedFiles:
+          - name: <implicitly generated file>
+            filename: "<implicitly generated file>.bat"
+            type: TEXT
+            data:
+                # batch code here
+      ```
+
+   3. *node* - Implicitly creates a JavaScript embedded file,
+   `command` becomes `node`, and `args` get prefixed with the implicitly
+   generated file. The file extension is `.js`. `node` (all lowercase) is
+   expected to be available in the runtime environment.
+
+      ```yaml
+      actions:
+        onRun:
+            args: ["--additional-argument"] # optional
+            node:
+                # JavaScript code here
+
+      ### syntax sugar equivalent to:
+
+      actions:
+          onRun:
+              command: node
+              args: ["{{Task.File.<implicitly generated file>}}", "--additional-argument"]
+      embeddedFiles:
+          - name: <implicitly generated file>
+            filename: "<implicitly generated file>.js"
+            type: TEXT
+            data:
+                # JavaScript code here
+      ```
+
+   4. *powershell* - Implicitly creates a Powershell embedded file,
+   `command` becomes `powershell`, and `args` get prefixed with
+   `["-File", "{{Task.File.<implicitly generated file>}}"]`.
+   The file extension is `.ps1`. `powershell` (all lowercase) is
+   expected to be available in the runtime environment.
+
+      ```yaml
+      actions:
+        onRun:
+            args: ["--additional-argument"] # optional
+            powershell:
+                # powershell code here
+
+      ### syntax sugar equivalent to:
+
+      actions:
+          onRun:
+              command: powershell
+              args: ["-File", "{{Task.File.<implicitly generated file>}}", "--additional-argument"]
+      embeddedFiles:
+          - name: <implicitly generated file>
+            filename: "<implicitly generated file>.ps1"
+            type: TEXT
+            data:
+                # Powershell code here
+      ```
+
+   5. *python* - Implicitly creates a Python embedded file,
+   `command` becomes `python`, and `args` get prefixed with the implicitly
+   generated file. The file extension is `.py`. `python` (all lowercase) is
+   expected to be available in the runtime environment.
+
+      ```yaml
+      actions:
+        onRun:
+            args: ["--additional-argument"] # optional
+            python:
+                # python code here
+
+      ### syntax sugar equivalent to:
+
+      actions:
+          onRun:
+              command: python
+              args: ["{{Task.File.<implicitly generated file>}}", "--additional-argument"]
+      embeddedFiles:
+          - name: <implicitly generated file>
+            filename: "<implicitly generated file>.py"
+            type: TEXT
+            data:
+                # python code here
+      ```
 
 The host uses the return code of the **command** run to determine success or failure of the Action. A zero exit code
 indicates success, and any non-zero exit code indicates failure. A timeout also indicates failure.
@@ -1157,12 +1312,16 @@ A `<CancelationMethodNotifyThenTerminate>` is the object:
 ```yaml
 mode: "NOTIFY_THEN_TERMINATE"
 notifyPeriodInSeconds: <posinteger> # @optional
+notifyPeriodInSeconds: <posinteger> | <posintstring> # @optional @fmtstring @extension FEATURE_BUNDLE_1 # @optional
 ```
 
-Where:
+Where `<posintstring>` is a string whose value is the string representation of a
+positive integer value in base-10, and:
 
 1. *notifyPeriodInSeconds* — Defines the maximum number of seconds between the two signals. It is possible that the actual
-   duration allowed in a particular cancel event will be less than this amount if circumstances warrant.
+   duration allowed in a particular cancel event will be less than this amount
+   if circumstances warrant. Can only be a `<posintstring>` when using the
+   extension `FEATURE_BUNDLE_1`.
    1. Maximum value: 600
    2. Defaults:
       * 120 if the Action is the "onRun" action of a `<StepActions>` object.
@@ -1216,6 +1375,7 @@ type: "TEXT"
 filename: <Filename> # @optional
 runnable: <bool> # @optional
 data: <DataString> # @fmtstring[host]
+endOfLine: enum("AUTO", "LF", "CRLF") # @optional @extension FEATURE_BUNDLE_1
 ```
 
 * *name* — The name of the embeded file. This value is used in Format String references to this file.
@@ -1224,6 +1384,9 @@ data: <DataString> # @fmtstring[host]
 * *runnable* — A boolean `True` value indicates that the file written to disk should have its execute-permissions set
   to true. Defaults to `False` if not provided.
 * *data* — The string data that will be written to the file exactly as it appears.
+* *endOfLine* — The line endings that the embedded file will have when written
+to disk. If `AUTO` the embedded file will have the default line endings of the
+host operating system. Default is `AUTO`. Requires the `FEATURE_BUNDLE_1` extension.
 
 The fully-qualified path of the file written by the host can be referenced in format strings using the following names:
 
@@ -1235,7 +1398,7 @@ The fully-qualified path of the file written by the host can be referenced in fo
 A string subject to the following constraints:
 
 * Min length: 1
-* Max length: 64
+* Max length: 64. 256 if using extension `FEATURE_BUNDLE_1`.
 * Characters allowed: Any characters allowed in filenames on the host operating system.
 
 #### 6.1.2. `<DataString>`
@@ -1257,7 +1420,7 @@ A string subject to the following constraints:
    * The underscore character ('_').
 2. Must start with a letter or underscore character.
 3. Minimum length: 1 character
-4. Maximum length: 64 character
+4. Maximum length: 64 characters. 512 characters if using extension `FEATURE_BUNDLE_1`.
 
 ### 7.2. `<Description>`
 
