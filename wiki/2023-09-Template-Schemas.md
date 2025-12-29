@@ -935,8 +935,9 @@ The Script of a Step defines the properties of the action that the Step runs on 
 A `<StepScript>` is the object:
 
 ```yaml
-actions: <StepActions>
-embeddedFiles: [ <EmbeddedFile>, ... ] # @optional
+actions: <StepActions> # @incompatible python | bash | cmd | powershell | node
+embeddedFiles: [ <EmbeddedFile>, ... ] # @optional @incompatible python | bash | cmd | powershell | node
+python | bash | cmd | powershell | node: <SimpleAction> # @optional @fmtstring[host] @incompatible command embeddedFiles @extension FEATURE_BUNDLE_1
 ```
 
 Where:
@@ -946,6 +947,8 @@ Where:
    Task is running within the Session. See: [&lt;EmbeddedFile&gt;](#6-embeddedfile).
    1. Minimum number of items: If defined, then there must be at least one element in this list.
    2. Maximum number of items: There is no limit on the number of elements in this list.
+3. *bash | cmd | node | powershell | python* - Syntactic sugar for scripts,
+   removes some commonly needed boilerplate for the given script interpreter.
 
 The format string scopes available to format strings within a `<StepScript>` are:
 
@@ -1049,7 +1052,7 @@ onExit: <Action> # optional
 1. *onEnter* — The action run when the environment is being entered on a host.
 2. *onExit* — The action run when the environment is being exited on a host.
 
-   >   **NOTE:** When *onExit* action does not define a *timeout* the action will default to 300
+   > **NOTE:** When *onExit* action does not define a *timeout* the action will default to 300
    seconds, or five minutes. Job schedulers may provide the ability to cancel jobs/steps/tasks. A
    reasonable default expectation should be that OpenJobDescription sessions are able to end and
    cleanup within a bound amount of time.
@@ -1087,19 +1090,18 @@ A string value subject to the following constraints:
 An Action is a specific command with arguments that is run on a host. An `<Action>` is the object:
 
 ```yaml
-command: <CommandString> # @fmtstring[host] @incompatible python | bash | cmd | powershell | node
+command: <CommandString> # @fmtstring[host]
 args: [ <ArgString>, ... ] # @optional @fmtstring[host]
 timeout: <posinteger> # @optional
 timeout: <posinteger> | <posintstring> # @optional @fmtstring @extension FEATURE_BUNDLE_1
 cancelation: <CancelationMethod> # @optional
-python | bash | cmd | powershell | node: <DataString> # @optional @fmtstring[host] @incompatible command @extension FEATURE_BUNDLE_1
 ```
 
 Where `<posintstring>` is a string whose value is the string representation of a
 positive integer value in base-10, and:
 
 1. *command* — A [Format String](#73-format-strings) containing the name of a runnable command that is run on a Worker
-   host. Cannot be used when *python | bash | cmd | powershell | node* is provided.
+   host.
 2. *args* — An array of [Format Strings](#73-format-strings) that will be passed as arguments to the **command** when the
    command is run on the host.
 3. *timeout* — The positive number of seconds that the command is given to successfully run to completion. A command that
@@ -1120,141 +1122,6 @@ positive integer value in base-10, and:
 
 4. *cancelation* — If defined, provides details regarding how this action should be canceled. If not provided, then it is
    treated as though provided with `<CancelationMethodTerminate>`.
-5. *bash | cmd | node | powershell | python* - Syntactic sugar for scripts,
-removes some commonly needed boilerplate for the given script interpreter.
-Removes the need for the `command` property. Implicitly prefixes the `args` property.
-Removes the need for the `embeddedFiles` property.
-Cannot be used when `command` is provided. Requires the `FEATURE_BUNDLE_1` extension.
-   1. *bash* - Implicitly creates a Bash embedded file,
-   `command` becomes `bash`, and `args` get prefixed with the implicitly
-   generated file. The file extension is `.sh`. `bash` (all lowercase) is
-   expected to be available in the runtime environment.
-
-      ```yaml
-      actions:
-        onRun:
-            args: ["--additional-argument"] # optional
-            bash:
-                # bash code here
-
-      ### syntax sugar equivalent to:
-
-      actions:
-          onRun:
-              command: bash
-              args: ["{{Task.File.<implicitly generated file>}}", "--additional-argument"]
-      embeddedFiles:
-          - name: <implicitly generated file>
-            filename: "<implicitly generated file>.sh"
-            type: TEXT
-            data:
-                # bash code here
-      ```
-
-   2. *cmd* - Implicitly creates a Batch embedded file,
-   `command` becomes `cmd`, and `args` get prefixed with
-   `["/C", "{{Task.File.<implicitly generated file>}}"]`. The file extension is `.bat`.
-   `cmd` (all lowercase) is expected to be available in the runtime environment.
-
-      ```yaml
-      actions:
-        onRun:
-            args: ["--additional-argument"] # optional
-            cmd:
-                # batch code here
-
-      ### syntax sugar equivalent to:
-
-      actions:
-          onRun:
-              command: cmd
-              args: ["/C", "{{Task.File.<implicitly generated file>}}", "--additional-argument"]
-      embeddedFiles:
-          - name: <implicitly generated file>
-            filename: "<implicitly generated file>.bat"
-            type: TEXT
-            data:
-                # batch code here
-      ```
-
-   3. *node* - Implicitly creates a JavaScript embedded file,
-   `command` becomes `node`, and `args` get prefixed with the implicitly
-   generated file. The file extension is `.js`. `node` (all lowercase) is
-   expected to be available in the runtime environment.
-
-      ```yaml
-      actions:
-        onRun:
-            args: ["--additional-argument"] # optional
-            node:
-                # JavaScript code here
-
-      ### syntax sugar equivalent to:
-
-      actions:
-          onRun:
-              command: node
-              args: ["{{Task.File.<implicitly generated file>}}", "--additional-argument"]
-      embeddedFiles:
-          - name: <implicitly generated file>
-            filename: "<implicitly generated file>.js"
-            type: TEXT
-            data:
-                # JavaScript code here
-      ```
-
-   4. *powershell* - Implicitly creates a Powershell embedded file,
-   `command` becomes `powershell`, and `args` get prefixed with
-   `["-File", "{{Task.File.<implicitly generated file>}}"]`.
-   The file extension is `.ps1`. `powershell` (all lowercase) is
-   expected to be available in the runtime environment.
-
-      ```yaml
-      actions:
-        onRun:
-            args: ["--additional-argument"] # optional
-            powershell:
-                # powershell code here
-
-      ### syntax sugar equivalent to:
-
-      actions:
-          onRun:
-              command: powershell
-              args: ["-File", "{{Task.File.<implicitly generated file>}}", "--additional-argument"]
-      embeddedFiles:
-          - name: <implicitly generated file>
-            filename: "<implicitly generated file>.ps1"
-            type: TEXT
-            data:
-                # Powershell code here
-      ```
-
-   5. *python* - Implicitly creates a Python embedded file,
-   `command` becomes `python`, and `args` get prefixed with the implicitly
-   generated file. The file extension is `.py`. `python` (all lowercase) is
-   expected to be available in the runtime environment.
-
-      ```yaml
-      actions:
-        onRun:
-            args: ["--additional-argument"] # optional
-            python:
-                # python code here
-
-      ### syntax sugar equivalent to:
-
-      actions:
-          onRun:
-              command: python
-              args: ["{{Task.File.<implicitly generated file>}}", "--additional-argument"]
-      embeddedFiles:
-          - name: <implicitly generated file>
-            filename: "<implicitly generated file>.py"
-            type: TEXT
-            data:
-                # python code here
-      ```
 
 The host uses the return code of the **command** run to determine success or failure of the Action. A zero exit code
 indicates success, and any non-zero exit code indicates failure. A timeout also indicates failure.
@@ -1402,6 +1269,8 @@ A string subject to the following constraints:
 * Max length: 64. 256 if using extension `FEATURE_BUNDLE_1`.
 * Characters allowed: Any characters allowed in filenames on the host operating system.
 
+<a name="data-string"></a>
+
 #### 6.1.2. `<DataString>`
 
 A [Format String](#73-format-strings) subject to the following constraints:
@@ -1472,25 +1341,222 @@ for the symbol `Param.Name` of "Bob", the resulting resolved string is
 |`Session.HasPathMappingRules`|This value can be used to determine whether path mapping rules are available to the Session. It is string valued, with values "true" or "false". "true" means that the path mapping JSON contains path mapping rules. "false" means that the contents of the path mapping JSON are the empty object.|This is available within all Environment Script Actions & Embedded Files, and all Step Script Actions and Embedded Files.|
 |`Session.PathMappingRulesFile`|This is a string whose value is the location of a JSON file on the worker node's local disk that contains the path mapping rule substitutions for the Session.|This is available within all Environment Script Actions & Embedded Files, and all Step Script Actions and Embedded Files.|
 
-## 8. Additional Information
+## 8. `<SimpleAction>`
+
+This object is only available in the extension `FEATURE_BUNDLE_1`
+
+A SimpleAction is syntactic sugar for a command with arguments that is run on
+a host. It removes some commonly needed boilerplate for the given script
+interpreter. In contrast to `<Action>`, `<SimpleAction>` removes the need for the
+`command` property, implicitly prefixes the `args` property, and removes the
+need for the `embeddedFiles` property.
+
+The behaviour of the syntactic sugar depends on the key it was specified with:
+
+* *bash* - Implicitly creates a Bash embedded file,
+`command` becomes `bash`, and `args` get prefixed with the implicitly
+generated file. The file extension is `.sh`. `bash` (all lowercase) is
+expected to be available in the runtime environment.
+
+  ```yaml
+  steps:
+    - name: BashStep
+      bash:
+        args: ["--additional-argument"] # optional
+        script: |
+          # bash code here
+  
+  ### syntax sugar equivalent to:
+
+  steps:
+    - name: BashStep
+      actions:
+          onRun:
+              command: bash
+              args: ["{{Task.File.<implicitly generated file>}}", "--additional-argument"]
+      embeddedFiles:
+          - name: <implicitly generated file>
+            filename: "<implicitly generated file>.sh"
+            type: TEXT
+            data:
+                # bash code here
+  ```
+
+* *cmd* - Implicitly creates a Batch embedded file,
+`command` becomes `cmd`, and `args` get prefixed with
+`["/C", "{{Task.File.<implicitly generated file>}}"]`. The file extension is
+`.bat`. `cmd` (all lowercase) is expected to be available in the runtime environment.
+
+  ```yaml
+  steps:
+    - name: CmdStep
+      cmd:
+        args: ["--additional-argument"] # optional
+        script: |
+          # batch code here
+
+  ### syntax sugar equivalent to:
+
+  steps:
+    - name: CmdStep
+      actions:
+          onRun:
+              command: cmd
+              args: ["/C", "{{Task.File.<implicitly generated file>}}", "--additional-argument"]
+      embeddedFiles:
+          - name: <implicitly generated file>
+            filename: "<implicitly generated file>.bat"
+            type: TEXT
+            data:
+                # batch code here
+  ```
+
+* *node* - Implicitly creates a JavaScript embedded file,
+`command` becomes `node`, and `args` get prefixed with the implicitly
+generated file. The file extension is `.js`. `node` (all lowercase) is
+expected to be available in the runtime environment.
+
+  ```yaml
+  steps:
+    - name: NodeStep
+      node:
+        args: ["--additional-argument"] # optional
+        script: |
+            # JavaScript code here
+
+  ### syntax sugar equivalent to:
+
+  steps:
+    - name: NodeStep
+      actions:
+          onRun:
+              command: node
+              args: ["{{Task.File.<implicitly generated file>}}", "--additional-argument"]
+      embeddedFiles:
+          - name: <implicitly generated file>
+            filename: "<implicitly generated file>.js"
+            type: TEXT
+            data:
+                # JavaScript code here
+  ```
+
+* *powershell* - Implicitly creates a Powershell embedded file,
+`command` becomes `powershell`, and `args` get prefixed with
+`["-File", "{{Task.File.<implicitly generated file>}}"]`.
+The file extension is `.ps1`. `powershell` (all lowercase) is
+expected to be available in the runtime environment.
+
+  ```yaml
+  steps:
+    - name: PowershellStep
+      powershell:
+        args: ["--additional-argument"] # optional
+        script: |
+            # powershell code here
+
+  ### syntax sugar equivalent to:
+
+  steps:
+    - name: PowershellStep
+      actions:
+          onRun:
+              command: powershell
+              args: ["-File", "{{Task.File.<implicitly generated file>}}", "--additional-argument"]
+      embeddedFiles:
+          - name: <implicitly generated file>
+            filename: "<implicitly generated file>.ps1"
+            type: TEXT
+            data:
+                # Powershell code here
+  ```
+
+* *python* - Implicitly creates a Python embedded file,
+`command` becomes `python`, and `args` get prefixed with the implicitly
+generated file. The file extension is `.py`. `python` (all lowercase) is
+expected to be available in the runtime environment.
+
+  ```yaml
+  steps: 
+    - name: PythonStep
+      python:
+        args: ["--additional-argument"] # optional
+            # python code here
+
+  ### syntax sugar equivalent to:
+
+  steps: 
+    - name: PythonStep
+      actions:
+          onRun:
+              command: python
+              args: ["{{Task.File.<implicitly generated file>}}", "--additional-argument"]
+      embeddedFiles:
+          - name: <implicitly generated file>
+            filename: "<implicitly generated file>.py"
+            type: TEXT
+            data:
+                # python code here
+  ```
+
+A `<SimpleAction>` is the object:
+
+```yaml
+script: <DataString> # @fmtstring[host]
+args: [ <ArgString>, ... ] # @optional @fmtstring[host]
+timeout: <posinteger> | <posintstring> # @optional @fmtstring
+cancelation: <CancelationMethod> # @optional
+```
+
+Where `<posintstring>` is a string whose value is the string representation of a
+positive integer value in base-10, and:
+
+1. *script* — The [Data String](#data-string) that will be written to the script
+   exactly as it appears.
+2. *args* — An array of [Format Strings](#73-format-strings) that will be passed
+   as arguments to the **command** when the command is run on the host.
+3. *timeout* — The positive number of seconds that the command is given to
+   successfully run to completion. A command that does not return before the
+   timeout is canceled and is treated as a failed run.
+
+   The default timeout, if not provided, depends on the action:
+
+   | Action container | Action | Default |
+   | --- | --- | --- |
+   | `<StepActions>` | `onRun` | *no timeout* |
+   | `<EnvironmentActions>` | `onEnter` | *no timeout* |
+   | `<EnvironmentActions>` | `onExit` | 300 seconds (five minutes) <sup>1</sup> |
+
+   <sup>1</sup> Environment exit actions are treated specially. Job schedulers
+   may provide the ability to cancel jobs, steps, and tasks. A reasonable
+   default expectation should be that OpenJobDescription sessions are able to
+   end and cleanup within a bound duration of time.
+
+4. *cancelation* — If defined, provides details regarding how this action should
+   be canceled. If not provided, then it is treated as though provided with `<CancelationMethodTerminate>`.
+
+The host uses the return code of the interpreter run to determine success or
+failure of the SimpleAction. A zero exit code indicates success, and any
+non-zero exit code indicates failure. A timeout also indicates failure.
+
+## 9. Additional Information
 
 * The Cc unicode character category is all [C0](https://www.unicode.org/charts/PDF/U0000.pdf)
   and [C1](https://www.unicode.org/charts/PDF/U0080.pdf) characters.
   * This is a category of 65 non-printable characters such as NUL, BEL, Backspace, DEL,
      tab, newline, carriage return, and form feed.
 
-## 9. License
+## 10. License
 
 Copyright ©2023 Amazon.com Inc. or Affiliates (“Amazon”).
 
 This Agreement sets forth the terms under which Amazon is making the Open Job Description
 Specification (“the Specification”) available to you.
 
-### 9.1. Copyrights
+### 10.1. Copyrights
 
 This Specification is licensed under [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/deed.en).
 
-### 9.2. Patents
+### 10.2. Patents
 
 Subject to the terms and conditions of this Agreement, Amazon hereby grants to
 you a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable
@@ -1508,7 +1574,7 @@ Specification constitute direct or contributory patent infringement, then any
 patent licenses granted to You under this Agreement shall terminate as of the
 date such litigation is filed.
 
-### 9.3. Additional Information
+### 10.3. Additional Information
 
 For more info see the [LICENSE file].
 

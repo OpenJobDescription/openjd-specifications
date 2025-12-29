@@ -143,11 +143,14 @@ steps:
 ```yaml
 steps:
 - name: RunPythonScript
-  script:
-    actions:
-      onRun:
-        python: |
-          print('Hello from Python!')
+  python:
+    args: ["--additional-argument"]
+    timeout: 5
+    cancelation: 
+        mode: "NOTIFY_THEN_TERMINATE"
+        notifyPeriodInSeconds: 30
+    script: |
+      print('Hello from Python!') 
 ```
 
 Compare to
@@ -159,7 +162,11 @@ steps:
     actions:
       onRun:
         command: python
-        args: ["{{Task.File.hello}}"]
+        args: ["{{Task.File.hello}}", "--additional-argument"]
+        timeout: 5
+        cancelation: 
+            mode: "NOTIFY_THEN_TERMINATE"
+            notifyPeriodInSeconds: 30
     embeddedFiles:
       - name: hello
         filename: "hello.py"
