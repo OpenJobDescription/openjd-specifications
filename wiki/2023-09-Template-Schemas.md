@@ -838,11 +838,13 @@ See section `<IntTaskParameterDefinition>` for the definitions of `<IntRangeExpr
     2. *targetRuntimeSeconds* — If provided and its value is greater than 0, the number of seconds
         to aim for when forming chunks. A scheduler can ignore this, or dynamically adjust
         the chunk task count to be closer to this value once some chunks have completed.
+        When the value is 0, a scheduler should ignore this configuration and use `defaultTaskCount`
+        for each chunk.
         1. Minimum value: 0
     3. *rangeConstraint* — If CONTIGUOUS, a chunk must always be a contiguous range
         of integers with two integers separated by "-" like a single "5-5" or interval "1-10".
         If NONCONTIGUOUS, a chunk can be an arbitrary set of integers following the
-        `<IntRangeExpr>` syntax like "1,3,7-10:2".
+        `<IntRangeExpr>` syntax like "1,3,7-10:2". Frame ranges are inclusive, so "10-20" contains 11 frames.
 5. `<IntRangeList>` is subject to the constraints:
    * Minimum number of elements: If provided, then this list must contain at least one element.
    * Maximum number of elements: The list must not contain more than 1024 elements.
