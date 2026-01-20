@@ -1,0 +1,17 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - 'RESULT: {{ Param.Float }} - {{    Param.End}}  '
+parameterDefinitions:
+- name: Float
+  type: STRING
+  default: '4.098'
+- name: End
+  type: STRING
+  default: '10'

@@ -1,0 +1,15 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+- name: Step2
+  dependencies:
+  - dependsOn: Step1
+  script:
+    actions:
+      onRun:
+        command: echo

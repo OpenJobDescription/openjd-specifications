@@ -1,0 +1,13 @@
+specificationVersion: environment-2023-09
+environment:
+  name: TestEnv
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args:
+        - entering
+      onExit:
+        command: echo
+        args:
+        - exiting

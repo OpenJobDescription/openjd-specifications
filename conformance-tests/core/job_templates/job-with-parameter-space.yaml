@@ -1,0 +1,15 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: RenderFrames
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Frame
+      type: INT
+      range: 1-10
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - '{{Task.Param.Frame}}'

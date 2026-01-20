@@ -1,0 +1,4 @@
+expected_output:
+  - "MERGE:JobParam=test-value,EnvParam=test-value"
+forbidden_output:
+  - "{{Param."

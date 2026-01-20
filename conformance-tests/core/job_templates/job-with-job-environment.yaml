@@ -1,0 +1,14 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+jobEnvironments:
+- name: SetupEnv
+  variables:
+    MY_VAR: value
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - $MY_VAR

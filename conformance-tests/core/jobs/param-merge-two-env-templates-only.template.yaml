@@ -1,0 +1,15 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: Foo
+  type: INT
+- name: Bar
+  type: STRING
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - MERGE:Foo={{Param.Foo}},Bar={{Param.Bar}}

@@ -1,0 +1,17 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - RESULT:{{Param.A}}{{Param.B}}
+parameterDefinitions:
+- name: A
+  type: STRING
+  default: Hello
+- name: B
+  type: STRING
+  default: World

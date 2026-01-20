@@ -1,0 +1,5 @@
+expected_output:
+  - "RESULT:high"
+forbidden_output:
+  - "{{Param."
+  - "{{Task."

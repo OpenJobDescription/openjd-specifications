@@ -1,0 +1,14 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  hostRequirements:
+    amounts:
+    - name: amount.worker.vcpu
+      min: 4
+    - name: amount.worker.vcpu
+      min: 8
+  script:
+    actions:
+      onRun:
+        command: echo

@@ -1,0 +1,28 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Valid1
+  script:
+    actions:
+      onRun:
+        command: echo
+- name: CycleA
+  dependencies:
+  - dependsOn: Valid1
+  - dependsOn: CycleB
+  script:
+    actions:
+      onRun:
+        command: echo
+- name: CycleB
+  dependencies:
+  - dependsOn: CycleA
+  script:
+    actions:
+      onRun:
+        command: echo
+- name: Valid2
+  script:
+    actions:
+      onRun:
+        command: echo

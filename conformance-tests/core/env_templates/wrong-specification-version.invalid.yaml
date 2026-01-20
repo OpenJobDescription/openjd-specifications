@@ -1,0 +1,5 @@
+specificationVersion: environment-2020-01
+environment:
+  name: TestEnv
+  variables:
+    MY_VAR: value

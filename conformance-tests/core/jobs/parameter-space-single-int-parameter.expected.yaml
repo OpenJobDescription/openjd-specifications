@@ -1,0 +1,7 @@
+expected_output:
+  - "TASK:Frame=1"
+  - "TASK:Frame=2"
+  - "TASK:Frame=3"
+forbidden_output:
+  - "TASK:Frame=0"
+  - "TASK:Frame=4"

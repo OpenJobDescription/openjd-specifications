@@ -1,0 +1,23 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: StepA
+  script:
+    actions:
+      onRun:
+        command: echo
+- name: StepB
+  script:
+    actions:
+      onRun:
+        command: echo
+- name: StepC
+  script:
+    actions:
+      onRun:
+        command: echo
+- name: StepD
+  script:
+    actions:
+      onRun:
+        command: echo

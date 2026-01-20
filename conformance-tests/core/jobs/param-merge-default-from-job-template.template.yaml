@@ -1,0 +1,15 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: Quality
+  type: STRING
+  default: high
+  allowedValues: [low, medium, high]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - MERGE:default={{Param.Quality}}

@@ -1,0 +1,19 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: Foo
+  type: INT
+  allowedValues:
+  - 10
+  - 30
+  minValue: 5
+  maxValue: 50
+  default: 10
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - MERGE:success

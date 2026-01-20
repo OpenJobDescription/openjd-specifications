@@ -1,0 +1,19 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: MyParam
+  type: STRING
+  allowedValues:
+  - a
+  - b
+  - c
+  userInterface:
+    control: DROPDOWN_LIST
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - '{{Param.MyParam}}'

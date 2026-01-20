@@ -1,0 +1,14 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - 'RESULT:Path: {{Param.Path}}'
+parameterDefinitions:
+- name: Path
+  type: STRING
+  default: /path/with spaces/and$pecial

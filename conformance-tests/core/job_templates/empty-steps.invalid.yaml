@@ -1,0 +1,3 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps: []

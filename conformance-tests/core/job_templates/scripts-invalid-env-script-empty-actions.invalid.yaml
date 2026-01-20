@@ -1,0 +1,12 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+jobEnvironments:
+- name: TestEnv
+  script:
+    actions: {}
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo

@@ -1,0 +1,11 @@
+specificationVersion: jobtemplate-2023-09
+name: Job-{{Param.Required}}
+parameterDefinitions:
+- name: Required
+  type: STRING
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo

@@ -1,0 +1,2 @@
+expected_output:
+  - "MERGE:Foo=5,Bar=hello-world"

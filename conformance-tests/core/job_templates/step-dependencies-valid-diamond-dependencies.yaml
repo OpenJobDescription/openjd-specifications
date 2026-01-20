@@ -1,0 +1,30 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Start
+  script:
+    actions:
+      onRun:
+        command: echo
+- name: BranchA
+  dependencies:
+  - dependsOn: Start
+  script:
+    actions:
+      onRun:
+        command: echo
+- name: BranchB
+  dependencies:
+  - dependsOn: Start
+  script:
+    actions:
+      onRun:
+        command: echo
+- name: End
+  dependencies:
+  - dependsOn: BranchA
+  - dependsOn: BranchB
+  script:
+    actions:
+      onRun:
+        command: echo

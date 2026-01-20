@@ -1,0 +1,5 @@
+expected_output:
+  - "MERGE:default=medium"
+forbidden_output:
+  - "MERGE:default=low"
+  - "MERGE:default=high"

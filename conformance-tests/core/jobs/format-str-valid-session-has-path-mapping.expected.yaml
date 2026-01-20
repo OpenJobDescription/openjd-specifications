@@ -1,0 +1,4 @@
+expected_output:
+  - "HAS_MAPPING:false"
+forbidden_output:
+  - "{{Session."

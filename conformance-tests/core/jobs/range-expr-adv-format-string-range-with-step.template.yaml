@@ -1,0 +1,25 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: Start
+  type: STRING
+  default: "0"
+- name: End
+  type: STRING
+  default: "10"
+- name: Step
+  type: STRING
+  default: "2"
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Val
+      type: INT
+      range: '{{Param.Start}}-{{Param.End}}:{{Param.Step}}'
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - VAL:{{Task.Param.Val}}

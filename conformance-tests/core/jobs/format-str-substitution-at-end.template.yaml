@@ -1,0 +1,14 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - RESULT:prefix-{{Param.Suffix}}
+parameterDefinitions:
+- name: Suffix
+  type: STRING
+  default: suf

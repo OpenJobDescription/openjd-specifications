@@ -1,0 +1,9 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+extensions: []
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo

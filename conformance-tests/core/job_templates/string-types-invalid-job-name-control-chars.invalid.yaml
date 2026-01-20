@@ -1,0 +1,8 @@
+specificationVersion: jobtemplate-2023-09
+name: "Job\0Name"
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
