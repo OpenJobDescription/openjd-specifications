@@ -1,0 +1,19 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: Frame
+  type: STRING
+  default: "5"
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Val
+      type: INT
+      range: '{{Param.Frame}}'
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - VAL:{{Task.Param.Val}}

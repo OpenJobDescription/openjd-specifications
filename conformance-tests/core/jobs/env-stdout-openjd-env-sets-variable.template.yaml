@@ -1,0 +1,16 @@
+specificationVersion: jobtemplate-2023-09
+name: EnvStdoutSetVar
+jobEnvironments:
+  - name: SetVarEnv
+    script:
+      actions:
+        onEnter:
+          command: bash
+          args: ["-c", "echo 'openjd_env: MY_VAR=myvalue'"]
+steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: bash
+          args: ["-c", "echo MY_VAR_IS:$MY_VAR"]

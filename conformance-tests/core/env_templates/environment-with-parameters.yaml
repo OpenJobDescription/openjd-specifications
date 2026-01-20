@@ -1,0 +1,9 @@
+specificationVersion: environment-2023-09
+parameterDefinitions:
+- name: EnvPath
+  type: PATH
+  objectType: DIRECTORY
+environment:
+  name: TestEnv
+  variables:
+    PATH_VAR: '{{Param.EnvPath}}'

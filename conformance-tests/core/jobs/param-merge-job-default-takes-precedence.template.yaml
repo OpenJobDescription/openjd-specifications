@@ -1,0 +1,14 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: Setting
+  type: STRING
+  default: job-value
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - MERGE:success

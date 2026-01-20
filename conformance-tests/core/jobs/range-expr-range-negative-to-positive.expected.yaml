@@ -1,0 +1,15 @@
+expected_output:
+  - "VAL:-5"
+  - "VAL:-4"
+  - "VAL:-3"
+  - "VAL:-2"
+  - "VAL:-1"
+  - "VAL:0"
+  - "VAL:1"
+  - "VAL:2"
+  - "VAL:3"
+  - "VAL:4"
+  - "VAL:5"
+forbidden_output:
+  - "VAL:-6"
+  - "VAL:6"

@@ -1,0 +1,14 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  script:
+    embeddedFiles:
+    - name: myscript
+      type: TEXT
+      data: "echo hello"
+    actions:
+      onRun:
+        command: echo
+        args:
+        - SCRIPT_PATH:{{Task.File.myscript}}

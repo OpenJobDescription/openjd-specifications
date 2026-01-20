@@ -1,0 +1,15 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  script:
+    embeddedFiles:
+    - name: script
+      type: TEXT
+      filename: run.sh
+      data: '#!/bin/bash
+
+        echo hello'
+    actions:
+      onRun:
+        command: '{{Task.File.script}}'

@@ -1,0 +1,15 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: OutputFile
+  type: PATH
+  objectType: FILE
+  dataFlow: OUT
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - '{{Param.OutputFile}}'

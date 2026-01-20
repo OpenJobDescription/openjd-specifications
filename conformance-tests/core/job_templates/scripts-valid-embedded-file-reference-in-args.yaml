@@ -1,0 +1,15 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  script:
+    embeddedFiles:
+    - name: config
+      type: TEXT
+      filename: config.json
+      data: '{"key": "value"}'
+    actions:
+      onRun:
+        command: cat
+        args:
+        - '{{Task.File.config}}'

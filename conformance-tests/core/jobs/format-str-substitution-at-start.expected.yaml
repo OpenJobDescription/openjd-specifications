@@ -1,0 +1,5 @@
+expected_output:
+  - "RESULT:pre-suffix"
+forbidden_output:
+  - "{{Param."
+  - "{{Task."

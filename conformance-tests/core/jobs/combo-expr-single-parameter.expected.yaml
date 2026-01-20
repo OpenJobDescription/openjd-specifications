@@ -1,0 +1,6 @@
+expected_output:
+  - "TASK:A=1"
+  - "TASK:A=2"
+  - "TASK:A=3"
+forbidden_output:
+  - "TASK:A=0"

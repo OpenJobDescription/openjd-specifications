@@ -1,0 +1,4 @@
+expected_output:
+  - "UNSET_ME_IS:UNSET"
+forbidden_output:
+  - "original_value"

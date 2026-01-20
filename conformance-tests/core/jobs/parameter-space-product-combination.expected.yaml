@@ -1,0 +1,8 @@
+expected_output:
+  - "TASK:Frame=1,Layer=fg"
+  - "TASK:Frame=1,Layer=bg"
+  - "TASK:Frame=2,Layer=fg"
+  - "TASK:Frame=2,Layer=bg"
+forbidden_output:
+  - "TASK:Frame=3"
+  - "TASK:Frame=0"

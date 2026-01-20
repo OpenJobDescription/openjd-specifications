@@ -1,0 +1,19 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: Value
+  type: STRING
+  allowedValues:
+  - bbbbb
+  - cccccc
+  minLength: 2
+  maxLength: 10
+  default: bbbbb
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - MERGE:success

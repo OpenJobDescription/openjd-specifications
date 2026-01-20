@@ -1,0 +1,22 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+jobEnvironments:
+- name: TestEnv
+  script:
+    embeddedFiles:
+    - name: setup
+      type: TEXT
+      data: "echo setup"
+    actions:
+      onEnter:
+        command: echo
+        args:
+        - ENV_FILE:{{Env.File.setup}}
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - TASK_RAN

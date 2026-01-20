@@ -1,3 +1,4 @@
 **/.DS_Store
-.vscode
 .kiro
+.vscode
+__pycache__/

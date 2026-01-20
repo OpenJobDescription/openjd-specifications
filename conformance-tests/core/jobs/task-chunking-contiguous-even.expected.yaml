@@ -1,0 +1,6 @@
+expected_output:
+  - "CHUNK:1-5"
+  - "CHUNK:6-10"
+forbidden_output:
+  - "CHUNK:1-10"
+  - "CHUNK:11"

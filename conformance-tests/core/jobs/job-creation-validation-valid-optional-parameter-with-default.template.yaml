@@ -1,0 +1,12 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: OptionalParam
+  type: STRING
+  default: default_value
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
