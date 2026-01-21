@@ -9,6 +9,7 @@ steps:
       data: "echo hello"
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - SCRIPT_PATH:{{Task.File.myscript}}
+        - "-c"
+        - "print(r'SCRIPT_PATH:{{Task.File.myscript}}')"

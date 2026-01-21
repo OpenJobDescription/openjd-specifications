@@ -5,9 +5,10 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - 'RESULT:Path: {{Param.Path}}'
+        - "-c"
+        - "print('RESULT:Path: {{Param.Path}}')"
 parameterDefinitions:
 - name: Path
   type: STRING

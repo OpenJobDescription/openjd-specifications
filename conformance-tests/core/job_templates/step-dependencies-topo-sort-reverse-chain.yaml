@@ -7,23 +7,35 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"
 - name: S2
   dependencies:
   - dependsOn: S3
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"
 - name: S3
   dependencies:
   - dependsOn: S4
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"
 - name: S4
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"

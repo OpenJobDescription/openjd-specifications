@@ -9,6 +9,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - "MERGE:Config={{Param.Config}}"
+        - "-c"
+        - "print(r'MERGE:Config={{Param.Config}}')"

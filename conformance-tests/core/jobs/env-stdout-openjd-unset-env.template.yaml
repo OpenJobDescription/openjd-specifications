@@ -7,12 +7,12 @@ jobEnvironments:
     script:
       actions:
         onEnter:
-          command: bash
-          args: ["-c", "echo 'openjd_unset_env: UNSET_ME'"]
+          command: python
+          args: ["-c", "print('openjd_unset_env: UNSET_ME')"]
 steps:
   - name: Step1
     script:
       actions:
         onRun:
-          command: bash
-          args: ["-c", "echo UNSET_ME_IS:${UNSET_ME:-UNSET}"]
+          command: python
+          args: ["-c", "import os; print('UNSET_ME_IS:' + os.environ.get('UNSET_ME', 'UNSET'))"]

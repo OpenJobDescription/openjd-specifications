@@ -5,6 +5,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - SESSION_DIR:{{Session.WorkingDirectory}}
+        - "-c"
+        - "print(r'SESSION_DIR:{{Session.WorkingDirectory}}')"

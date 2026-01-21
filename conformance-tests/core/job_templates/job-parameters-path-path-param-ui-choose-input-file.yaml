@@ -12,6 +12,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - '{{Param.InputFile}}'
+        - "-c"
+        - "print('{{Param.InputFile}}')"

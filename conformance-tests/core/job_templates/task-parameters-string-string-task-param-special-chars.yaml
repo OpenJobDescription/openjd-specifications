@@ -12,6 +12,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - '{{Task.Param.Path}}'
+        - "-c"
+        - "print('{{Task.Param.Path}}')"

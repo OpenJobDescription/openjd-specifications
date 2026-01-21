@@ -5,9 +5,15 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"
 - name: Step1
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"

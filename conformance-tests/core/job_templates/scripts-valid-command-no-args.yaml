@@ -5,4 +5,7 @@ steps:
   script:
     actions:
       onRun:
-        command: /usr/bin/true
+        command: python
+        args:
+        - "-c"
+        - ""

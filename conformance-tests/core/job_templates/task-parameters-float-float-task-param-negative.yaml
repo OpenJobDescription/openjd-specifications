@@ -15,6 +15,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - '{{Task.Param.Offset}}'
+        - "-c"
+        - "print('{{Task.Param.Offset}}')"

@@ -26,4 +26,7 @@ steps:
       data: content5
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"

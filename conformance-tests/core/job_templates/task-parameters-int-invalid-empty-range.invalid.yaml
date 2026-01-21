@@ -10,6 +10,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - '{{Task.Param.Frame}}'
+        - "-c"
+        - "print('{{Task.Param.Frame}}')"

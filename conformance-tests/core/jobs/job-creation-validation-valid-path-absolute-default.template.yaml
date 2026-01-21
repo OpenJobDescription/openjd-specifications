@@ -9,6 +9,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - OUTPUT:{{Param.OutputDir}}
+        - "-c"
+        - "print(r'OUTPUT:{{Param.OutputDir}}')"

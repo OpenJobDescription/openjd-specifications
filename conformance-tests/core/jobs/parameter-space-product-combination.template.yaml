@@ -17,6 +17,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - TASK:Frame={{Task.Param.Frame}},Layer={{Task.Param.Layer}}
+        - "-c"
+        - "print(r'TASK:Frame={{Task.Param.Frame}},Layer={{Task.Param.Layer}}')"

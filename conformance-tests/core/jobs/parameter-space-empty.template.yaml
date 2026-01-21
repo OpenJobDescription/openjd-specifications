@@ -5,6 +5,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - TASK:executed
+        - "-c"
+        - "print(r'TASK:executed')"

@@ -5,9 +5,10 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - RESULT:{{Param.Quality}}
+        - "-c"
+        - "print(r'RESULT:{{Param.Quality}}')"
 parameterDefinitions:
 - name: Quality
   type: STRING

@@ -20,6 +20,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - TASK:Frame={{Task.Param.Frame}},Scene={{Task.Param.Scene}}
+        - "-c"
+        - "print(r'TASK:Frame={{Task.Param.Frame}},Scene={{Task.Param.Scene}}')"

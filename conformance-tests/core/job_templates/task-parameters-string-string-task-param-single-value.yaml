@@ -11,6 +11,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - '{{Task.Param.Config}}'
+        - "-c"
+        - "print('{{Task.Param.Config}}')"

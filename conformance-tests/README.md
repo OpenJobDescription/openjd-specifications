@@ -73,9 +73,9 @@ uv run run_openjd_cli_tests.py 'extensions/chunking/*'      # Run chunking exten
 uv run run_openjd_cli_tests.py 'core/job_templates/param-*' # Run specific tests by pattern
 ```
 
-### Known openjd CLI Gaps
+### Known openjd CLI Deviations
 
-The example test runner uses the `openjd` CLI. These tests document correct spec behavior but the CLI implementation has gaps:
+The example test runner uses the `openjd` CLI. The CLI implementation fails several tests either because of missing validations (e.g. duplicate host requirement names) or because of intentional choices (e.g. not allowing absolute paths as defaults for PATH parameters):
 
 - Parameter merge validation (type mismatches, constraint widening/narrowing, default validation)
 - Descending range expressions without explicit negative step

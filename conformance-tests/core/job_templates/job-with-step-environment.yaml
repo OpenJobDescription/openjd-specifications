@@ -9,6 +9,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - $STEP_VAR
+        - "-c"
+        - "print(r'$STEP_VAR')"

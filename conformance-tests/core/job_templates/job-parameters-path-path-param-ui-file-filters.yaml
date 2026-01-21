@@ -21,6 +21,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - '{{Param.ImageFile}}'
+        - "-c"
+        - "print('{{Param.ImageFile}}')"

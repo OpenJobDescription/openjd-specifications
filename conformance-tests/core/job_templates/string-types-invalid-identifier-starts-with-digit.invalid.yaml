@@ -8,6 +8,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - '{{Param.1Invalid}}'
+        - "-c"
+        - "print('{{Param.1Invalid}}')"

@@ -5,6 +5,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - RESULT:Job-{{Task.Param.Frame}}
+        - "-c"
+        - "print(r'RESULT:Job-{{Task.Param.Frame}}')"

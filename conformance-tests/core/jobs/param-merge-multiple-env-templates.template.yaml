@@ -16,6 +16,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - MERGE:Foo={{Param.Foo}},Bar={{Param.Bar}}
+        - "-c"
+        - "print(r'MERGE:Foo={{Param.Foo}},Bar={{Param.Bar}}')"

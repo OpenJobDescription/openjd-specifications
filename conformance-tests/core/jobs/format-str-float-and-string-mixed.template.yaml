@@ -5,9 +5,10 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - RESULT:{{Param.Float}}-{{Param.String}}
+        - "-c"
+        - "print(r'RESULT:{{Param.Float}}-{{Param.String}}')"
 parameterDefinitions:
 - name: Float
   type: STRING

@@ -5,6 +5,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - RESULT:{{Unknown.Variable}}
+        - "-c"
+        - "print(r'RESULT:{{Unknown.Variable}}')"

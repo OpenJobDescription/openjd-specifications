@@ -5,9 +5,10 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - 'RESULT:Value: [{{Param.Empty}}]'
+        - "-c"
+        - "print('RESULT:Value: [{{Param.Empty}}]')"
 parameterDefinitions:
 - name: Empty
   type: STRING

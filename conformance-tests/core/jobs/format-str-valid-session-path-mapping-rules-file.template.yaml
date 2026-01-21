@@ -5,7 +5,8 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - RESULT:true
+        - "-c"
+        - "print(r'RESULT:true')"
         - FILE:{{Session.PathMappingRulesFile}}

@@ -10,4 +10,7 @@ steps:
       data: content
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"

@@ -5,6 +5,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - "HAS_MAPPING:{{Session.HasPathMappingRules}}"
+        - "-c"
+        - "print(r'HAS_MAPPING:{{Session.HasPathMappingRules}}')"

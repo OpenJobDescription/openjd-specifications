@@ -5,6 +5,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - "hello\tworld"
+        - "-c"
+        - "print(r'hello\tworld')"

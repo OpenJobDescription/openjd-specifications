@@ -4,6 +4,7 @@ environment:
   script:
     actions:
       onEnter:
-        command: echo
+        command: python
         args:
-        - entering
+        - "-c"
+        - "print(r'entering')"

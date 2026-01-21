@@ -5,7 +5,10 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"
         cancelation:
           mode: NOTIFY_THEN_TERMINATE
           notifyPeriodInSeconds: '0.5'

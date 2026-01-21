@@ -5,9 +5,10 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - RESULT:{{Param.Undefined}}
+        - "-c"
+        - "print(r'RESULT:{{Param.Undefined}}')"
 parameterDefinitions:
 - name: Defined
   type: STRING

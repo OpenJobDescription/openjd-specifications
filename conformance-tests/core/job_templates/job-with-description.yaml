@@ -6,6 +6,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - hello
+        - "-c"
+        - "print(r'hello')"

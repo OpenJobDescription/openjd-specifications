@@ -5,15 +5,17 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - step1
+        - "-c"
+        - "print(r'step1')"
 - name: Step2
   dependencies:
   - dependsOn: Step1
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - step2
+        - "-c"
+        - "print(r'step2')"
