@@ -5,9 +5,10 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - RESULT:prefix-{{Param.Suffix}}
+        - "-c"
+        - "print(r'RESULT:prefix-{{Param.Suffix}}')"
 parameterDefinitions:
 - name: Suffix
   type: STRING

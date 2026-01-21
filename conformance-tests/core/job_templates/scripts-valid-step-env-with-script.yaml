@@ -7,14 +7,19 @@ steps:
     script:
       actions:
         onEnter:
-          command: echo
+          command: python
           args:
-          - entering step env
+          - "-c"
+          - "print(r'entering step env')"
         onExit:
-          command: echo
+          command: python
           args:
-          - exiting step env
+          - "-c"
+          - "print(r'exiting step env')"
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"

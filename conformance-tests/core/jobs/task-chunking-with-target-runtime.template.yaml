@@ -16,6 +16,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - "CHUNK:{{Task.Param.Frame}}"
+        - "-c"
+        - "print(r'CHUNK:{{Task.Param.Frame}}')"

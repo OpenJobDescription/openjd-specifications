@@ -6,6 +6,12 @@ environment:
   script:
     actions:
       onEnter:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"
       onExit:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"

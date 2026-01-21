@@ -5,7 +5,10 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"
 - name: CycleA
   dependencies:
   - dependsOn: Valid1
@@ -13,16 +16,25 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"
 - name: CycleB
   dependencies:
   - dependsOn: CycleA
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"
 - name: Valid2
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"

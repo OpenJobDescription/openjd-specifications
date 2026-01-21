@@ -5,7 +5,7 @@ steps:
   script:
     actions:
       onRun:
-        command: /bin/bash
+        command: python
         args:
         - -c
-        - echo hello world
+        - print('hello world')

@@ -5,9 +5,10 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - 'RESULT:Count: {{Param.Count}}'
+        - "-c"
+        - "print('RESULT:Count: {{Param.Count}}')"
 parameterDefinitions:
 - name: Count
   type: STRING

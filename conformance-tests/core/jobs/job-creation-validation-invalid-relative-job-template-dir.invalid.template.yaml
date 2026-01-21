@@ -9,6 +9,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - OUTPUT:success
+        - "-c"
+        - "print(r'OUTPUT:success')"

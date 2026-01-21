@@ -9,6 +9,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - "MERGE:JobParam={{Param.JobParam}},EnvParam={{Param.EnvParam}}"
+        - "-c"
+        - "print(r'MERGE:JobParam={{Param.JobParam}},EnvParam={{Param.EnvParam}}')"

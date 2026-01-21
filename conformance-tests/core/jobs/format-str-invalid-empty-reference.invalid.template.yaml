@@ -5,6 +5,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - RESULT:Hello {{}}
+        - "-c"
+        - "print(r'RESULT:Hello {{}}')"

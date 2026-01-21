@@ -5,12 +5,12 @@ jobEnvironments:
     script:
       actions:
         onEnter:
-          command: bash
-          args: ["-c", "echo 'openjd_env: MY_VAR=myvalue'"]
+          command: python
+          args: ["-c", "print('openjd_env: MY_VAR=myvalue')"]
 steps:
   - name: Step1
     script:
       actions:
         onRun:
-          command: bash
-          args: ["-c", "echo MY_VAR_IS:$MY_VAR"]
+          command: python
+          args: ["-c", "import os; print('MY_VAR_IS:' + os.environ.get('MY_VAR', ''))"]

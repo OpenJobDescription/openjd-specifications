@@ -5,21 +5,30 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"
 - name: BranchA
   dependencies:
   - dependsOn: Start
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"
 - name: BranchB
   dependencies:
   - dependsOn: Start
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"
 - name: End
   dependencies:
   - dependsOn: BranchA
@@ -27,4 +36,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"

@@ -13,6 +13,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - TASK:A={{Task.Param.A}},B={{Task.Param.B}}
+        - "-c"
+        - "print(r'TASK:A={{Task.Param.A}},B={{Task.Param.B}}')"

@@ -5,6 +5,6 @@ steps:
   script:
     actions:
       onRun:
-        command: 'echo
+        command: 'python
 
-          hello'
+          -c'

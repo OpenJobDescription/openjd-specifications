@@ -10,6 +10,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - "JOBNAME:Job-{{Param.Version}}-{{Param.Project}}"
+        - "-c"
+        - "print(r'JOBNAME:Job-{{Param.Version}}-{{Param.Project}}')"

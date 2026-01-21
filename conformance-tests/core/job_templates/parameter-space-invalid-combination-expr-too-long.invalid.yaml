@@ -557,5 +557,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
-        args: ["ok"]
+        command: python
+        args:
+        - "-c"
+        - "print(r'ok')"

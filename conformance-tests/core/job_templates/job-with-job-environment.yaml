@@ -9,6 +9,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - $MY_VAR
+        - "-c"
+        - "print(r'$MY_VAR')"

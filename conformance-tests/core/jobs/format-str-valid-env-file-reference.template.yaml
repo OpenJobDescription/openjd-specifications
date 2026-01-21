@@ -9,14 +9,16 @@ jobEnvironments:
       data: "echo setup"
     actions:
       onEnter:
-        command: echo
+        command: python
         args:
-        - ENV_FILE:{{Env.File.setup}}
+        - "-c"
+        - "print(r'ENV_FILE:{{Env.File.setup}}')"
 steps:
 - name: Step1
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - TASK_RAN
+        - "-c"
+        - "print(r'TASK_RAN')"

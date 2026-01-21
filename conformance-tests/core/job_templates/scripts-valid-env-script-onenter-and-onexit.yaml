@@ -5,16 +5,21 @@ jobEnvironments:
   script:
     actions:
       onEnter:
-        command: echo
+        command: python
         args:
-        - entering
+        - "-c"
+        - "print(r'entering')"
       onExit:
-        command: echo
+        command: python
         args:
-        - exiting
+        - "-c"
+        - "print(r'exiting')"
 steps:
 - name: Step1
   script:
     actions:
       onRun:
-        command: echo
+        command: python
+        args:
+        - "-c"
+        - "print()"

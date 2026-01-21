@@ -13,6 +13,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - '{{Task.Param.Scene}}'
+        - "-c"
+        - "print('{{Task.Param.Scene}}')"

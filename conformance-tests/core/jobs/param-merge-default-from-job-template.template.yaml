@@ -10,6 +10,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - MERGE:default={{Param.Quality}}
+        - "-c"
+        - "print(r'MERGE:default={{Param.Quality}}')"

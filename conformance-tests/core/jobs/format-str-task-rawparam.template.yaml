@@ -12,6 +12,7 @@ steps:
   script:
     actions:
       onRun:
-        command: echo
+        command: python
         args:
-        - TASK:Scene={{Task.RawParam.Scene}}
+        - "-c"
+        - "print(r'TASK:Scene={{Task.RawParam.Scene}}')"

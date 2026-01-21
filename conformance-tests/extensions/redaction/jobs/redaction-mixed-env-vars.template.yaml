@@ -9,12 +9,12 @@ jobEnvironments:
     script:
       actions:
         onEnter:
-          command: bash
-          args: ["-c", "echo 'openjd_redacted_env: PRIVATE_VAR=private_value_hidden'"]
+          command: python
+          args: ["-c", "print('openjd_redacted_env: PRIVATE_VAR=private_value_hidden')"]
 steps:
   - name: Step1
     script:
       actions:
         onRun:
-          command: bash
-          args: ["-c", "echo PUBLIC:$PUBLIC_VAR PRIVATE:$PRIVATE_VAR"]
+          command: python
+          args: ["-c", "import os; print('PUBLIC:' + os.environ.get('PUBLIC_VAR', '') + ' PRIVATE:' + os.environ.get('PRIVATE_VAR', ''))"]

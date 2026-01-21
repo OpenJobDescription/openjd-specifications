@@ -10,6 +10,7 @@ steps:
       data: '{"key": "value"}'
     actions:
       onRun:
-        command: cat
+        command: python
         args:
-        - '{{Task.File.config}}'
+        - '-c'
+        - "print(open(r'{{Task.File.config}}').read())"
