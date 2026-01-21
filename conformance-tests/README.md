@@ -15,12 +15,14 @@ Any OpenJD library can use these tests to verify spec compliance.
 
 ```
 conformance-tests/
-├── job_templates/           # Job template validation tests
-├── env_templates/           # Environment template validation tests
-├── jobs/                    # Job execution tests
+├── job_templates-2023-09/   # Job template validation tests
+├── env_templates-2023-09/   # Environment template validation tests
+├── jobs-2023-09/            # Job execution tests
 ├── run_openjd_cli_tests.py
 └── README.md
 ```
+
+Directory names include the specification revision (e.g., `-2023-09`) to support multiple spec versions.
 
 ### Naming Convention
 
@@ -75,10 +77,10 @@ To validate your OpenJD library against these tests:
 The included `run_openjd_cli_tests.py` demonstrates how to run these tests using the `openjd` CLI. Implementers can adapt this approach or write their own runner targeting their library's API.
 
 ```bash
-uv run run_openjd_cli_tests.py                        # Run all tests
-uv run run_openjd_cli_tests.py 'job_templates/*'      # Run job template tests only
-uv run run_openjd_cli_tests.py 'jobs/ext-*'           # Run extension execution tests
-uv run run_openjd_cli_tests.py 'job_templates/3.3*'   # Run host requirements tests
+uv run run_openjd_cli_tests.py                              # Run all tests
+uv run run_openjd_cli_tests.py 'job_templates-2023-09/*'    # Run job template tests only
+uv run run_openjd_cli_tests.py 'jobs-2023-09/ext-*'         # Run extension execution tests
+uv run run_openjd_cli_tests.py 'job_templates-2023-09/3.3*' # Run host requirements tests
 ```
 
 ### Known openjd CLI Deviations
