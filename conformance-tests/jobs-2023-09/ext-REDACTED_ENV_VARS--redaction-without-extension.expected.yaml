@@ -1,0 +1,4 @@
+expected_output:
+  - "VAR:********"
+forbidden_output:
+  - "secret_value_xyz"

@@ -1,0 +1,6 @@
+expected_output:
+  - "SHORT:********"
+  - "LONG:********"
+forbidden_output:
+  - "abc"
+  - "abcdefghijklmnopqrstuvwxyz"

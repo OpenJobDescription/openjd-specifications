@@ -1,0 +1,17 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Scene
+      type: PATH
+      range:
+      - /path/to/scene1
+      - /path/to/scene2
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "{{Task.RawParam.Scene}}"

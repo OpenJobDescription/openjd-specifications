@@ -1,0 +1,20 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+  - FEATURE_BUNDLE_1
+name: EndOfLineLF
+steps:
+- name: Step1
+  script:
+    embeddedFiles:
+    - name: script
+      type: TEXT
+      filename: run.sh
+      endOfLine: LF
+      data: |
+        #!/bin/bash
+        echo "Hello"
+    actions:
+      onRun:
+        command: bash
+        args:
+        - "{{Task.File.script}}"

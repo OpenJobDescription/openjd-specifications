@@ -1,0 +1,11 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+  - FEATURE_BUNDLE_1
+name: BashExecution
+steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: bash
+          args: ["-c", "echo 'BASH_OUTPUT:hello_world'"]

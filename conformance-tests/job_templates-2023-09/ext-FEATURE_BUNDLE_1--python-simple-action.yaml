@@ -1,0 +1,12 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+  - FEATURE_BUNDLE_1
+name: PythonSimpleAction
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        script: |
+          #!/usr/bin/env python3
+          print("Hello")

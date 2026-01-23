@@ -1,0 +1,14 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  script:
+    embeddedFiles:
+    - name: script
+      type: BINARY
+      data: echo hello
+    actions:
+      onRun:
+        command: echo
+        args:
+        - hello

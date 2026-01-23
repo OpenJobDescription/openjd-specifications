@@ -1,0 +1,16 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+  - FEATURE_BUNDLE_1
+name: SimpleActionWithEmbeddedFiles
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        script: |
+          #!/bin/bash
+          echo "Hello"
+    embeddedFiles:
+    - name: test.txt
+      type: TEXT
+      data: "test data"

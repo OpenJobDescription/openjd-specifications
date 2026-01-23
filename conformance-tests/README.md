@@ -94,3 +94,9 @@ The example test runner uses the `openjd` CLI. The CLI implementation fails seve
 - Range item limit (1024) enforcement
 - Nested associative parameter length validation
 - Duplicate host requirement name detection
+- minLength=0 for STRING parameters (CLI requires minLength > 0)
+- Empty args array in actions (CLI requires at least 1 arg if args is provided)
+- decimals property on non-SPINBOX FLOAT parameters
+- Empty string/path values in task parameter ranges
+- Embedded filename path separator validation
+- FEATURE_BUNDLE_1 extension (SimpleAction, endOfLine, extended filename length)
