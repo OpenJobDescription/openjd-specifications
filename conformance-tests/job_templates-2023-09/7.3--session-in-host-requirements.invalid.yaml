@@ -1,0 +1,15 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  hostRequirements:
+    attributes:
+    - name: attr.worker.os.family
+      allOf:
+      - "{{Session.WorkingDirectory}}"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "test"

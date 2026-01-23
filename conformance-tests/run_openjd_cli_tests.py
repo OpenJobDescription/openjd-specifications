@@ -26,7 +26,6 @@ from pathlib import Path
 import yaml
 
 CONFORMANCE_DIR = Path(__file__).parent
-TEST_SUITES = ["core", "extensions/chunking", "extensions/redaction"]
 
 
 def load_yaml_or_json(path: Path):
@@ -143,51 +142,29 @@ def run_job_tests(directory: Path, pattern: str = None) -> tuple[int, int]:
 
 def main():
     parser = argparse.ArgumentParser(description="Run OpenJD conformance tests")
-    parser.add_argument("pattern", nargs="?", help="Glob pattern (e.g. 'core/*', 'extensions/chunking/*', 'core/job_templates/param-*')")
+    parser.add_argument("pattern", nargs="?", default="*/*", help="Glob pattern (e.g. 'job_templates-2023-09/*', 'jobs-2023-09/ext-*')")
     args = parser.parse_args()
     
     total_passed = total_failed = 0
-    categories = ["job_templates", "env_templates", "jobs"]
+    dir_pattern, _, test_pattern = args.pattern.rpartition("/")
+    test_pattern = test_pattern if test_pattern != "*" else None
     
-    for suite in TEST_SUITES:
-        suite_dir = CONFORMANCE_DIR / suite
-        if not suite_dir.exists():
+    test_dirs = sorted(d for d in CONFORMANCE_DIR.iterdir() if d.is_dir() and "-" in d.name)
+    
+    for directory in test_dirs:
+        if not fnmatch.fnmatch(directory.name, dir_pattern or "*"):
             continue
         
-        for category in categories:
-            directory = suite_dir / category
-            if not directory.exists() or not any(directory.iterdir()):
-                continue
-            
-            suite_category = f"{suite}/{category}"
-            
-            # Parse pattern: suite/category/test_pattern or just test_pattern
-            test_pattern = None
-            if args.pattern:
-                parts = args.pattern.rstrip("/").split("/")
-                if len(parts) >= 2:
-                    # Pattern includes suite/category prefix
-                    pattern_prefix = "/".join(parts[:-1]) if parts[-1] != "*" else "/".join(parts[:-1])
-                    if parts[-1] == "*":
-                        if not fnmatch.fnmatch(suite_category, args.pattern.rstrip("/*") + "/*"):
-                            continue
-                    elif not suite_category.startswith("/".join(parts[:-1])):
-                        continue
-                    else:
-                        test_pattern = parts[-1]
-                else:
-                    test_pattern = args.pattern
-            
-            print(f"\n{suite_category}:")
-            
-            if category == "jobs":
-                passed, failed = run_job_tests(directory, test_pattern)
-            else:
-                passed, failed = run_template_tests(directory, test_pattern)
-            
-            total_passed += passed
-            total_failed += failed
-            print(f"  {passed} passed, {failed} failed")
+        print(f"\n{directory.name}:")
+        
+        if directory.name.startswith("jobs"):
+            passed, failed = run_job_tests(directory, test_pattern)
+        else:
+            passed, failed = run_template_tests(directory, test_pattern)
+        
+        total_passed += passed
+        total_failed += failed
+        print(f"  {passed} passed, {failed} failed")
     
     print(f"\nTotal: {total_passed} passed, {total_failed} failed")
     sys.exit(0 if total_failed == 0 else 1)

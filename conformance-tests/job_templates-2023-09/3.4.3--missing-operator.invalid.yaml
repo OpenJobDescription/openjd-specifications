@@ -1,0 +1,18 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: A
+      type: INT
+      range: [1, 2]
+    - name: B
+      type: INT
+      range: [1, 2]
+    combination: "A B"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["test"]

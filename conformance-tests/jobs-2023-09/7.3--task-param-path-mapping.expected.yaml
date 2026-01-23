@@ -1,0 +1,3 @@
+expected_output:
+  - "TASK:/path/to/file_a"
+  - "TASK:/path/to/file_b"

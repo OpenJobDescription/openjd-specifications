@@ -1,0 +1,16 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: MyParam
+  type: INT
+  userInterface:
+    control: SPIN_BOX
+    singleStepDelta: 0
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "{{Param.MyParam}}"

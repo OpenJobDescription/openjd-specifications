@@ -1,0 +1,4 @@
+expected_output:
+  - "MY_VAR:NOT_SET"
+forbidden_output:
+  - "secret_data"

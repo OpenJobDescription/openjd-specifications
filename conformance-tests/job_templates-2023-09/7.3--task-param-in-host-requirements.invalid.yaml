@@ -1,0 +1,20 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Feature
+      type: STRING
+      range: ["gpu", "cpu"]
+  hostRequirements:
+    attributes:
+    - name: attr.worker.os.family
+      allOf:
+      - "{{Task.Param.Feature}}"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "{{Task.Param.Feature}}"

@@ -1,0 +1,4 @@
+expected_output:
+  - "openjd_redacted_env: MY_SECRET=********"
+forbidden_output:
+  - "actual_secret_value"
