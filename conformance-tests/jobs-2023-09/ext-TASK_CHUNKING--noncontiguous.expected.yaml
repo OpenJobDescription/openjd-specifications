@@ -1,2 +1,6 @@
 expected_output:
-  - "CHUNK:"
+  - "CHUNK:1,6"
+  - "CHUNK:2,7"
+  - "CHUNK:3,8"
+  - "CHUNK:4,9"
+  - "CHUNK:5,10"

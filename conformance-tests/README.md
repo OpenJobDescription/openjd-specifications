@@ -44,6 +44,20 @@ Examples:
 - `2.1--missing-name.invalid.yaml` - Invalid test for Section 2.1
 - `ext-TASK_CHUNKING--contiguous-even.template.yaml` - TASK_CHUNKING extension execution test
 
+### Extension Tests
+
+Extensions must be explicitly enabled in templates via the `extensions` field:
+
+```yaml
+specificationVersion: jobtemplate-2023-09
+extensions:
+  - REDACTED_ENV_VARS
+name: MyJob
+# ...
+```
+
+Tests prefixed with `ext-<NAME>` verify extension behavior. Some tests (like `ext-REDACTED_ENV_VARS--redaction-without-extension`) intentionally omit the `extensions` field to verify behavior when extension syntax is used without enabling the extension.
+
 ### Auxiliary Files
 
 Job tests support these optional auxiliary files (YAML or JSON):
