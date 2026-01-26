@@ -9,7 +9,7 @@ parameterDefinitions:
     fileFilters:
     - label: Max Length
       patterns:
-      - '*.abcdefghijklmnop'
+      - '*.abcdefghijklmnopqr'
 steps:
 - name: Step1
   script:

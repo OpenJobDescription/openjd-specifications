@@ -1,4 +1,4 @@
 expected_output:
-  - "VAR:********"
+  - "VAR:NOT_SET"
 forbidden_output:
   - "secret_value_xyz"
