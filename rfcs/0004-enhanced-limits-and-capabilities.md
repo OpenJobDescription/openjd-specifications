@@ -2,7 +2,7 @@
 * RFC Tracking Issue: <https://github.com/OpenJobDescription/openjd-specifications/issues/92>
 * Start Date: 2025-10-03
 * Specification Version: 2023-09 extension FEATURE_BUNDLE_1
-* Accepted On:
+* Accepted On: 2026-01-09
 
 ## Summary
 
@@ -146,11 +146,11 @@ steps:
   python:
     args: ["--additional-argument"]
     timeout: 5
-    cancelation: 
+    cancelation:
         mode: "NOTIFY_THEN_TERMINATE"
         notifyPeriodInSeconds: 30
     script: |
-      print('Hello from Python!') 
+      print('Hello from Python!')
 ```
 
 Compare to
@@ -164,7 +164,7 @@ steps:
         command: python
         args: ["{{Task.File.hello}}", "--additional-argument"]
         timeout: 5
-        cancelation: 
+        cancelation:
             mode: "NOTIFY_THEN_TERMINATE"
             notifyPeriodInSeconds: 30
     embeddedFiles:

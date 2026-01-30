@@ -59,7 +59,7 @@ Where:
    See: [&lt;JobParameterDefinition&gt;](#2-jobparameterdefinition).
       * Minimum number of elements: If provided, then this list must contain at least one element.
       * Maximum number of elements: The list must not contain more than 50
-      elements or 100 elements with the `FEATURE_BUNDLE_1` extension.
+      elements or 200 elements with the `FEATURE_BUNDLE_1` extension.
 7. *jobEnvironments* — An ordered list of the environments that are required to run Tasks in the Jobs created by this Job
    Template. These are entered in the order provided at the start of every Session for Tasks in the Job, and exited in the
    reverse order at the end of those Sessions. See: [&lt;Environment&gt;](#4-environment). Constraints:
@@ -1367,7 +1367,7 @@ expected to be available in the runtime environment.
         args: ["--additional-argument"] # optional
         script: |
           # bash code here
-  
+
   ### syntax sugar equivalent to:
 
   steps:
@@ -1478,7 +1478,7 @@ generated file. The file extension is `.py`. `python` (all lowercase) is
 expected to be available in the runtime environment.
 
   ```yaml
-  steps: 
+  steps:
     - name: PythonStep
       python:
         args: ["--additional-argument"] # optional
@@ -1486,7 +1486,7 @@ expected to be available in the runtime environment.
 
   ### syntax sugar equivalent to:
 
-  steps: 
+  steps:
     - name: PythonStep
       actions:
           onRun:
