@@ -1,0 +1,28 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'SPLIT:{{ split("a,b,c", ",").join(";") }}')
+            print(r'SPLIT_MAX:{{ split("a,b,c,d", ",", 2).join(";") }}')
+            print(r'RSPLIT:{{ rsplit("a,b,c", ",").join(";") }}')
+            print(r'RSPLIT_MAX:{{ rsplit("a,b,c,d", ",", 2).join(";") }}')
+            print(r'METHOD:{{ "a/b/c/d".split("/", 1).join(";") }}')
+            print(r'RMETHOD:{{ "a/b/c/d".rsplit("/", 1).join(";") }}')
+expected:
+  output:
+  - SPLIT:a;b;c
+  - SPLIT_MAX:a;b;c,d
+  - RSPLIT:a;b;c
+  - RSPLIT_MAX:a,b;c;d
+  - METHOD:a;b/c/d
+  - RMETHOD:a/b/c;d

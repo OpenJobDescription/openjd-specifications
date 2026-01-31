@@ -1655,5 +1655,64 @@ Mon Jul  8 10:48:30 2024	Frames(STRING) = 1..40
 ...
 ```
 
+#### 4.2.4. With the EXPR Extension
+
+The [Open Job Description Expression Language](2026-02-Expression-Language), added
+in the EXPR extension of the 2023-09 template schemas, enables arithmetic expressions
+in format strings. This eliminates the need for workaround parameters like `FrameEndMinusOne`
+from section 4.2.2, because you can compute values directly.
+
+Enable the extension:
+
+```yaml
+specificationVersion: 'jobtemplate-2023-09'
+extensions:
+- EXPR
+```
+
+With EXPR, the combination expression approach from section 4.2.2 becomes much simpler. You only need `RangeStart` as a
+task parameter, and compute the end of each chunk inline:
+
+```yaml
+parameterDefinitions:
+  - name: FrameStart
+    type: INT
+    minValue: 1
+    default: 1
+  - name: FrameEnd
+    type: INT
+    minValue: 1
+    default: 380
+  - name: FramesPerTask
+    type: INT
+    default: 11
+...
+steps:
+  - name: BlenderRender
+    parameterSpace:
+      taskParameterDefinitions:
+        - name: RangeStart
+          type: INT
+          range: "{{Param.FrameStart}}-{{Param.FrameEnd}}:{{Param.FramesPerTask}}"
+    script:
+      actions:
+        onRun:
+          command: "{{Task.File.Render}}"
+          args:
+            - "{{Param.SceneFile}}"
+            - "{{Param.FramesDirectory}}"
+            - "{{Task.Param.RangeStart}}..{{min(Task.Param.RangeStart + Param.FramesPerTask - 1, Param.FrameEnd)}}"
+```
+
+The key is `{{min(Task.Param.RangeStart + Param.FramesPerTask - 1, Param.FrameEnd)}}` which computes the chunk end,
+clamped to `FrameEnd` for the final chunk.
+
+EXPR also enables other useful patterns:
+
+- **Progress calculation**: `{{(Task.Param.Frame - Param.FrameStart) * 100 / (Param.FrameEnd - Param.FrameStart + 1)}}%`
+- **Total frame count**: `{{Param.FrameEnd - Param.FrameStart + 1}}`
+- **Conditional values**: `{{256 if Param.Quality == 'final' else 32}}`
+- **Path manipulation**: `{{Param.OutputDir / Param.SceneFile.stem + '_' + zfill(Task.Param.Frame, 4) + '.png'}}`
+
 
 Continue the walkthrough in [Ready for Production](Job-Intro-04-Ready-for-Production).

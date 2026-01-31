@@ -1,0 +1,38 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    # TEMPLATE scope for cross-platform POSIX path semantics (Expression Language §2.3.2)
+    let:
+    - 'paths = flatten([[path("/a"), path("/b")], [path("/c")]])'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'INT:{{ flatten([[1, 2], [3]]) }}')
+            print(r'STR:{{ flatten([["a", "b"], ["c"]]) }}')
+            print(r'PATH:{{ paths }}')
+            print(r'SINGLES:{{ flatten([[1], [2], [3]]) }}')
+            print(r'MIXED_LEN:{{ flatten([[], [1], [2, 3]]) }}')
+            print(r'EMPTY:{{ flatten([]) }}')
+            print(r'FLAT_INT:{{ flatten([1, 2, 3]) }}')
+            print(r'FLAT_STR:{{ flatten(["a", "b"]) }}')
+expected:
+  output:
+  - "INT:[1, 2, 3]"
+  - 'STR:["a", "b", "c"]'
+  - "SINGLES:[1, 2, 3]"
+  - "MIXED_LEN:[1, 2, 3]"
+  - "EMPTY:[]"
+  - "FLAT_INT:[1, 2, 3]"
+  - 'FLAT_STR:["a", "b"]'
+  output_posix:
+  - 'PATH:["/a", "/b", "/c"]'
+  output_windows:
+  - 'PATH:["\\a", "\\b", "\\c"]'

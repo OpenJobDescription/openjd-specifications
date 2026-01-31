@@ -1,0 +1,34 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: X
+    type: INT
+    default: 10
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'ADD:{{ Param.X + 3 }}')
+            print(r'SUB:{{ Param.X - 3 }}')
+            print(r'MUL:{{ Param.X * 3 }}')
+            print(r'FLOORDIV:{{ Param.X // 3 }}')
+            print(r'MOD:{{ Param.X % 3 }}')
+            print(r'NEG:{{ -Param.X }}')
+            print(r'POS:{{ +Param.X }}')
+expected:
+  output:
+  - ADD:13
+  - SUB:7
+  - MUL:30
+  - FLOORDIV:3
+  - MOD:1
+  - NEG:-10
+  - POS:10

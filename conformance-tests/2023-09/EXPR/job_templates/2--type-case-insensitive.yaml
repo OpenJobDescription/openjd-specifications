@@ -1,0 +1,46 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: MyInt
+  type: int
+- name: MyFloat
+  type: Float
+- name: MyString
+  type: STRING
+- name: MyPath
+  type: pAtH
+- name: MyBool
+  type: Bool
+  default: true
+- name: MyRangeExpr
+  type: range_expr
+  default: "1-10"
+- name: MyListString
+  type: "list[string]"
+  default: ["a", "b"]
+- name: MyListInt
+  type: "List[Int]"
+  default: [1, 2]
+- name: MyListFloat
+  type: "LIST[float]"
+  default: [1.0, 2.0]
+- name: MyListPath
+  type: "list[PATH]"
+  default: ["/tmp/a", "/tmp/b"]
+- name: MyListBool
+  type: "List[Bool]"
+  default: [true, false]
+- name: MyListListInt
+  type: "list[list[int]]"
+  default: [[1, 2], [3]]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

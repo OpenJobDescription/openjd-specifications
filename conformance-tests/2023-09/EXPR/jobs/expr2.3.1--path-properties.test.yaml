@@ -1,0 +1,58 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'p = path("/mnt/renders/scene.exr")'
+    - 'pname = p.name'
+    - 'pstem = p.stem'
+    - 'psuffix = p.suffix'
+    - 'psuffixes = p.suffixes'
+    - 'pparent = p.parent'
+    - 'pparts = p.parts'
+    - 'noext = path("/mnt/renders/Makefile")'
+    - 'noext_suffix = noext.suffix'
+    - 'noext_suffixes = noext.suffixes'
+    - 'root = path("/")'
+    - 'root_name = root.name'
+    - 'root_parent = root.parent'
+    - 'root_parts = root.parts'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'NAME:{{ pname }}')
+            print(r'STEM:{{ pstem }}')
+            print(r'SUFFIX:{{ psuffix }}')
+            print(r'SUFFIXES:{{ psuffixes }}')
+            print(r'PARENT:{{ pparent }}')
+            print(r'PARTS:{{ pparts }}')
+            print(r'NOEXT_SUFFIX:{{ noext_suffix }}')
+            print(r'NOEXT_SUFFIXES:{{ noext_suffixes }}')
+            print(r'ROOT_NAME:{{ len(root_name) }} chars')
+            print(r'ROOT_PARENT_POSIX:{{ root_parent.as_posix() }}')
+            print(r'ROOT_PARTS:{{ root_parts }}')
+expected:
+  output:
+  - NAME:scene.exr
+  - STEM:scene
+  - SUFFIX:.exr
+  - 'SUFFIXES:[".exr"]'
+  # parts returns list[string] — evaluated in TEMPLATE scope, same everywhere
+  - 'PARTS:["/", "mnt", "renders", "scene.exr"]'
+  - "NOEXT_SUFFIX:"
+  - "NOEXT_SUFFIXES:[]"
+  - "ROOT_NAME:0 chars"
+  # root_parent tested via as_posix() to avoid Windows backslash-at-end-of-raw-string issue
+  - "ROOT_PARENT_POSIX:/"
+  - 'ROOT_PARTS:["/"]'
+  output_posix:
+  - PARENT:/mnt/renders
+  output_windows:
+  - PARENT:\mnt\renders

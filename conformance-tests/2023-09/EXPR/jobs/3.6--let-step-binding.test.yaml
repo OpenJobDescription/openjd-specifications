@@ -1,0 +1,23 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - "base = 100"
+    - "doubled = base * 2"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'BASE:{{ base }}')
+            print(r'DOUBLED:{{ doubled }}')
+expected:
+  output:
+  - BASE:100
+  - DOUBLED:200

@@ -1,0 +1,15 @@
+# String repetition that exceeds the default 100 million byte memory limit.
+# 'a' * 100000000 would produce a 100MB string which, with overhead, exceeds the limit.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - -c
+        - "print(r'{{ 'a' * 100000000 }}')"

@@ -1,0 +1,111 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+# Bool literals
+- name: BoolTrue
+  type: BOOL
+  default: true
+- name: BoolFalse
+  type: BOOL
+  default: false
+# Int values
+- name: Int1
+  type: BOOL
+  default: 1
+- name: Int0
+  type: BOOL
+  default: 0
+# Float values
+- name: Float1
+  type: BOOL
+  default: 1.0
+- name: Float0
+  type: BOOL
+  default: 0.0
+# String true/false
+- name: StrTrue
+  type: BOOL
+  default: "true"
+- name: StrFalse
+  type: BOOL
+  default: "false"
+- name: StrTRUE
+  type: BOOL
+  default: "TRUE"
+- name: StrFALSE
+  type: BOOL
+  default: "FALSE"
+- name: StrTrueMixed
+  type: BOOL
+  default: "True"
+- name: StrFalseMixed
+  type: BOOL
+  default: "False"
+# String yes/no
+- name: StrYes
+  type: BOOL
+  default: "yes"
+- name: StrNo
+  type: BOOL
+  default: "no"
+- name: StrYES
+  type: BOOL
+  default: "YES"
+- name: StrNO
+  type: BOOL
+  default: "NO"
+- name: StrYesMixed
+  type: BOOL
+  default: "Yes"
+- name: StrNoMixed
+  type: BOOL
+  default: "No"
+# String on/off
+- name: StrOn
+  type: BOOL
+  default: "on"
+- name: StrOff
+  type: BOOL
+  default: "off"
+- name: StrON
+  type: BOOL
+  default: "ON"
+- name: StrOFF
+  type: BOOL
+  default: "OFF"
+- name: StrOnMixed
+  type: BOOL
+  default: "On"
+- name: StrOffMixed
+  type: BOOL
+  default: "Off"
+# String 1/0
+- name: Str1
+  type: BOOL
+  default: "1"
+- name: Str0
+  type: BOOL
+  default: "0"
+# UI control
+- name: WithCheckbox
+  type: BOOL
+  default: true
+  userInterface:
+    control: CHECK_BOX
+    label: Enable Feature
+- name: WithHidden
+  type: BOOL
+  default: false
+  userInterface:
+    control: HIDDEN
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

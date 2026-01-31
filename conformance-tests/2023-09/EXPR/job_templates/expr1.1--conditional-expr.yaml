@@ -1,0 +1,40 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Flag
+  type: BOOL
+  default: true
+- name: X
+  type: INT
+  default: 5
+- name: Quality
+  type: STRING
+  default: final
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - |
+          # Basic true/false branches
+          print(r'{{ "a" if Param.Flag else "b" }}')
+          # Comparison as condition
+          print(r'{{ "positive" if Param.X > 0 else "non-positive" }}')
+          # Nested conditional
+          print(r'{{ "high" if Param.X > 10 else "mid" if Param.X > 3 else "low" }}')
+          # Int result
+          print(r'{{ 16 if Param.Quality == "final" else 4 }}')
+          # Conditional with not
+          print(r'{{ "off" if not Param.Flag else "on" }}')
+          # Conditional with and/or
+          print(r'{{ "yes" if Param.Flag and Param.X > 0 else "no" }}')
+          print(r'{{ "yes" if Param.Flag or Param.X < 0 else "no" }}')
+        # Conditional producing null (omits arg)
+        - "{{ '--verbose' if Param.Flag else null }}"
+        # Conditional producing list (flattened into args)
+        - "{{ ['--quality', Param.Quality] if Param.Flag else null }}"

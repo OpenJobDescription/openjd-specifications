@@ -1,0 +1,22 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Scale
+  type: FLOAT
+  default: "2.5"
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Factor
+      type: FLOAT
+      range: "{{ [Param.Scale * 2, Param.Scale + 0.5] }}"
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{Task.Param.Factor}}')"

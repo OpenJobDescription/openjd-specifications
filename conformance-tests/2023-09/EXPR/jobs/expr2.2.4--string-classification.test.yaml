@@ -1,0 +1,46 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'ISDIGIT_T:[{{ "123".isdigit() }}]')
+            print(r'ISDIGIT_F:[{{ "12a".isdigit() }}]')
+            print(r'ISDIGIT_E:[{{ "".isdigit() }}]')
+            print(r'ISALPHA_T:[{{ "abc".isalpha() }}]')
+            print(r'ISALPHA_F:[{{ "ab3".isalpha() }}]')
+            print(r'ISALNUM_T:[{{ "abc123".isalnum() }}]')
+            print(r'ISALNUM_F:[{{ "abc 123".isalnum() }}]')
+            print(r'ISSPACE_T:[{{ "   ".isspace() }}]')
+            print(r'ISSPACE_F:[{{ " hi ".isspace() }}]')
+            print(r'ISUPPER_T:[{{ "ABC".isupper() }}]')
+            print(r'ISUPPER_F:[{{ "ABc".isupper() }}]')
+            print(r'ISLOWER_T:[{{ "abc".islower() }}]')
+            print(r'ISLOWER_F:[{{ "aBc".islower() }}]')
+            print(r'ISASCII_T:[{{ "hello".isascii() }}]')
+            print(r'ISASCII_E:[{{ "".isascii() }}]')
+expected:
+  output:
+  - ISDIGIT_T:[true]
+  - ISDIGIT_F:[false]
+  - ISDIGIT_E:[false]
+  - ISALPHA_T:[true]
+  - ISALPHA_F:[false]
+  - ISALNUM_T:[true]
+  - ISALNUM_F:[false]
+  - ISSPACE_T:[true]
+  - ISSPACE_F:[false]
+  - ISUPPER_T:[true]
+  - ISUPPER_F:[false]
+  - ISLOWER_T:[true]
+  - ISLOWER_F:[false]
+  - ISASCII_T:[true]
+  - ISASCII_E:[true]

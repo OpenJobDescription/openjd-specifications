@@ -1,0 +1,52 @@
+# Tests that let bindings in host-context scopes (StepScript, EnvironmentScript,
+# SimpleAction) can reference Session.*, Task.Param.*, and Task.File.* symbols.
+# Covers Template Schemas §3.6.2 scope table.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+- FEATURE_BUNDLE_1
+name: TestJob
+parameterDefinitions:
+- name: OutputDir
+  type: PATH
+  default: /renders
+steps:
+- name: ScriptLet
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Frame
+      type: INT
+      range: "1-3"
+  script:
+    let:
+    - work_dir = Session.WorkingDirectory / 'output'
+    - frame_file = Param.OutputDir / string(Task.Param.Frame)
+    actions:
+      onRun:
+        command: echo
+        args: ["{{work_dir}}", "{{frame_file}}"]
+
+- name: SimpleActionLet
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Frame
+      type: INT
+      range: "1-3"
+  bash:
+    let:
+    - out = Session.WorkingDirectory / 'renders'
+    - has_mapping = Session.HasPathMappingRules
+    script: "echo {{repr_sh(out)}} {{has_mapping}}"
+
+- name: EnvLet
+  stepEnvironments:
+  - name: Setup
+    script:
+      let:
+      - work_dir = Session.WorkingDirectory / 'workspace'
+      actions:
+        onEnter:
+          command: echo
+          args: ["{{work_dir}}"]
+  bash:
+    script: echo done

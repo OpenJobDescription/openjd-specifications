@@ -1,0 +1,26 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'WD_LEN:{{ len(string(Session.WorkingDirectory)) > 0 }}')
+            print(r'WD_IS_PATH:{{ len(Session.WorkingDirectory.name) > 0 }}')
+            print(r'HAS_PM:{{ Session.HasPathMappingRules }}')
+            print(r'HAS_PM_COND:{{ "yes" if Session.HasPathMappingRules else "no" }}')
+            print(r'PM_FILE_IS_PATH:{{ Session.PathMappingRulesFile.suffix }}')
+expected:
+  output:
+  - WD_LEN:true
+  - WD_IS_PATH:true
+  - HAS_PM:false
+  - HAS_PM_COND:no
+  - PM_FILE_IS_PATH:.json

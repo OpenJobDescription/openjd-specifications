@@ -1,0 +1,23 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: X
+    type: INT
+    default: 5
+  steps:
+  - name: Step1
+    let:
+    - "doubled = Param.X * 2"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'OUT:{{ doubled }}')
+expected:
+  output:
+  - OUT:10

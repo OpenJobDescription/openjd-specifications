@@ -1,0 +1,38 @@
+# URI path: path_format does not affect URI paths (Expression Language §1.2.1)
+# URI paths always use forward slashes, even in host contexts on Windows.
+# This test runs in host context where path_format matches the OS.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'STR:{{ path("s3://bucket/a/b/c.txt") }}')
+            print(r'PARENT:{{ path("s3://bucket/a/b/c.txt").parent }}')
+            print(r'JOIN:{{ path("s3://bucket/a") / "b" / "c.txt" }}')
+            print(r'PARTS:{{ path("s3://bucket/a/b").parts }}')
+            print(r'SCHEME_PRESERVED:{{ path("s3://bucket/key") }}')
+            print(r'HTTPS:{{ path("https://host/path/file.txt") }}')
+            print(r'HTTPS_PARENT:{{ path("https://host/path/file.txt").parent }}')
+expected:
+  # URI paths produce identical output on both platforms
+  output:
+  - "PARENT:s3://bucket/a/b"
+  - 'PARTS:["s3://bucket", "a", "b"]'
+  - "SCHEME_PRESERVED:s3://bucket/key"
+  - "HTTPS:https://host/path/file.txt"
+  - "HTTPS_PARENT:https://host/path"
+  output_posix:
+  - "STR:s3://bucket/a/b/c.txt"
+  - "JOIN:s3://bucket/a/b/c.txt"
+  output_windows:
+  - "STR:s3://bucket/a/b/c.txt"
+  - "JOIN:s3://bucket/a/b/c.txt"

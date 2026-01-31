@@ -83,6 +83,13 @@ replacing the open & closing curly braces and everything within them with the re
 value, `"1-{{ Param.End}}:10"`, for the "Frame" **Task Parameter** in the previous section's example resolves to
 `"1-400:10"` when the **Job Template** is evaluated with `End=400`.
 
+When the EXPR extension is used, **String Interpolation Expressions** can contain the full
+[expression language](2026-02-Expression-Language) including arithmetic, conditionals, function calls,
+list operations, and more. For example, `"{{ min(Task.Param.Frame + Param.FramesPerTask - 1, Param.FrameEnd) }}"` computes
+a frame range end value, and `"{{ 64 if Param.Quality == 'final' else 16 }}"` selects a value based on a parameter.
+The EXPR extension also introduces new parameter types including booleans and lists. See the
+[Expression Language](2026-02-Expression-Language) specification for details.
+
 The time when a **Format String** in a **Job Template** is evaluated is determined by what value from the **Job Template**
 is being defined. For example, the string `"1-{{Param.End}}:10"` in the previous section's example is evaluated by the
 render management system when the **Job Template** is submitted to create a **Job**, and the string

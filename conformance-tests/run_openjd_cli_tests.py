@@ -102,7 +102,7 @@ def run_job(test_path: Path) -> tuple[bool, str]:
         forbidden = expected.get("forbidden", []) + expected.get(f"forbidden_{PLATFORM}", [])
         for line in expected_output:
             if line not in output:
-                return False, f"Missing expected output: {line}\n--- Actual output (last 500 chars) ---\n{output[-500:]}"
+                return False, f"Missing expected output: {line}\n--- Actual output ---\n{output}"
         for line in forbidden:
             if line in output:
                 return False, f"Found forbidden output: {line}"

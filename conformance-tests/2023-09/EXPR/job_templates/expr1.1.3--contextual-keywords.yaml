@@ -1,0 +1,68 @@
+# Tests that Python keywords work as parameter attribute names after '.'
+# Covers: if, def, else, and, or, not, for, in, True, False, None
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: "if"
+  type: STRING
+  default: cond_val
+- name: "def"
+  type: STRING
+  default: def_val
+- name: "else"
+  type: STRING
+  default: else_val
+- name: "and"
+  type: STRING
+  default: and_val
+- name: "or"
+  type: STRING
+  default: or_val
+- name: "not"
+  type: STRING
+  default: not_val
+- name: "for"
+  type: STRING
+  default: for_val
+- name: "in"
+  type: STRING
+  default: in_val
+- name: "True"
+  type: STRING
+  default: true_val
+- name: "False"
+  type: STRING
+  default: false_val
+- name: "None"
+  type: STRING
+  default: none_val
+- name: flag
+  type: BOOL
+  default: true
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - |
+          # Simple keyword attribute access
+          print(r'{{Param.if}}')
+          print(r'{{Param.def}}')
+          print(r'{{Param.else}}')
+          print(r'{{Param.and}}')
+          print(r'{{Param.or}}')
+          print(r'{{Param.not}}')
+          print(r'{{Param.for}}')
+          print(r'{{Param.in}}')
+          print(r'{{Param.True}}')
+          print(r'{{Param.False}}')
+          print(r'{{Param.None}}')
+          # Keyword attrs combined with keyword operators
+          print(r'{{ Param.if if Param.flag else Param.else }}')
+          print(r'{{ Param.and if Param.flag and true else Param.or }}')
+          print(r'{{ Param.not if not false else Param.None }}')

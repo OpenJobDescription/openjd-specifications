@@ -18,10 +18,11 @@ template:
           command: python
           args:
           - -c
-          - import os; print('VAR:' + os.environ.get('SECRET_VAR', 'NOT_SET'))
+          - import os; print('VAR:' + os.environ.get('SECRET_VAR', 'NOT_SET')); print('LEAK:secret_value_xyz')
 expected:
   output:
   - 'openjd_redacted_env: SECRET_VAR=********'
-  - 'VAR:********'
+  - 'VAR:NOT_SET'
+  - 'LEAK:********'
   forbidden:
   - secret_value_xyz

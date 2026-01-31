@@ -1,0 +1,86 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+# Minimal
+- name: Minimal
+  type: LIST[BOOL]
+# With default
+- name: WithDefault
+  type: LIST[BOOL]
+  default: [true, false, true]
+# Empty default
+- name: EmptyDefault
+  type: LIST[BOOL]
+  default: []
+# Single element
+- name: SingleElement
+  type: LIST[BOOL]
+  default: [true]
+# Int coercion
+- name: IntValues
+  type: LIST[BOOL]
+  default: [1, 0, 1, 0]
+# Float coercion
+- name: FloatValues
+  type: LIST[BOOL]
+  default: [1.0, 0.0]
+# String coercion
+- name: StringTrueFalse
+  type: LIST[BOOL]
+  default: ["true", "false"]
+- name: StringYesNo
+  type: LIST[BOOL]
+  default: ["yes", "no"]
+- name: StringOnOff
+  type: LIST[BOOL]
+  default: ["on", "off"]
+- name: String10
+  type: LIST[BOOL]
+  default: ["1", "0"]
+# Mixed case strings
+- name: MixedCaseStrings
+  type: LIST[BOOL]
+  default: ["TRUE", "False", "YES", "no", "On", "OFF"]
+# Mixed types
+- name: MixedTypes
+  type: LIST[BOOL]
+  default: [true, 1, "yes", 0.0, "off"]
+# Length constraints
+- name: WithMinMax
+  type: LIST[BOOL]
+  default: [true, false]
+  minLength: 1
+  maxLength: 50
+# Long list
+- name: LongList
+  type: LIST[BOOL]
+  default: [true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false,true,false]
+# Description
+- name: WithDescription
+  type: LIST[BOOL]
+  default: [true]
+  description: A list of booleans
+# UI controls
+- name: WithCheckBoxList
+  type: LIST[BOOL]
+  default: [true]
+  userInterface:
+    control: CHECK_BOX_LIST
+    label: Flags
+    groupLabel: Options
+- name: WithHidden
+  type: LIST[BOOL]
+  default: [true]
+  userInterface:
+    control: HIDDEN
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

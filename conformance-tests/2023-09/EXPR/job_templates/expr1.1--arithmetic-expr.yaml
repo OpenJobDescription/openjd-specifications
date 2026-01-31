@@ -1,0 +1,44 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: X
+  type: INT
+  default: 10
+- name: Y
+  type: FLOAT
+  default: 2.5
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - |
+          # Addition
+          print(r'{{ Param.X + 3 }}')
+          # Subtraction
+          print(r'{{ Param.X - 3 }}')
+          # Multiplication
+          print(r'{{ Param.X * 3 }}')
+          # True division (returns float)
+          print(r'{{ Param.X / 3 }}')
+          # Floor division
+          print(r'{{ Param.X // 3 }}')
+          # Modulo
+          print(r'{{ Param.X % 3 }}')
+          # Exponentiation
+          print(r'{{ 2 ** 3 }}')
+          # Unary negation
+          print(r'{{ -Param.X }}')
+          # Unary positive
+          print(r'{{ +Param.X }}')
+          # Int/float promotion
+          print(r'{{ Param.X + Param.Y }}')
+          # Float arithmetic
+          print(r'{{ Param.Y * 2 }}')
+          # Parenthesized
+          print(r'{{ (Param.X + 1) * 2 }}')

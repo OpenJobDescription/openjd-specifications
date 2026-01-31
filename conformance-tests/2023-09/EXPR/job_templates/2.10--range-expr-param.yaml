@@ -1,0 +1,86 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+# Single values
+- name: SinglePositive
+  type: RANGE_EXPR
+  default: "42"
+- name: SingleZero
+  type: RANGE_EXPR
+  default: "0"
+- name: SingleNegative
+  type: RANGE_EXPR
+  default: "-100"
+# Simple ranges
+- name: SimpleRange
+  type: RANGE_EXPR
+  default: "1-100"
+- name: NegativeRange
+  type: RANGE_EXPR
+  default: "-10-10"
+# Ranges with step
+- name: RangeWithStep
+  type: RANGE_EXPR
+  default: "0-100:10"
+- name: RangeStepNotEvenlyDivide
+  type: RANGE_EXPR
+  default: "1-9:3"
+- name: NegativeStep
+  type: RANGE_EXPR
+  default: "10-1:-1"
+- name: NegativeRangeNegativeStep
+  type: RANGE_EXPR
+  default: "-1--10:-1"
+# Comma-separated values
+- name: CommaSeparated
+  type: RANGE_EXPR
+  default: "1,3,5,7"
+# Mixed ranges and values
+- name: MixedRangesAndValues
+  type: RANGE_EXPR
+  default: "1-10,20-30:2,42"
+# Multiple ranges
+- name: MultipleRanges
+  type: RANGE_EXPR
+  default: "0-3:3,5-10:5,12,13,14,15"
+# Ranges out of order (parser normalizes)
+- name: OutOfOrder
+  type: RANGE_EXPR
+  default: "20-29,0-9,10-19"
+# Whitespace (parser ignores)
+- name: WithWhitespace
+  type: RANGE_EXPR
+  default: " 0 - 1 : 1, 2 - 100 : 1"
+# Large values
+- name: LargeValues
+  type: RANGE_EXPR
+  default: "9999999"
+# UI controls
+- name: WithLineEdit
+  type: RANGE_EXPR
+  default: "1-10"
+  userInterface:
+    control: LINE_EDIT
+    label: Frame Range
+- name: WithHidden
+  type: RANGE_EXPR
+  default: "1-10"
+  userInterface:
+    control: HIDDEN
+# Length constraints
+- name: WithLengthConstraints
+  type: RANGE_EXPR
+  default: "1-100"
+  minLength: 1
+  maxLength: 1024
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

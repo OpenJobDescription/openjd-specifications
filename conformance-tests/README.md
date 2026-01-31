@@ -52,12 +52,26 @@ Filenames encode the spec section they test:
 - `.invalid` - Test should FAIL validation/execution
 - `.test` - Job execution test (in `jobs/` directory)
 
+For the `EXPR` extension, tests may reference either the Template Schema or the
+[Expression Language](../wiki/2026-02-Expression-Language.md) specification. Tests referencing
+the Expression Language use the `expr` prefix:
+
+```
+expr<section>--<description>[.invalid][.suffix].yaml
+```
+
+- `expr<section>` - Reference to the Expression Language section (e.g., `expr1.1`, `expr2.2.4`)
+
 Examples:
 - `1.1--minimal-job-template.yaml` - Section 1.1 (Job Template root)
 - `3.3.2--allof.yaml` - Section 3.3.2 (AttributeRequirement)
 - `5--cancelation-notify-then-terminate.yaml` - Section 5 (Action)
 - `2.1--missing-name.invalid.yaml` - Invalid test for Section 2.1
 - `contiguous-even.test.yaml` - TASK_CHUNKING extension execution test (in `TASK_CHUNKING/jobs/`)
+- `2.9--bool-param-default-true.yaml` - EXPR: Template Schema §2.9 (JobBoolParameterDefinition)
+- `3.6--let-step-level.yaml` - EXPR: Template Schema §3.6 (LetBindings)
+- `expr1.1--arithmetic-expr.yaml` - EXPR: Expression Language §1.1 (Extended Format String Grammar)
+- `expr2.2.4--upper.test.yaml` - EXPR: Expression Language §2.2.4 (String Functions)
 
 ### Extension Tests
 

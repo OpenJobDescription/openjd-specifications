@@ -1,0 +1,28 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'FULL:{{ re_search("asset_v042_final.abc", r"_v(\d+)")[0] }}')
+            print(r'GROUP:{{ re_search("asset_v042_final.abc", r"_v(\d+)")[1] }}')
+            print(r'NO_GROUPS:{{ re_search("hello123", r"\d+")[0] }}')
+            print(r'MULTI:{{ re_search("shot010_v003", r"shot(\d+)_v(\d+)") }}')
+            print(r'NONE:{{ re_search("no match", r"frame") == null }}')
+            print(r'ANCHOR:{{ re_search("render_001.exr", r"_\d+\.exr$") != null }}')
+expected:
+  output:
+  - FULL:_v042
+  - GROUP:042
+  - NO_GROUPS:123
+  - 'MULTI:["shot010_v003", "010", "003"]'
+  - NONE:true
+  - ANCHOR:true

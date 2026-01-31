@@ -1,0 +1,15 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  - FEATURE_BUNDLE_1
+  name: TestJob
+  steps:
+  - name: Step1
+    bash:
+      let:
+      - "msg = 'hello from bash'"
+      script: echo "BASH:{{ msg }}"
+expected:
+  output:
+  - BASH:hello from bash

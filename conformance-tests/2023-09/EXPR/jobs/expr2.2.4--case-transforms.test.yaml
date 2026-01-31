@@ -1,0 +1,24 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'UPPER:{{ upper("hello") }}')
+            print(r'LOWER:{{ lower("HELLO") }}')
+            print(r'CAP:{{ capitalize("hello world") }}')
+            print(r'TITLE:{{ title("hello world") }}')
+expected:
+  output:
+  - UPPER:HELLO
+  - LOWER:hello
+  - CAP:Hello world
+  - TITLE:Hello World

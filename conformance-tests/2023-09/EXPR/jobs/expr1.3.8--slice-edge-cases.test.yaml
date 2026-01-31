@@ -1,0 +1,22 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'CLAMP:{{ [1, 2, 3][0:100] }}')
+            print(r'NEG_STEP:{{ [1, 2, 3, 4, 5][4:1:-1] }}')
+            print(r'NEG_FULL:{{ "abcde"[3:0:-1] }}')
+expected:
+  output:
+  - "CLAMP:[1, 2, 3]"
+  - "NEG_STEP:[5, 4, 3]"
+  - "NEG_FULL:dcb"

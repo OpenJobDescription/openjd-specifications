@@ -1,0 +1,37 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Items
+    type: LIST[STRING]
+    default: ["alpha", "beta", "gamma"]
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Item
+        type: STRING
+        range: "{{Param.Items}}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'LEN:{{ len(Param.Items) }}')
+            print(r'FIRST:{{ Param.Items[0] }}')
+            print(r'UPPER:{{ [x.upper() for x in Param.Items] }}')
+            print(r'JOIN:{{ Param.Items.join(",") }}')
+            print(r'TASK:{{ Task.Param.Item }}')
+expected:
+  output:
+  - LEN:3
+  - FIRST:alpha
+  - 'UPPER:["ALPHA", "BETA", "GAMMA"]'
+  - "JOIN:alpha,beta,gamma"
+  - "TASK:alpha"
+  - "TASK:beta"
+  - "TASK:gamma"

@@ -1,0 +1,29 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: UseGpu
+    type: BOOL
+    default: true
+  - name: Debug
+    type: BOOL
+    default: false
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'GPU:{{ "yes" if Param.UseGpu else "no" }}')
+            print(r'DEBUG:{{ "yes" if Param.Debug else "no" }}')
+            print(r'NOT:{{ not Param.Debug }}')
+expected:
+  output:
+  - GPU:yes
+  - DEBUG:no
+  - NOT:true

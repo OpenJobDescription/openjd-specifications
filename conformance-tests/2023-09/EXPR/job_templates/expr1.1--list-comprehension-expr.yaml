@@ -1,0 +1,39 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Items
+  type: LIST[STRING]
+  default: ["a", "b", "c"]
+- name: Numbers
+  type: LIST[INT]
+  default: [1, 2, 3, 4, 5]
+- name: Frames
+  type: RANGE_EXPR
+  default: "1-5"
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - |
+          # Identity
+          print(r'{{ [x for x in Param.Items] }}')
+          # Transform
+          print(r'{{ [x * 2 for x in Param.Numbers] }}')
+          # String transform
+          print(r'{{ [s.upper() for s in Param.Items] }}')
+          # With filter
+          print(r'{{ [x for x in Param.Numbers if x > 2] }}')
+          # Over range_expr
+          print(r'{{ [x for x in Param.Frames] }}')
+          # Over range() function
+          print(r'{{ [x * x for x in range(5)] }}')
+          # Nested list result
+          print(r'{{ [["-e", s] for s in Param.Items] }}')
+          # Underscore variable name
+          print(r'{{ [_i + 1 for _i in Param.Numbers] }}')

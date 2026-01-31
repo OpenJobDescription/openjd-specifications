@@ -1,0 +1,61 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'path_lt = path("/a") < path("/b")'
+    - 'path_eq = path("/a") == path("/a")'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'EQ:{{ 5 == 5 }}')
+            print(r'NE:{{ 5 != 3 }}')
+            print(r'LT:{{ 3 < 5 }}')
+            print(r'GT:{{ 5 > 3 }}')
+            print(r'LE:{{ 5 <= 5 }}')
+            print(r'GE:{{ 5 >= 5 }}')
+            print(r'LE2:{{ 3 <= 5 }}')
+            print(r'GE2:{{ 5 >= 3 }}')
+            print(r'INTFLOAT:{{ 5 == 5.0 }}')
+            print(r'BOOLINT:{{ true == 1 }}')
+            print(r'STRINT:{{ "5" == 5 }}')
+            print(r'CHAIN:{{ 1 < 2 < 3 }}')
+            print(r'STREQ:{{ "abc" == "abc" }}')
+            print(r'STRLT:{{ "abc" < "abd" }}')
+            print(r'LISTEQ:{{ [1, 2, 3] == [1, 2, 3] }}')
+            print(r'LISTNE:{{ [1, 2] == [1, 3] }}')
+            print(r'LISTLT:{{ [1, 2] < [1, 3] }}')
+            print(r'LISTLEN:{{ [1, 2] < [1, 2, 3] }}')
+            print(r'BOOL_ORD:{{ false < true }}')
+            print(r'PATH_LT:{{ path_lt }}')
+            print(r'PATH_EQ:{{ path_eq }}')
+expected:
+  output:
+  - EQ:true
+  - NE:true
+  - LT:true
+  - GT:true
+  - LE:true
+  - GE:true
+  - LE2:true
+  - GE2:true
+  - INTFLOAT:true
+  - BOOLINT:false
+  - STRINT:false
+  - CHAIN:true
+  - STREQ:true
+  - STRLT:true
+  - LISTEQ:true
+  - LISTNE:false
+  - LISTLT:true
+  - LISTLEN:true
+  - BOOL_ORD:true
+  - PATH_LT:true
+  - PATH_EQ:true

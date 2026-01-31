@@ -1,0 +1,17 @@
+# Step.Name is available in stepEnvironments.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Render
+  stepEnvironments:
+  - name: Setup
+    variables:
+      CURRENT_STEP: "{{ Step.Name }}"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - hello

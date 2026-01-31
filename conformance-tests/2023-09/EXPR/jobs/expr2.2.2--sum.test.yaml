@@ -1,0 +1,28 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'INT_LIST:{{ sum([1, 2, 3]) }}')
+            print(r'EMPTY:{{ sum([]) }}')
+            print(r'RANGE:{{ sum(range_expr("1-5")) }}')
+            print(r'FLOAT_LIST:{{ sum([1.5, 2.5, 3.0]) }}')
+            print(r'SINGLE:{{ sum([42]) }}')
+            print(r'NEGATIVE:{{ sum([-1, -2, 3]) }}')
+expected:
+  output:
+  - INT_LIST:6
+  - EMPTY:0
+  - RANGE:15
+  - FLOAT_LIST:7.0
+  - SINGLE:42
+  - NEGATIVE:0

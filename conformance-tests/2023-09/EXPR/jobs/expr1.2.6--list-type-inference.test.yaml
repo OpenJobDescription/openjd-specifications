@@ -1,0 +1,65 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    # List literals are evaluated in step-level let (TEMPLATE scope) so that
+    # path() uses PurePosixPath for cross-platform consistency (Expression
+    # Language §2.3.2). In host context, path() would use native OS semantics.
+    let:
+    - 'homo_int = [1, 2, 3]'
+    - 'homo_float = [1.0, 2.0]'
+    - 'homo_str = ["a", "b"]'
+    - 'homo_path = [path("/a"), path("/b")]'
+    - 'mix_int_float = [1, 2.0]'
+    - 'mix_path_str = [path("/a"), "b"]'
+    - 'empty = []'
+    - 'nested_int = [[1, 2], [3, 4]]'
+    - 'nested_float = [[1.0, 2.0], [3.0, 4.0]]'
+    - 'nested_str = [["a", "b"], ["c"]]'
+    - 'nested_path = [[path("/a")], [path("/b")]]'
+    - 'nested_mix_int_float = [[1], [2.0]]'
+    - 'nested_mix_path_str = [[path("/a")], ["b"]]'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'HOMO_INT:{{ homo_int }}')
+            print(r'HOMO_FLOAT:{{ homo_float }}')
+            print(r'HOMO_STR:{{ homo_str }}')
+            print(r'HOMO_PATH:{{ homo_path }}')
+            print(r'MIX_INT_FLOAT:{{ mix_int_float }}')
+            print(r'MIX_PATH_STR:{{ mix_path_str }}')
+            print(r'EMPTY:{{ empty }}')
+            print(r'NESTED_INT:{{ nested_int }}')
+            print(r'NESTED_FLOAT:{{ nested_float }}')
+            print(r'NESTED_STR:{{ nested_str }}')
+            print(r'NESTED_PATH:{{ nested_path }}')
+            print(r'NESTED_MIX_INT_FLOAT:{{ nested_mix_int_float }}')
+            print(r'NESTED_MIX_PATH_STR:{{ nested_mix_path_str }}')
+expected:
+  output:
+  - "HOMO_INT:[1, 2, 3]"
+  - "HOMO_FLOAT:[1.0, 2.0]"
+  - 'HOMO_STR:["a", "b"]'
+  - "MIX_INT_FLOAT:[1.0, 2.0]"
+  # MIX_PATH_STR coerces to list[string] in TEMPLATE scope → POSIX everywhere
+  - 'MIX_PATH_STR:["/a", "b"]'
+  - "EMPTY:[]"
+  - "NESTED_INT:[[1, 2], [3, 4]]"
+  - "NESTED_FLOAT:[[1.0, 2.0], [3.0, 4.0]]"
+  - 'NESTED_STR:[["a", "b"], ["c"]]'
+  - "NESTED_MIX_INT_FLOAT:[[1.0], [2.0]]"
+  # NESTED_MIX_PATH_STR coerces to list[list[string]] → POSIX everywhere
+  - 'NESTED_MIX_PATH_STR:[["/a"], ["b"]]'
+  output_posix:
+  - 'HOMO_PATH:["/a", "/b"]'
+  - 'NESTED_PATH:[["/a"], ["/b"]]'
+  output_windows:
+  - 'HOMO_PATH:["\\a", "\\b"]'
+  - 'NESTED_PATH:[["\\a"], ["\\b"]]'

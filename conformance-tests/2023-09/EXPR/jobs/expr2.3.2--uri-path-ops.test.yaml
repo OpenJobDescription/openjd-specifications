@@ -1,0 +1,79 @@
+# URI path operators: join (/), concat (+), construction (Expression Language §2.1.5, §2.3.2)
+# URI paths always use forward slashes regardless of path_format.
+# Join is equivalent to path(p.parts + child.parts).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    # --- Join with / operator ---
+    - 'joined = path("s3://bucket/assets") / "subdir/file.obj"'
+    - 'joined_str = string(joined)'
+    # --- Multi-level join ---
+    - 'multi = path("s3://bucket") / "a" / "b" / "c.txt"'
+    - 'multi_str = string(multi)'
+    # --- Join absolute replaces entirely ---
+    - 'abs_replace = path("s3://bucket/assets") / path("/local/path")'
+    - 'abs_str = abs_replace.as_posix()'
+    # --- Concat with + (no separator) ---
+    - 'cat = path("s3://bucket/file") + ".txt"'
+    - 'cat_str = string(cat)'
+    # --- Construction from string ---
+    - 'from_str = path("https://host/a/b")'
+    - 'from_str_str = string(from_str)'
+    # --- Construction from parts ---
+    - 'from_parts = path(["s3://bucket", "dir", "file.obj"])'
+    - 'from_parts_str = string(from_parts)'
+    # --- Construction from parts with empty (preserves //) ---
+    - 'from_dbl = path(["s3://bucket", "a", "", "b"])'
+    - 'from_dbl_str = string(from_dbl)'
+    # --- with_suffix ---
+    - 'ws = path("s3://bucket/renders/scene.exr").with_suffix(".png")'
+    - 'ws_str = string(ws)'
+    # --- with_name ---
+    - 'wn = path("s3://bucket/renders/scene.exr").with_name("other.obj")'
+    - 'wn_str = string(wn)'
+    # --- with_stem ---
+    - 'wst = path("s3://bucket/renders/scene.exr").with_stem("final")'
+    - 'wst_str = string(wst)'
+    # --- as_posix on URI is identity ---
+    - 'ap = path("s3://bucket/a/b").as_posix()'
+    # --- with_number ---
+    - 'wnum = path("s3://bucket/renders/shot_####.exr").with_number(42)'
+    - 'wnum_str = string(wnum)'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'JOINED:{{ joined_str }}')
+            print(r'MULTI:{{ multi_str }}')
+            print(r'ABS_REPLACE:{{ abs_str }}')
+            print(r'CONCAT:{{ cat_str }}')
+            print(r'FROM_STR:{{ from_str_str }}')
+            print(r'FROM_PARTS:{{ from_parts_str }}')
+            print(r'FROM_DBL:{{ from_dbl_str }}')
+            print(r'WITH_SUFFIX:{{ ws_str }}')
+            print(r'WITH_NAME:{{ wn_str }}')
+            print(r'WITH_STEM:{{ wst_str }}')
+            print(r'AS_POSIX:{{ ap }}')
+            print(r'WITH_NUMBER:{{ wnum_str }}')
+expected:
+  output:
+  - "JOINED:s3://bucket/assets/subdir/file.obj"
+  - "MULTI:s3://bucket/a/b/c.txt"
+  - "ABS_REPLACE:/local/path"
+  - "CONCAT:s3://bucket/file.txt"
+  - "FROM_STR:https://host/a/b"
+  - "FROM_PARTS:s3://bucket/dir/file.obj"
+  - "FROM_DBL:s3://bucket/a//b"
+  - "WITH_SUFFIX:s3://bucket/renders/scene.png"
+  - "WITH_NAME:s3://bucket/renders/other.obj"
+  - "WITH_STEM:s3://bucket/renders/final.exr"
+  - "AS_POSIX:s3://bucket/a/b"
+  - "WITH_NUMBER:s3://bucket/renders/shot_0042.exr"

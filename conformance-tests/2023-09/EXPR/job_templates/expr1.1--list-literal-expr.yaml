@@ -1,0 +1,41 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: X
+  type: INT
+  default: 5
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - |
+          # Int list
+          print(r'{{ [1, 2, 3] }}')
+          # String list
+          print(r'{{ ["a", "b", "c"] }}')
+          # Float list
+          print(r'{{ [1.0, 2.5, 3.0] }}')
+          # Bool list
+          print(r'{{ [true, false, true] }}')
+          # Empty list
+          print(r'{{ [] }}')
+          # Single element
+          print(r'{{ [42] }}')
+          # Trailing comma
+          print(r'{{ [1, 2, 3,] }}')
+          # Nested list
+          print(r'{{ [[1, 2], [3, 4]] }}')
+          # Expressions in list
+          print(r'{{ [Param.X, Param.X + 1, Param.X * 2] }}')
+          # Mixed int/float (promotes to float)
+          print(r'{{ [1, 2.0, 3] }}')
+          # List concatenation
+          print(r'{{ [1, 2] + [3, 4] }}')
+          # List repetition
+          print(r'{{ [0] * 3 }}')

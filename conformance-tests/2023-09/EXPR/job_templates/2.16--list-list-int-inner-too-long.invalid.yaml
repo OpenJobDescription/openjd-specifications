@@ -1,0 +1,19 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: AdjList
+  type: LIST[LIST[INT]]
+  default: [[1, 2, 3, 4, 5]]
+  item:
+    maxLength: 3
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

@@ -1,0 +1,24 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'RP_MATCH:{{ removeprefix("TestHook", "Test") }}')
+            print(r'RP_NONE:{{ removeprefix("TestHook", "Xyz") }}')
+            print(r'RS_MATCH:{{ removesuffix("render.exr", ".exr") }}')
+            print(r'RS_NONE:{{ removesuffix("render.exr", ".png") }}')
+expected:
+  output:
+  - RP_MATCH:Hook
+  - RP_NONE:TestHook
+  - RS_MATCH:render
+  - RS_NONE:render.exr

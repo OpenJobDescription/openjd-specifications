@@ -1,0 +1,28 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'TWO:{{ max(3, 1) }}')
+            print(r'THREE:{{ max(1, 3, 2) }}')
+            print(r'LIST:{{ max([5, 2, 8]) }}')
+            print(r'RANGE:{{ max(range_expr("3-7")) }}')
+            print(r'FLOAT:{{ max(1.5, 2.5) }}')
+            print(r'MIXED:{{ max(1, 2.5) }}')
+expected:
+  output:
+  - TWO:3
+  - THREE:3
+  - LIST:8
+  - RANGE:7
+  - FLOAT:2.5
+  - MIXED:2.5

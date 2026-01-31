@@ -1,0 +1,87 @@
+# URI path properties (Expression Language §2.3.1)
+# When a path value contains a URI (scheme://authority/path), the scheme+authority
+# is an opaque prefix. Properties operate on the path portion without normalization.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    # --- Basic S3 URI ---
+    - 's3p = path("s3://my-bucket/assets/teapot.obj")'
+    - 's3_name = s3p.name'
+    - 's3_stem = s3p.stem'
+    - 's3_suffix = s3p.suffix'
+    - 's3_parent = s3p.parent'
+    - 's3_parts = s3p.parts'
+    # --- HTTPS URI ---
+    - 'hp = path("https://example.com/models/scene.tar.gz")'
+    - 'h_name = hp.name'
+    - 'h_stem = hp.stem'
+    - 'h_suffix = hp.suffix'
+    - 'h_suffixes = hp.suffixes'
+    - 'h_parent = hp.parent'
+    - 'h_parts = hp.parts'
+    # --- Parent chain reaches root ---
+    - 'p2 = path("s3://bucket/a/b")'
+    - 'p2_parent1 = p2.parent'
+    - 'p2_parent2 = p2.parent.parent'
+    - 'p2_root = p2.parent.parent.parent'
+    # --- URI with no path beyond authority ---
+    - 'bare = path("s3://bucket")'
+    - 'bare_name = bare.name'
+    - 'bare_parts = bare.parts'
+    - 'bare_parent = bare.parent'
+    # --- Custom scheme ---
+    - 'fsx = path("fsx://vol-123/data/file.bin")'
+    - 'fsx_name = fsx.name'
+    - 'fsx_parts = fsx.parts'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'S3_NAME:{{ s3_name }}')
+            print(r'S3_STEM:{{ s3_stem }}')
+            print(r'S3_SUFFIX:{{ s3_suffix }}')
+            print(r'S3_PARENT:{{ s3_parent }}')
+            print(r'S3_PARTS:{{ s3_parts }}')
+            print(r'H_NAME:{{ h_name }}')
+            print(r'H_STEM:{{ h_stem }}')
+            print(r'H_SUFFIX:{{ h_suffix }}')
+            print(r'H_SUFFIXES:{{ h_suffixes }}')
+            print(r'H_PARENT:{{ h_parent }}')
+            print(r'H_PARTS:{{ h_parts }}')
+            print(r'P2_PARENT1:{{ p2_parent1 }}')
+            print(r'P2_PARENT2:{{ p2_parent2 }}')
+            print(r'P2_ROOT:{{ p2_root }}')
+            print(r'BARE_NAME:{{ bare_name }}')
+            print(r'BARE_PARTS:{{ bare_parts }}')
+            print(r'BARE_PARENT:{{ bare_parent }}')
+            print(r'FSX_NAME:{{ fsx_name }}')
+            print(r'FSX_PARTS:{{ fsx_parts }}')
+expected:
+  output:
+  - "S3_NAME:teapot.obj"
+  - "S3_STEM:teapot"
+  - "S3_SUFFIX:.obj"
+  - "S3_PARENT:s3://my-bucket/assets"
+  - 'S3_PARTS:["s3://my-bucket", "assets", "teapot.obj"]'
+  - "H_NAME:scene.tar.gz"
+  - "H_STEM:scene.tar"
+  - "H_SUFFIX:.gz"
+  - 'H_SUFFIXES:[".tar", ".gz"]'
+  - "H_PARENT:https://example.com/models"
+  - 'H_PARTS:["https://example.com", "models", "scene.tar.gz"]'
+  - "P2_PARENT1:s3://bucket/a"
+  - "P2_PARENT2:s3://bucket"
+  - "P2_ROOT:s3://bucket"
+  - "BARE_NAME:"
+  - 'BARE_PARTS:["s3://bucket"]'
+  - "BARE_PARENT:s3://bucket"
+  - "FSX_NAME:file.bin"
+  - 'FSX_PARTS:["fsx://vol-123", "data", "file.bin"]'

@@ -1,0 +1,44 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'ZFILL:{{ zfill("42", 5) }}')
+            print(r'ZFILL_INT:{{ zfill(7, 4) }}')
+            print(r'ZFILL_METHOD:{{ "42".zfill(5) }}')
+            print(r'ZFILL_INT_METHOD:{{ (7).zfill(4) }}')
+            print(r'ZFILL_NEG_INT:{{ zfill(-1, 3) }}')
+            print(r'ZFILL_NEG_STR:{{ zfill("-10", 4) }}')
+            print(r'ZFILL_PLUS:{{ zfill("+5", 4) }}')
+            print(r'ZFILL_FLOAT:{{ zfill(3.14, 8) }}')
+            print(r'ZFILL_FLOAT_NEG:{{ zfill(-2.5, 8) }}')
+            print(r'ZFILL_FLOAT_METHOD:{{ (3.14).zfill(8) }}')
+            print(r'ZFILL_FLOAT_ROUND:{{ zfill(round(0.3, 2), 7) }}')
+            print(r'LJUST:[{{ ljust("hi", 6) }}]')
+            print(r'RJUST:[{{ rjust("hi", 6) }}]')
+            print(r'CENTER:[{{ center("hi", 6) }}]')
+expected:
+  output:
+  - ZFILL:00042
+  - ZFILL_INT:0007
+  - ZFILL_METHOD:00042
+  - ZFILL_INT_METHOD:0007
+  - ZFILL_NEG_INT:-01
+  - ZFILL_NEG_STR:-010
+  - ZFILL_PLUS:+005
+  - ZFILL_FLOAT:00003.14
+  - ZFILL_FLOAT_NEG:-00002.5
+  - ZFILL_FLOAT_METHOD:00003.14
+  - ZFILL_FLOAT_ROUND:0000.30
+  - "LJUST:[hi    ]"
+  - "RJUST:[    hi]"
+  - "CENTER:[  hi  ]"

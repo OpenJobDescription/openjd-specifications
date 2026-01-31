@@ -1,0 +1,11 @@
+# Step.Name requires the EXPR extension. Without it, this is an undefined variable.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "{{ Step.Name }}"

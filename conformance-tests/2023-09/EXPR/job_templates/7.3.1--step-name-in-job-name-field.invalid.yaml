@@ -1,0 +1,13 @@
+# Step.Name is not available in the job template's name field.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: "{{ Step.Name }}-job"
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - hello

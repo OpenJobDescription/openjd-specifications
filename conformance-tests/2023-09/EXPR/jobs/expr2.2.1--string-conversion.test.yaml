@@ -1,0 +1,37 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    # TEMPLATE scope for cross-platform POSIX path semantics (Expression Language §2.3.2)
+    let:
+    - 'from_path = string(path("/mnt/out"))'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'INT:{{ string(42) }}')
+            print(r'FLOAT:{{ string(3.14) }}')
+            print(r'BOOL_T:{{ string(true) }}')
+            print(r'BOOL_F:{{ string(false) }}')
+            print(r'STR:{{ string("hello") }}')
+            print(r'NULL:{{ string(null) }}')
+            print(r'PATH:{{ from_path }}')
+            print(r'RANGE:{{ string(range_expr("1-5")) }}')
+            print(r'LIST:{{ string([1, 2, 3]) }}')
+expected:
+  output:
+  - INT:42
+  - FLOAT:3.14
+  - BOOL_T:true
+  - BOOL_F:false
+  - STR:hello
+  - NULL:null
+  - PATH:/mnt/out
+  - RANGE:1-5
+  - "LIST:[1, 2, 3]"

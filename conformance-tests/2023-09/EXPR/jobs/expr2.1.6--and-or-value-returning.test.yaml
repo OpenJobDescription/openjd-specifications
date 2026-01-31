@@ -1,0 +1,34 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'OR_NULL:{{ null or "fallback" }}')
+            print(r'OR_FALSE:{{ false or "fallback" }}')
+            print(r'OR_STR:{{ "hello" or "fallback" }}')
+            print(r'OR_ZERO:{{ 0 or 5 }}')
+            print(r'OR_EMPTY:[{{ "" or "fallback" }}]')
+            print(r'AND_NULL:[{{ null and "hello" }}]')
+            print(r'AND_TRUE:{{ true and "hello" }}')
+            print(r'AND_STR:{{ "hello" and "world" }}')
+            print(r'BOOL:{{ true or false }}')
+expected:
+  output:
+  - 'OR_NULL:fallback'
+  - 'OR_FALSE:fallback'
+  - 'OR_STR:hello'
+  - 'OR_ZERO:0'
+  - 'OR_EMPTY:[]'
+  - 'AND_NULL:[]'
+  - 'AND_TRUE:hello'
+  - 'AND_STR:world'
+  - 'BOOL:true'

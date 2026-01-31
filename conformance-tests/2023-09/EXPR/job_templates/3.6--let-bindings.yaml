@@ -1,0 +1,81 @@
+# Tests for let bindings at all scoping levels, with chained bindings
+# and complex expressions. Covers Template Schemas §3.6.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+- FEATURE_BUNDLE_1
+name: TestJob
+parameterDefinitions:
+- name: X
+  type: INT
+  default: 5
+- name: Name
+  type: STRING
+  default: test
+- name: Items
+  type: LIST[INT]
+  default: [1, 2, 3, 4, 5]
+
+# --- §3.6.2: StepTemplate.let ---
+# Step-level bindings available to parameterSpace, hostRequirements, script
+jobEnvironments:
+- name: SetupEnv
+  script:
+    # --- §3.6.2: EnvironmentScript.let ---
+    # Env-level bindings available to actions and embeddedFiles
+    let:
+    - greeting = Param.Name
+    - config_line = 'name=' + Param.Name
+    actions:
+      onEnter:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{greeting}}')"
+    embeddedFiles:
+    - name: config
+      type: TEXT
+      data: "{{config_line}}"
+steps:
+- name: StepWithLetAtAllLevels
+  # --- Step-level let: chained bindings referencing params ---
+  let:
+  - a = Param.X
+  - b = a + 1
+  - c = a + b
+  script:
+    # --- §3.6.2: StepScript.let ---
+    # Script-level bindings can reference step-level bindings and Task.Param
+    let:
+    - result = c * 2
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{result}}')"
+    embeddedFiles:
+    - name: summary
+      type: TEXT
+      data: "step={{c}} script={{result}}"
+
+- name: StepWithComplexExpressions
+  # --- §3.6.1: Complex expressions in let bindings ---
+  let:
+  - total = sum(Param.Items)
+  - count = len(Param.Items)
+  - avg_str = string(total) + '/' + string(count)
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print({{repr_py(avg_str)}})"
+
+- name: StepWithSimpleAction
+  # --- §3.6.2: SimpleAction.let (requires FEATURE_BUNDLE_1) ---
+  bash:
+    let:
+    - val = Param.X + 1
+    script: "echo {{val}}"

@@ -1,0 +1,84 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+# Minimal
+- name: Minimal
+  type: LIST[INT]
+# With default
+- name: WithDefault
+  type: LIST[INT]
+  default: [1, 2, 3]
+# Empty default
+- name: EmptyDefault
+  type: LIST[INT]
+  default: []
+# Single element
+- name: SingleElement
+  type: LIST[INT]
+  default: [42]
+# Negative values
+- name: Negatives
+  type: LIST[INT]
+  default: [-10, -1, 0, 1, 10]
+# Long list
+- name: LongList
+  type: LIST[INT]
+  default: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+# Length constraints
+- name: WithMinMax
+  type: LIST[INT]
+  default: [1, 2]
+  minLength: 1
+  maxLength: 50
+# Item constraints - allowedValues
+- name: ItemAllowed
+  type: LIST[INT]
+  default: [1, 3]
+  item:
+    allowedValues: [1, 2, 3, 4, 5]
+# Item constraints - value range
+- name: ItemRange
+  type: LIST[INT]
+  default: [5, 10]
+  item:
+    minValue: 0
+    maxValue: 100
+# Both constraints
+- name: FullyConstrained
+  type: LIST[INT]
+  default: [10, 20]
+  minLength: 1
+  maxLength: 10
+  item:
+    minValue: 0
+    maxValue: 100
+# Description
+- name: WithDescription
+  type: LIST[INT]
+  default: [1]
+  description: A list of integers
+# UI controls
+- name: WithSpinBoxList
+  type: LIST[INT]
+  default: [1]
+  userInterface:
+    control: SPIN_BOX_LIST
+    label: Values
+    groupLabel: Numbers
+    singleStepDelta: 5
+- name: WithHidden
+  type: LIST[INT]
+  default: [1]
+  userInterface:
+    control: HIDDEN
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

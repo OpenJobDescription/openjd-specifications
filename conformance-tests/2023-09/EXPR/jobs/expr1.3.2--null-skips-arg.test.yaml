@@ -1,0 +1,32 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Verbose
+    type: BOOL
+    default: false
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import sys
+            sys.stdout.write('ARGS:')
+            sys.stdout.write(' '.join(sys.argv[1:]))
+            sys.stdout.write('\n')
+          - "--input"
+          - "file.exr"
+          - "{{ '--verbose' if Param.Verbose else null }}"
+          - "{{ ['--quality', '90'] if Param.Verbose else null }}"
+expected:
+  output:
+  - "ARGS:--input file.exr"
+  forbidden:
+  - "--verbose"
+  - "--quality"

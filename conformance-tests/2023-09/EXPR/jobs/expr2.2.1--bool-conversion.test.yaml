@@ -1,0 +1,40 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'INT1:{{ bool(1) }}')
+            print(r'INT0:{{ bool(0) }}')
+            print(r'FLOAT1:{{ bool(1.0) }}')
+            print(r'FLOAT0:{{ bool(0.0) }}')
+            print(r'PASS:{{ bool(true) }}')
+            print(r'NULL:{{ bool(null) }}')
+            print(r'TRUE:{{ bool("true") }}')
+            print(r'FALSE:{{ bool("false") }}')
+            print(r'YES:{{ bool("yes") }}')
+            print(r'NO:{{ bool("no") }}')
+            print(r'ON:{{ bool("on") }}')
+            print(r'OFF:{{ bool("off") }}')
+expected:
+  output:
+  - INT1:true
+  - INT0:false
+  - FLOAT1:true
+  - FLOAT0:false
+  - PASS:true
+  - "NULL:false"
+  - TRUE:true
+  - FALSE:false
+  - YES:true
+  - NO:false
+  - ON:true
+  - OFF:false

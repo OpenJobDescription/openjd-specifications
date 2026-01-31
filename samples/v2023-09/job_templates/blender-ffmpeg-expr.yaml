@@ -1,0 +1,133 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# ----
+# Demonstrates
+# ----
+# This demonstrates a Job that will render a series of animation frames
+# from the Blender CLI for a given scene, using the EXPR extension for
+# arithmetic and path expressions.
+#
+# Key EXPR features demonstrated:
+# - Arithmetic: {{Param.EndFrame - Param.StartFrame + 1}} for total frame count
+# - Path properties: {{Param.BlenderFile.stem}} for deriving output names
+# - Path construction: {{Param.OutputDir / Param.BlenderFile.stem + '_####'}}
+#
+# You can see a summary of what this template will do by running:
+#
+#   openjd summary blender-ffmpeg-expr.yaml
+#
+# To Run with default parameters use:
+#
+#   openjd run blender-ffmpeg-expr.yaml --step CreateVideoFromRender --run-dependencies
+#
+# ----
+# Requirements (tested with Blender 4.0.2 and ffmpeg 6.1.1)
+# ----
+# - bash shell
+# - Blender
+# - ffmpeg
+
+specificationVersion: 'jobtemplate-2023-09'
+extensions:
+- EXPR
+name: '{{Param.JobName}}'
+description: |
+  Render a blender animation using EXPR extension for arithmetic and path expressions.
+parameterDefinitions:
+- name: JobName
+  type: STRING
+  userInterface:
+    control: LINE_EDIT
+    label: Job Name
+  default: Blender Scene Renderer (EXPR)
+- name: StartFrame
+  type: INT
+  default: 1
+- name: EndFrame
+  type: INT
+  default: 100
+- name: BlenderFile
+  type: PATH
+  objectType: FILE
+  dataFlow: IN
+  userInterface:
+    control: CHOOSE_INPUT_FILE
+    label: Blender File
+  default: "./scene/blender_scene.blend"
+  description: Choose the Blender scene you want to render.
+- name: OutputDir
+  type: PATH
+  objectType: DIRECTORY
+  dataFlow: OUT
+  userInterface:
+    control: CHOOSE_DIRECTORY
+    label: Output Directory
+  default: "./output"
+  description: Choose the render output directory.
+- name: Format
+  type: STRING
+  userInterface:
+    control: DROPDOWN_LIST
+    label: Output File Format
+  description: Choose the file format to render as.
+  default: PNG
+  allowedValues: [TGA, RAWTGA, JPEG, IRIS, IRIZ, PNG, HDR, TIFF, OPEN_EXR, OPEN_EXR_MULTILAYER, CINEON, DPX, DDS, JP2, WEBP]
+steps:
+- name: RenderScene
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Frame
+      type: INT
+      range: "{{Param.StartFrame}}-{{Param.EndFrame}}"
+  script:
+    actions:
+      onRun:
+        command: bash
+        args: ['{{ Task.File.run }}']
+    embeddedFiles:
+      - name: run
+        type: TEXT
+        data: |
+          #!/bin/env bash
+
+          set -xeuo pipefail
+
+          mkdir -p '{{Param.OutputDir}}'
+
+          echo "Rendering frame {{Task.Param.Frame}} of {{Param.EndFrame - Param.StartFrame + 1}} total"
+          echo "Scene: {{Param.BlenderFile.name}} (stem: {{Param.BlenderFile.stem}})"
+
+          # Use path expressions to derive output pattern from input filename
+          blender --background '{{Param.BlenderFile}}' \
+                  --render-output '{{Param.OutputDir / Param.BlenderFile.stem + "_####"}}' \
+                  --render-format '{{Param.Format}}' \
+                  --use-extension 1 \
+                  --render-frame {{Task.Param.Frame}}
+
+- name: CreateVideoFromRender
+  dependencies:
+  - dependsOn: RenderScene
+  script:
+    actions:
+      onRun:
+        command: bash
+        args: [ "{{Task.File.Encode}}"]
+    embeddedFiles:
+    - name: Encode
+      type: TEXT
+      runnable: True
+      data: |
+        #!/bin/env bash
+
+        set -xeuo pipefail
+
+        echo "Encoding {{Param.EndFrame - Param.StartFrame + 1}} frames to video"
+
+        # Output video named after the scene file
+        ffmpeg -y -r 10 -start_number {{Param.StartFrame}} \
+          -i '{{Param.OutputDir / Param.BlenderFile.stem + "_%04d." + Param.Format}}' \
+          -pix_fmt yuv420p \
+          -vf "scale=in_color_matrix=bt709:out_color_matrix=bt709" \
+          -frames:v 300 -c:v libx264 -preset fast \
+          -color_range tv -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1 \
+          -movflags faststart '{{Param.OutputDir / Param.BlenderFile.stem + ".mp4"}}'

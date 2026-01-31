@@ -1,0 +1,48 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'posix_abs = path("/mnt/renders/scene.exr")'
+    - 'posix_rel = path("sub/file.exr")'
+    - 'posix_joined = path("/mnt/output") / "sub" / "file.exr"'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'HOST_POSIX_ABS:{{ path("/mnt/renders/scene.exr") }}')
+            print(r'HOST_REL:{{ path("sub/file.exr") }}')
+            print(r'HOST_JOIN:{{ path("/mnt/output") / "sub" / "file.exr" }}')
+            print(r'HOST_WIN_ABS:{{ path("D:/renders/scene.exr") }}')
+            print(r'HOST_PARENT:{{ path("/mnt/renders/scene.exr").parent }}')
+            print(r'AS_POSIX:{{ path("/mnt/renders/scene.exr").as_posix() }}')
+            print(r'LET_ABS:{{ posix_abs }}')
+            print(r'LET_REL:{{ posix_rel }}')
+            print(r'LET_JOINED:{{ posix_joined }}')
+expected:
+  output:
+  - AS_POSIX:/mnt/renders/scene.exr
+  output_posix:
+  - HOST_POSIX_ABS:/mnt/renders/scene.exr
+  - HOST_REL:sub/file.exr
+  - HOST_JOIN:/mnt/output/sub/file.exr
+  - HOST_WIN_ABS:D:/renders/scene.exr
+  - HOST_PARENT:/mnt/renders
+  - LET_ABS:/mnt/renders/scene.exr
+  - LET_REL:sub/file.exr
+  - LET_JOINED:/mnt/output/sub/file.exr
+  output_windows:
+  - HOST_POSIX_ABS:\mnt\renders\scene.exr
+  - HOST_REL:sub\file.exr
+  - HOST_JOIN:\mnt\output\sub\file.exr
+  - HOST_WIN_ABS:D:\renders\scene.exr
+  - HOST_PARENT:\mnt\renders
+  - LET_ABS:\mnt\renders\scene.exr
+  - LET_REL:sub\file.exr
+  - LET_JOINED:\mnt\output\sub\file.exr

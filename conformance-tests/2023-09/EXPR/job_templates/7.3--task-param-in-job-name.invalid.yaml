@@ -1,0 +1,19 @@
+# Task.Param is not available in submission-time context (job name)
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: "Job {{ Task.Param.Frame }}"
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Frame
+      type: INT
+      range: "1-5"
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

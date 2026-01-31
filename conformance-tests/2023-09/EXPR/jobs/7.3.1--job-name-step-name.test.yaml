@@ -1,0 +1,46 @@
+# Test that Job.Name and Step.Name resolve to the correct values at runtime.
+# The job name is derived from multiple parameters to verify it resolves
+# after parameter substitution.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: "{{ Param.Project }}-{{ Param.SceneName }}-render"
+  parameterDefinitions:
+  - name: Project
+    type: STRING
+    default: MyProject
+  - name: SceneName
+    type: STRING
+    default: main_comp
+  steps:
+  - name: Render
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'JOB:{{ Job.Name }}')
+            print(r'STEP:{{ Step.Name }}')
+  - name: Composite
+    dependencies:
+    - dependsOn: Render
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'JOB:{{ Job.Name }}')
+            print(r'STEP:{{ Step.Name }}')
+parameters:
+  Project: StudioX
+  SceneName: hero_layout
+expected:
+  output:
+  - JOB:StudioX-hero_layout-render
+  - STEP:Render
+  - STEP:Composite

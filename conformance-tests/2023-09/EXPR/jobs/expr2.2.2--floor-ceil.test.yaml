@@ -1,0 +1,32 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'FLOOR:{{ floor(3.7) }}')
+            print(r'CEIL:{{ ceil(3.2) }}')
+            print(r'FLOOR_NEG:{{ floor(-3.2) }}')
+            print(r'CEIL_NEG:{{ ceil(-3.7) }}')
+            print(r'FLOOR_INT:{{ floor(5) }}')
+            print(r'CEIL_INT:{{ ceil(5) }}')
+            print(r'FLOOR_EXACT:{{ floor(4.0) }}')
+            print(r'CEIL_EXACT:{{ ceil(4.0) }}')
+expected:
+  output:
+  - FLOOR:3
+  - CEIL:4
+  - FLOOR_NEG:-4
+  - CEIL_NEG:-3
+  - FLOOR_INT:5
+  - CEIL_INT:5
+  - FLOOR_EXACT:4
+  - CEIL_EXACT:4

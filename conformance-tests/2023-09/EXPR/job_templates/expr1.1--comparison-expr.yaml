@@ -1,0 +1,56 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: X
+  type: INT
+  default: 5
+- name: Name
+  type: STRING
+  default: hello
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - |
+          # Equal
+          print(r'{{ Param.X == 5 }}')
+          # Not equal
+          print(r'{{ Param.X != 3 }}')
+          # Less than
+          print(r'{{ Param.X < 10 }}')
+          # Less than or equal
+          print(r'{{ Param.X <= 5 }}')
+          # Greater than
+          print(r'{{ Param.X > 0 }}')
+          # Greater than or equal
+          print(r'{{ Param.X >= 5 }}')
+          # Chained comparisons
+          print(r'{{ 1 < Param.X < 10 }}')
+          print(r'{{ 0 < Param.X <= 5 }}')
+          print(r'{{ 1 <= Param.X <= 5 }}')
+          print(r'{{ 10 > Param.X > 0 }}')
+          print(r'{{ 5 >= Param.X >= 1 }}')
+          print(r'{{ 5 >= Param.X > 0 }}')
+          print(r'{{ 1 < 2 < 3 < 4 < 5 }}')
+          print(r'{{ 5 > 4 > 3 > 2 > 1 }}')
+          # String comparison
+          print(r'{{ Param.Name == "hello" }}')
+          print(r'{{ "a" < "b" }}')
+          # Logical and
+          print(r'{{ Param.X > 0 and Param.X < 10 }}')
+          # Logical or
+          print(r'{{ Param.X < 0 or Param.X > 0 }}')
+          # Logical not
+          print(r'{{ not (Param.X == 0) }}')
+          # in / not in (list)
+          print(r'{{ Param.X in [1, 3, 5, 7] }}')
+          print(r'{{ Param.X not in [2, 4, 6] }}')
+          # in / not in (string)
+          print(r'{{ "ell" in Param.Name }}')
+          print(r'{{ "xyz" not in Param.Name }}')

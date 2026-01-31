@@ -1,0 +1,40 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'HEX:{{ 0x2A }}')
+            print(r'OCT:{{ 0o52 }}')
+            print(r'BIN:{{ 0b101010 }}')
+            print(r'USCORE:{{ 1_000_000 }}')
+            print(r'SCI_PASS:{{ 1.5e3 }}')
+            print(r'SCI_NEG_PASS:{{ 1.5e-3 }}')
+            print(r'SCI_ADD:{{ 1.5e3 + 0 }}')
+            print(r'SCI_NEG_ADD:{{ 1.5e-3 + 0 }}')
+            print(r'SCI_POS:{{ +1.5e3 }}')
+            print(r'SCI_NEG_POS:{{ +1.5e-3 }}')
+            print(r'HEX_US:{{ 0xFF_FF }}')
+            print(r'BIN_US:{{ 0b1010_1010 }}')
+expected:
+  output:
+  - HEX:42
+  - OCT:42
+  - BIN:42
+  - USCORE:1000000
+  - SCI_PASS:1.5e3
+  - SCI_NEG_PASS:1.5e-3
+  - SCI_ADD:1500.0
+  - SCI_NEG_ADD:0.0015
+  - SCI_POS:1500.0
+  - SCI_NEG_POS:0.0015
+  - HEX_US:65535
+  - BIN_US:170

@@ -1,0 +1,31 @@
+# Without the EXPR extension, URI-like strings in PATH parameters are treated
+# as relative paths and joined with the current working directory. This test
+# verifies that the base specification behavior is preserved — s3:// values
+# are NOT given special URI treatment without EXPR.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: InputFile
+    type: PATH
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import os
+            value = r'{{ Param.InputFile }}'
+            # The value should have been joined with the working directory,
+            # so it should be an absolute local path, not a URI
+            print(r'IS_ABS:' + str(os.path.isabs(value)))
+            print(r'HAS_SCHEME:' + str(value.startswith('s3://')))
+parameters:
+  InputFile: "s3://bucket/key"
+expected:
+  output:
+  - "IS_ABS:True"
+  - "HAS_SCHEME:False"

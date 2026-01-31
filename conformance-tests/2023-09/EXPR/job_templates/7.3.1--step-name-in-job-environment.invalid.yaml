@@ -1,0 +1,17 @@
+# Step.Name is not available in jobEnvironments (job-level scope, not step scope).
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Setup
+  variables:
+    STEP: "{{ Step.Name }}"
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - hello

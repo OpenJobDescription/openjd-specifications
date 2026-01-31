@@ -1,0 +1,88 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+# Minimal
+- name: Minimal
+  type: LIST[FLOAT]
+# With default
+- name: WithDefault
+  type: LIST[FLOAT]
+  default: [0.5, 1.0, 1.5]
+# Empty default
+- name: EmptyDefault
+  type: LIST[FLOAT]
+  default: []
+# Single element
+- name: SingleElement
+  type: LIST[FLOAT]
+  default: [3.14]
+# Integer values (coerced to float)
+- name: IntValues
+  type: LIST[FLOAT]
+  default: [1, 2, 3]
+# Negative values
+- name: Negatives
+  type: LIST[FLOAT]
+  default: [-1.5, 0.0, 1.5]
+# High precision
+- name: HighPrecision
+  type: LIST[FLOAT]
+  default: [0.123456789, 9.87654321]
+# Length constraints
+- name: WithMinMax
+  type: LIST[FLOAT]
+  default: [1.0, 2.0]
+  minLength: 1
+  maxLength: 50
+# Item constraints - allowedValues
+- name: ItemAllowed
+  type: LIST[FLOAT]
+  default: [0.25, 0.75]
+  item:
+    allowedValues: [0.25, 0.5, 0.75, 1.0]
+# Item constraints - value range
+- name: ItemRange
+  type: LIST[FLOAT]
+  default: [0.5, 5.0]
+  item:
+    minValue: 0.0
+    maxValue: 10.0
+# Both constraints
+- name: FullyConstrained
+  type: LIST[FLOAT]
+  default: [1.0, 2.0]
+  minLength: 1
+  maxLength: 10
+  item:
+    minValue: 0.0
+    maxValue: 100.0
+# Description
+- name: WithDescription
+  type: LIST[FLOAT]
+  default: [1.0]
+  description: A list of floats
+# UI controls
+- name: WithSpinBoxList
+  type: LIST[FLOAT]
+  default: [1.0]
+  userInterface:
+    control: SPIN_BOX_LIST
+    label: Weights
+    decimals: 2
+    singleStepDelta: 0.1
+- name: WithHidden
+  type: LIST[FLOAT]
+  default: [1.0]
+  userInterface:
+    control: HIDDEN
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

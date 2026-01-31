@@ -1,0 +1,32 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'FLOAT:{{ int(3.0) }}')
+            print(r'STR:{{ int("42") }}')
+            print(r'SCI:{{ int(1e2) }}')
+            print(r'NEG:{{ int(-5.0) }}')
+            print(r'STR_NEG:{{ int("-7") }}')
+            print(r'LEADING:{{ int("  42") }}')
+            print(r'TRAILING:{{ int("42  ") }}')
+            print(r'BOTH:{{ int("  42  ") }}')
+expected:
+  output:
+  - FLOAT:3
+  - STR:42
+  - SCI:100
+  - NEG:-5
+  - STR_NEG:-7
+  - LEADING:42
+  - TRAILING:42
+  - BOTH:42

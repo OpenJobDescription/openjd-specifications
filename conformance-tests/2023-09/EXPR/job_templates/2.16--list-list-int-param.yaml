@@ -1,0 +1,100 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+# Minimal
+- name: Minimal
+  type: LIST[LIST[INT]]
+# With default
+- name: WithDefault
+  type: LIST[LIST[INT]]
+  default: [[1, 2], [3], [0, 1]]
+# Empty outer list
+- name: EmptyOuter
+  type: LIST[LIST[INT]]
+  default: []
+# Empty inner lists
+- name: EmptyInner
+  type: LIST[LIST[INT]]
+  default: [[], [], []]
+# Single inner list
+- name: SingleInner
+  type: LIST[LIST[INT]]
+  default: [[1, 2, 3]]
+# Single element inner lists
+- name: SingleElements
+  type: LIST[LIST[INT]]
+  default: [[1], [2], [3]]
+# Negative values
+- name: Negatives
+  type: LIST[LIST[INT]]
+  default: [[-10, -1], [0], [1, 10]]
+# Long outer list
+- name: LongOuter
+  type: LIST[LIST[INT]]
+  default: [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15]]
+# Long inner list
+- name: LongInner
+  type: LIST[LIST[INT]]
+  default: [[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]]
+# Outer length constraints
+- name: OuterMinMax
+  type: LIST[LIST[INT]]
+  default: [[1], [2]]
+  minLength: 1
+  maxLength: 50
+# Inner length constraints
+- name: InnerMinMax
+  type: LIST[LIST[INT]]
+  default: [[1, 2, 3]]
+  item:
+    minLength: 1
+    maxLength: 20
+# Inner item value constraints
+- name: InnerItemRange
+  type: LIST[LIST[INT]]
+  default: [[5, 10]]
+  item:
+    item:
+      minValue: 0
+      maxValue: 100
+# Inner item allowedValues
+- name: InnerItemAllowed
+  type: LIST[LIST[INT]]
+  default: [[1, 3]]
+  item:
+    item:
+      allowedValues: [1, 2, 3, 4, 5]
+# All constraints
+- name: FullyConstrained
+  type: LIST[LIST[INT]]
+  default: [[1, 2], [3, 4]]
+  minLength: 1
+  maxLength: 10
+  item:
+    minLength: 1
+    maxLength: 5
+    item:
+      minValue: 0
+      maxValue: 100
+# Description
+- name: WithDescription
+  type: LIST[LIST[INT]]
+  default: [[1]]
+  description: Adjacency list for task dependencies
+# UI control (only HIDDEN supported)
+- name: WithHidden
+  type: LIST[LIST[INT]]
+  default: [[1]]
+  userInterface:
+    control: HIDDEN
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

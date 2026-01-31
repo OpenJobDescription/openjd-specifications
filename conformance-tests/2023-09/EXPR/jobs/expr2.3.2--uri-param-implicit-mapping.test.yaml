@@ -1,0 +1,67 @@
+# URI PATH job parameters with implicit path mapping (Expression Language §1.2.1, §2.3.2)
+# When PATH parameters contain URIs and path mapping rules match, Param.<name>
+# receives the mapped local path while RawParam.<name> preserves the original URI.
+# This tests the implicit mapping that happens during parameter processing,
+# not the explicit apply_path_mapping() function.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: S3File
+    type: PATH
+    default: "s3://my-bucket/assets/teapot.obj"
+  - name: HttpFile
+    type: PATH
+    default: "https://cdn.example.com/models/scene.obj"
+  - name: UnmappedFile
+    type: PATH
+    default: "fsx://vol/data/file.bin"
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'S3_RAW:{{ RawParam.S3File }}')
+            print(r'S3_MAPPED:{{ Param.S3File }}')
+            print(r'S3_NAME:{{ Param.S3File.name }}')
+            print(r'S3_PARENT:{{ Param.S3File.parent }}')
+            print(r'HTTP_RAW:{{ RawParam.HttpFile }}')
+            print(r'HTTP_MAPPED:{{ Param.HttpFile }}')
+            print(r'HTTP_NAME:{{ Param.HttpFile.name }}')
+            print(r'UNMAPPED_RAW:{{ RawParam.UnmappedFile }}')
+            print(r'UNMAPPED_VALUE:{{ Param.UnmappedFile }}')
+            print(r'UNMAPPED_NAME:{{ Param.UnmappedFile.name }}')
+            print(r'UNMAPPED_PARTS:{{ Param.UnmappedFile.parts }}')
+pathMapping:
+  - source_path_format: URI
+    source_path: s3://my-bucket/assets
+    destination_path: /local/assets
+  - source_path_format: URI
+    source_path: https://cdn.example.com/models
+    destination_path: /cache/models
+expected:
+  output:
+  # RawParam always preserves the original URI
+  - "S3_RAW:s3://my-bucket/assets/teapot.obj"
+  - "S3_NAME:teapot.obj"
+  - "HTTP_RAW:https://cdn.example.com/models/scene.obj"
+  - "HTTP_NAME:scene.obj"
+  # Unmapped URI passes through as-is with URI path semantics
+  - "UNMAPPED_RAW:fsx://vol/data/file.bin"
+  - "UNMAPPED_VALUE:fsx://vol/data/file.bin"
+  - "UNMAPPED_NAME:file.bin"
+  - 'UNMAPPED_PARTS:["fsx://vol", "data", "file.bin"]'
+  output_posix:
+  - "S3_MAPPED:/local/assets/teapot.obj"
+  - "S3_PARENT:/local/assets"
+  - "HTTP_MAPPED:/cache/models/scene.obj"
+  output_windows:
+  - "S3_MAPPED:\\local\\assets\\teapot.obj"
+  - "S3_PARENT:\\local\\assets"
+  - "HTTP_MAPPED:\\cache\\models\\scene.obj"

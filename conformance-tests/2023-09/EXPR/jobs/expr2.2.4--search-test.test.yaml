@@ -1,0 +1,28 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'SW_T:{{ startswith("hello", "hel") }}')
+            print(r'SW_F:{{ startswith("hello", "world") }}')
+            print(r'EW_T:{{ endswith("hello", "llo") }}')
+            print(r'EW_F:{{ endswith("hello", "world") }}')
+            print(r'COUNT:{{ count("banana", "an") }}')
+            print(r'COUNT_ZERO:{{ count("hello", "xyz") }}')
+expected:
+  output:
+  - SW_T:true
+  - SW_F:false
+  - EW_T:true
+  - EW_F:false
+  - COUNT:2
+  - COUNT_ZERO:0

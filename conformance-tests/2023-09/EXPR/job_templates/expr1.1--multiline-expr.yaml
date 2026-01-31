@@ -1,0 +1,50 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: X
+  type: INT
+  default: 5
+- name: Items
+  type: LIST[INT]
+  default: [1, 2, 3, 4, 5]
+- name: Quality
+  type: STRING
+  default: final
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        # Multi-line arithmetic
+        - |-
+          print(r'{{ Param.X +
+                     1 }}')
+        # Multi-line conditional
+        - |-
+          print(r'{{ "high"
+                     if Param.Quality == "final"
+                     else "low" }}')
+        # Multi-line list literal
+        - |-
+          print(r'{{ [
+              Param.X,
+              Param.X + 1,
+              Param.X + 2
+          ] }}')
+        # Multi-line list comprehension
+        - |-
+          print(r'{{ [
+              x * 2
+              for x in Param.Items
+              if x > 2
+          ] }}')
+        # Multi-line function call
+        - |-
+          print(r'{{ min(
+              Param.X,
+              10
+          ) }}')

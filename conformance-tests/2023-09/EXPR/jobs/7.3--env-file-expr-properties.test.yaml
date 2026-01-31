@@ -1,0 +1,46 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Greeting
+    type: STRING
+    default: hello
+  jobEnvironments:
+  - name: TestEnv
+    script:
+      embeddedFiles:
+      - name: config
+        type: TEXT
+        data: "greeting={{Param.Greeting}}"
+      let:
+      - "cfg = Env.File.config"
+      - "has_parent = len(string(cfg.parent)) > 0"
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - |
+            import os
+            path = {{ repr_py(cfg) }}
+            exists = os.path.isfile(path)
+            content = open(path).read() if exists else ''
+            print(f'EXISTS:{exists}')
+            print(f'CONTENT:{content}')
+            print(r'HAS_PARENT:{{ has_parent }}')
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print('RAN')
+expected:
+  output:
+  - "EXISTS:True"
+  - "CONTENT:greeting=hello"
+  - "HAS_PARENT:true"

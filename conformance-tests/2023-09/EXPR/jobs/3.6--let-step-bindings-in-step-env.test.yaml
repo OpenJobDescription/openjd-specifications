@@ -1,0 +1,57 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Base
+    type: INT
+    default: 7
+  steps:
+  - name: Step1
+    let:
+    - val = Param.Base * 3
+    - label = "item_" + string(val)
+    stepEnvironments:
+    - name: VarEnv
+      variables:
+        MY_VAL: "{{ val }}"
+        MY_LABEL: "{{ label }}"
+    - name: ScriptEnv
+      script:
+        actions:
+          onEnter:
+            command: python
+            args:
+            - -c
+            - "print(r'ENTER_VAL:{{val}}')\nprint(r'ENTER_LABEL:{{label}}')"
+          onExit:
+            command: python
+            args:
+            - -c
+            - "print(r'EXIT_VAL:{{val}}')\nprint(r'EXIT_LABEL:{{label}}')"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import os
+            print('ENV_VAL:' + os.environ.get('MY_VAL', ''))
+            print('ENV_LABEL:' + os.environ.get('MY_LABEL', ''))
+            print(r'TASK_VAL:{{val}}')
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range: [1]
+expected:
+  output:
+  - ENTER_VAL:21
+  - ENTER_LABEL:item_21
+  - ENV_VAL:21
+  - ENV_LABEL:item_21
+  - TASK_VAL:21
+  - EXIT_VAL:21
+  - EXIT_LABEL:item_21

@@ -1,0 +1,16 @@
+# Nested list comprehensions that exceed the default 10 million operation limit.
+# The expression evaluates len() of nested comprehensions with range(300),
+# producing ~10M operations through the cubic iteration pattern.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - -c
+        - "print(r'{{ [len([i for i in [len(range(300)) for j in range(300)]]) for k in range(300)] }}')"

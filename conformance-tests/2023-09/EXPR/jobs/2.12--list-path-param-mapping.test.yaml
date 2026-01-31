@@ -1,0 +1,44 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Paths
+    type: LIST[PATH]
+    default: ["/mnt/shared/a.exr", "/mnt/shared/b.exr"]
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Path
+        type: PATH
+        range: "{{RawParam.Paths}}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'RAW:{{ RawParam.Paths }}')
+            print(r'MAPPED:{{ Param.Paths }}')
+            print(r'TASK_MAPPED:{{ Task.Param.Path }}')
+            print(r'TASK_RAW:{{ Task.RawParam.Path }}')
+pathMapping:
+  - source_path_format: POSIX
+    source_path: /mnt/shared
+    destination_path: /local/cache
+expected:
+  output:
+  - 'RAW:["/mnt/shared/a.exr", "/mnt/shared/b.exr"]'
+  - "TASK_RAW:/mnt/shared/a.exr"
+  - "TASK_RAW:/mnt/shared/b.exr"
+  output_posix:
+  - 'MAPPED:["/local/cache/a.exr", "/local/cache/b.exr"]'
+  - "TASK_MAPPED:/local/cache/a.exr"
+  - "TASK_MAPPED:/local/cache/b.exr"
+  output_windows:
+  - 'MAPPED:["\\local\\cache\\a.exr", "\\local\\cache\\b.exr"]'
+  - "TASK_MAPPED:\\local\\cache\\a.exr"
+  - "TASK_MAPPED:\\local\\cache\\b.exr"

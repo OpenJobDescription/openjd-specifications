@@ -1,0 +1,26 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'STRIP:[{{ strip("xxhelloxx", "x") }}]')
+            print(r'LSTRIP:[{{ lstrip("xxhelloxx", "x") }}]')
+            print(r'RSTRIP:[{{ rstrip("xxhelloxx", "x") }}]')
+            print(r'STRIP_MULTI:[{{ strip("abcHELLOcba", "abc") }}]')
+            print(r'METHOD:[{{ "...hi...".strip(".") }}]')
+expected:
+  output:
+  - STRIP:[hello]
+  - LSTRIP:[helloxx]
+  - RSTRIP:[xxhello]
+  - STRIP_MULTI:[HELLO]
+  - METHOD:[hi]

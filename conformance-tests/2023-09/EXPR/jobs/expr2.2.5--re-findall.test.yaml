@@ -1,0 +1,24 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'PLAIN:{{ re_findall("a1b2c3", r"\d+") }}')
+            print(r'ONE_GROUP:{{ re_findall("shot010_shot020", r"shot(\d+)") }}')
+            print(r'MULTI_GROUP:{{ re_findall("v1.2.3 and v4.5.6", r"v(\d+)\.(\d+)\.(\d+)") }}')
+            print(r'NO_MATCH:{{ re_findall("hello", r"\d+") }}')
+expected:
+  output:
+  - 'PLAIN:["1", "2", "3"]'
+  - 'ONE_GROUP:["010", "020"]'
+  - 'MULTI_GROUP:[["1", "2", "3"], ["4", "5", "6"]]'
+  - "NO_MATCH:[]"

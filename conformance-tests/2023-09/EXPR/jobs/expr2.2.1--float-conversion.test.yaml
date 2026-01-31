@@ -1,0 +1,32 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'INT:{{ float(3) }}')
+            print(r'STR:{{ float("2.5") }}')
+            print(r'STR_INT:{{ float("42") }}')
+            print(r'SCI:{{ float("1.5e3") }}')
+            print(r'SCI_NEG:{{ float("2.5e-1") }}')
+            print(r'LEADING:{{ float("  2.5") }}')
+            print(r'TRAILING:{{ float("2.5  ") }}')
+            print(r'BOTH:{{ float("  2.5  ") }}')
+expected:
+  output:
+  - INT:3.0
+  - STR:2.5
+  - STR_INT:42.0
+  - SCI:1500.0
+  - SCI_NEG:0.25
+  - LEADING:2.5
+  - TRAILING:2.5
+  - BOTH:2.5

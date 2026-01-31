@@ -1,0 +1,21 @@
+# Float values outside int64 range are fine
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'POS:{{ 9223372036854775808.0 }}')
+            print(r'NEG:{{ -9223372036854775809.0 }}')
+expected:
+  output:
+  - "POS:9223372036854775808.0"
+  - "NEG:-9.223372036854776e+18"  # unary negation removes pass-through, so shortest repr

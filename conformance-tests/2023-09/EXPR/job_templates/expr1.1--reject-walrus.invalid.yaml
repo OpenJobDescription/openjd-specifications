@@ -1,0 +1,20 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: X
+  type: INT
+  default: 5
+- name: Items
+  type: LIST[INT]
+  default: [1, 2, 3]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ (x := 5) }}')"

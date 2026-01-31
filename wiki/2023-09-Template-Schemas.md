@@ -49,7 +49,8 @@ Where:
 3. *extensions* — If provided, is a non-empty list of extensions to the schema. Introduced in [RFC 0002](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0002-model-extensions.md).
       * Extensions available for specification version 2023-09: [TASK_CHUNKING](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0001-task-chunking.md),
          [REDACTED_ENV_VARS](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0003-redacted-env-vars.md),
-         [FEATURE_BUNDLE_1](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0004-enhanced-limits-and-capabilities.md)
+         [FEATURE_BUNDLE_1](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0004-enhanced-limits-and-capabilities.md),
+         [EXPR](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0005-expression-language.md)
 4. *name* — The name to give to a Job that is created from the template. See: [&lt;JobName&gt;](#111-jobname).
 5. *description* — A description to apply to all Jobs that are created from the template. It has no functional purpose,
    but may appear in UI elements. See: [&lt;Description&gt;](#72-description).
@@ -129,8 +130,22 @@ valid -- for example, the value of the `default` property must adhere to the con
 
 ```bnf
 <JobParameterDefinition> ::= <JobStringParameterDefinition> | <JobPathParameterDefinition> |
-                             <JobIntParameterDefinition> | <JobFloatParameterDefinition>
+                             <JobIntParameterDefinition> | <JobFloatParameterDefinition> |
+                             <JobBoolParameterDefinition> |              # @extension EXPR
+                             <JobRangeExprParameterDefinition> |         # @extension EXPR
+                             <JobListStringParameterDefinition> |        # @extension EXPR
+                             <JobListPathParameterDefinition> |          # @extension EXPR
+                             <JobListIntParameterDefinition> |           # @extension EXPR
+                             <JobListFloatParameterDefinition> |         # @extension EXPR
+                             <JobListBoolParameterDefinition> |          # @extension EXPR
+                             <JobListListIntParameterDefinition>         # @extension EXPR
 ```
+
+When the `EXPR` extension is enabled, job parameter and task parameter type names become
+case-insensitive. For example, `INT`, `Int`, and `int` are all equivalent, as are
+`LIST[STRING]`, `List[String]`, and `list[string]`. See
+[RFC 0007](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0007-extend-parameter-types.md)
+for the design rationale.
 
 ### 2.1. `<JobStringParameterDefinition>`
 
@@ -171,28 +186,30 @@ Where:
 7. *userInterface* — User interface properties for this parameter. This metadata defines how a user interface element
    should be constructed to allow a user to input a value for the parameter.
     1. *control* — The user interface control to use when editing this parameter.
-       The default, if not provided, is "LINE_EDIT" when *allowedValues* is not provided, “DROPDOWN_LIST” when it is.
-        1. “LINE_EDIT“ — This is a freeform string line edit control. Cannot be used when *allowedValues* is provided.
-        2. “MULTILINE_EDIT” — This is a freeform string multi-line edit control. It uses a fixed width font, intended for
+       The default, if not provided, is "LINE_EDIT" when *allowedValues* is not provided, "DROPDOWN_LIST" when it is.
+        1. "LINE_EDIT" — This is a freeform string line edit control. Cannot be used when *allowedValues* is provided.
+        2. "MULTILINE_EDIT" — This is a freeform string multi-line edit control. It uses a fixed width font, intended for
            editing script code. The vertical size of this control is set to grow to fit the available space. Cannot be
            used when *allowedValues* is provided.
-        3. “DROPDOWN_LIST” — This is a dropdown list, for selecting from a fixed set of values. It requires that
+        3. "DROPDOWN_LIST" — This is a dropdown list, for selecting from a fixed set of values. It requires that
            *allowedValues* is also provided.
-        4. “CHECK_BOX” — This is a checkbox control. It requires that *allowedValues* is also provided, and contains two
+        4. "CHECK_BOX" — This is a checkbox control. It requires that *allowedValues* is also provided, and contains two
            values, case-insensitive, one representing true and another representing false.
-            * Valid pairs are [“true”, “false”], [“yes”, “no”], [“on”, “off”], and [“1”, “0”].
-        5. “HIDDEN” — This hides the parameter from the user interface.
-    2. *label* — The user interface label to use when displaying the parameter’s edit control. If not provided, the
+            * Valid pairs are ["true", "false"], ["yes", "no"], ["on", "off"], and ["1", "0"].
+        5. "HIDDEN" — This hides the parameter from the user interface.
+    2. *label* — The user interface label to use when displaying the parameter's edit control. If not provided, the
        implementation should default to using the parameter *name*.
        See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
     3. *groupLabel* — Parameters with the same *groupLabel* value should be placed together in a grouping control with the
        value of *groupLabel* as its label.
        See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
 
+With the EXPR extension, the value of a Job Parameter of this type is referenced in format strings as `Param.<name>`, returning a `string` type value.
+
 ### 2.2. `<JobPathParameterDefinition>`
 
 Defines a job parameter that allows input to a Job Template of a single string value that represents a file or directory
-path on a filesystem. This parameter type differs from a
+path on a filesystem, or a URI. This parameter type differs from a
 [`<JobStringParameterDefinition>`](#21-jobstringparameterdefinition) in that the value of the parameter automatically has
 defined and matching path mapping rules applied to it.
 
@@ -200,6 +217,14 @@ The value of a Job Parameter of this type referenced in format strings as both:
 
 1. `Param.<name>` — the value of the parameter with applicable path mapping applied to it; and
 2. `RawParam.<name>` — the value of the parameter exactly as it was input to the job, with no path mapping applied to it.
+
+**`@extension EXPR` — URI values**: When the EXPR extension is enabled, PATH parameter values
+may be URIs (values with a `scheme://` prefix, e.g. `s3://bucket/key`). URI values are not
+subject to relative path resolution — they are not joined with the job template directory or
+the current working directory. If no path mapping rule matches a URI value, it passes through
+to `Param.<name>` unchanged. See the
+[Expression Language path type description](2026-02-Expression-Language#121-types) for how
+path operations handle URIs.
 
 A `<JobPathParameterDefinition>` is the object:
 
@@ -239,25 +264,27 @@ Where:
        *objectType*, *dataFlow*, and *allowedValues*. If *objectType* is FILE, then if *dataFlow* is "OUT", it is
        "CHOOSE_OUTPUT_FILE", otherwise it is "CHOOSE_INPUT_FILE". If *objectType* is not "FILE", then it is
        "CHOOSE_DIRECTORY". If *allowedValues* is provided, then the default is instead "DROPDOWN_LIST".
-        1. “CHOOSE_INPUT_FILE“ — This is a combination of a line edit and a button that uses the system’s input file
+        1. "CHOOSE_INPUT_FILE" — This is a combination of a line edit and a button that uses the system's input file
            dialog. Cannot be used when *allowedValues* is provided.
-        2. “CHOOSE_OUTPUT_FILE” — This is a combination of a line edit and a button that uses the system’s output/save
+        2. "CHOOSE_OUTPUT_FILE" — This is a combination of a line edit and a button that uses the system's output/save
            file dialog. Cannot be used when *allowedValues* is provided.
-        3. “CHOOSE_DIRECTORY” — This is a combination of a line edit and a button that uses the system’s directory dialog.
+        3. "CHOOSE_DIRECTORY" — This is a combination of a line edit and a button that uses the system's directory dialog.
            Cannot be used when *allowedValues* is provided.
-        4. “DROPDOWN_LIST” — This is a dropdown list, for selecting from a fixed set of values. It requires that
+        4. "DROPDOWN_LIST" — This is a dropdown list, for selecting from a fixed set of values. It requires that
            *allowedValues* is also provided.
-        5. “HIDDEN” — This hides the parameter from the user interface.
-    2. *label* — The user interface label to use when displaying the parameter’s edit control. If not provided, the
+        5. "HIDDEN" — This hides the parameter from the user interface.
+    2. *label* — The user interface label to use when displaying the parameter's edit control. If not provided, the
        implementation should default to using the parameter *name*.
        See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
     3. *groupLabel* — Parameters with the same *groupLabel* value should be placed together in a grouping control with the
        value of *groupLabel* as its label.
        See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
-    4. fileFilters — Can be provided when the *uiControl* is “CHOOSE_INPUT_FILE” or “CHOOSE_OUTPUT_FILE”. Defines the file
+    4. fileFilters — Can be provided when the *uiControl* is "CHOOSE_INPUT_FILE" or "CHOOSE_OUTPUT_FILE". Defines the file
        filters that are shown in the file choice dialog. Maximum of 20 filters.
-    5. fileFilterDefault — Can be provided when the *uiControl* is “CHOOSE_INPUT_FILE” or “CHOOSE_OUTPUT_FILE”. The
-       default file filter that’s shown in the file choice dialog.
+    5. fileFilterDefault — Can be provided when the *uiControl* is "CHOOSE_INPUT_FILE" or "CHOOSE_OUTPUT_FILE". The
+       default file filter that's shown in the file choice dialog.
+
+With the EXPR extension, the value of a Job Parameter of this type is referenced in format strings as `Param.<name>`, returning a `path` type value.
 
 ### 2.3 `<JobIntParameterDefinition>`
 
@@ -300,12 +327,12 @@ Where `<intstring>` is a string whose value is the string representation of an i
    greater than this.
 7. *userInterface — User interface properties for this parameter*
     1. *control* — The user interface control to use when editing this parameter. The default, if not provided, is
-      “SPIN_BOX” when *allowedValues* is not provided, “DROPDOWN_LIST” when it is.
-        1. “SPIN_BOX“ — This is an integer editing control. Cannot be used when *allowedValues* is provided.
-        2. “DROPDOWN_LIST” — This is a dropdown list, for selecting from a fixed set of values. It requires that
+      "SPIN_BOX" when *allowedValues* is not provided, "DROPDOWN_LIST" when it is.
+        1. "SPIN_BOX" — This is an integer editing control. Cannot be used when *allowedValues* is provided.
+        2. "DROPDOWN_LIST" — This is a dropdown list, for selecting from a fixed set of values. It requires that
            *allowedValues* is provided.
-        3. “HIDDEN” — This hides the parameter from the user interface.
-    2. *label* — The user interface label to use when displaying the parameter’s edit control. If not provided, the
+        3. "HIDDEN" — This hides the parameter from the user interface.
+    2. *label* — The user interface label to use when displaying the parameter's edit control. If not provided, the
        implementation should default to using the parameter *name*.
        See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
     3. *groupLabel* — Parameters with the same *groupLabel* value should be placed together in a grouping control with the
@@ -313,6 +340,8 @@ Where `<intstring>` is a string whose value is the string representation of an i
        See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
     4. *singleStepDelta* — How much the value changes for a single step modification, such as selecting an up or down
        arrow in the user interface control.
+
+With the EXPR extension, the value of a Job Parameter of this type is referenced in format strings as `Param.<name>`, returning an `int` type value.
 
 ### 2.4. `<JobFloatParameterDefinition>`
 
@@ -356,12 +385,12 @@ base-10, and:
    greater than this.
 7. *userInterface — User interface properties for this parameter*
     1. *control* — The user interface control to use when editing this parameter. The default, if not provided, is
-       “SPIN_BOX” when *allowedValues* is not provided, “DROPDOWN_LIST” when it is.
-        1. “SPIN_BOX“ — This is a floating point editing control. Cannot be used when *allowedValues* is provided.
-        2. “DROPDOWN_LIST” — This is a dropdown list, for selecting from a fixed set of values. It requires that
+       "SPIN_BOX" when *allowedValues* is not provided, "DROPDOWN_LIST" when it is.
+        1. "SPIN_BOX" — This is a floating point editing control. Cannot be used when *allowedValues* is provided.
+        2. "DROPDOWN_LIST" — This is a dropdown list, for selecting from a fixed set of values. It requires that
            *allowedValues* is provided.
-        3. “HIDDEN” — This hides the parameter from the user interface.
-    2. *label* — The user interface label to use when displaying the parameter’s edit control. If not provided, the
+        3. "HIDDEN" — This hides the parameter from the user interface.
+    2. *label* — The user interface label to use when displaying the parameter's edit control. If not provided, the
        implementation should default to using the parameter *name*.
        See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
     3. *groupLabel* — Parameters with the same *groupLabel* value should be placed together in a grouping control with the
@@ -373,7 +402,11 @@ base-10, and:
        arrow in the user interface control. If *decimals* is provided, this is an absolute value, otherwise it is the
        fraction of the current value to use as an adaptive step.
 
+With the EXPR extension, the value of a Job Parameter of this type is referenced in format strings as `Param.<name>`, returning a `float` type value.
+
 ### 2.5. `<JobParameterStringValue>`
+
+*This is a supplemental value type referenced by the parameter definitions in sections 2.1–2.4 and 2.9+.*
 
 A string value subject to the following constraints:
 
@@ -383,6 +416,8 @@ A string value subject to the following constraints:
 
 ### 2.6. `<UserInterfaceLabelStringValue>`
 
+*This is a supplemental value type referenced by the parameter definitions in sections 2.1–2.4 and 2.9+.*
+
 A string value subject to the following constraints:
 
 1. Allowable characters: Any unicode character except those in the Cc unicode character category.
@@ -391,8 +426,10 @@ A string value subject to the following constraints:
 
 ### 2.7. `<JobPathParameterFileFilter>`
 
+*This is a supplemental value type referenced by the parameter definitions in sections 2.1–2.4 and 2.9+.*
+
 Represents one named file type for an input or output file choice dialog. For example:
-`{“label”: “Image Files”, “patterns”: [“*.png”, “*.jpg”, “*.exr”]}` or `{“label”: “All Files”, “patterns”: [“*”]}`.
+`{"label": "Image Files", "patterns": ["*.png", "*.jpg", "*.exr"]}` or `{"label": "All Files", "patterns": ["*"]}`.
 
 A `<JobPathParameterFileFilter>` is the object:
 
@@ -403,17 +440,396 @@ patterns: [ <FileDialogFilterPatternStringValue>, ... ]
 
 ### 2.8. `<FileDialogFilterPatternStringValue>`
 
+*This is a supplemental value type referenced by the parameter definitions in sections 2.1–2.4 and 2.9+.*
+
 A string value subject to the following constraints:
 
-1. Allowable values: “*”, “*.*”, and “*.[:file-extension-chars:]+”. The characters that :file-extension-chars: can take on
+1. Allowable values: "*", "*.*", and "*.[:file-extension-chars:]+". The characters that :file-extension-chars: can take on
    are any unicode character except
     1. The Cc unicode character category.
-    2. Path separators “\” and “/”.
-    3. Wildcard characters “*”, “?”, “[”, “]”.
-    4. Characters commonly disallowed in paths: “#”, “%”, “&”, “{”, “}”, “<”, “>”, “$”, “!”, “‘”, “\"", ":", "@", "`", "|",
+    2. Path separators "\" and "/".
+    3. Wildcard characters "*", "?", "[", "]".
+    4. Characters commonly disallowed in paths: "#", "%", "&", "{", "}", "<", ">", "$", "!", "'", "\"", ":", "@", "`", "|",
        and "=".
 2. Minimum length: 1 character.
 3. Maximum length: 20 characters.
+
+### 2.9. `<JobBoolParameterDefinition>` `@extension EXPR`
+
+Defines a job parameter that accepts a boolean value.
+
+```yaml
+name: <Identifier>
+type: "BOOL"
+description: <Description> # @optional
+default: <bool> # @optional
+userInterface: # @optional
+   control: enum("CHECK_BOX", "HIDDEN")
+   label: <UserInterfaceLabelStringValue> # @optional
+   groupLabel: <UserInterfaceLabelStringValue> # @optional
+```
+
+Accepted values are:
+- JSON/YAML boolean literals: `true`, `false`
+- Integer or float `1` or `1.0` (true), `0` or `0.0` (false)
+- Case-insensitive strings representing true: `"true"`, `"yes"`, `"on"`, `"1"`
+- Case-insensitive strings representing false: `"false"`, `"no"`, `"off"`, `"0"`
+
+Where:
+
+1. *name* — The name by which the parameter is referenced. See: [&lt;Identifier&gt;](#71-identifier).
+2. *description* — A description to apply to the parameter. It has no functional purpose, but may appear in UI elements.
+   See: [&lt;Description&gt;](#72-description).
+3. *default* — Default value to use for the parameter if the submission does not include a value for it.
+4. *userInterface* — User interface properties for this parameter.
+    1. *control* — The user interface control to use when editing this parameter. The default, if not provided, is "CHECK_BOX".
+        1. "CHECK_BOX" — A checkbox control for boolean input.
+        2. "HIDDEN" — This hides the parameter from the user interface.
+    2. *label* — The user interface label to use when displaying the parameter's edit control. If not provided, the
+       implementation should default to using the parameter *name*.
+       See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+    3. *groupLabel* — Parameters with the same *groupLabel* value should be placed together in a grouping control with the
+       value of *groupLabel* as its label.
+       See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+
+The value of a Job Parameter of this type is referenced in format strings as `Param.<name>`, returning a `bool` type value.
+
+Note: Unlike other parameter types, `BOOL` does not support `allowedValues` because restricting
+to only `true` or only `false` does not provide meaningful value.
+
+### 2.10. `<JobRangeExprParameterDefinition>` `@extension EXPR`
+
+Defines a job parameter that accepts a range expression string conforming to the
+[`<IntRangeExpr>`](#34111-intrangeexpr) grammar.
+
+```yaml
+name: <Identifier>
+type: "RANGE_EXPR"
+description: <Description> # @optional
+default: <string> # @optional, must be valid <IntRangeExpr>
+minLength: <integer> # @optional
+maxLength: <integer> # @optional
+userInterface: # @optional
+   control: enum("LINE_EDIT", "HIDDEN")
+   label: <UserInterfaceLabelStringValue> # @optional
+   groupLabel: <UserInterfaceLabelStringValue> # @optional
+```
+
+Where:
+
+1. *name* — The name by which the parameter is referenced. See: [&lt;Identifier&gt;](#71-identifier).
+2. *description* — A description to apply to the parameter. It has no functional purpose, but may appear in UI elements.
+   See: [&lt;Description&gt;](#72-description).
+3. *default* — Default value to use for the parameter if the submission does not include a value for it.
+   Must be a valid `<IntRangeExpr>`.
+4. *minLength* — Minimum string length of the range expression. Must be >= 1 if provided.
+5. *maxLength* — Maximum string length of the range expression. Default is 1024.
+6. *userInterface* — User interface properties for this parameter.
+    1. *control* — The user interface control to use when editing this parameter. The default, if not provided, is "LINE_EDIT".
+        1. "LINE_EDIT" — A single-line text input for entering range expressions.
+        2. "HIDDEN" — This hides the parameter from the user interface.
+    2. *label* — The user interface label to use when displaying the parameter's edit control. If not provided, the
+       implementation should default to using the parameter *name*.
+       See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+    3. *groupLabel* — Parameters with the same *groupLabel* value should be placed together in a grouping control with the
+       value of *groupLabel* as its label.
+       See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+
+The value of a Job Parameter of this type is referenced in format strings as:
+
+1. `Param.<name>` — Returns a `range_expr` type value.
+2. `RawParam.<name>` — Returns a `range_expr` type value (identical to `Param.<name>`).
+3. `list(Param.<name>)` — Returns a `list[int]` with the expanded values.
+
+### 2.11. `<JobListStringParameterDefinition>` `@extension EXPR`
+
+Defines a job parameter that accepts a list of string values.
+
+```yaml
+name: <Identifier>
+type: "LIST[STRING]"
+description: <Description> # @optional
+default: [ <string>, ... ] # @optional
+minLength: <integer> # @optional
+maxLength: <integer> # @optional
+item: # @optional
+  allowedValues: [ <string>, ... ] # @optional
+  minLength: <integer> # @optional
+  maxLength: <integer> # @optional
+userInterface: # @optional
+   control: enum("LINE_EDIT_LIST", "HIDDEN")
+   label: <UserInterfaceLabelStringValue> # @optional
+   groupLabel: <UserInterfaceLabelStringValue> # @optional
+```
+
+Where:
+
+1. *name* — The name by which the parameter is referenced. See: [&lt;Identifier&gt;](#71-identifier).
+2. *description* — A description to apply to the parameter. It has no functional purpose, but may appear in UI elements.
+   See: [&lt;Description&gt;](#72-description).
+3. *default* — Default value to use for the parameter if the submission does not include a value for it.
+4. *minLength*/*maxLength* — Constrain the number of items in the list.
+5. *item* — Constraints for each item in the list.
+    1. *allowedValues* — An array of the values that each item is allowed to be.
+    2. *minLength*/*maxLength* — Constrain the string length of each item.
+6. *userInterface* — User interface properties for this parameter.
+    1. *control* — The user interface control to use when editing this parameter. The default, if not provided, is "LINE_EDIT_LIST".
+        1. "LINE_EDIT_LIST" — A list of line edit controls.
+        2. "HIDDEN" — This hides the parameter from the user interface.
+    2. *label* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+    3. *groupLabel* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+
+The value of a Job Parameter of this type is referenced in format strings as:
+
+1. `Param.<name>` — Returns a `list[string]` type value.
+2. `Param.<name>[i]` — Returns the i-th element as `string`.
+3. `len(Param.<name>)` — Returns the count of elements.
+
+### 2.12. `<JobListPathParameterDefinition>` `@extension EXPR`
+
+Defines a job parameter that accepts a list of path values.
+
+```yaml
+name: <Identifier>
+type: "LIST[PATH]"
+description: <Description> # @optional
+objectType: enum("FILE", "DIRECTORY") # @optional
+dataFlow: enum("IN", "OUT", "INOUT", "NONE") # @optional
+default: [ <string>, ... ] # @optional
+minLength: <integer> # @optional
+maxLength: <integer> # @optional
+item: # @optional
+  allowedValues: [ <string>, ... ] # @optional
+  minLength: <integer> # @optional
+  maxLength: <integer> # @optional
+userInterface: # @optional
+   control: enum("CHOOSE_INPUT_FILE_LIST", "CHOOSE_OUTPUT_FILE_LIST",
+                 "CHOOSE_DIRECTORY_LIST", "HIDDEN")
+   label: <UserInterfaceLabelStringValue> # @optional
+   groupLabel: <UserInterfaceLabelStringValue> # @optional
+   fileFilters: [ <JobPathParameterFileFilter>, ... ] # @optional
+   fileFilterDefault: <JobPathParameterFileFilter> # @optional
+```
+
+Where:
+
+1. *name* — The name by which the parameter is referenced. See: [&lt;Identifier&gt;](#71-identifier).
+2. *description* — A description to apply to the parameter. It has no functional purpose, but may appear in UI elements.
+   See: [&lt;Description&gt;](#72-description).
+3. *objectType* — The type of object the paths represent; either FILE or DIRECTORY. Default is DIRECTORY.
+4. *dataFlow* — Whether the objects the paths represent serve as input, output or both for the Job. Default is NONE.
+5. *default* — Default value to use for the parameter if the submission does not include a value for it.
+6. *minLength*/*maxLength* — Constrain the number of paths in the list.
+7. *item* — Constraints for each item in the list.
+    1. *allowedValues* — An array of the values that each item is allowed to be.
+    2. *minLength*/*maxLength* — Constrain the string length of each path.
+8. *userInterface* — User interface properties for this parameter.
+    1. *control* — The user interface control to use. The default depends on *objectType* and *dataFlow*:
+       If *objectType* is FILE and *dataFlow* is "OUT", default is "CHOOSE_OUTPUT_FILE_LIST".
+       If *objectType* is FILE otherwise, default is "CHOOSE_INPUT_FILE_LIST".
+       If *objectType* is DIRECTORY, default is "CHOOSE_DIRECTORY_LIST".
+        1. "CHOOSE_INPUT_FILE_LIST" — A list of input file choice controls.
+        2. "CHOOSE_OUTPUT_FILE_LIST" — A list of output file choice controls.
+        3. "CHOOSE_DIRECTORY_LIST" — A list of directory choice controls.
+        4. "HIDDEN" — This hides the parameter from the user interface.
+    2. *label* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+    3. *groupLabel* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+    4. *fileFilters* — File filters for the file choice dialog (only for CHOOSE_INPUT_FILE_LIST/CHOOSE_OUTPUT_FILE_LIST).
+    5. *fileFilterDefault* — Default file filter for the file choice dialog.
+
+The value of a Job Parameter of this type is referenced in format strings as:
+
+1. `Param.<name>` — Returns a `list[path]` type value with path mapping applied.
+2. `RawParam.<name>` — Returns a `list[string]` type value without path mapping.
+3. `Param.<name>[i]` — Returns the i-th element as `path`.
+4. `len(Param.<name>)` — Returns the count of elements.
+
+### 2.13. `<JobListIntParameterDefinition>` `@extension EXPR`
+
+Defines a job parameter that accepts a list of integer values.
+
+```yaml
+name: <Identifier>
+type: "LIST[INT]"
+description: <Description> # @optional
+default: [ <integer>, ... ] # @optional
+minLength: <integer> # @optional
+maxLength: <integer> # @optional
+item: # @optional
+  allowedValues: [ <integer>, ... ] # @optional
+  minValue: <integer> # @optional
+  maxValue: <integer> # @optional
+userInterface: # @optional
+   control: enum("SPIN_BOX_LIST", "HIDDEN")
+   label: <UserInterfaceLabelStringValue> # @optional
+   groupLabel: <UserInterfaceLabelStringValue> # @optional
+   singleStepDelta: <positiveint> # @optional
+```
+
+Where:
+
+1. *name* — The name by which the parameter is referenced. See: [&lt;Identifier&gt;](#71-identifier).
+2. *description* — A description to apply to the parameter. It has no functional purpose, but may appear in UI elements.
+   See: [&lt;Description&gt;](#72-description).
+3. *default* — Default value to use for the parameter if the submission does not include a value for it.
+4. *minLength*/*maxLength* — Constrain the number of items in the list.
+5. *item* — Constraints for each item in the list.
+    1. *allowedValues* — An array of the values that each item is allowed to be.
+    2. *minValue*/*maxValue* — Constrain the value of each integer item.
+6. *userInterface* — User interface properties for this parameter.
+    1. *control* — The user interface control to use when editing this parameter. The default, if not provided, is "SPIN_BOX_LIST".
+        1. "SPIN_BOX_LIST" — A list of integer editing controls.
+        2. "HIDDEN" — This hides the parameter from the user interface.
+    2. *label* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+    3. *groupLabel* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+    4. *singleStepDelta* — How much the value changes for a single step modification.
+
+The value of a Job Parameter of this type is referenced in format strings as:
+
+1. `Param.<name>` — Returns a `list[int]` type value.
+2. `Param.<name>[i]` — Returns the i-th element as `int`.
+3. `len(Param.<name>)` — Returns the count of elements.
+
+### 2.14. `<JobListFloatParameterDefinition>` `@extension EXPR`
+
+Defines a job parameter that accepts a list of floating-point values.
+
+```yaml
+name: <Identifier>
+type: "LIST[FLOAT]"
+description: <Description> # @optional
+default: [ <float>, ... ] # @optional
+minLength: <integer> # @optional
+maxLength: <integer> # @optional
+item: # @optional
+  allowedValues: [ <float>, ... ] # @optional
+  minValue: <float> # @optional
+  maxValue: <float> # @optional
+userInterface: # @optional
+   control: enum("SPIN_BOX_LIST", "HIDDEN")
+   label: <UserInterfaceLabelStringValue> # @optional
+   groupLabel: <UserInterfaceLabelStringValue> # @optional
+   decimals: <integer> # @optional
+   singleStepDelta: <positivefloat> # @optional
+```
+
+Where:
+
+1. *name* — The name by which the parameter is referenced. See: [&lt;Identifier&gt;](#71-identifier).
+2. *description* — A description to apply to the parameter. It has no functional purpose, but may appear in UI elements.
+   See: [&lt;Description&gt;](#72-description).
+3. *default* — Default value to use for the parameter if the submission does not include a value for it.
+4. *minLength*/*maxLength* — Constrain the number of items in the list.
+5. *item* — Constraints for each item in the list.
+    1. *allowedValues* — An array of the values that each item is allowed to be.
+    2. *minValue*/*maxValue* — Constrain the value of each float item.
+6. *userInterface* — User interface properties for this parameter.
+    1. *control* — The user interface control to use when editing this parameter. The default, if not provided, is "SPIN_BOX_LIST".
+        1. "SPIN_BOX_LIST" — A list of floating point editing controls.
+        2. "HIDDEN" — This hides the parameter from the user interface.
+    2. *label* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+    3. *groupLabel* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+    4. *decimals* — The number of places editable after the decimal point.
+    5. *singleStepDelta* — How much the value changes for a single step modification.
+
+The value of a Job Parameter of this type is referenced in format strings as:
+
+1. `Param.<name>` — Returns a `list[float]` type value.
+2. `Param.<name>[i]` — Returns the i-th element as `float`.
+3. `len(Param.<name>)` — Returns the count of elements.
+
+### 2.15. `<JobListBoolParameterDefinition>` `@extension EXPR`
+
+Defines a job parameter that accepts a list of boolean values.
+
+```yaml
+name: <Identifier>
+type: "LIST[BOOL]"
+description: <Description> # @optional
+default: [ <bool>, ... ] # @optional
+minLength: <integer> # @optional
+maxLength: <integer> # @optional
+userInterface: # @optional
+   control: enum("CHECK_BOX_LIST", "HIDDEN")
+   label: <UserInterfaceLabelStringValue> # @optional
+   groupLabel: <UserInterfaceLabelStringValue> # @optional
+```
+
+Each list item accepts the same values as [`<JobBoolParameterDefinition>`](#29-jobboolparameterdefinition):
+- JSON/YAML boolean literals: `true`, `false`
+- Integer or float `1` or `1.0` (true), `0` or `0.0` (false)
+- Case-insensitive strings representing true: `"true"`, `"yes"`, `"on"`, `"1"`
+- Case-insensitive strings representing false: `"false"`, `"no"`, `"off"`, `"0"`
+
+Where:
+
+1. *name* — The name by which the parameter is referenced. See: [&lt;Identifier&gt;](#71-identifier).
+2. *description* — A description to apply to the parameter. It has no functional purpose, but may appear in UI elements.
+   See: [&lt;Description&gt;](#72-description).
+3. *default* — Default value to use for the parameter if the submission does not include a value for it.
+4. *minLength*/*maxLength* — Constrain the number of items in the list.
+5. *userInterface* — User interface properties for this parameter.
+    1. *control* — The user interface control to use when editing this parameter. The default, if not provided, is "CHECK_BOX_LIST".
+        1. "CHECK_BOX_LIST" — A list of checkbox controls.
+        2. "HIDDEN" — This hides the parameter from the user interface.
+    2. *label* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+    3. *groupLabel* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+
+The value of a Job Parameter of this type is referenced in format strings as:
+
+1. `Param.<name>` — Returns a `list[bool]` type value.
+2. `Param.<name>[i]` — Returns the i-th element as `bool`.
+3. `len(Param.<name>)` — Returns the count of elements.
+
+### 2.16. `<JobListListIntParameterDefinition>` `@extension EXPR`
+
+Defines a job parameter that accepts a nested list of integer values. This enables use cases
+like representing graph adjacency lists for task-task dependencies.
+
+```yaml
+name: <Identifier>
+type: "LIST[LIST[INT]]"
+description: <Description> # @optional
+default: [ [ <integer>, ... ], ... ] # @optional
+minLength: <integer> # @optional
+maxLength: <integer> # @optional
+item: # @optional
+  minLength: <integer> # @optional
+  maxLength: <integer> # @optional
+  item: # @optional
+    allowedValues: [ <integer>, ... ] # @optional
+    minValue: <integer> # @optional
+    maxValue: <integer> # @optional
+userInterface: # @optional
+   control: enum("HIDDEN")
+   label: <UserInterfaceLabelStringValue> # @optional
+   groupLabel: <UserInterfaceLabelStringValue> # @optional
+```
+
+Where:
+
+1. *name* — The name by which the parameter is referenced. See: [&lt;Identifier&gt;](#71-identifier).
+2. *description* — A description to apply to the parameter. It has no functional purpose, but may appear in UI elements.
+   See: [&lt;Description&gt;](#72-description).
+3. *default* — Default value to use for the parameter if the submission does not include a value for it.
+4. *minLength*/*maxLength* — Constrain the number of inner lists.
+5. *item* — Constraints for each inner list.
+    1. *minLength*/*maxLength* — Constrain the size of each inner list.
+    2. *item* — Constraints for each integer in the inner list.
+        1. *allowedValues* — An array of the values that each integer is allowed to be.
+        2. *minValue*/*maxValue* — Constrain the value of each integer.
+6. *userInterface* — User interface properties for this parameter.
+    1. *control* — The only supported control is "HIDDEN", which hides the parameter from the user interface.
+    2. *label* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+    3. *groupLabel* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+
+The value of a Job Parameter of this type is referenced in format strings as:
+
+1. `Param.<name>` — Returns a `list[list[int]]` type value.
+2. `Param.<name>[i]` — Returns the i-th element as `list[int]`.
+3. `Param.<name>[i][j]` — Returns the j-th element of the i-th list as `int`.
+4. `len(Param.<name>)` — Returns the count of outer list elements.
+5. `len(Param.<name>[i])` — Returns the count of inner list elements.
 
 ## 3. `<StepTemplate>`
 
@@ -425,6 +841,7 @@ A `<StepTemplate>` is the object:
 ```yaml
 name: <StepName>
 description: <Description> # @optional
+let: <LetBindings> # @optional @extension EXPR
 dependencies: [ <StepDependency>, ... ] # @optional
 stepEnvironments: [ <Environment>, ... ] # @optional
 hostRequirements: <HostRequirements> # @optional
@@ -438,12 +855,14 @@ Where:
    the names of all other Steps in the same Job Template. See: [&lt;StepName&gt;](#31-stepname).
 2. *description* — A description to apply to the step. It has no functional purpose, but may appear in UI elements.
    See: [&lt;Description&gt;](#72-description).
-3. *dependencies* — A list of the dependencies of this Step. These dependencies must be resolved before the Tasks of the
+3. *let* — An ordered list of expression bindings evaluated once per step. Bound names are available in
+   *stepEnvironments*, *hostRequirements*, *parameterSpace*, and *script* fields. See: [&lt;LetBindings&gt;](#36-letbindings).
+4. *dependencies* — A list of the dependencies of this Step. These dependencies must be resolved before the Tasks of the
    Step may be scheduled. See: [&lt;StepDependency&gt;](#32-stepdependency)
     * Minimum number of elements: If provided, then this list must contain at least one element.
     * Maximum number of elements: There is no maximum defined, though implementations may choose to constrain the number of
     dependencies.
-4. *stepEnvironments* — An ordered list of the environments that are required to run Tasks in this Step.
+5. *stepEnvironments* — An ordered list of the environments that are required to run Tasks in this Step.
   These are entered in the order provided at the start of every Session for Tasks in the Step, and exited in the reverse
   order at the end of those Sessions.
   See: [&lt;Environment&gt;](#4-environment).
@@ -451,12 +870,12 @@ Where:
         1. No two Environments in this list may have the same value for the `name` property.
         2. The Environments defined in this list must not have the same `name` as a Job Environment defined in the same
            Job Template.
-5. *hostRequirements* — Describes the requirements on Worker host's capabilities that must be satisfied for the Task(s) of
+6. *hostRequirements* — Describes the requirements on Worker host's capabilities that must be satisfied for the Task(s) of
    the Step to be scheduled to the host. See: [&lt;HostRequirements&gt;](#33-hostrequirements).
-6. *parameterSpace* — Defines the parameterization of the Step's action; the available parameters, the values that they
+7. *parameterSpace* — Defines the parameterization of the Step's action; the available parameters, the values that they
    take on, and how those parameters' values are combined to produce the Tasks of the Step. Absent this property the Step
    is run a single time.
-7. *script* — The action that is taken by this Step's Tasks when they are run on a Worker host.
+8. *script* — The action that is taken by this Step's Tasks when they are run on a Worker host.
 
 ### 3.1. `<StepName>`
 
@@ -490,7 +909,7 @@ capabilities that must be satisfied for the Task(s) of the Step to be scheduled 
 Each requirement corresponds to an attribute of a host or render manager that must be satisfied to allow the Step to
 be scheduled to the host. Some examples of concrete attributes include processor architecture (x86_64, arm64, etc), the
 number of CPU cores, the amount of system memory, or available floating licenses for an application. We also allow for
-user-defined whose meaning is defined by the customer; a “SoftwareConfig” requirement whose values could be “Option1” or “Option2”,
+user-defined whose meaning is defined by the customer; a "SoftwareConfig" requirement whose values could be "Option1" or "Option2",
 for example.
 
 There are two types of requirements: attribute and amount.
@@ -522,8 +941,8 @@ With the constraints:
 Amount requirements are the mechanism for defining a quantity of something that the Worker host or render manager needs to have
 for a Step to run. They represent quantifiable things that need to be reserved to do the work — vCPUs, memory, licenses, etc. They
 are always non-negative floating point valued, and a Step can require a certain amount of that capability to be able to run —
-“at least 4 CPU cores” for example. Further, a quantity of each amount required are logically allocated to a Session while that
-session is running on a host. A Step requiring, say, “at least 4 CPU cores”, might result in a Session with 4 CPU cores allocated
+"at least 4 CPU cores" for example. Further, a quantity of each amount required are logically allocated to a Session while that
+session is running on a host. A Step requiring, say, "at least 4 CPU cores", might result in a Session with 4 CPU cores allocated
 to it being created on a host. Those cores are reserved for that Session while that Session is running on the host; effectively
 making the number of available cores on the host 4 less for scheduling purposes during the duration of the Session. Logically
 allocating amounts to Sessions is the key mechanism by which system resources can be optimally utilized through bin packing
@@ -825,7 +1244,7 @@ using the following names:
 1. `Task.Param.<name>` — the value of the parameter with relevant path mapping rules applied to it; and
 2. `Task.RawParam.<name>` — the value of the parameter as it was defined, with no path mapping rules applied.
 
-##### 3.4.1.5. `<ChunkIntTaskParameterDefinition>` `# @extension TASK_CHUNKING`
+##### 3.4.1.5. `<ChunkIntTaskParameterDefinition>` `@extension TASK_CHUNKING`
 
 An integer valued task parameter, processed as chunks instead of as individual elements.
 At most one `CHUNK[INT]` parameter can be specified in a step parameter space. When forming
@@ -939,6 +1358,7 @@ The Script of a Step defines the properties of the action that the Step runs on 
 A `<StepScript>` is the object:
 
 ```yaml
+let: <LetBindings> # @optional @extension EXPR
 actions: <StepActions> # @incompatible python | bash | cmd | powershell | node
 embeddedFiles: [ <EmbeddedFile>, ... ] # @optional @incompatible python | bash | cmd | powershell | node
 python | bash | cmd | powershell | node: <SimpleAction> # @optional @fmtstring[host] @incompatible command embeddedFiles @extension FEATURE_BUNDLE_1
@@ -946,19 +1366,22 @@ python | bash | cmd | powershell | node: <SimpleAction> # @optional @fmtstring[h
 
 Where:
 
-1. *actions* — The Actions that are run by Tasks of the Step.
-2. *embeddedFiles* — Files embedded into the Step that are materialized to a Session's working directory as the Step's
+1. *let* — An ordered list of expression bindings evaluated once per task. Bound names are available in *actions*
+   and *embeddedFiles* fields, and can reference `Task.Param.*` values. See: [&lt;LetBindings&gt;](#36-letbindings).
+2. *actions* — The Actions that are run by Tasks of the Step.
+3. *embeddedFiles* — Files embedded into the Step that are materialized to a Session's working directory as the Step's
    Task is running within the Session. See: [&lt;EmbeddedFile&gt;](#6-embeddedfile).
    1. Minimum number of items: If defined, then there must be at least one element in this list.
    2. Maximum number of items: There is no limit on the number of elements in this list.
-3. *bash | cmd | node | powershell | python* - Syntactic sugar for scripts,
+4. *bash | cmd | node | powershell | python* - Syntactic sugar for scripts,
    removes some commonly needed boilerplate for the given script interpreter.
 
 The format string scopes available to format strings within a `<StepScript>` are:
 
 1. `Param.*` and `RawParam.*` — Values of Job Parameters.
-2. `Session.*` — Values such as the Session’s working directory.
+2. `Session.*` — Values such as the Session's working directory.
 3. `Task.*` — Values of embedded file locations defined within the `<StepScript>`, and Task Parameters.
+4. Names bound by `let` in the enclosing `<StepTemplate>` and `<StepScript>`. Available with the `EXPR` extension.
 
 #### 3.5.1. `<StepActions>`
 
@@ -971,6 +1394,78 @@ onRun: <Action>
 Where:
 
 1. *onRun* — The action that is run when a Task for the Step is run on a host. See: [&lt;Action&gt;](#5-action).
+
+### 3.6. `<LetBindings>`
+
+Available when using the `EXPR` extension.
+
+A `<LetBindings>` is an ordered array of `<LetBinding>` strings:
+
+```yaml
+let:
+  - <LetBinding>
+  - <LetBinding>
+  ...
+```
+
+Bindings are evaluated in declaration order. Later bindings can reference names from earlier bindings in the same
+`let` block. A binding that shadows a previous binding in the same `let` block or any enclosing scope is an error.
+For example, a `let` binding in a `<StepScript>` cannot shadow a binding from the enclosing `<StepTemplate>`'s `let`
+block, and a `let` binding in a `<StepTemplate>`'s *stepEnvironments* cannot shadow a binding from that step's `let` block.
+
+Constraints:
+1. Minimum number of items: If defined, then there must be at least one element in this list.
+2. Maximum number of items: 50.
+
+#### 3.6.1. `<LetBinding>`
+
+A `<LetBinding>` is a string containing a Python assignment expression:
+
+```bnf
+<LetBinding>     ::= <UserIdentifier><WS>*"="<WS>*<Expression>
+<UserIdentifier> ::= [a-z_][A-Za-z0-9_]*
+<Expression>     ::= (any valid expression as defined by the EXPR extension)
+<WS>             ::= whitespace character: tabs or spaces
+```
+
+Where:
+
+1. The `<UserIdentifier>` must start with a lowercase letter or underscore. This ensures user-defined names never
+   conflict with spec-defined symbols (`Param`, `Task`, `Session`, `Env`, `RawParam`), which always start with an
+   uppercase letter.
+2. Minimum length of `<UserIdentifier>`: 1 character.
+3. Maximum length of `<UserIdentifier>`: 512 characters.
+4. The `<Expression>` is evaluated according to the rules defined by the `EXPR` extension. See:
+   [Expression Language Specification](2026-02-Expression-Language).
+5. The type of the binding is the natural result type of the expression.
+
+Examples:
+
+```yaml
+let:
+  - frame_count = Param.EndFrame - Param.StartFrame + 1
+  - output_dir = Param.OutputRoot / Param.ProjectName
+  - files = [Param.InputDir / f for f in Param.FileNames]
+```
+
+#### 3.6.2. Let Binding Scope Summary
+
+The following table summarizes where `let` bindings can appear, what symbols they can reference,
+and where the bound names are available:
+
+| Location | Can Reference | Bound Names Available In |
+|----------|---------------|--------------------------|
+| `<StepTemplate>.let` | `Param.*`, `RawParam.*`, earlier bindings in same `let` | *stepEnvironments*, *hostRequirements*, *parameterSpace*, *script* (including nested `<StepScript>.let` or `<SimpleAction>.let`) |
+| `<StepScript>.let` | `Param.*`, `RawParam.*`, `Task.Param.*`, `Task.RawParam.*`, `Session.*`, step-level bindings, earlier bindings in same `let` | *actions*, *embeddedFiles* |
+| `<SimpleAction>.let` | `Param.*`, `RawParam.*`, `Task.Param.*`, `Task.RawParam.*`, `Session.*`, step-level bindings, earlier bindings in same `let` | *script*, *args* |
+| `<EnvironmentScript>.let` | `Param.*`, `RawParam.*`, `Session.*`, `Env.File.*`, earlier bindings in same `let` | *actions*, *embeddedFiles* |
+
+Note: `Task.Param.*` and `Task.RawParam.*` are only available in `<StepScript>` and `<SimpleAction>` contexts because task parameter
+values are not known until task execution time.
+
+Note: `Env.File.*` symbols in `<EnvironmentScript>.let` refer to embedded files defined in the same `<EnvironmentScript>`.
+The file path is determined before evaluation, so `let` bindings can reference the path where the file will be written,
+even though the file content (which may also contain format strings) is evaluated separately.
 
 ## 4. `<Environment>`
 
@@ -1002,9 +1497,10 @@ Where:
 The format string scopes available to format strings within an Environment are:
 
 1. `Param.*` and `RawParam.*` — Values of Job Parameters.
-2. `Session.*` — Values such as the Session’s working directory.
+2. `Session.*` — Values such as the Session's working directory.
 3. `Env.*` — Scope of the environment entity itself. Values such as the embedded files defined within the Environment
    entity.
+4. Names bound by `let` in the enclosing `<EnvironmentScript>`. Available with the `EXPR` extension.
 
 Implementations of this specfication must watch STDOUT when running the `onEnter` action for any line matching:
 
@@ -1034,12 +1530,15 @@ A string value subject to the following constraints:
 An `<EnvironmentScript>` is the object:
 
 ```yaml
+let: <LetBindings> # @optional @extension EXPR
 actions: <EnvironmentActions>
 embeddedFiles: [ <EmbeddedFile>, ... ] # @optional
 ```
 
-1. *actions* — The actions to run at different stages of the Environment’s lifecycle.
-2. *embeddedFiles* — Files embedded into the Environment that are materialized to a Session's working directory as the
+1. *let* — An ordered list of expression bindings evaluated once when the environment is entered. Bound names are
+   available in *actions* and *embeddedFiles* fields. See: [&lt;LetBindings&gt;](#36-letbindings).
+2. *actions* — The actions to run at different stages of the Environment's lifecycle.
+3. *embeddedFiles* — Files embedded into the Environment that are materialized to a Session's working directory as the
    Environment is running within the Session. See: [&lt;EmbeddedFile&gt;](#6-embeddedfile).
    1. Minimum number of items: If defined, then there must be at least one element in this list.
    2. Maximum number of items: There is no limit on the number of elements in this list.
@@ -1229,7 +1728,7 @@ Implementation notes:
 
 A step or environment script can have data attached to it via this mechanism. The embedded data is made available to the
 environment/task action(s) as a file within the Session working directory while being run on a host. This file is
-written prior to every one of the corresponding actions each time that they are run. The materialized files’ permissions
+written prior to every one of the corresponding actions each time that they are run. The materialized files' permissions
 are read-only by only the user under which the task will be run on the worker host.
 
 ```bnf
@@ -1239,7 +1738,7 @@ are read-only by only the user under which the task will be run on the worker ho
 ### 6.1. `<EmbeddedFileText>`
 
 Embedding of a plain text file into the template. The *data* provided in the file is written as a plain text file. This
-file is written prior to every one of the script’s actions each time that they are run.
+file is written prior to every one of the script's actions each time that they are run.
 
 ```yaml
 name: <Identifier>
@@ -1331,6 +1830,11 @@ Format String `"The value of Job Parameter 'Name' is: {{ Param.Name }}"` and a v
 for the symbol `Param.Name` of "Bob", the resulting resolved string is
 `"The value of Job Parameter 'Name' is: Bob"`.
 
+When the `EXPR` extension is enabled, the `<StringInterpExpr>` grammar is extended to support
+the full expression language including arithmetic, conditionals, function calls, list operations,
+and more. See the [Expression Language](2026-02-Expression-Language#11-extended-format-string-grammar)
+specification for the extended grammar, type system, and evaluation semantics.
+
 #### 7.3.1. Value References
 
 |**Value**|**Description**|**Scope**|
@@ -1342,8 +1846,31 @@ for the symbol `Param.Name` of "Bob", the resulting resolved string is
 |`Task.File.<name>`|The filesystem location to which the Task Embedded File with key `<name>` has been written.| Available within the Step Script Actions and Embedded Files.|
 |`Env.File.<name>`|The filesystem location to which the Environment Attachment with key `<name>` has been written.|Available within the Environment Script Actions and Embedded Files.|
 |`Session.WorkingDirectory`|The agent is expected to create a local temporary scratch directory for the duration of a Session. This builtin provides the location of that temporary directory. This is the working directory that the Worker Agent uses when running the task.|This is available within all Environment Script Actions & Embedded Files, and all Step Script Actions and Embedded Files.|
-|`Session.HasPathMappingRules`|This value can be used to determine whether path mapping rules are available to the Session. It is string valued, with values "true" or "false". "true" means that the path mapping JSON contains path mapping rules. "false" means that the contents of the path mapping JSON are the empty object.|This is available within all Environment Script Actions & Embedded Files, and all Step Script Actions and Embedded Files.|
+|`Job.Name`|The resolved name of the Job. This is a `string` type. Requires the `EXPR` extension.|Available in every Format String in the Job Template, except the `name` field of the Job Template itself.|
+|`Step.Name`|The name of the current Step. This is a `string` type. Requires the `EXPR` extension.|Available within the Step Template scope: `stepEnvironments`, `hostRequirements`, `parameterSpace`, and `script`.|
+|`Session.HasPathMappingRules`|This value can be used to determine whether path mapping rules are available to the Session. Without the `EXPR` extension, it is string valued, with values "true" or "false". With the `EXPR` extension enabled, it is a `bool` type. "true"/`True` means that the path mapping JSON contains path mapping rules. "false"/`False` means that the contents of the path mapping JSON are the empty object.|This is available within all Environment Script Actions & Embedded Files, and all Step Script Actions and Embedded Files.|
 |`Session.PathMappingRulesFile`|This is a string whose value is the location of a JSON file on the worker node's local disk that contains the path mapping rule substitutions for the Session.|This is available within all Environment Script Actions & Embedded Files, and all Step Script Actions and Embedded Files.|
+|`<name>` (let binding)|Names bound by `let` in `<StepTemplate>`, `<StepScript>`, `<SimpleAction>`, or `<EnvironmentScript>`. Names must start with a lowercase letter or underscore (see `<UserIdentifier>`). The type is determined by the expression. Available with the `EXPR` extension.|See [Let Binding Scope Summary](#362-let-binding-scope-summary) for detailed scoping rules.|
+
+### 7.4. Template Processing Stages
+
+A Job Template is processed in stages as more information becomes available. At each stage,
+different sets of values are known, which determines which format strings can be fully resolved.
+
+| Stage | When | Known Values | Unknown Values | What Happens |
+|-------|------|-------------|----------------|--------------|
+| **Template validation** | `openjd check` or equivalent | Literal values, parameter type declarations | `Param.*`, `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*` | Syntax validation, structural checks. With the `EXPR` extension: type checking of expressions using declared parameter types. `Job.Name` and `Step.Name` are available as `unresolved[string]`. |
+| **Job creation** | Job submission with parameter values | `Param.*`, `RawParam.*` | `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*` | Parameter values are bound. Format strings not annotated `@fmtstring[host]` are resolved (e.g., `name`, `parameterSpace` ranges). PATH parameter defaults are joined with the job template directory; PATH parameter values are joined with the current working directory. With the `EXPR` extension: `let` bindings in `<StepTemplate>` are evaluated; expressions in TEMPLATE scope are fully evaluated; `Job.Name` and `Step.Name` are concrete. |
+| **Task execution** | On the worker host | All values: `Param.*`, `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*`, path mapping rules | *(none)* | Format strings annotated `@fmtstring[host]` are resolved. Path mapping rules are applied to PATH-type parameters. Embedded files are written. With the `EXPR` extension: `let` bindings in `<StepScript>` and `<EnvironmentScript>` are evaluated; all remaining expressions are fully evaluated. |
+
+The `@fmtstring` and `@fmtstring[host]` annotations in this specification indicate which stage
+a format string is resolved in. A format string annotated `@fmtstring` (without `[host]`) is
+resolved at job creation time. A format string annotated `@fmtstring[host]` is resolved at task
+execution time on the worker host.
+
+With the `EXPR` extension enabled, expressions that reference values not yet known at a given
+stage are type-checked using the declared types of those values, catching type errors as early
+as possible. See the [Expression Language](2026-02-Expression-Language) specification for details.
 
 ## 8. `<SimpleAction>`
 
@@ -1366,24 +1893,31 @@ expected to be available in the runtime environment.
   steps:
     - name: BashStep
       bash:
+        let:  # optional, requires EXPR extension
+          - output_file = Param.OutputDir / Param.Pattern.with_number(Task.Param.Frame)
         args: ["--additional-argument"] # optional
         script: |
           # bash code here
+          echo Output: {{repr_sh(output_file)}}
 
   ### syntax sugar equivalent to:
 
   steps:
     - name: BashStep
-      actions:
+      script:
+        let:
+          - output_file = Param.OutputDir / Param.Pattern.with_number(Task.Param.Frame)
+        actions:
           onRun:
-              command: bash
-              args: ["{{Task.File.<implicitly generated file>}}", "--additional-argument"]
-      embeddedFiles:
+            command: bash
+            args: ["{{Task.File.<implicitly generated file>}}", "--additional-argument"]
+        embeddedFiles:
           - name: <implicitly generated file>
             filename: "<implicitly generated file>.sh"
             type: TEXT
-            data:
-                # bash code here
+            data: |
+              # bash code here
+              echo Output: {{repr_sh(output_file)}}
   ```
 
 * *cmd* - Implicitly creates a Batch embedded file,
@@ -1505,6 +2039,7 @@ expected to be available in the runtime environment.
 A `<SimpleAction>` is the object:
 
 ```yaml
+let: <LetBindings> # @optional @extension EXPR
 script: <DataString> # @fmtstring[host]
 args: [ <ArgString>, ... ] # @optional @fmtstring[host]
 timeout: <posinteger> | <posintstring> # @optional @fmtstring
@@ -1514,11 +2049,14 @@ cancelation: <CancelationMethod> # @optional
 Where `<posintstring>` is a string whose value is the string representation of a
 positive integer value in base-10, and:
 
-1. *script* — The [Data String](#data-string) that will be written to the script
+1. *let* — An ordered list of expression bindings evaluated once per task. Bound names are available in *script*
+   and *args* fields, and can reference `Task.Param.*` values. See: [&lt;LetBindings&gt;](#36-letbindings).
+   Requires both the `FEATURE_BUNDLE_1` and `EXPR` extensions.
+2. *script* — The [Data String](#data-string) that will be written to the script
    exactly as it appears.
-2. *args* — An array of [Format Strings](#73-format-strings) that will be passed
+3. *args* — An array of [Format Strings](#73-format-strings) that will be passed
    as arguments to the **command** when the command is run on the host.
-3. *timeout* — The positive number of seconds that the command is given to
+4. *timeout* — The positive number of seconds that the command is given to
    successfully run to completion. A command that does not return before the
    timeout is canceled and is treated as a failed run.
 
@@ -1535,7 +2073,7 @@ positive integer value in base-10, and:
    default expectation should be that OpenJobDescription sessions are able to
    end and cleanup within a bound duration of time.
 
-4. *cancelation* — If defined, provides details regarding how this action should
+5. *cancelation* — If defined, provides details regarding how this action should
    be canceled. If not provided, then it is treated as though provided with `<CancelationMethodTerminate>`.
 
 The host uses the return code of the interpreter run to determine success or
@@ -1551,10 +2089,10 @@ non-zero exit code indicates failure. A timeout also indicates failure.
 
 ## 10. License
 
-Copyright ©2023 Amazon.com Inc. or Affiliates (“Amazon”).
+Copyright ©2023 Amazon.com Inc. or Affiliates ("Amazon").
 
 This Agreement sets forth the terms under which Amazon is making the Open Job Description
-Specification (“the Specification”) available to you.
+Specification ("the Specification") available to you.
 
 ### 10.1. Copyrights
 
@@ -1567,7 +2105,7 @@ you a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable
 (except as stated in this section) patent license to make, have made, use, offer
 to sell, sell, import, and otherwise transfer implementations of the
 Specification that implement and are compliant with all relevant portions of the
-Specification (“Compliant Implementations”). Notwithstanding the foregoing, no
+Specification ("Compliant Implementations"). Notwithstanding the foregoing, no
 patent license is granted to any technologies that may be necessary to make or
 use any product or portion thereof that complies with the Specification but are
 not themselves expressly set forth in the Specification.

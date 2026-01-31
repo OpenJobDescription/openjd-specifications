@@ -1,0 +1,44 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'str_val = repr_pwsh("hello")'
+    - "quote_val = repr_pwsh(\"it's\")"
+    - 'bool_t = repr_pwsh(true)'
+    - 'bool_f = repr_pwsh(false)'
+    - 'int_val = repr_pwsh(42)'
+    - 'float_val = repr_pwsh(3.14)'
+    - 'path_val = repr_pwsh(path("/tmp/out"))'
+    - "range_val = repr_pwsh(range_expr(\"1-10\"))"
+    - "list_val = repr_pwsh([\"a\", \"b\"])"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r"STR:{{ str_val }}")
+            print(r"QUOTE:{{ quote_val }}")
+            print(r"BOOL_T:{{ bool_t }}")
+            print(r"BOOL_F:{{ bool_f }}")
+            print(r"INT:{{ int_val }}")
+            print(r"FLOAT:{{ float_val }}")
+            print(r"PATH:{{ path_val }}")
+            print(r"RANGE:{{ range_val }}")
+            print(r"LIST:{{ list_val }}")
+expected:
+  output:
+  - "STR:'hello'"
+  - "QUOTE:'it''s'"
+  - BOOL_T:$true
+  - BOOL_F:$false
+  - INT:42
+  - FLOAT:3.14
+  - "PATH:'/tmp/out'"
+  - "RANGE:'1-10'"
+  - "LIST:@('a', 'b')"

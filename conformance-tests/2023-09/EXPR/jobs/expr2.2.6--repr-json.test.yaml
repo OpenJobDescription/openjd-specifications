@@ -1,0 +1,41 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'str_val = repr_json("hello")'
+    - 'int_val = repr_json(42)'
+    - 'float_val = repr_json(3.14)'
+    - 'bool_t = repr_json(true)'
+    - 'bool_f = repr_json(false)'
+    - 'null_val = repr_json(null)'
+    - 'list_val = repr_json([1, 2, 3])'
+    - "range_val = repr_json(range_expr(\"1-10\"))"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'STR:{{ str_val }}')
+            print(r'INT:{{ int_val }}')
+            print(r'FLOAT:{{ float_val }}')
+            print(r'BOOL_T:{{ bool_t }}')
+            print(r'BOOL_F:{{ bool_f }}')
+            print(r'NULL:{{ null_val }}')
+            print(r'LIST:{{ list_val }}')
+            print(r'RANGE:{{ range_val }}')
+expected:
+  output:
+  - 'STR:"hello"'
+  - INT:42
+  - FLOAT:3.14
+  - BOOL_T:true
+  - BOOL_F:false
+  - "NULL:null"
+  - "LIST:[1, 2, 3]"
+  - 'RANGE:"1-10"'

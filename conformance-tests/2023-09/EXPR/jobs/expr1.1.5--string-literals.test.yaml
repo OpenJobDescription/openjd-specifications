@@ -1,0 +1,49 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - "tdq = \"\"\"triple\ndouble\"\"\""
+    - "tsq = '''triple\nsingle'''"
+    - "rtdq = r\"\"\"raw\\ntriple\"\"\""
+    - "rtsq = r'''raw\\ntriple'''"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'DQ:{{ len("hello") }}')
+            print(r"SQ:{{ len('world') }}")
+            print(r'RDQ:{{ r"hello\n" }}')
+            print(r"RSQ:{{ r'hello\n' }}")
+            print(r'RDQ_LEN:{{ len(r"hello\n") }}')
+            print(r"RSQ_LEN:{{ len(r'hello\n') }}")
+            print(r'ESC_LEN:{{ len("hello\nworld") }}')
+            print(r'ESC_T_LEN:{{ len("a\tb") }}')
+            print(r'ESC_BS:{{ "a\\b" }}')
+            print(r'RAW_BS:{{ r"C:\Users\test" }}')
+            print(r'TDQ_LEN:{{ len(tdq) }}')
+            print(r'TSQ_LEN:{{ len(tsq) }}')
+            print(r'RTDQ:{{ rtdq }}')
+            print(r'RTSQ:{{ rtsq }}')
+expected:
+  output:
+  - DQ:5
+  - SQ:5
+  - "RDQ:hello\\n"
+  - "RSQ:hello\\n"
+  - RDQ_LEN:7
+  - RSQ_LEN:7
+  - ESC_LEN:11
+  - ESC_T_LEN:3
+  - "ESC_BS:a\\b"
+  - "RAW_BS:C:\\Users\\test"
+  - TDQ_LEN:13
+  - TSQ_LEN:13
+  - "RTDQ:raw\\ntriple"
+  - "RTSQ:raw\\ntriple"

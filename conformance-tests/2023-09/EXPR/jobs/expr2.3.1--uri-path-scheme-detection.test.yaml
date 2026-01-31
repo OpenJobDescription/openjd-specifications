@@ -1,0 +1,63 @@
+# URI path: scheme detection (Expression Language §1.2.1)
+# URI detection uses the pattern ^[a-zA-Z][a-zA-Z0-9+.-]*://
+# Filesystem paths must NOT be detected as URIs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    # --- Various URI schemes ---
+    - 's3 = path("s3://bucket/key")'
+    - 'https = path("https://host/path")'
+    - 'fsx = path("fsx://vol/data")'
+    - 'custom = path("my-scheme+2://server/path")'
+    # --- NOT URIs: filesystem paths ---
+    - 'posix_abs = path("/mnt/data/file.txt")'
+    - 'posix_rel = path("relative/path")'
+    # --- Edge case: colon in path but not a URI ---
+    - 'colon_path = path("/mnt/c:/data")'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'S3:{{ s3 }}')
+            print(r'S3_PARTS:{{ s3.parts }}')
+            print(r'HTTPS:{{ https }}')
+            print(r'HTTPS_PARTS:{{ https.parts }}')
+            print(r'FSX:{{ fsx }}')
+            print(r'FSX_PARTS:{{ fsx.parts }}')
+            print(r'CUSTOM:{{ custom }}')
+            print(r'CUSTOM_PARTS:{{ custom.parts }}')
+            print(r'POSIX_ABS:{{ posix_abs }}')
+            print(r'POSIX_ABS_PARTS:{{ posix_abs.parts }}')
+            print(r'POSIX_REL:{{ posix_rel }}')
+            print(r'COLON:{{ colon_path }}')
+expected:
+  output:
+  # URIs: scheme://authority is first part, forward slashes preserved
+  - "S3:s3://bucket/key"
+  - 'S3_PARTS:["s3://bucket", "key"]'
+  - "HTTPS:https://host/path"
+  - 'HTTPS_PARTS:["https://host", "path"]'
+  - "FSX:fsx://vol/data"
+  - 'FSX_PARTS:["fsx://vol", "data"]'
+  - "CUSTOM:my-scheme+2://server/path"
+  - 'CUSTOM_PARTS:["my-scheme+2://server", "path"]'
+  output_posix:
+  # Filesystem paths: PurePosixPath behavior
+  - "POSIX_ABS:/mnt/data/file.txt"
+  - 'POSIX_ABS_PARTS:["/", "mnt", "data", "file.txt"]'
+  - "POSIX_REL:relative/path"
+  - "COLON:/mnt/c:/data"
+  output_windows:
+  # Filesystem paths: PureWindowsPath behavior
+  - "POSIX_ABS:\\mnt\\data\\file.txt"
+  - 'POSIX_ABS_PARTS:["\\", "mnt", "data", "file.txt"]'
+  - "POSIX_REL:relative\\path"
+  - "COLON:\\mnt\\c:\\data"

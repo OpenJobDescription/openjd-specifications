@@ -1,0 +1,14 @@
+# Power overflow: 2 ** 64 exceeds int64 range
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ 2 ** 64 }}')"

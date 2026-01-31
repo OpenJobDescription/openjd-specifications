@@ -1,0 +1,30 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Dir
+    type: STRING
+    default: renders
+  steps:
+  - name: Step1
+    let:
+    - 'p = path("base") / Param.Dir / "file.exr"'
+    - 'p_str = string(p)'
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Item
+        type: STRING
+        range: "{{ [p_str] }}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'ITEM:{{ Task.Param.Item }}')
+expected:
+  output:
+  - "ITEM:base/renders/file.exr"

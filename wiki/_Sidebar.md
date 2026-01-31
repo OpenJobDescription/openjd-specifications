@@ -11,3 +11,4 @@
       4. [Ready for Production](Job-Intro-04-Ready-for-Production)
 4. Formal Specifications
    1. [2023-09: Template Schemas](2023-09-Template-Schemas)
+   2. [2026-02: Expression Language](2026-02-Expression-Language)

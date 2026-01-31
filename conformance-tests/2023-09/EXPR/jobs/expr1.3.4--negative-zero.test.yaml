@@ -1,0 +1,24 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'NEG_ZERO:{{ -0.0 }}')
+            print(r'NEG_MUL:{{ -1.0 * 0.0 }}')
+            print(r'ABS:{{ abs(-0.0) }}')
+            print(r'EQ:{{ -0.0 == 0.0 }}')
+expected:
+  output:
+  - 'NEG_ZERO:0.0'
+  - 'NEG_MUL:0.0'
+  - 'ABS:0.0'
+  - 'EQ:true'

@@ -1,0 +1,42 @@
+specificationVersion: 'jobtemplate-2023-09'
+extensions:
+  - EXPR
+name: Expression Test Job
+parameterDefinitions:
+  - name: InputFile
+    type: PATH
+    default: input/scene.exr
+  - name: OutputDir
+    type: PATH
+    default: output
+  - name: FrameStart
+    type: INT
+    default: 1
+  - name: FrameEnd
+    type: INT
+    default: 10
+  - name: Quality
+    type: STRING
+    allowedValues: ["draft", "final"]
+    default: draft
+steps:
+  - name: Render
+    parameterSpace:
+      taskParameterDefinitions:
+        - name: Frame
+          type: INT
+          range: "{{Param.FrameStart}}-{{Param.FrameEnd}}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args:
+            # Basic arithmetic
+            - "Frame {{Task.Param.Frame}} of {{Param.FrameEnd - Param.FrameStart + 1}}"
+            # Path properties
+            - "Input stem: {{Param.InputFile.stem}}"
+            - "Input suffix: {{Param.InputFile.suffix}}"
+            # Path construction
+            - "Output: {{Param.OutputDir / Param.InputFile.stem + '_' + string(Task.Param.Frame) + '.exr'}}"
+            # Conditional expression
+            - "Samples: {{ 64 if Param.Quality == 'final' else 16 }}"

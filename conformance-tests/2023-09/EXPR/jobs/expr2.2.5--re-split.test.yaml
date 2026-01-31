@@ -1,0 +1,32 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'DELIM:[{{ re_split("one,two;three", r"[,;]").join("|") }}]')
+            print(r'DIGITS:[{{ re_split("abc123def4567ghi89", r"[0-9]+").join("|") }}]')
+            print(r'WHITESPACE:[{{ re_split("hello   world\tfoo\nbar", r"\s+").join("|") }}]')
+            print(r'MULTI_CHAR:[{{ re_split("foo::bar:::baz", r":+").join("|") }}]')
+            print(r'MAXSPLIT:[{{ re_split("a1b2c3d4e", r"[0-9]+", 2).join("|") }}]')
+            print(r'NO_MATCH:[{{ re_split("hello", r"[0-9]+").join("|") }}]')
+            print(r'METHOD:[{{ "2024-01-15".re_split(r"[-/]").join("|") }}]')
+            print(r'KV_PAIRS:[{{ re_split("key1=val1,key2=val2,key3=val3", r"[=,]").join("|") }}]')
+expected:
+  output:
+  - DELIM:[one|two|three]
+  - DIGITS:[abc|def|ghi|]
+  - WHITESPACE:[hello|world|foo|bar]
+  - MULTI_CHAR:[foo|bar|baz]
+  - MAXSPLIT:[a|b|c3d4e]
+  - NO_MATCH:[hello]
+  - METHOD:[2024|01|15]
+  - KV_PAIRS:[key1|val1|key2|val2|key3|val3]

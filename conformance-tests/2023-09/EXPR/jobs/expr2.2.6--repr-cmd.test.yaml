@@ -1,0 +1,55 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'simple = repr_cmd("hello")'
+    - 'amp = repr_cmd("a & b")'
+    - 'pipe = repr_cmd("x | y")'
+    - 'caret = repr_cmd("a ^ b")'
+    - 'angles = repr_cmd("a < b > c")'
+    - "dquote = repr_cmd(\"say \\\"hi\\\"\")"
+    - 'parens = repr_cmd("(foo)")'
+    - 'pct = repr_cmd("100%")'
+    - 'bang = repr_cmd("hello!")'
+    - 'spaces = repr_cmd("hello world")'
+    - |-
+      newline = repr_cmd("a\nb")
+    - "list_val = repr_cmd([\"echo\", \"a & b\"])"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'SIMPLE:{{ simple }}')
+            print(r'AMP:{{ amp }}')
+            print(r'PIPE:{{ pipe }}')
+            print(r'CARET:{{ caret }}')
+            print(r'ANGLES:{{ angles }}')
+            print(r'DQUOTE:{{ dquote }}')
+            print(r'PARENS:{{ parens }}')
+            print(r'PCT:{{ pct }}')
+
+            print(r'BANG:{{ bang }}')
+            print(r'SPACES:{{ spaces }}')
+            print(r'NEWLINE_QUOTED:{{ newline == "\"a\nb\"" }}')
+            print(r'LIST:{{ list_val }}')
+expected:
+  output:
+  - SIMPLE:hello
+  - "AMP:\"a & b\""
+  - "PIPE:\"x | y\""
+  - "CARET:\"a ^^ b\""
+  - "ANGLES:\"a < b > c\""
+  - "DQUOTE:\"say ^\"hi^\"\""
+  - "PARENS:\"(foo)\""
+  - "PCT:\"100%%\""
+  - "BANG:\"hello!\""
+  - "SPACES:\"hello world\""
+  - "NEWLINE_QUOTED:true"
+  - "LIST:echo \"a & b\""

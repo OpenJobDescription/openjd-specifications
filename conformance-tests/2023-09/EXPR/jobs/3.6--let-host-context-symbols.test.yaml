@@ -1,0 +1,31 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range: "1-2"
+    script:
+      let:
+      - work_dir = Session.WorkingDirectory / 'output'
+      - frame_str = string(Task.Param.Frame)
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'DIR_NAME:{{work_dir.name}}')
+            print(r'IS_PATH:{{len(string(work_dir)) > 0}}')
+            print(r'FRAME:{{frame_str}}')
+expected:
+  output:
+  - DIR_NAME:output
+  - IS_PATH:true
+  - FRAME:1
+  - FRAME:2

@@ -1,0 +1,22 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'MIN:{{ -9223372036854775808 }}')
+            print(r'MAX:{{ 9223372036854775807 }}')
+            print(r'SUM:{{ -9223372036854775808 + 9223372036854775807 }}')
+expected:
+  output:
+  - "MIN:-9223372036854775808"
+  - "MAX:9223372036854775807"
+  - "SUM:-1"

@@ -1,0 +1,104 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+# Minimal
+- name: Minimal
+  type: LIST[PATH]
+# With default
+- name: WithDefault
+  type: LIST[PATH]
+  default: ["/tmp/a.exr", "/tmp/b.exr"]
+# Empty default
+- name: EmptyDefault
+  type: LIST[PATH]
+  default: []
+# Single element
+- name: SingleElement
+  type: LIST[PATH]
+  default: ["/tmp/only.exr"]
+# objectType and dataFlow
+- name: FileIn
+  type: LIST[PATH]
+  objectType: FILE
+  dataFlow: IN
+  default: ["/input/a.exr"]
+- name: FileOut
+  type: LIST[PATH]
+  objectType: FILE
+  dataFlow: OUT
+  default: ["/output/a.exr"]
+- name: FileInOut
+  type: LIST[PATH]
+  objectType: FILE
+  dataFlow: INOUT
+  default: ["/data/a.exr"]
+- name: DirNone
+  type: LIST[PATH]
+  objectType: DIRECTORY
+  dataFlow: NONE
+  default: ["/mnt/share"]
+# Length constraints
+- name: WithMinMax
+  type: LIST[PATH]
+  default: ["/a", "/b"]
+  minLength: 1
+  maxLength: 50
+# Item constraints
+- name: ItemLength
+  type: LIST[PATH]
+  default: ["/tmp/file"]
+  item:
+    minLength: 1
+    maxLength: 200
+# Both constraints
+- name: FullyConstrained
+  type: LIST[PATH]
+  default: ["/opt/a", "/opt/b"]
+  minLength: 1
+  maxLength: 10
+  item:
+    minLength: 1
+    maxLength: 100
+# Description
+- name: WithDescription
+  type: LIST[PATH]
+  default: ["/tmp"]
+  description: A list of paths
+# UI controls
+- name: WithInputFileList
+  type: LIST[PATH]
+  objectType: FILE
+  dataFlow: IN
+  default: ["/tmp/a"]
+  userInterface:
+    control: CHOOSE_INPUT_FILE_LIST
+    label: Input Files
+- name: WithOutputFileList
+  type: LIST[PATH]
+  objectType: FILE
+  dataFlow: OUT
+  default: ["/tmp/a"]
+  userInterface:
+    control: CHOOSE_OUTPUT_FILE_LIST
+- name: WithDirList
+  type: LIST[PATH]
+  objectType: DIRECTORY
+  default: ["/tmp"]
+  userInterface:
+    control: CHOOSE_DIRECTORY_LIST
+- name: WithHidden
+  type: LIST[PATH]
+  default: ["/tmp"]
+  userInterface:
+    control: HIDDEN
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

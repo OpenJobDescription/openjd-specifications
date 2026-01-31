@@ -1,0 +1,23 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'posix = as_posix(path("/mnt/renders/scene.exr"))'
+    - 'relative = as_posix(path("a/b/c"))'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'ABS:{{ posix }}')
+            print(r'REL:{{ relative }}')
+expected:
+  output:
+  - ABS:/mnt/renders/scene.exr
+  - REL:a/b/c

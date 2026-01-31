@@ -31,6 +31,10 @@ runs Chunks for that Step instead of individual Tasks. A Chunk is a set of Tasks
 values identical except for the chunked Task parameter. It takes values from an integer range expression
 like "1-3" or 1-3,5,7" depending on whether the chunks are constrained to be contiguous or not.
 
+When the EXPR extension is used, format strings evaluated on the Worker Host support the full
+[expression language](2026-02-Expression-Language) including arithmetic, conditionals, function calls,
+path manipulation, and script embedding functions like `repr_sh()` for safe shell quoting.
+
 All failures and cancellations in a **Session** are terminal for the **Session**, as the system generally does not know
 what state a failure or cancellation leaves the **Session** in. Think of a Task failure which inadvertently terminates
 the container that was set up in an **Environment** for the Tasks to run
@@ -125,6 +129,11 @@ The format for the path mapping rules is:
 
 The location of this file, and whether there are path mapping rules defined, are available as value references for
 use in [Format Strings](How-Jobs-Are-Constructed#format-strings) within a Job Template. The value references available are:
+
+**`@extension EXPR` — URI source paths**: When the EXPR extension is enabled,
+`source_path_format` also accepts `"URI"` for mapping URI prefixes (e.g. `s3://bucket/assets`)
+to local filesystem paths. URI matching uses string prefix comparison on path boundaries,
+preserving the exact URI content without normalization.
 
 1. `Session.HasPathMappingRules` -- Has the string value `true` or `false`.
     * `true` — means that the path mapping JSON contains path mapping rules.

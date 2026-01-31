@@ -1,0 +1,28 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'ANY_T:{{ any([false, true]) }}')
+            print(r'ANY_F:{{ any([false, false]) }}')
+            print(r'ANY_EMPTY:{{ any([]) }}')
+            print(r'ALL_T:{{ all([true, true]) }}')
+            print(r'ALL_F:{{ all([true, false]) }}')
+            print(r'ALL_EMPTY:{{ all([]) }}')
+expected:
+  output:
+  - ANY_T:true
+  - ANY_F:false
+  - ANY_EMPTY:false
+  - ALL_T:true
+  - ALL_F:false
+  - ALL_EMPTY:true

@@ -1,0 +1,36 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'CONCAT:{{ [1, 2] + [3, 4] }}')
+            print(r'INTFLOAT:{{ [1, 2] + [3.0, 4.0] }}')
+            print(r'REPEAT:{{ [1, 2] * 2 }}')
+            print(r'REPEAT0:{{ [1, 2] * 0 }}')
+            print(r'IN:{{ 2 in [1, 2, 3] }}')
+            print(r'NOTIN:{{ 5 not in [1, 2, 3] }}')
+            print(r'RANGE_IN:{{ 5 in range_expr("1-10") }}')
+            print(r'RANGE_NOTIN:{{ 15 not in range_expr("1-10") }}')
+            print(r'RANGE_RANGE:{{ range_expr("1-3") + range_expr("7-9") }}')
+            print(r'EMPTY_CONCAT:{{ [] + [1, 2] }}')
+expected:
+  output:
+  - "CONCAT:[1, 2, 3, 4]"
+  - "INTFLOAT:[1.0, 2.0, 3.0, 4.0]"
+  - "REPEAT:[1, 2, 1, 2]"
+  - "REPEAT0:[]"
+  - IN:true
+  - NOTIN:true
+  - RANGE_IN:true
+  - RANGE_NOTIN:true
+  - "RANGE_RANGE:[1, 2, 3, 7, 8, 9]"
+  - "EMPTY_CONCAT:[1, 2]"

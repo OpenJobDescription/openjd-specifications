@@ -1,0 +1,58 @@
+# Tests Expression Language §1.3.2: list-to-args flattening
+#
+# When a format string in an args list is exactly "{{<expr>}}" and the expression
+# evaluates to a list[T], the list is flattened inline — each element becomes a
+# separate argument. This tests the three behaviors described in the spec:
+#   1. A value of type T is added as a single item.
+#   2. A None/null result causes the item to be skipped.
+#   3. A list[T] result is flattened inline.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: ExtraFlags
+    type: LIST[STRING]
+    default: ["--verbose", "--color"]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import sys
+            args = sys.argv[1:]
+            for i, a in enumerate(args):
+                print(f'ARG{i}:{a}')
+            print(f'COUNT:{len(args)}')
+          # 1. Bare list literal flattened into separate args
+          - "{{ ['--width', '1920', '--height', '1080'] }}"
+          # 2. List parameter flattened into separate args
+          - "{{ Param.ExtraFlags }}"
+          # 3. Single-element list still flattens (produces one arg, not a list string)
+          - "{{ ['--single'] }}"
+          # 4. Null skips the arg entirely
+          - "{{ null }}"
+          # 5. Conditional list-or-null
+          - "{{ ['--debug', 'on'] if true else null }}"
+          # 6. Empty list produces zero args (flattens to nothing)
+          - "{{ [] }}"
+          # 7. Plain string arg (baseline)
+          - "--end"
+expected:
+  output:
+  - "ARG0:--width"
+  - "ARG1:1920"
+  - "ARG2:--height"
+  - "ARG3:1080"
+  - "ARG4:--verbose"
+  - "ARG5:--color"
+  - "ARG6:--single"
+  - "ARG7:--debug"
+  - "ARG8:on"
+  - "ARG9:--end"
+  - "COUNT:10"

@@ -1,0 +1,22 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'R0:{{ round(0.5) }}')
+            print(r'R1:{{ round(1.5) }}')
+            print(r'R2:{{ round(2.5) }}')
+expected:
+  output:
+  - 'R0:0'
+  - 'R1:2'
+  - 'R2:2'

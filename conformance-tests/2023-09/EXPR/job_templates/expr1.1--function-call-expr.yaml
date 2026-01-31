@@ -1,0 +1,41 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Name
+  type: STRING
+  default: hello
+- name: X
+  type: INT
+  default: 5
+- name: Y
+  type: FLOAT
+  default: 3.7
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - |
+          # Single-arg functions
+          print(r'{{ len(Param.Name) }}')
+          print(r'{{ abs(-Param.X) }}')
+          print(r'{{ floor(Param.Y) }}')
+          print(r'{{ ceil(Param.Y) }}')
+          print(r'{{ string(Param.X) }}')
+          # Multi-arg functions
+          print(r'{{ min(Param.X, 10) }}')
+          print(r'{{ max(Param.X, 1) }}')
+          print(r'{{ round(Param.Y, 1) }}')
+          print(r'{{ zfill(Param.X, 4) }}')
+          # Nested function calls
+          print(r'{{ string(min(Param.X, 10)) }}')
+          print(r'{{ len(split(Param.Name, "l")) }}')
+          # Type conversion functions
+          print(r'{{ int(Param.Y) }}')
+          print(r'{{ float(Param.X) }}')
+          print(r'{{ bool(Param.X) }}')

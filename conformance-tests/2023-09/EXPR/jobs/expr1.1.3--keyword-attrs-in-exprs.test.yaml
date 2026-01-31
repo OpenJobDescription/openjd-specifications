@@ -1,0 +1,221 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  # Every Python hard keyword (as of 3.14) as a parameter name
+  - name: "False"
+    type: STRING
+    default: v_False
+  - name: "None"
+    type: STRING
+    default: v_None
+  - name: "True"
+    type: STRING
+    default: v_True
+  - name: "and"
+    type: STRING
+    default: v_and
+  - name: "as"
+    type: STRING
+    default: v_as
+  - name: "assert"
+    type: STRING
+    default: v_assert
+  - name: "async"
+    type: STRING
+    default: v_async
+  - name: "await"
+    type: STRING
+    default: v_await
+  - name: "break"
+    type: STRING
+    default: v_break
+  - name: "class"
+    type: STRING
+    default: v_class
+  - name: "continue"
+    type: STRING
+    default: v_continue
+  - name: "def"
+    type: STRING
+    default: v_def
+  - name: "del"
+    type: STRING
+    default: v_del
+  - name: "elif"
+    type: STRING
+    default: v_elif
+  - name: "else"
+    type: STRING
+    default: v_else
+  - name: "except"
+    type: STRING
+    default: v_except
+  - name: "finally"
+    type: STRING
+    default: v_finally
+  - name: "for"
+    type: STRING
+    default: v_for
+  - name: "from"
+    type: STRING
+    default: v_from
+  - name: "global"
+    type: STRING
+    default: v_global
+  - name: "if"
+    type: STRING
+    default: v_if
+  - name: "import"
+    type: STRING
+    default: v_import
+  - name: "in"
+    type: STRING
+    default: v_in
+  - name: "is"
+    type: STRING
+    default: v_is
+  - name: "lambda"
+    type: STRING
+    default: v_lambda
+  - name: "nonlocal"
+    type: STRING
+    default: v_nonlocal
+  - name: "not"
+    type: STRING
+    default: v_not
+  - name: "or"
+    type: STRING
+    default: v_or
+  - name: "pass"
+    type: STRING
+    default: v_pass
+  - name: "raise"
+    type: STRING
+    default: v_raise
+  - name: "return"
+    type: STRING
+    default: v_return
+  - name: "try"
+    type: STRING
+    default: v_try
+  - name: "while"
+    type: STRING
+    default: v_while
+  - name: "with"
+    type: STRING
+    default: v_with
+  - name: "yield"
+    type: STRING
+    default: v_yield
+  # Python soft keywords (as of 3.14)
+  - name: "_"
+    type: STRING
+    default: v__
+  - name: "case"
+    type: STRING
+    default: v_case
+  - name: "match"
+    type: STRING
+    default: v_match
+  - name: "type"
+    type: STRING
+    default: v_type
+  - name: flag
+    type: BOOL
+    default: true
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'False:{{ Param.False }}')
+            print(r'None:{{ Param.None }}')
+            print(r'True:{{ Param.True }}')
+            print(r'and:{{ Param.and }}')
+            print(r'as:{{ Param.as }}')
+            print(r'assert:{{ Param.assert }}')
+            print(r'async:{{ Param.async }}')
+            print(r'await:{{ Param.await }}')
+            print(r'break:{{ Param.break }}')
+            print(r'class:{{ Param.class }}')
+            print(r'continue:{{ Param.continue }}')
+            print(r'def:{{ Param.def }}')
+            print(r'del:{{ Param.del }}')
+            print(r'elif:{{ Param.elif }}')
+            print(r'else:{{ Param.else }}')
+            print(r'except:{{ Param.except }}')
+            print(r'finally:{{ Param.finally }}')
+            print(r'for:{{ Param.for }}')
+            print(r'from:{{ Param.from }}')
+            print(r'global:{{ Param.global }}')
+            print(r'if:{{ Param.if }}')
+            print(r'import:{{ Param.import }}')
+            print(r'in:{{ Param.in }}')
+            print(r'is:{{ Param.is }}')
+            print(r'lambda:{{ Param.lambda }}')
+            print(r'nonlocal:{{ Param.nonlocal }}')
+            print(r'not:{{ Param.not }}')
+            print(r'or:{{ Param.or }}')
+            print(r'pass:{{ Param.pass }}')
+            print(r'raise:{{ Param.raise }}')
+            print(r'return:{{ Param.return }}')
+            print(r'try:{{ Param.try }}')
+            print(r'while:{{ Param.while }}')
+            print(r'with:{{ Param.with }}')
+            print(r'yield:{{ Param.yield }}')
+            print(r'_:{{ Param._ }}')
+            print(r'case:{{ Param.case }}')
+            print(r'match:{{ Param.match }}')
+            print(r'type:{{ Param.type }}')
+            print(r'COND:{{ Param.if if Param.flag else Param.else }}')
+            print(r'LOGIC:{{ Param.and if Param.flag and true else Param.or }}')
+expected:
+  output:
+  - "False:v_False"
+  - "None:v_None"
+  - "True:v_True"
+  - "and:v_and"
+  - "as:v_as"
+  - "assert:v_assert"
+  - "async:v_async"
+  - "await:v_await"
+  - "break:v_break"
+  - "class:v_class"
+  - "continue:v_continue"
+  - "def:v_def"
+  - "del:v_del"
+  - "elif:v_elif"
+  - "else:v_else"
+  - "except:v_except"
+  - "finally:v_finally"
+  - "for:v_for"
+  - "from:v_from"
+  - "global:v_global"
+  - "if:v_if"
+  - "import:v_import"
+  - "in:v_in"
+  - "is:v_is"
+  - "lambda:v_lambda"
+  - "nonlocal:v_nonlocal"
+  - "not:v_not"
+  - "or:v_or"
+  - "pass:v_pass"
+  - "raise:v_raise"
+  - "return:v_return"
+  - "try:v_try"
+  - "while:v_while"
+  - "with:v_with"
+  - "yield:v_yield"
+  - "_:v__"
+  - "case:v_case"
+  - "match:v_match"
+  - "type:v_type"
+  - COND:v_if
+  - LOGIC:v_and

@@ -1,0 +1,44 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'r = range_expr("1-3")'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'LIST_RANGE:{{ [1, 2, 3] == range_expr("1-3") }}')
+            print(r'RANGE_LIST:{{ range_expr("1-3") == [1, 2, 3] }}')
+            print(r'SCALAR_LIST:{{ 1 == [1] }}')
+            print(r'STR_PATH:{{ "/a/b" == path("/a/b") }}')
+            print(r'PATH_STR:{{ path("/a/b") == "/a/b" }}')
+            print(r'ELEM_CROSS:{{ [5] == [5.0] }}')
+            print(r'NESTED_CROSS:{{ [[5]] == [[5.0]] }}')
+            print(r'BOOL_INT:{{ true == 1 }}')
+            print(r'BOOL_STR:{{ true == "true" }}')
+            print(r'STR_INT:{{ "5" == 5 }}')
+            print(r'NULL_ZERO:{{ null == 0 }}')
+            print(r'NULL_NULL:{{ null == null }}')
+            print(r'LIST_DIFF_LEN:{{ [1, 2] == [1, 2, 3] }}')
+expected:
+  output:
+  - LIST_RANGE:true
+  - RANGE_LIST:true
+  - SCALAR_LIST:false
+  - STR_PATH:true
+  - PATH_STR:true
+  - ELEM_CROSS:true
+  - NESTED_CROSS:true
+  - BOOL_INT:false
+  - BOOL_STR:false
+  - STR_INT:false
+  - NULL_ZERO:false
+  - NULL_NULL:true
+  - LIST_DIFF_LEN:false

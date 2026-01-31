@@ -1,0 +1,33 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'joined = path("/mnt/output") / "renders" / "scene.exr"'
+    - 'appended = path("/mnt/output/base") + ".txt"'
+    - 'abs_replace = path("/mnt/output") / path("/other/path")'
+    - 'path_path = path("/mnt") / path("sub/dir")'
+    - 'joined_posix = joined.as_posix()'
+    - 'appended_posix = appended.as_posix()'
+    - 'abs_posix = abs_replace.as_posix()'
+    - 'pp_posix = path_path.as_posix()'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'JOIN:{{ joined_posix }}')
+            print(r'APPEND:{{ appended_posix }}')
+            print(r'ABS_REPLACE:{{ abs_posix }}')
+            print(r'PATH_PATH:{{ pp_posix }}')
+expected:
+  output:
+  - JOIN:/mnt/output/renders/scene.exr
+  - APPEND:/mnt/output/base.txt
+  - ABS_REPLACE:/other/path
+  - PATH_PATH:/mnt/sub/dir

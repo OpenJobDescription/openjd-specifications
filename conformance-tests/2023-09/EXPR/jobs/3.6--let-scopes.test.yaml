@@ -1,0 +1,26 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - "step_val = 10"
+    script:
+      let:
+      - "script_val = 20"
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'STEP:{{ step_val }}')
+            print(r'SCRIPT:{{ script_val }}')
+            print(r'SUM:{{ step_val + script_val }}')
+expected:
+  output:
+  - STEP:10
+  - SCRIPT:20
+  - SUM:30

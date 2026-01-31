@@ -1,0 +1,20 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'LOWER:{{ [x * 2 for x in [1, 2, 3]] }}')
+            print(r'UNDER:{{ [_x + 1 for _x in [10, 20]] }}')
+expected:
+  output:
+  - "LOWER:[2, 4, 6]"
+  - "UNDER:[11, 21]"

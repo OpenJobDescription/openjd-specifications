@@ -1,0 +1,13 @@
+# Job.Name cannot be used in the job template's name field (circular reference).
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: "{{ Job.Name }}-copy"
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - hello

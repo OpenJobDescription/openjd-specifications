@@ -1,0 +1,69 @@
+# URI path: no normalization of consecutive slashes (Expression Language §1.2.1, §2.3.1)
+# S3 object keys are opaque — a//b and a/b are different resources.
+# The path portion must be preserved verbatim.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    # --- Double slash in path portion preserved ---
+    - 'p1 = path("s3://bucket/a//b/file.txt")'
+    - 'p1_str = string(p1)'
+    - 'p1_parts = p1.parts'
+    - 'p1_name = p1.name'
+    - 'p1_parent = p1.parent'
+    # --- Triple slash preserved ---
+    - 'p2 = path("s3://bucket/a///b")'
+    - 'p2_str = string(p2)'
+    - 'p2_parts = p2.parts'
+    # --- Dot segments preserved (not collapsed) ---
+    - 'p3 = path("s3://bucket/a/./b/../c")'
+    - 'p3_str = string(p3)'
+    - 'p3_parts = p3.parts'
+    # --- Trailing slash preserved ---
+    - 'p4 = path("s3://bucket/prefix/")'
+    - 'p4_str = string(p4)'
+    - 'p4_parts = p4.parts'
+    - 'p4_name = p4.name'
+    # --- Roundtrip: path(parts) reconstructs original ---
+    - 'rt = path(p1.parts)'
+    - 'rt_str = string(rt)'
+    - 'rt_eq = rt == p1'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'P1_STR:{{ p1_str }}')
+            print(r'P1_PARTS:{{ p1_parts }}')
+            print(r'P1_NAME:{{ p1_name }}')
+            print(r'P1_PARENT:{{ p1_parent }}')
+            print(r'P2_STR:{{ p2_str }}')
+            print(r'P2_PARTS:{{ p2_parts }}')
+            print(r'P3_STR:{{ p3_str }}')
+            print(r'P3_PARTS:{{ p3_parts }}')
+            print(r'P4_STR:{{ p4_str }}')
+            print(r'P4_PARTS:{{ p4_parts }}')
+            print(r'P4_NAME:{{ p4_name }}')
+            print(r'RT_STR:{{ rt_str }}')
+            print(r'RT_EQ:{{ rt_eq }}')
+expected:
+  output:
+  - "P1_STR:s3://bucket/a//b/file.txt"
+  - 'P1_PARTS:["s3://bucket", "a", "", "b", "file.txt"]'
+  - "P1_NAME:file.txt"
+  - "P1_PARENT:s3://bucket/a//b"
+  - "P2_STR:s3://bucket/a///b"
+  - 'P2_PARTS:["s3://bucket", "a", "", "", "b"]'
+  - "P3_STR:s3://bucket/a/./b/../c"
+  - 'P3_PARTS:["s3://bucket", "a", ".", "b", "..", "c"]'
+  - "P4_STR:s3://bucket/prefix/"
+  - 'P4_PARTS:["s3://bucket", "prefix", ""]'
+  - "P4_NAME:"
+  - "RT_STR:s3://bucket/a//b/file.txt"
+  - "RT_EQ:true"

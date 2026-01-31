@@ -1,0 +1,26 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'CONCAT:{{ "hello" + " world" }}')
+            print(r'REPEAT:{{ "ab" * 3 }}')
+            print(r'REPEAT0:{{ len("ab" * 0) }} chars')
+            print(r'IN:{{ "ell" in "hello" }}')
+            print(r'NOTIN:{{ "xyz" not in "hello" }}')
+expected:
+  output:
+  - "CONCAT:hello world"
+  - REPEAT:ababab
+  - "REPEAT0:0 chars"
+  - IN:true
+  - NOTIN:true
