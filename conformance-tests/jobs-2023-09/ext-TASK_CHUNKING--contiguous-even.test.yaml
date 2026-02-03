@@ -1,0 +1,29 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - TASK_CHUNKING
+  name: ChunkTest
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: CHUNK[INT]
+        range: 1-10
+        chunks:
+          defaultTaskCount: 5
+          rangeConstraint: CONTIGUOUS
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'CHUNK:{{Task.Param.Frame}}')
+expected:
+  output:
+  - CHUNK:1-5
+  - CHUNK:6-10
+  forbidden:
+  - CHUNK:1-10
+  - CHUNK:11

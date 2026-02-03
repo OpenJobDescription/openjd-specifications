@@ -1,5 +1,0 @@
-expected_output:
-  - "RESULT:Hello {Param.Name}"
-forbidden_output:
-  - "{{Param."
-  - "{{Task."

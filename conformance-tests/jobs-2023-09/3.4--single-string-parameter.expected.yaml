@@ -1,5 +1,0 @@
-expected_output:
-  - "TASK:Scene=scene_a"
-  - "TASK:Scene=scene_b"
-forbidden_output:
-  - "TASK:Scene=scene_c"

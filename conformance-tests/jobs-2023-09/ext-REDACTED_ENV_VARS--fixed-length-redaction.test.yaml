@@ -1,0 +1,32 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - REDACTED_ENV_VARS
+  name: FixedLengthRedaction
+  jobEnvironments:
+  - name: SecretEnv
+    script:
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - 'print(''openjd_redacted_env: SHORT=abc''); print(''openjd_redacted_env:
+            LONG=abcdefghijklmnopqrstuvwxyz'')'
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - import os; print('SHORT:' + os.environ.get('SHORT', '') + ' LONG:' + os.environ.get('LONG',
+            ''))
+expected:
+  output:
+  - SHORT:********
+  - LONG:********
+  forbidden:
+  - abc
+  - abcdefghijklmnopqrstuvwxyz

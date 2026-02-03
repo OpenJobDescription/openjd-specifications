@@ -1,0 +1,47 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Foo
+    type: INT
+  - name: Bar
+    type: STRING
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'MERGE:Foo={{Param.Foo}},Bar={{Param.Bar}}')
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: Foo
+    type: INT
+    minValue: 1
+    default: 5
+  - name: Bar
+    type: STRING
+    minLength: 5
+    default: hello-world
+  environment:
+    name: Env1
+    variables:
+      FOO: '{{Param.Foo}}'
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: Foo
+    type: INT
+    maxValue: 10
+  - name: Bar
+    type: STRING
+    maxLength: 50
+  environment:
+    name: Env2
+    variables:
+      BAR: '{{Param.Bar}}'
+expected:
+  output:
+  - MERGE:Foo=5,Bar=hello-world

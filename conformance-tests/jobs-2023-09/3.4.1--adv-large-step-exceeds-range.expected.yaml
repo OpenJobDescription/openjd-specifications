@@ -1,5 +1,0 @@
-expected_output:
-  - "VAL:1"
-forbidden_output:
-  - "VAL:0"
-  - "VAL:2"

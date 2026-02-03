@@ -1,0 +1,26 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Value
+    type: INT
+    default: 0
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'MERGE:success')
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: Value
+    type: STRING
+    default: test-value
+  environment:
+    name: TestEnv
+    variables:
+      VAL: '{{Param.Value}}'

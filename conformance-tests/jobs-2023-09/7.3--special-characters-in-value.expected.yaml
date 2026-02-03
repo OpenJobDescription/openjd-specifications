@@ -1,5 +1,0 @@
-expected_output:
-  - "RESULT:Path: /path/with spaces/and$pecial"
-forbidden_output:
-  - "{{Param."
-  - "{{Task."

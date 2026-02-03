@@ -1,0 +1,28 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Scale
+        type: FLOAT
+        range:
+        - 0.5
+        - 1.0
+        - 1.5
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'TASK:Scale={{Task.Param.Scale}}')
+expected:
+  output:
+  - TASK:Scale=0.5
+  - TASK:Scale=1.0
+  - TASK:Scale=1.5
+  forbidden:
+  - TASK:Scale=0.0
+  - TASK:Scale=2.0

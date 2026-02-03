@@ -1,0 +1,23 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: Job-{{Param.Version}}-{{Param.Project}}
+  parameterDefinitions:
+  - name: Version
+    type: STRING
+  - name: Project
+    type: STRING
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'JOBNAME:Job-{{Param.Version}}-{{Param.Project}}')
+parameters:
+  Version: '1.0'
+  Project: MyProject
+expected:
+  output:
+  - JOBNAME:Job-1.0-MyProject

@@ -1,0 +1,19 @@
+# Tests FLOAT parameter allowedValues item violates maxValue (Spec 2.4)
+# Each allowedValues item must meet maxValue constraint
+specificationVersion: jobtemplate-2023-09
+name: FloatAllowedValuesMaxValue
+parameterDefinitions:
+  - name: Scale
+    type: FLOAT
+    maxValue: 5.0
+    allowedValues:
+      - 2.0
+      - 10.0
+steps:
+  - name: TestStep
+    script:
+      actions:
+        onRun:
+          command: echo
+          args:
+            - "{{Param.Scale}}"

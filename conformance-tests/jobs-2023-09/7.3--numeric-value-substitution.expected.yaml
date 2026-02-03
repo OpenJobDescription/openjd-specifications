@@ -1,5 +1,0 @@
-expected_output:
-  - "RESULT:Count: 100"
-forbidden_output:
-  - "{{Param."
-  - "{{Task."

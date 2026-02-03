@@ -1,9 +1,0 @@
-expected_output:
-  - "TASK:Frame=1,Scene=a,Quality=low"
-  - "TASK:Frame=1,Scene=a,Quality=high"
-  - "TASK:Frame=2,Scene=b,Quality=low"
-  - "TASK:Frame=2,Scene=b,Quality=high"
-forbidden_output:
-  - "TASK:Frame=1,Scene=b"
-  - "TASK:Frame=2,Scene=a"
-  - "TASK:Frame=3"

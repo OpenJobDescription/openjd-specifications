@@ -1,4 +1,0 @@
-expected_output:
-  - "SECRET_IS:********"
-forbidden_output:
-  - "password123"

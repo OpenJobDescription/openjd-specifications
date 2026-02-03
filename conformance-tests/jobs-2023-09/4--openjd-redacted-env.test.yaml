@@ -1,0 +1,28 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - REDACTED_ENV_VARS
+  name: EnvStdoutRedactedVar
+  jobEnvironments:
+  - name: RedactedEnv
+    script:
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - 'print(''openjd_redacted_env: SECRET=password123'')'
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - import os; print('SECRET_IS:' + os.environ.get('SECRET', ''))
+expected:
+  output:
+  - SECRET_IS:********
+  forbidden:
+  - password123

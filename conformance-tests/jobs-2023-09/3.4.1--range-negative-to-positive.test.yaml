@@ -1,0 +1,33 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Val
+        type: INT
+        range: -5-5
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'VAL:{{Task.Param.Val}}')
+expected:
+  output:
+  - VAL:-5
+  - VAL:-4
+  - VAL:-3
+  - VAL:-2
+  - VAL:-1
+  - VAL:0
+  - VAL:1
+  - VAL:2
+  - VAL:3
+  - VAL:4
+  - VAL:5
+  forbidden:
+  - VAL:-6
+  - VAL:6

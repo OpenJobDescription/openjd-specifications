@@ -1,0 +1,37 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range:
+        - 1
+        - 2
+        - 3
+      - name: Scene
+        type: STRING
+        range:
+        - a
+        - b
+        - c
+      combination: (Frame, Scene)
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'TASK:Frame={{Task.Param.Frame}},Scene={{Task.Param.Scene}}')
+expected:
+  output:
+  - TASK:Frame=1,Scene=a
+  - TASK:Frame=2,Scene=b
+  - TASK:Frame=3,Scene=c
+  forbidden:
+  - TASK:Frame=1,Scene=b
+  - TASK:Frame=1,Scene=c
+  - TASK:Frame=2,Scene=a
+  - TASK:Frame=4

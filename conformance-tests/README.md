@@ -17,7 +17,7 @@ Any OpenJD library can use these tests to verify spec compliance.
 conformance-tests/
 ├── job_templates-2023-09/   # Job template validation tests
 ├── env_templates-2023-09/   # Environment template validation tests
-├── jobs-2023-09/            # Job execution tests
+├── jobs-2023-09/            # Job execution tests (unified format)
 ├── run_openjd_cli_tests.py
 └── README.md
 ```
@@ -34,15 +34,15 @@ Filenames encode the spec section they test:
 
 - `<spec-section>` - Reference to the [Template Schema](../wiki/2023-09-Template-Schemas.md) section (e.g., `1.1`, `3.3.2`, `7.3`)
 - `ext-<EXTENSION_NAME>` - For extension tests (e.g., `ext-TASK_CHUNKING`, `ext-REDACTED_ENV_VARS`)
-- `.invalid` - Test should FAIL validation
-- `.template` - Job execution test (in `jobs/` directory)
+- `.invalid` - Test should FAIL validation/execution
+- `.test` - Job execution test (in `jobs/` directory)
 
 Examples:
 - `1.1--minimal-job-template.yaml` - Section 1.1 (Job Template root)
 - `3.3.2--allof.yaml` - Section 3.3.2 (AttributeRequirement)
 - `5--cancelation-notify-then-terminate.yaml` - Section 5 (Action)
 - `2.1--missing-name.invalid.yaml` - Invalid test for Section 2.1
-- `ext-TASK_CHUNKING--contiguous-even.template.yaml` - TASK_CHUNKING extension execution test
+- `ext-TASK_CHUNKING--contiguous-even.test.yaml` - TASK_CHUNKING extension execution test
 
 ### Extension Tests
 
@@ -58,23 +58,48 @@ name: MyJob
 
 Tests prefixed with `ext-<NAME>` verify extension behavior. Some tests (like `ext-REDACTED_ENV_VARS--redaction-without-extension`) intentionally omit the `extensions` field to verify behavior when extension syntax is used without enabling the extension.
 
-### Auxiliary Files
+### Job Execution Test Format
 
-Job tests support these optional auxiliary files (YAML or JSON):
-- `*.parameters.yaml` or `*.parameters.json` - Job parameters
-- `*.expected.yaml` or `*.expected.json` - Output assertions
-- `*.env.yaml` - Environment template
-
-### Expected Output Format
-
-For job tests, create a `.expected.yaml` file:
+Job execution tests use a unified single-file format (`.test.yaml`):
 
 ```yaml
-expected_output:
-  - LINE1
-  - LINE2
-forbidden_output:
-  - SHOULD_NOT_APPEAR
+# The job template to test (required)
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: MyJob
+  steps:
+    - name: Step1
+      script:
+        actions:
+          onRun:
+            command: echo
+            args: ["{{Param.Value}}"]
+
+# Optional: parameters to pass when running the job
+parameters:
+  MyParam: "override-value"
+
+# Optional: environment templates (supports multiple)
+environments:
+  - specificationVersion: environment-2023-09
+    environment:
+      name: Env1
+      variables:
+        FOO: bar
+
+# Optional: path mapping rules
+pathMapping:
+  - source_path_format: POSIX
+    source_path: /mnt/shared
+    destination_path: /local/shared
+
+# Optional: expected output assertions
+expected:
+  output:
+    - LINE1
+    - LINE2
+  forbidden:
+    - SHOULD_NOT_APPEAR
 ```
 
 ## Writing Your Own Test Runner
@@ -84,7 +109,7 @@ To validate your OpenJD library against these tests:
 1. Parse the test files and naming conventions
 2. For `*.yaml` files (without `.invalid`): verify your library accepts them
 3. For `*.invalid.yaml` files: verify your library rejects them
-4. For job execution tests: verify outputs match `.expected.yaml` assertions
+4. For job execution tests (`.test.yaml`): extract template/parameters/environments, run the job, verify outputs match `expected` assertions
 
 ### Example Test Runner for openjd CLI
 

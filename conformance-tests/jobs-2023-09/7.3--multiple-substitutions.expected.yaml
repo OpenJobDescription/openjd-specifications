@@ -1,5 +1,0 @@
-expected_output:
-  - "RESULT:One and Two"
-forbidden_output:
-  - "{{Param."
-  - "{{Task."

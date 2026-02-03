@@ -1,0 +1,31 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Setting
+    type: STRING
+    default: job-value
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'Setting={{Param.Setting}}')
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: Setting
+    type: STRING
+    default: env-value
+  environment:
+    name: TestEnv
+    variables:
+      SETTING: '{{Param.Setting}}'
+expected:
+  output:
+  - Setting=job-value
+  forbidden:
+  - Setting=env-value

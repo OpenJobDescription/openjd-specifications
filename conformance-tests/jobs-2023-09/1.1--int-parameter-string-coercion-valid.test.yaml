@@ -1,0 +1,20 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: Job-{{Param.Count}}
+  parameterDefinitions:
+  - name: Count
+    type: INT
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'OUTPUT:{{Param.Count}}')
+parameters:
+  Count: '5'
+expected:
+  output:
+  - OUTPUT:5
