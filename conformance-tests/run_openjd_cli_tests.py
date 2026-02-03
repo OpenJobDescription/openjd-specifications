@@ -12,8 +12,8 @@ Test naming conventions:
 - *.invalid.yaml in job_templates/ - should FAIL `openjd check`
 - *.yaml in env_templates/ - should pass `openjd check`
 - *.invalid.yaml in env_templates/ - should FAIL `openjd check`
-- *.template.yaml in jobs/ - should pass `openjd run`
-- *.invalid.template.yaml in jobs/ - should FAIL `openjd run`
+- *.test.yaml in jobs/ - unified job execution tests
+- *.invalid.test.yaml in jobs/ - should FAIL `openjd run`
 """
 
 import argparse
@@ -21,6 +21,7 @@ import fnmatch
 import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 import yaml
@@ -29,13 +30,10 @@ CONFORMANCE_DIR = Path(__file__).parent
 
 
 def load_yaml_or_json(path: Path):
-    """Load a YAML or JSON file."""
     with open(path) as f:
         content = f.read()
-    
     if path.suffix == ".json":
         return json.loads(content)
-    
     return yaml.safe_load(content)
 
 
@@ -47,51 +45,53 @@ def run_check(template_path: Path) -> tuple[bool, str]:
     return result.returncode == 0, result.stderr or result.stdout
 
 
-def run_job(template_path: Path) -> tuple[bool, str]:
-    base = template_path.name.replace(".invalid.template.yaml", "").replace(".template.yaml", "")
-    base_path = template_path.parent / base
+def run_job(test_path: Path) -> tuple[bool, str]:
+    test = load_yaml_or_json(test_path)
     
-    cmd = ["openjd", "run", str(template_path)]
-    
-    # Support both YAML and JSON parameters (prefer YAML)
-    params_yaml = base_path.with_suffix(".parameters.yaml")
-    params_json = base_path.with_suffix(".parameters.json")
-    if params_yaml.exists():
-        cmd.extend(["-p", f"file://{params_yaml}"])
-    elif params_json.exists():
-        cmd.extend(["-p", f"file://{params_json}"])
-    
-    # Support multiple env files: base.env.yaml, base.env2.yaml, base.env3.yaml, etc.
-    env_path = base_path.with_suffix(".env.yaml")
-    if env_path.exists():
-        cmd.extend(["--env", str(env_path)])
-    for i in range(2, 10):
-        env_path_n = template_path.parent / f"{base}.env{i}.yaml"
-        if env_path_n.exists():
-            cmd.extend(["--env", str(env_path_n)])
-    
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    output = result.stdout + result.stderr
-    
-    # Support both YAML and JSON expected files (prefer YAML)
-    expected_yaml = base_path.with_suffix(".expected.yaml")
-    expected_json = base_path.with_suffix(".expected.json")
-    expected_path = expected_yaml if expected_yaml.exists() else expected_json
-    
-    if expected_path.exists():
-        expected = load_yaml_or_json(expected_path)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
         
-        for line in expected.get("expected_output", []):
+        # Write template
+        template_path = tmpdir / "template.yaml"
+        with open(template_path, "w") as f:
+            yaml.dump(test["template"], f)
+        
+        cmd = ["openjd", "run", str(template_path)]
+        
+        # Parameters
+        if "parameters" in test:
+            params_path = tmpdir / "parameters.yaml"
+            with open(params_path, "w") as f:
+                yaml.dump(test["parameters"], f)
+            cmd.extend(["-p", f"file://{params_path}"])
+        
+        # Environment templates
+        for i, env in enumerate(test.get("environments", [])):
+            env_path = tmpdir / f"env{i}.yaml"
+            with open(env_path, "w") as f:
+                yaml.dump(env, f)
+            cmd.extend(["--env", str(env_path)])
+        
+        # Path mapping
+        if "pathMapping" in test:
+            pm_path = tmpdir / "pathmapping.json"
+            with open(pm_path, "w") as f:
+                json.dump({"version": "pathmapping-1.0", "path_mapping_rules": test["pathMapping"]}, f)
+            cmd.extend(["--path-mapping-rules", f"file://{pm_path}"])
+        
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        output = result.stdout + result.stderr
+        
+        # Check expected output
+        expected = test.get("expected", {})
+        for line in expected.get("output", []):
             if line not in output:
                 return False, f"Missing expected output: {line}"
-        
-        for line in expected.get("forbidden_output", []):
+        for line in expected.get("forbidden", []):
             if line in output:
                 return False, f"Found forbidden output: {line}"
         
         return True, output
-    
-    return result.returncode == 0, output
 
 
 def run_template_tests(directory: Path, pattern: str = None) -> tuple[int, int]:
@@ -120,12 +120,12 @@ def run_template_tests(directory: Path, pattern: str = None) -> tuple[int, int]:
 def run_job_tests(directory: Path, pattern: str = None) -> tuple[int, int]:
     passed = failed = 0
     
-    for template in sorted(directory.glob("*.template.yaml")):
-        name = template.name.replace(".template.yaml", "")
+    for test_path in sorted(directory.glob("*.test.yaml")):
+        name = test_path.name.replace(".invalid.test.yaml", "").replace(".test.yaml", "")
         if pattern and not fnmatch.fnmatch(name, pattern):
             continue
-        expect_failure = ".invalid." in template.name
-        success, output = run_job(template)
+        expect_failure = ".invalid." in test_path.name
+        success, output = run_job(test_path)
         ok = success != expect_failure
         
         if ok:

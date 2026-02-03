@@ -1,5 +1,0 @@
-expected_output:
-  - "PUBLIC:public_value_visible"
-  - "PRIVATE:********"
-forbidden_output:
-  - "private_value_hidden"

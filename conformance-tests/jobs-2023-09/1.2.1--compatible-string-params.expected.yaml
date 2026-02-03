@@ -1,5 +1,0 @@
-expected_output:
-  - "MERGE:Config=job-default"
-forbidden_output:
-  - "{{Param."
-  - "env-default"

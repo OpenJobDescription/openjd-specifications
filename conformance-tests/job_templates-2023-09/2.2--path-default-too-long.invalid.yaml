@@ -1,0 +1,17 @@
+# Tests PATH parameter default violates maxLength (Spec 2.2)
+# Default value must meet maxLength constraint
+specificationVersion: jobtemplate-2023-09
+name: PathMaxLengthViolation
+parameterDefinitions:
+  - name: InputPath
+    type: PATH
+    maxLength: 5
+    default: /tmp/toolong
+steps:
+  - name: TestStep
+    script:
+      actions:
+        onRun:
+          command: echo
+          args:
+            - "{{Param.InputPath}}"

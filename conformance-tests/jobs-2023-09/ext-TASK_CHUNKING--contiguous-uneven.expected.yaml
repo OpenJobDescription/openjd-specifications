@@ -1,4 +1,0 @@
-expected_output:
-  - "CHUNK:1-4"
-  - "CHUNK:5-8"
-  - "CHUNK:9-12"

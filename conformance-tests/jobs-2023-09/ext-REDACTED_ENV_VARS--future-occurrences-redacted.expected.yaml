@@ -1,4 +1,0 @@
-expected_output:
-  - "The value is ********"
-forbidden_output:
-  - "hidden_token_abc"

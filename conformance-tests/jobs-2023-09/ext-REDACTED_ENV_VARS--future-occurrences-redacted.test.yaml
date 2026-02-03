@@ -1,0 +1,28 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - REDACTED_ENV_VARS
+  name: FutureOccurrencesRedacted
+  jobEnvironments:
+  - name: SecretEnv
+    script:
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - 'print(''openjd_redacted_env: SECRET=hidden_token_abc'')'
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print('The value is hidden_token_abc')
+expected:
+  output:
+  - The value is ********
+  forbidden:
+  - hidden_token_abc

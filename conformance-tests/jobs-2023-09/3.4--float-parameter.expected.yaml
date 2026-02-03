@@ -1,7 +1,0 @@
-expected_output:
-  - "TASK:Scale=0.5"
-  - "TASK:Scale=1.0"
-  - "TASK:Scale=1.5"
-forbidden_output:
-  - "TASK:Scale=0.0"
-  - "TASK:Scale=2.0"

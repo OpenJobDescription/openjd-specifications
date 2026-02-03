@@ -1,0 +1,33 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Scale
+    type: FLOAT
+    minValue: 1.0
+    maxValue: 5.0
+    default: 2.5
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'Scale={{Param.Scale}}')
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: Scale
+    type: FLOAT
+    minValue: 0.0
+    maxValue: 10.0
+    default: 2.5
+  environment:
+    name: TestEnv
+    variables:
+      SCALE: '{{Param.Scale}}'
+expected:
+  output:
+  - Scale=2.5

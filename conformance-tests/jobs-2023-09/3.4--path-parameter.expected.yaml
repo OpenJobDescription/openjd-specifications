@@ -1,5 +1,0 @@
-expected_output:
-  - "TASK:InputFile=/path/a.exr"
-  - "TASK:InputFile=/path/b.exr"
-forbidden_output:
-  - "TASK:InputFile=/path/c.exr"

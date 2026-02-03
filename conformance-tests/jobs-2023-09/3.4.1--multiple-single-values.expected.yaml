@@ -1,8 +1,0 @@
-expected_output:
-  - "VAL:1"
-  - "VAL:3"
-  - "VAL:5"
-  - "VAL:7"
-forbidden_output:
-  - "VAL:0"
-  - "VAL:8"

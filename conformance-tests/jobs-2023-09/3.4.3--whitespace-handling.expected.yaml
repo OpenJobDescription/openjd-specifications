@@ -1,8 +1,0 @@
-expected_output:
-  - "TASK:A=1,B=x"
-  - "TASK:A=1,B=y"
-  - "TASK:A=2,B=x"
-  - "TASK:A=2,B=y"
-forbidden_output:
-  - "TASK:A=0,B=y"
-  - "TASK:A=2,B=0"

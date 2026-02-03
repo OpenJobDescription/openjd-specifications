@@ -1,0 +1,33 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Name
+    type: STRING
+    minLength: 5
+    maxLength: 50
+    default: test-value
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'Name={{Param.Name}}')
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: Name
+    type: STRING
+    minLength: 1
+    maxLength: 100
+    default: test-value
+  environment:
+    name: TestEnv
+    variables:
+      NAME: '{{Param.Name}}'
+expected:
+  output:
+  - Name=test-value

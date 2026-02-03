@@ -1,0 +1,17 @@
+# Tests PATH parameter default violates minLength (Spec 2.2)
+# Default value must meet minLength constraint
+specificationVersion: jobtemplate-2023-09
+name: PathMinLengthViolation
+parameterDefinitions:
+  - name: InputPath
+    type: PATH
+    minLength: 20
+    default: /tmp/short
+steps:
+  - name: TestStep
+    script:
+      actions:
+        onRun:
+          command: echo
+          args:
+            - "{{Param.InputPath}}"
