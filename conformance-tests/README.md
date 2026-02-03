@@ -124,18 +124,21 @@ uv run run_openjd_cli_tests.py 'job_templates-2023-09/3.3*' # Run host requireme
 
 ### Known openjd CLI Deviations
 
-The example test runner uses the `openjd` CLI. The CLI implementation fails several tests either because of missing validations (e.g. duplicate host requirement names) or because of intentional choices (e.g. not allowing absolute paths as defaults for PATH parameters):
+The example test runner uses the `openjd` CLI. The CLI implementation fails several tests due to missing validations or intentional implementation choices:
 
-- Parameter merge validation (type mismatches, constraint widening/narrowing, default validation)
-- Descending range expressions without explicit negative step
-- Absolute path defaults in PATH parameters
-- Job name length limit (128 chars) and control character validation
-- Range item limit (1024) enforcement
-- Nested associative parameter length validation
-- Duplicate host requirement name detection
-- minLength=0 for STRING parameters (CLI requires minLength > 0)
-- Empty args array in actions (CLI requires at least 1 arg if args is provided)
-- decimals property on non-SPINBOX FLOAT parameters
-- Empty string/path values in task parameter ranges
+**Template Validation** - CLI doesn't enforce:
+- Job name max length (128 chars) or control character restrictions
+- STRING `minLength=0` (CLI requires > 0)
+- Empty `args` array (CLI requires at least 1 arg)
+- `decimals` property restricted to SPINBOX controls
+- Duplicate host requirement names
+- Max 1024 range items, empty string/path values in ranges
 - Embedded filename path separator validation
-- FEATURE_BUNDLE_1 extension (SimpleAction, endOfLine, extended filename length)
+- TASK_CHUNKING extension declaration requirement
+
+**Job Execution** - Many tests expect errors at runtime, but CLI catches them earlier:
+- Parameter validation errors (type mismatches, constraint violations) fail at generation time instead of runtime
+- Format string scope errors fail at validation time instead of runtime
+- Descending ranges like `5-1` require explicit negative step
+- Path mapping not applied to `Param.*` references
+- Some extension behaviors differ (REDACTED_ENV_VARS, TASK_CHUNKING noncontiguous)

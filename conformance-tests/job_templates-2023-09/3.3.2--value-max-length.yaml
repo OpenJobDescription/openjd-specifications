@@ -4,7 +4,7 @@ steps:
 - name: Step1
   hostRequirements:
     attributes:
-    - name: attr.worker.custom
+    - name: vendor:attr.custom
       anyOf:
       - aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
   script:
