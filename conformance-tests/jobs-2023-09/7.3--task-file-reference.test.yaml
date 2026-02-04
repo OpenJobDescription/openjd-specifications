@@ -15,5 +15,8 @@ template:
           - -c
           - print(r'SCRIPT_PATH:{{Task.File.myscript}}')
 expected:
-  output:
+  output_posix:
   - SCRIPT_PATH:/
+  output_windows:
+  - "SCRIPT_PATH:"
+  - ":\\"

@@ -18,6 +18,7 @@ Test naming conventions:
 
 import argparse
 import fnmatch
+import io
 import json
 import subprocess
 import sys
@@ -25,6 +26,12 @@ import tempfile
 from pathlib import Path
 
 import yaml
+
+# Ensure UTF-8 output on Windows
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
+PLATFORM = "windows" if sys.platform == "win32" else "posix"
 
 CONFORMANCE_DIR = Path(__file__).parent
 
@@ -84,10 +91,12 @@ def run_job(test_path: Path) -> tuple[bool, str]:
         
         # Check expected output
         expected = test.get("expected", {})
-        for line in expected.get("output", []):
+        expected_output = expected.get("output", []) + expected.get(f"output_{PLATFORM}", [])
+        forbidden = expected.get("forbidden", []) + expected.get(f"forbidden_{PLATFORM}", [])
+        for line in expected_output:
             if line not in output:
-                return False, f"Missing expected output: {line}"
-        for line in expected.get("forbidden", []):
+                return False, f"Missing expected output: {line}\n--- Actual output (last 500 chars) ---\n{output[-500:]}"
+        for line in forbidden:
             if line in output:
                 return False, f"Found forbidden output: {line}"
         

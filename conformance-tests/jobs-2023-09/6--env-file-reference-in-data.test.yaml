@@ -32,5 +32,8 @@ template:
           - -c
           - print('TASK_RAN')
 expected:
-  output:
+  output_posix:
   - CONFIG_PATH:/
+  output_windows:
+  - "CONFIG_PATH:"
+  - ":\\"

@@ -24,5 +24,8 @@ template:
           - -c
           - print(r'TASK_RAN')
 expected:
-  output:
+  output_posix:
   - ENV_FILE:/
+  output_windows:
+  - "ENV_FILE:"
+  - ":\\"

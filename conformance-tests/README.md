@@ -100,7 +100,18 @@ expected:
     - LINE2
   forbidden:
     - SHOULD_NOT_APPEAR
+  # Platform-specific assertions (optional)
+  output_posix:
+    - PATH:/unix/style
+  output_windows:
+    - PATH:D:\windows\style
+  forbidden_posix:
+    - /wrong/path
+  forbidden_windows:
+    - D:\wrong\path
 ```
+
+Platform-specific assertions (`output_posix`, `output_windows`, `forbidden_posix`, `forbidden_windows`) are merged with the base `output` and `forbidden` lists at runtime based on the current platform. Use these when tests involve filesystem paths or other platform-dependent behavior.
 
 ## Writing Your Own Test Runner
 

@@ -17,4 +17,7 @@ template:
 expected:
   output:
   - 'OUTPUT:'
+  output_posix:
   - /output
+  output_windows:
+  - "\\output"

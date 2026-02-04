@@ -19,5 +19,5 @@ template:
           - import os, stat; path = r'{{Task.File.runnable_script}}'; mode = os.stat(path).st_mode;
             is_exec = bool(mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)); print(f'EXECUTABLE:{is_exec}')
 expected:
-  output:
+  output_posix:
   - EXECUTABLE:True

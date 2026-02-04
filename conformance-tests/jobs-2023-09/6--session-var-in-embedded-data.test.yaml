@@ -18,5 +18,8 @@ template:
           args:
           - '{{Task.File.script}}'
 expected:
-  output:
+  output_posix:
   - SESSION_DIR:/
+  output_windows:
+  - "SESSION_DIR:"
+  - ":\\"
