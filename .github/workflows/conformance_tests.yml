@@ -1,0 +1,42 @@
+name: Conformance Tests
+
+on:
+  push:
+    branches: [ mainline ]
+    paths:
+      - conformance-tests/**
+  pull_request:
+    branches: [ mainline ]
+    paths:
+      - conformance-tests/**
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Setup Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install openjd-cli pyyaml
+
+    - name: Verify test runner works
+      working-directory: conformance-tests
+      # Run one test which we expect to pass if the test runner is working.
+      run: python run_openjd_cli_tests.py 'jobs-2023-09/1.1--basic-job-creation*'
+
+    - name: Run full conformance test suite
+      working-directory: conformance-tests
+      # Ignore the result of this test run because we expect some tests to fail at the moment. Run the full
+      # suite though so we can see the pass/fail counts.
+      run: python run_openjd_cli_tests.py || true
