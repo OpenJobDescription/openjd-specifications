@@ -30,13 +30,11 @@ jobs:
         pip install --upgrade pip
         pip install openjd-cli pyyaml
 
-    - name: Verify test runner works
-      working-directory: conformance-tests
-      # Run one test which we expect to pass if the test runner is working.
-      run: python run_openjd_cli_tests.py 'jobs-2023-09/1.1--basic-job-creation*'
-
     - name: Run full conformance test suite
+      # We expect some tests to fail with the openjd CLI at the moment. The CLI is also not in the scope
+      # of this repo, so PRs in this repo should not depend too specifically on its functinoality. Still run
+      # the conformance tests against it to validate the example runner works and to see where the test cases
+      # and the CLI differ.
+      continue-on-error: true
       working-directory: conformance-tests
-      # Ignore the result of this test run because we expect some tests to fail at the moment. Run the full
-      # suite though so we can see the pass/fail counts.
-      run: python run_openjd_cli_tests.py || true
+      run: python run_openjd_cli_tests.py

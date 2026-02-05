@@ -103,8 +103,9 @@ def run_job(test_path: Path) -> tuple[bool, str]:
         return True, output
 
 
-def run_template_tests(directory: Path, pattern: str = None) -> tuple[int, int]:
+def run_template_tests(directory: Path, pattern: str = None) -> tuple[int, int, list[str]]:
     passed = failed = 0
+    failed_tests = []
     
     templates = sorted(list(directory.glob("*.yaml")) + list(directory.glob("*.json")))
     for template in templates:
@@ -119,15 +120,17 @@ def run_template_tests(directory: Path, pattern: str = None) -> tuple[int, int]:
             print(f"  ✓ {template.name}")
         else:
             failed += 1
+            failed_tests.append(f"{directory.name}/{template.name}")
             print(f"  ✗ {template.name}")
             print(f"    Expected {'failure' if expect_failure else 'success'}, got {'success' if success else 'failure'}")
             print(f"    {output[:200]}")
     
-    return passed, failed
+    return passed, failed, failed_tests
 
 
-def run_job_tests(directory: Path, pattern: str = None) -> tuple[int, int]:
+def run_job_tests(directory: Path, pattern: str = None) -> tuple[int, int, list[str]]:
     passed = failed = 0
+    failed_tests = []
     
     for test_path in sorted(directory.glob("*.test.yaml")):
         name = test_path.name.replace(".invalid.test.yaml", "").replace(".test.yaml", "")
@@ -142,11 +145,12 @@ def run_job_tests(directory: Path, pattern: str = None) -> tuple[int, int]:
             print(f"  ✓ {name}")
         else:
             failed += 1
+            failed_tests.append(f"{directory.name}/{test_path.name}")
             print(f"  ✗ {name}")
             print(f"    Expected {'failure' if expect_failure else 'success'}, got {'success' if success else 'failure'}")
             print(f"    {output[:300]}")
     
-    return passed, failed
+    return passed, failed, failed_tests
 
 
 def main():
@@ -155,6 +159,7 @@ def main():
     args = parser.parse_args()
     
     total_passed = total_failed = 0
+    all_failed_tests = []
     dir_pattern, _, test_pattern = args.pattern.rpartition("/")
     test_pattern = test_pattern if test_pattern != "*" else None
     
@@ -167,15 +172,22 @@ def main():
         print(f"\n{directory.name}:")
         
         if directory.name.startswith("jobs"):
-            passed, failed = run_job_tests(directory, test_pattern)
+            passed, failed, failed_tests = run_job_tests(directory, test_pattern)
         else:
-            passed, failed = run_template_tests(directory, test_pattern)
+            passed, failed, failed_tests = run_template_tests(directory, test_pattern)
         
         total_passed += passed
         total_failed += failed
+        all_failed_tests.extend(failed_tests)
         print(f"  {passed} passed, {failed} failed")
     
     print(f"\nTotal: {total_passed} passed, {total_failed} failed")
+    
+    if all_failed_tests:
+        print(f"\nFailed tests ({len(all_failed_tests)}):")
+        for name in all_failed_tests:
+            print(f"  - {name}")
+    
     sys.exit(0 if total_failed == 0 else 1)
 
 
