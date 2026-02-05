@@ -32,9 +32,8 @@ jobs:
 
     - name: Run full conformance test suite
       # We expect some tests to fail with the openjd CLI at the moment. The CLI is also not in the scope
-      # of this repo, so PRs in this repo should not depend too specifically on its functinoality. Still run
+      # of this repo, so PRs in this repo should not depend too specifically on its functionality. Still run
       # the conformance tests against it to validate the example runner works and to see where the test cases
       # and the CLI differ.
-      continue-on-error: true
       working-directory: conformance-tests
       run: python run_openjd_cli_tests.py
