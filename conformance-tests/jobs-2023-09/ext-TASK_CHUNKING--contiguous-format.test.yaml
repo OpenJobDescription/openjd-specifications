@@ -9,10 +9,10 @@ template:
       taskParameterDefinitions:
       - name: Frame
         type: CHUNK[INT]
-        range: 1-10
+        range: 1-8
         chunks:
-          defaultTaskCount: 5
-          rangeConstraint: NONCONTIGUOUS
+          defaultTaskCount: 3
+          rangeConstraint: CONTIGUOUS
     script:
       actions:
         onRun:
@@ -22,5 +22,8 @@ template:
           - print(r'CHUNK:{{Task.Param.Frame}}')
 expected:
   output:
-  - 'CHUNK:1-5'
-  - 'CHUNK:6-10'
+  - 'CHUNK:1-3'
+  - 'CHUNK:4-6'
+  - 'CHUNK:7-8'
+  forbidden:
+  - 'CHUNK:7,8'

@@ -4,7 +4,6 @@ template:
   parameterDefinitions:
   - name: InputPath
     type: PATH
-    default: /original/path
   steps:
   - name: Step1
     script:
@@ -14,10 +13,15 @@ template:
           args:
           - -c
           - print(r'RAW:{{RawParam.InputPath}}');print(r'MAPPED:{{Param.InputPath}}')
+
+parameters:
+  InputPath: /original/path
+
 pathMapping:
 - source_path_format: POSIX
   source_path: /original
   destination_path: /mapped
+
 expected:
   output:
   - RAW:/original/path

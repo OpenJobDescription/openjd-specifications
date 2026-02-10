@@ -13,4 +13,4 @@ template:
           command: python
           args:
           - -c
-          - print()
+          - print(r'OUTPUT:success')

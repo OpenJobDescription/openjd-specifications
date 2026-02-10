@@ -21,6 +21,7 @@ template:
           - import os; print('VAR:' + os.environ.get('SECRET_VAR', 'NOT_SET'))
 expected:
   output:
-  - VAR:NOT_SET
+  - 'openjd_redacted_env: SECRET_VAR=********'
+  - 'VAR:********'
   forbidden:
   - secret_value_xyz

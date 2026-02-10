@@ -8,8 +8,8 @@ template:
       - name: InputFile
         type: PATH
         range:
-        - /path/to/file_a
-        - /path/to/file_b
+        - /original/file_a
+        - /original/file_b
     script:
       actions:
         onRun:
@@ -17,7 +17,13 @@ template:
           args:
           - -c
           - print(r'TASK:{{Task.Param.InputFile}}')
+
+pathMapping:
+- source_path_format: POSIX
+  source_path: /original
+  destination_path: /mapped
+
 expected:
   output:
-  - TASK:/path/to/file_a
-  - TASK:/path/to/file_b
+  - TASK:/mapped/file_a
+  - TASK:/mapped/file_b

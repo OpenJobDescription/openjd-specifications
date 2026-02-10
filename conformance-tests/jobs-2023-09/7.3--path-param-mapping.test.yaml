@@ -1,6 +1,9 @@
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob
+  parameterDefinitions:
+  - name: InputPath
+    type: PATH
   steps:
   - name: Step1
     script:
@@ -10,10 +13,15 @@ template:
           args:
           - -c
           - print(r'RESULT:{{Param.InputPath}}')
-  parameterDefinitions:
-  - name: InputPath
-    type: PATH
-    default: /original/path
+
+parameters:
+  InputPath: /original/path
+
+pathMapping:
+- source_path_format: POSIX
+  source_path: /original
+  destination_path: /mapped
+
 expected:
   output:
-  - RESULT:/original/path
+  - RESULT:/mapped/path

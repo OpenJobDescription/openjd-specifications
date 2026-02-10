@@ -1,10 +1,6 @@
 template:
   specificationVersion: jobtemplate-2023-09
-  name: TestJob
-  parameterDefinitions:
-  - name: OutputDir
-    type: PATH
-    default: ../outside
+  name: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
   steps:
   - name: Step1
     script:
@@ -13,4 +9,4 @@ template:
           command: python
           args:
           - -c
-          - print(r'OUTPUT:success')
+          - print()

@@ -54,6 +54,7 @@ def run_check(template_path: Path) -> tuple[bool, str]:
 
 def run_job(test_path: Path) -> tuple[bool, str]:
     test = load_yaml_or_json(test_path)
+    expect_failure = ".invalid." in test_path.name
     
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
@@ -88,6 +89,11 @@ def run_job(test_path: Path) -> tuple[bool, str]:
         
         result = subprocess.run(cmd, capture_output=True, text=True)
         output = result.stdout + result.stderr
+        
+        # For invalid tests, any failure (non-zero exit code) is acceptable
+        if expect_failure:
+            # Return False (job failed) which is what we want for invalid tests
+            return result.returncode == 0, output
         
         # Check expected output
         expected = test.get("expected", {})
@@ -153,10 +159,44 @@ def run_job_tests(directory: Path, pattern: str = None) -> tuple[int, int, list[
     return passed, failed, failed_tests
 
 
+def run_single_file(file_path: Path) -> tuple[int, int, list[str]]:
+    """Run a single test file directly."""
+    if not file_path.exists():
+        print(f"File not found: {file_path}")
+        return 0, 1, [str(file_path)]
+    
+    name = file_path.name
+    if ".test.yaml" in name:
+        expect_failure = ".invalid." in name
+        success, output = run_job(file_path)
+        display_name = name.replace(".invalid.test.yaml", "").replace(".test.yaml", "")
+    else:
+        expect_failure = ".invalid." in name
+        success, output = run_check(file_path)
+        display_name = name
+    
+    ok = success != expect_failure
+    if ok:
+        print(f"  ✓ {display_name}")
+    else:
+        print(f"  ✗ {display_name}")
+        print(f"    Expected {'failure' if expect_failure else 'success'}, got {'success' if success else 'failure'}")
+    
+    print(f"\n--- Output ---\n{output}")
+    return (1, 0, []) if ok else (0, 1, [str(file_path)])
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run OpenJD conformance tests")
-    parser.add_argument("pattern", nargs="?", default="*/*", help="Glob pattern (e.g. 'job_templates-2023-09/*', 'jobs-2023-09/ext-*')")
+    parser.add_argument("pattern", nargs="?", default="*/*", help="Glob pattern (e.g. 'job_templates-2023-09/*') or file path")
     args = parser.parse_args()
+    
+    # Check if it's a direct file path
+    potential_path = CONFORMANCE_DIR / args.pattern
+    if potential_path.is_file():
+        passed, failed, failed_tests = run_single_file(potential_path)
+        print(f"\nTotal: {passed} passed, {failed} failed")
+        sys.exit(0 if failed == 0 else 1)
     
     total_passed = total_failed = 0
     all_failed_tests = []
