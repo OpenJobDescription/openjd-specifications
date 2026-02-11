@@ -15,14 +15,30 @@ Any OpenJD library can use these tests to verify spec compliance.
 
 ```
 conformance-tests/
-├── job_templates-2023-09/   # Job template validation tests
-├── env_templates-2023-09/   # Environment template validation tests
-├── jobs-2023-09/            # Job execution tests (unified format)
-├── run_openjd_cli_tests.py
-└── README.md
+└── {spec_version}/
+    ├── base/                    # Base specification tests
+    │   ├── job_templates/       # Job template validation tests
+    │   ├── env_templates/       # Environment template validation tests
+    │   └── jobs/                # Job execution tests
+    └── {EXTENSION_NAME}/        # Extension-specific tests
+        ├── job_templates/
+        └── jobs/
 ```
 
-Directory names include the specification revision (e.g., `-2023-09`) to support multiple spec versions.
+Example:
+```
+conformance-tests/
+└── 2023-09/
+    ├── base/
+    │   ├── job_templates/
+    │   ├── env_templates/
+    │   └── jobs/
+    ├── TASK_CHUNKING/
+    │   ├── job_templates/
+    │   └── jobs/
+    └── REDACTED_ENV_VARS/
+        └── jobs/
+```
 
 ### Naming Convention
 
@@ -33,7 +49,6 @@ Filenames encode the spec section they test:
 ```
 
 - `<spec-section>` - Reference to the [Template Schema](../wiki/2023-09-Template-Schemas.md) section (e.g., `1.1`, `3.3.2`, `7.3`)
-- `ext-<EXTENSION_NAME>` - For extension tests (e.g., `ext-TASK_CHUNKING`, `ext-REDACTED_ENV_VARS`)
 - `.invalid` - Test should FAIL validation/execution
 - `.test` - Job execution test (in `jobs/` directory)
 
@@ -42,11 +57,11 @@ Examples:
 - `3.3.2--allof.yaml` - Section 3.3.2 (AttributeRequirement)
 - `5--cancelation-notify-then-terminate.yaml` - Section 5 (Action)
 - `2.1--missing-name.invalid.yaml` - Invalid test for Section 2.1
-- `ext-TASK_CHUNKING--contiguous-even.test.yaml` - TASK_CHUNKING extension execution test
+- `contiguous-even.test.yaml` - TASK_CHUNKING extension execution test (in `TASK_CHUNKING/jobs/`)
 
 ### Extension Tests
 
-Extensions must be explicitly enabled in templates via the `extensions` field:
+Extension tests are organized in their own directories (e.g., `2023-09/TASK_CHUNKING/`). Extensions must be explicitly enabled in templates via the `extensions` field:
 
 ```yaml
 specificationVersion: jobtemplate-2023-09
@@ -56,7 +71,7 @@ name: MyJob
 # ...
 ```
 
-Tests prefixed with `ext-<NAME>` verify extension behavior. Some tests (like `ext-REDACTED_ENV_VARS--redaction-without-extension`) intentionally omit the `extensions` field to verify behavior when extension syntax is used without enabling the extension.
+Some tests (like `redaction-without-extension.test.yaml` in `REDACTED_ENV_VARS/jobs/`) intentionally omit the `extensions` field to verify behavior when extension syntax is used without enabling the extension.
 
 ### Job Execution Test Format
 
@@ -127,29 +142,10 @@ To validate your OpenJD library against these tests:
 The included `run_openjd_cli_tests.py` demonstrates how to run these tests using the `openjd` CLI. Implementers can adapt this approach or write their own runner targeting their library's API.
 
 ```bash
-uv run run_openjd_cli_tests.py                              # Run all tests
-uv run run_openjd_cli_tests.py 'job_templates-2023-09/*'    # Run job template tests only
-uv run run_openjd_cli_tests.py 'jobs-2023-09/ext-*'         # Run extension execution tests
-uv run run_openjd_cli_tests.py 'job_templates-2023-09/3.3*' # Run host requirements tests
+uv run run_openjd_cli_tests.py                          # Run all tests
+uv run run_openjd_cli_tests.py 2023-09                  # Run all 2023-09 tests
+uv run run_openjd_cli_tests.py 2023-09/base             # Run base spec tests only
+uv run run_openjd_cli_tests.py 2023-09/TASK_CHUNKING    # Run TASK_CHUNKING extension tests
+uv run run_openjd_cli_tests.py 2023-09/*/jobs           # Run all job execution tests
+uv run run_openjd_cli_tests.py '*/*/jobs/*param*'       # Pattern match test names
 ```
-
-### Known openjd CLI Deviations
-
-The example test runner uses the `openjd` CLI. The CLI implementation fails several tests due to missing validations or intentional implementation choices:
-
-**Template Validation** - CLI doesn't enforce:
-- Job name max length (128 chars) or control character restrictions
-- STRING `minLength=0` (CLI requires > 0)
-- Empty `args` array (CLI requires at least 1 arg)
-- `decimals` property restricted to SPINBOX controls
-- Duplicate host requirement names
-- Max 1024 range items, empty string/path values in ranges
-- Embedded filename path separator validation
-- TASK_CHUNKING extension declaration requirement
-
-**Job Execution** - Many tests expect errors at runtime, but CLI catches them earlier:
-- Parameter validation errors (type mismatches, constraint violations) fail at generation time instead of runtime
-- Format string scope errors fail at validation time instead of runtime
-- Descending ranges like `5-1` require explicit negative step
-- Path mapping not applied to `Param.*` references
-- Some extension behaviors differ (REDACTED_ENV_VARS, TASK_CHUNKING noncontiguous)

@@ -7,13 +7,14 @@ OpenJD Conformance Test Runner - Example for openjd CLI
 
 Run with: uv run run_openjd_cli_tests.py
 
-Test naming conventions:
-- *.yaml in job_templates/ - should pass `openjd check`
-- *.invalid.yaml in job_templates/ - should FAIL `openjd check`
-- *.yaml in env_templates/ - should pass `openjd check`
-- *.invalid.yaml in env_templates/ - should FAIL `openjd check`
-- *.test.yaml in jobs/ - unified job execution tests
-- *.invalid.test.yaml in jobs/ - should FAIL `openjd run`
+Examples:
+  uv run run_openjd_cli_tests.py                          # run all tests
+  uv run run_openjd_cli_tests.py 2023-09                  # run all 2023-09 tests
+  uv run run_openjd_cli_tests.py 2023-09/base             # run base spec tests only
+  uv run run_openjd_cli_tests.py 2023-09/TASK_CHUNKING    # run TASK_CHUNKING extension tests
+  uv run run_openjd_cli_tests.py 2023-09/*/jobs           # run all job tests
+  uv run run_openjd_cli_tests.py '*/*/jobs/*param*'       # pattern match test names
+  uv run run_openjd_cli_tests.py 2023-09/base/jobs/1.1--basic-job-creation.test.yaml  # run single test
 """
 
 import argparse
@@ -123,11 +124,11 @@ def run_template_tests(directory: Path, pattern: str = None) -> tuple[int, int, 
         
         if ok:
             passed += 1
-            print(f"  ✓ {template.name}")
+            print(f"  ✓ {template.name}", flush=True)
         else:
             failed += 1
-            failed_tests.append(f"{directory.name}/{template.name}")
-            print(f"  ✗ {template.name}")
+            failed_tests.append(str(template.relative_to(CONFORMANCE_DIR)))
+            print(f"  ✗ {template.name}", flush=True)
             print(f"    Expected {'failure' if expect_failure else 'success'}, got {'success' if success else 'failure'}")
             print(f"    {output[:200]}")
     
@@ -140,7 +141,7 @@ def run_job_tests(directory: Path, pattern: str = None) -> tuple[int, int, list[
     
     for test_path in sorted(directory.glob("*.test.yaml")):
         name = test_path.name.replace(".invalid.test.yaml", "").replace(".test.yaml", "")
-        if pattern and not fnmatch.fnmatch(name, pattern):
+        if pattern and not fnmatch.fnmatch(test_path.name, pattern):
             continue
         expect_failure = ".invalid." in test_path.name
         success, output = run_job(test_path)
@@ -148,11 +149,11 @@ def run_job_tests(directory: Path, pattern: str = None) -> tuple[int, int, list[
         
         if ok:
             passed += 1
-            print(f"  ✓ {name}")
+            print(f"  ✓ {name}", flush=True)
         else:
             failed += 1
-            failed_tests.append(f"{directory.name}/{test_path.name}")
-            print(f"  ✗ {name}")
+            failed_tests.append(str(test_path.relative_to(CONFORMANCE_DIR)))
+            print(f"  ✗ {name}", flush=True)
             print(f"    Expected {'failure' if expect_failure else 'success'}, got {'success' if success else 'failure'}")
             print(f"    {output[:300]}")
     
@@ -186,9 +187,26 @@ def run_single_file(file_path: Path) -> tuple[int, int, list[str]]:
     return (1, 0, []) if ok else (0, 1, [str(file_path)])
 
 
+def discover_test_dirs(base: Path) -> list[tuple[Path, str]]:
+    """Discover all test directories: (path, type) where type is job_templates|env_templates|jobs"""
+    results = []
+    for spec_version in sorted(base.iterdir()):
+        if not spec_version.is_dir() or not spec_version.name[0].isdigit():
+            continue
+        for component in sorted(spec_version.iterdir()):
+            if not component.is_dir():
+                continue
+            for test_type in ["job_templates", "env_templates", "jobs"]:
+                test_dir = component / test_type
+                if test_dir.is_dir():
+                    results.append((test_dir, test_type))
+    return results
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run OpenJD conformance tests")
-    parser.add_argument("pattern", nargs="?", default="*/*", help="Glob pattern (e.g. 'job_templates-2023-09/*') or file path")
+    parser.add_argument("pattern", nargs="?", default="*/*/*", 
+                        help="Pattern: {version}/{component}/{type}/{test} or file path")
     args = parser.parse_args()
     
     # Check if it's a direct file path
@@ -198,23 +216,33 @@ def main():
         print(f"\nTotal: {passed} passed, {failed} failed")
         sys.exit(0 if failed == 0 else 1)
     
+    # Parse pattern: version/component/type/test_pattern
+    parts = args.pattern.split("/")
+    version_pat = parts[0] if len(parts) > 0 else "*"
+    component_pat = parts[1] if len(parts) > 1 else "*"
+    type_pat = parts[2] if len(parts) > 2 else "*"
+    test_pat = parts[3] if len(parts) > 3 else None
+    
     total_passed = total_failed = 0
     all_failed_tests = []
-    dir_pattern, _, test_pattern = args.pattern.rpartition("/")
-    test_pattern = test_pattern if test_pattern != "*" else None
     
-    test_dirs = sorted(d for d in CONFORMANCE_DIR.iterdir() if d.is_dir() and "-" in d.name)
-    
-    for directory in test_dirs:
-        if not fnmatch.fnmatch(directory.name, dir_pattern or "*"):
+    for test_dir, test_type in discover_test_dirs(CONFORMANCE_DIR):
+        rel_path = test_dir.relative_to(CONFORMANCE_DIR)
+        version, component, _ = rel_path.parts
+        
+        if not fnmatch.fnmatch(version, version_pat):
+            continue
+        if not fnmatch.fnmatch(component, component_pat):
+            continue
+        if not fnmatch.fnmatch(test_type, type_pat):
             continue
         
-        print(f"\n{directory.name}:")
+        print(f"\n{rel_path}:", flush=True)
         
-        if directory.name.startswith("jobs"):
-            passed, failed, failed_tests = run_job_tests(directory, test_pattern)
+        if test_type == "jobs":
+            passed, failed, failed_tests = run_job_tests(test_dir, test_pat)
         else:
-            passed, failed, failed_tests = run_template_tests(directory, test_pattern)
+            passed, failed, failed_tests = run_template_tests(test_dir, test_pat)
         
         total_passed += passed
         total_failed += failed
