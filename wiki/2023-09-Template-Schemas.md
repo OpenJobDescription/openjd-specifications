@@ -514,6 +514,8 @@ With the constraints:
 1. If this object is provided in a Job Template, then at least one of the *amounts* or *attributes* properties must be
    defined.
 2. The sum of the lengths of the *amounts* and *attributes* arrays must not exceed 50 elements.
+3. No two elements in the *amounts* array may have the same value for the *name* property.
+4. No two elements in the *attributes* array may have the same value for the *name* property.
 
 #### 3.3.1. `<AmountRequirement>`
 
