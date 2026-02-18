@@ -40,24 +40,33 @@ conformance-tests/
         └── jobs/
 ```
 
-### Naming Convention
+### File Naming Rules
 
-Filenames encode the spec section they test:
+Test filenames follow strict conventions that encode metadata used by test runners.
 
 ```
-<spec-section>--<description>[.invalid][.suffix].yaml
+[<doc>-][<section>]--<description>[.invalid][.test].<ext>
 ```
 
-- `<spec-section>` - Reference to the [Template Schema](../wiki/2023-09-Template-Schemas.md) section (e.g., `1.1`, `3.3.2`, `7.3`)
-- `.invalid` - Test should FAIL validation/execution
-- `.test` - Job execution test (in `jobs/` directory)
+| Component | Required | Description |
+|---|---|---|
+| `<doc>` | No | Document prefix, required for extension specs. Omitted for the base [Template Schema](../wiki/2023-09-Template-Schemas.md) (a leading number implies it). |
+| `<section>` | No | Section reference within the document (e.g., `1.1`, `3.4.1.5`). Omitted when the test isn't tied to a specific numbered section. |
+| `--` | Yes | Double-hyphen separator before the description. |
+| `<description>` | Yes | Lowercase kebab-case description of what is being tested. |
+| `.invalid` | No | Present when the test should FAIL validation or execution. |
+| `.test` | No | Present for job execution tests (files in `jobs/` directories). |
+| `<ext>` | Yes | `.yaml` or `.json`. |
+
+When both `.invalid` and `.test` are present, `.invalid` comes first: `1.1--desc.invalid.test.yaml`
+
+Each extension spec should use a short, consistent prefix (e.g., `chunk` for TASK_CHUNKING, `redact` for REDACTED_ENV_VARS). The base [Template Schema](../wiki/2023-09-Template-Schemas.md) needs no prefix — a leading number implies it.
 
 Examples:
-- `1.1--minimal-job-template.yaml` - Section 1.1 (Job Template root)
-- `3.3.2--allof.yaml` - Section 3.3.2 (AttributeRequirement)
-- `5--cancelation-notify-then-terminate.yaml` - Section 5 (Action)
-- `2.1--missing-name.invalid.yaml` - Invalid test for Section 2.1
-- `contiguous-even.test.yaml` - TASK_CHUNKING extension execution test (in `TASK_CHUNKING/jobs/`)
+- `1.1--minimal-job-template.yaml` — base spec section 1.1, valid template
+- `7.3--nested-braces.invalid.test.yaml` — base spec section 7.3, job execution test that should fail
+- `chunk-3.4.1.5--noncontiguous.yaml` — TASK_CHUNKING section 3.4.1.5, valid template
+- `redact--mixed-env-vars.test.yaml` — REDACTED_ENV_VARS, no specific section, job execution test
 
 ### Extension Tests
 

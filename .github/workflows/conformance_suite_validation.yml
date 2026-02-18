@@ -1,0 +1,27 @@
+name: Conformance Test Suite Validation
+
+on:
+  push:
+    branches: [ mainline ]
+    paths:
+      - conformance-tests/**
+  pull_request:
+    branches: [ mainline ]
+    paths:
+      - conformance-tests/**
+  workflow_dispatch:
+
+jobs:
+  validate-naming:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Setup Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Validate conformance test suite
+      working-directory: conformance-tests
+      run: python test_conformance_suite.py
