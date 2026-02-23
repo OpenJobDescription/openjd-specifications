@@ -1,6 +1,7 @@
 
 * Feature Name: Model Extensions
-* RFC Tracking Issue: https://github.com/OpenJobDescription/openjd-specifications/issues/66
+* Author(s): Alex Hughes &lt;[Ahuge](https://github.com/Ahuge)&gt;
+* RFC Tracking Issue: https://github.com/OpenJobDescription/openjd-specifications/issues/57
 * Start Date: 2024-12-09
 * Accepted On: 2025-01-17
 

@@ -1,4 +1,5 @@
 * Feature Name: Feature Bundle 1
+* Author(s): Cody Edwards &lt;[edwards-aws](https://github.com/edwards-aws)&gt;
 * RFC Tracking Issue: <https://github.com/OpenJobDescription/openjd-specifications/issues/92>
 * Start Date: 2025-10-03
 * Specification Version: 2023-09 extension FEATURE_BUNDLE_1

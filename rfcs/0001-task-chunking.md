@@ -1,5 +1,6 @@
 
 * Feature Name: Task Chunking
+* Author(s): Mark Wiebe &lt;[mwiebe](https://github.com/mwiebe)&gt;
 * RFC Tracking Issue: https://github.com/OpenJobDescription/openjd-specifications/issues/53
 * Start Date: 2024-11-27
 * Specification Version: 2023-09 extension TASK_CHUNKING

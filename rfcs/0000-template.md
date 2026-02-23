@@ -1,5 +1,6 @@
 
 * Feature Name: (fill in with a unique one or two word identifier. e.g. my_feature)
+* Author(s): (fill in all the authors as Author Name `[<github-user>](https://github.com/<github-user>)`)
 * RFC Tracking Issue: (fill in with the URL for the tracking issue in this repository)
 * Start Date: (fill in with today's date: YYYY-MM-DD)
 * Specification Version: 2023-09 extension (fill in with a chosen extension name as per RFC 0002)

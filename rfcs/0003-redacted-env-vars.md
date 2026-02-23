@@ -1,4 +1,5 @@
 - Feature Name: Redacted Environment Variables
+- Author(s): baxeaz &lt;[baxeaz](https://github.com/baxeaz)&gt;
 - RFC Tracking Issue: https://github.com/OpenJobDescription/openjd-specifications/issues/85
 - Start Date: 2025-04-09
 - Specification Version: 2023-09 extension REDACTED_ENV_VARS
