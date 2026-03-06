@@ -1,0 +1,26 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: '{{Param.Project}}-{{Param.Shot}}-v{{Param.Version}}'
+  parameterDefinitions:
+  - name: Project
+    type: STRING
+  - name: Shot
+    type: STRING
+  - name: Version
+    type: INT
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'OUTPUT:{{Param.Project}}')
+parameters:
+  Project: MyProject
+  Shot: shot_010
+  Version: 3
+expected:
+  output:
+  - OUTPUT:MyProject

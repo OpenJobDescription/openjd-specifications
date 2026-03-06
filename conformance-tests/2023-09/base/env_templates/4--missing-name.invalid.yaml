@@ -1,0 +1,4 @@
+specificationVersion: environment-2023-09
+environment:
+  variables:
+    VAR: value

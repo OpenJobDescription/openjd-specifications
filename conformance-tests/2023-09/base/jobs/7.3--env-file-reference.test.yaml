@@ -1,0 +1,31 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  jobEnvironments:
+  - name: TestEnv
+    script:
+      embeddedFiles:
+      - name: setup
+        type: TEXT
+        data: echo setup
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - print(r'ENV_FILE:{{Env.File.setup}}')
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'TASK_RAN')
+expected:
+  output_posix:
+  - ENV_FILE:/
+  output_windows:
+  - "ENV_FILE:"
+  - ":\\"

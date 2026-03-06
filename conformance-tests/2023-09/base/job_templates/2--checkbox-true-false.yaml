@@ -1,0 +1,19 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: Enabled
+  type: STRING
+  allowedValues:
+  - 'TRUE'
+  - 'FALSE'
+  userInterface:
+    control: CHECK_BOX
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print('{{Param.Enabled}}')"

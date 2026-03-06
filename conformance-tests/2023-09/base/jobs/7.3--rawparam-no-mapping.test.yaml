@@ -1,0 +1,28 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: InputPath
+    type: PATH
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'RAW:{{RawParam.InputPath}}');print(r'MAPPED:{{Param.InputPath}}')
+
+parameters:
+  InputPath: /original/path
+
+pathMapping:
+- source_path_format: POSIX
+  source_path: /original
+  destination_path: /mapped
+
+expected:
+  output:
+  - RAW:/original/path
+  - MAPPED:/mapped/path

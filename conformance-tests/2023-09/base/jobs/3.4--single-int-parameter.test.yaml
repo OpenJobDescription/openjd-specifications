@@ -1,0 +1,28 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range:
+        - 1
+        - 2
+        - 3
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'TASK:Frame={{Task.Param.Frame}}')
+expected:
+  output:
+  - TASK:Frame=1
+  - TASK:Frame=2
+  - TASK:Frame=3
+  forbidden:
+  - TASK:Frame=0
+  - TASK:Frame=4

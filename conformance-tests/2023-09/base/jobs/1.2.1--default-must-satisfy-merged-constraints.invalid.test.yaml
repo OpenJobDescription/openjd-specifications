@@ -1,0 +1,34 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Quality
+    type: STRING
+    default: ultra
+    allowedValues:
+    - low
+    - medium
+    - high
+    - ultra
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'MERGE:success')
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: Quality
+    type: STRING
+    allowedValues:
+    - low
+    - medium
+    - high
+  environment:
+    name: TestEnv
+    variables:
+      QUALITY: '{{Param.Quality}}'

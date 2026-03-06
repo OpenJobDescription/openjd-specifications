@@ -1,0 +1,42 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Foo
+    type: INT
+    allowedValues:
+    - 10
+    - 30
+    minValue: 5
+    maxValue: 50
+    default: 10
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'Foo={{Param.Foo}}')
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: Foo
+    type: INT
+    allowedValues:
+    - 10
+    - 20
+    - 30
+    minValue: 0
+    maxValue: 40
+    default: 20
+  environment:
+    name: TestEnv
+    variables:
+      FOO: '{{Param.Foo}}'
+expected:
+  output:
+  - Foo=10
+  forbidden:
+  - Foo=20

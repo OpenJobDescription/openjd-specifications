@@ -1,0 +1,35 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: A
+        type: STRING
+        range:
+        - '1'
+        - '2'
+        - '3'
+      - name: B
+        type: STRING
+        range:
+        - x
+        - y
+        - z
+      combination: (A, B)
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'TASK:A={{Task.Param.A}},B={{Task.Param.B}}')
+expected:
+  output:
+  - TASK:A=1,B=x
+  - TASK:A=2,B=y
+  - TASK:A=3,B=z
+  forbidden:
+  - TASK:A=0,B=z
+  - TASK:A=2,B=0

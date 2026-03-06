@@ -1,0 +1,38 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: A
+        type: INT
+        range:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+      - name: B
+        type: INT
+        range:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+      - name: C
+        type: INT
+        range:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+      combination: (A, B * C)
+    script:
+      actions:
+        onRun:
+          command: echo
+          args:
+          - "test"

@@ -1,0 +1,563 @@
+specificationVersion: jobtemplate-2023-09
+name: CombinationExprTooLong
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: P00001
+      type: INT
+      range: [1]
+    - name: P0002
+      type: INT
+      range: [1]
+    - name: P003
+      type: INT
+      range: [1]
+    - name: P004
+      type: INT
+      range: [1]
+    - name: P005
+      type: INT
+      range: [1]
+    - name: P006
+      type: INT
+      range: [1]
+    - name: P007
+      type: INT
+      range: [1]
+    - name: P008
+      type: INT
+      range: [1]
+    - name: P009
+      type: INT
+      range: [1]
+    - name: P010
+      type: INT
+      range: [1]
+    - name: P011
+      type: INT
+      range: [1]
+    - name: P012
+      type: INT
+      range: [1]
+    - name: P013
+      type: INT
+      range: [1]
+    - name: P014
+      type: INT
+      range: [1]
+    - name: P015
+      type: INT
+      range: [1]
+    - name: P016
+      type: INT
+      range: [1]
+    - name: P017
+      type: INT
+      range: [1]
+    - name: P018
+      type: INT
+      range: [1]
+    - name: P019
+      type: INT
+      range: [1]
+    - name: P020
+      type: INT
+      range: [1]
+    - name: P021
+      type: INT
+      range: [1]
+    - name: P022
+      type: INT
+      range: [1]
+    - name: P023
+      type: INT
+      range: [1]
+    - name: P024
+      type: INT
+      range: [1]
+    - name: P025
+      type: INT
+      range: [1]
+    - name: P026
+      type: INT
+      range: [1]
+    - name: P027
+      type: INT
+      range: [1]
+    - name: P028
+      type: INT
+      range: [1]
+    - name: P029
+      type: INT
+      range: [1]
+    - name: P030
+      type: INT
+      range: [1]
+    - name: P031
+      type: INT
+      range: [1]
+    - name: P032
+      type: INT
+      range: [1]
+    - name: P033
+      type: INT
+      range: [1]
+    - name: P034
+      type: INT
+      range: [1]
+    - name: P035
+      type: INT
+      range: [1]
+    - name: P036
+      type: INT
+      range: [1]
+    - name: P037
+      type: INT
+      range: [1]
+    - name: P038
+      type: INT
+      range: [1]
+    - name: P039
+      type: INT
+      range: [1]
+    - name: P040
+      type: INT
+      range: [1]
+    - name: P041
+      type: INT
+      range: [1]
+    - name: P042
+      type: INT
+      range: [1]
+    - name: P043
+      type: INT
+      range: [1]
+    - name: P044
+      type: INT
+      range: [1]
+    - name: P045
+      type: INT
+      range: [1]
+    - name: P046
+      type: INT
+      range: [1]
+    - name: P047
+      type: INT
+      range: [1]
+    - name: P048
+      type: INT
+      range: [1]
+    - name: P049
+      type: INT
+      range: [1]
+    - name: P050
+      type: INT
+      range: [1]
+    - name: P051
+      type: INT
+      range: [1]
+    - name: P052
+      type: INT
+      range: [1]
+    - name: P053
+      type: INT
+      range: [1]
+    - name: P054
+      type: INT
+      range: [1]
+    - name: P055
+      type: INT
+      range: [1]
+    - name: P056
+      type: INT
+      range: [1]
+    - name: P057
+      type: INT
+      range: [1]
+    - name: P058
+      type: INT
+      range: [1]
+    - name: P059
+      type: INT
+      range: [1]
+    - name: P060
+      type: INT
+      range: [1]
+    - name: P061
+      type: INT
+      range: [1]
+    - name: P062
+      type: INT
+      range: [1]
+    - name: P063
+      type: INT
+      range: [1]
+    - name: P064
+      type: INT
+      range: [1]
+    - name: P065
+      type: INT
+      range: [1]
+    - name: P066
+      type: INT
+      range: [1]
+    - name: P067
+      type: INT
+      range: [1]
+    - name: P068
+      type: INT
+      range: [1]
+    - name: P069
+      type: INT
+      range: [1]
+    - name: P070
+      type: INT
+      range: [1]
+    - name: P071
+      type: INT
+      range: [1]
+    - name: P072
+      type: INT
+      range: [1]
+    - name: P073
+      type: INT
+      range: [1]
+    - name: P074
+      type: INT
+      range: [1]
+    - name: P075
+      type: INT
+      range: [1]
+    - name: P076
+      type: INT
+      range: [1]
+    - name: P077
+      type: INT
+      range: [1]
+    - name: P078
+      type: INT
+      range: [1]
+    - name: P079
+      type: INT
+      range: [1]
+    - name: P080
+      type: INT
+      range: [1]
+    - name: P081
+      type: INT
+      range: [1]
+    - name: P082
+      type: INT
+      range: [1]
+    - name: P083
+      type: INT
+      range: [1]
+    - name: P084
+      type: INT
+      range: [1]
+    - name: P085
+      type: INT
+      range: [1]
+    - name: P086
+      type: INT
+      range: [1]
+    - name: P087
+      type: INT
+      range: [1]
+    - name: P088
+      type: INT
+      range: [1]
+    - name: P089
+      type: INT
+      range: [1]
+    - name: P090
+      type: INT
+      range: [1]
+    - name: P091
+      type: INT
+      range: [1]
+    - name: P092
+      type: INT
+      range: [1]
+    - name: P093
+      type: INT
+      range: [1]
+    - name: P094
+      type: INT
+      range: [1]
+    - name: P095
+      type: INT
+      range: [1]
+    - name: P096
+      type: INT
+      range: [1]
+    - name: P097
+      type: INT
+      range: [1]
+    - name: P098
+      type: INT
+      range: [1]
+    - name: P099
+      type: INT
+      range: [1]
+    - name: P100
+      type: INT
+      range: [1]
+    - name: P101
+      type: INT
+      range: [1]
+    - name: P102
+      type: INT
+      range: [1]
+    - name: P103
+      type: INT
+      range: [1]
+    - name: P104
+      type: INT
+      range: [1]
+    - name: P105
+      type: INT
+      range: [1]
+    - name: P106
+      type: INT
+      range: [1]
+    - name: P107
+      type: INT
+      range: [1]
+    - name: P108
+      type: INT
+      range: [1]
+    - name: P109
+      type: INT
+      range: [1]
+    - name: P110
+      type: INT
+      range: [1]
+    - name: P111
+      type: INT
+      range: [1]
+    - name: P112
+      type: INT
+      range: [1]
+    - name: P113
+      type: INT
+      range: [1]
+    - name: P114
+      type: INT
+      range: [1]
+    - name: P115
+      type: INT
+      range: [1]
+    - name: P116
+      type: INT
+      range: [1]
+    - name: P117
+      type: INT
+      range: [1]
+    - name: P118
+      type: INT
+      range: [1]
+    - name: P119
+      type: INT
+      range: [1]
+    - name: P120
+      type: INT
+      range: [1]
+    - name: P121
+      type: INT
+      range: [1]
+    - name: P122
+      type: INT
+      range: [1]
+    - name: P123
+      type: INT
+      range: [1]
+    - name: P124
+      type: INT
+      range: [1]
+    - name: P125
+      type: INT
+      range: [1]
+    - name: P126
+      type: INT
+      range: [1]
+    - name: P127
+      type: INT
+      range: [1]
+    - name: P128
+      type: INT
+      range: [1]
+    - name: P129
+      type: INT
+      range: [1]
+    - name: P130
+      type: INT
+      range: [1]
+    - name: P131
+      type: INT
+      range: [1]
+    - name: P132
+      type: INT
+      range: [1]
+    - name: P133
+      type: INT
+      range: [1]
+    - name: P134
+      type: INT
+      range: [1]
+    - name: P135
+      type: INT
+      range: [1]
+    - name: P136
+      type: INT
+      range: [1]
+    - name: P137
+      type: INT
+      range: [1]
+    - name: P138
+      type: INT
+      range: [1]
+    - name: P139
+      type: INT
+      range: [1]
+    - name: P140
+      type: INT
+      range: [1]
+    - name: P141
+      type: INT
+      range: [1]
+    - name: P142
+      type: INT
+      range: [1]
+    - name: P143
+      type: INT
+      range: [1]
+    - name: P144
+      type: INT
+      range: [1]
+    - name: P145
+      type: INT
+      range: [1]
+    - name: P146
+      type: INT
+      range: [1]
+    - name: P147
+      type: INT
+      range: [1]
+    - name: P148
+      type: INT
+      range: [1]
+    - name: P149
+      type: INT
+      range: [1]
+    - name: P150
+      type: INT
+      range: [1]
+    - name: P151
+      type: INT
+      range: [1]
+    - name: P152
+      type: INT
+      range: [1]
+    - name: P153
+      type: INT
+      range: [1]
+    - name: P154
+      type: INT
+      range: [1]
+    - name: P155
+      type: INT
+      range: [1]
+    - name: P156
+      type: INT
+      range: [1]
+    - name: P157
+      type: INT
+      range: [1]
+    - name: P158
+      type: INT
+      range: [1]
+    - name: P159
+      type: INT
+      range: [1]
+    - name: P160
+      type: INT
+      range: [1]
+    - name: P161
+      type: INT
+      range: [1]
+    - name: P162
+      type: INT
+      range: [1]
+    - name: P163
+      type: INT
+      range: [1]
+    - name: P164
+      type: INT
+      range: [1]
+    - name: P165
+      type: INT
+      range: [1]
+    - name: P166
+      type: INT
+      range: [1]
+    - name: P167
+      type: INT
+      range: [1]
+    - name: P168
+      type: INT
+      range: [1]
+    - name: P169
+      type: INT
+      range: [1]
+    - name: P170
+      type: INT
+      range: [1]
+    - name: P171
+      type: INT
+      range: [1]
+    - name: P172
+      type: INT
+      range: [1]
+    - name: P173
+      type: INT
+      range: [1]
+    - name: P174
+      type: INT
+      range: [1]
+    - name: P175
+      type: INT
+      range: [1]
+    - name: P176
+      type: INT
+      range: [1]
+    - name: P177
+      type: INT
+      range: [1]
+    - name: P178
+      type: INT
+      range: [1]
+    - name: P179
+      type: INT
+      range: [1]
+    - name: P180
+      type: INT
+      range: [1]
+    - name: P181
+      type: INT
+      range: [1]
+    - name: P182
+      type: INT
+      range: [1]
+    - name: P183
+      type: INT
+      range: [1]
+    combination: "P00001 * P0002 * P003 * P004 * P005 * P006 * P007 * P008 * P009 * P010 * P011 * P012 * P013 * P014 * P015 * P016 * P017 * P018 * P019 * P020 * P021 * P022 * P023 * P024 * P025 * P026 * P027 * P028 * P029 * P030 * P031 * P032 * P033 * P034 * P035 * P036 * P037 * P038 * P039 * P040 * P041 * P042 * P043 * P044 * P045 * P046 * P047 * P048 * P049 * P050 * P051 * P052 * P053 * P054 * P055 * P056 * P057 * P058 * P059 * P060 * P061 * P062 * P063 * P064 * P065 * P066 * P067 * P068 * P069 * P070 * P071 * P072 * P073 * P074 * P075 * P076 * P077 * P078 * P079 * P080 * P081 * P082 * P083 * P084 * P085 * P086 * P087 * P088 * P089 * P090 * P091 * P092 * P093 * P094 * P095 * P096 * P097 * P098 * P099 * P100 * P101 * P102 * P103 * P104 * P105 * P106 * P107 * P108 * P109 * P110 * P111 * P112 * P113 * P114 * P115 * P116 * P117 * P118 * P119 * P120 * P121 * P122 * P123 * P124 * P125 * P126 * P127 * P128 * P129 * P130 * P131 * P132 * P133 * P134 * P135 * P136 * P137 * P138 * P139 * P140 * P141 * P142 * P143 * P144 * P145 * P146 * P147 * P148 * P149 * P150 * P151 * P152 * P153 * P154 * P155 * P156 * P157 * P158 * P159 * P160 * P161 * P162 * P163 * P164 * P165 * P166 * P167 * P168 * P169 * P170 * P171 * P172 * P173 * P174 * P175 * P176 * P177 * P178 * P179 * P180 * P181 * P182 * P183"
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print(r'ok')"

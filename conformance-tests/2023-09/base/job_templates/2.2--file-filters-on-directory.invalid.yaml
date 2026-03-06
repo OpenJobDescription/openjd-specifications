@@ -1,0 +1,22 @@
+# Tests fileFilters on invalid control type (Spec 2.2)
+# fileFilters can only be used with CHOOSE_INPUT_FILE or CHOOSE_OUTPUT_FILE
+specificationVersion: jobtemplate-2023-09
+name: FileFiltersOnDirectory
+parameterDefinitions:
+  - name: OutputDir
+    type: PATH
+    objectType: DIRECTORY
+    userInterface:
+      control: CHOOSE_DIRECTORY
+      fileFilters:
+        - label: "Text Files"
+          patterns:
+            - "*.txt"
+steps:
+  - name: TestStep
+    script:
+      actions:
+        onRun:
+          command: echo
+          args:
+            - "{{Param.OutputDir}}"

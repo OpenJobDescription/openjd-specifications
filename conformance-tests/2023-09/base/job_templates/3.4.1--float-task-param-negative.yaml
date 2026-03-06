@@ -1,0 +1,21 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Offset
+      type: FLOAT
+      range:
+      - -1.5
+      - -0.5
+      - 0.0
+      - 0.5
+      - 1.5
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print('{{Task.Param.Offset}}')"

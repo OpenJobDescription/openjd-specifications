@@ -1,0 +1,32 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Config
+    type: STRING
+    default: job-default
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'MERGE:Config={{Param.Config}}')
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: Config
+    type: STRING
+    default: env-default
+  environment:
+    name: TestEnv
+    variables:
+      CONFIG: '{{Param.Config}}'
+expected:
+  output:
+  - MERGE:Config=job-default
+  forbidden:
+  - '{{Param.'
+  - env-default

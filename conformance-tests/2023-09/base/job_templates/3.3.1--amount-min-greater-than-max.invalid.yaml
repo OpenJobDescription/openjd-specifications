@@ -1,0 +1,15 @@
+# Tests that amount min must be <= max (Spec 3.3.1)
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+  - name: Step1
+    hostRequirements:
+      amounts:
+        - name: amount.worker.vcpu
+          min: 10
+          max: 5
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print()"]

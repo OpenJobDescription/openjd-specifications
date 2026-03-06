@@ -1,0 +1,23 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      embeddedFiles:
+      - name: runnable_script
+        type: TEXT
+        runnable: true
+        data: '#!/bin/bash
+
+          echo hello'
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - import os, stat; path = r'{{Task.File.runnable_script}}'; mode = os.stat(path).st_mode;
+            is_exec = bool(mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)); print(f'EXECUTABLE:{is_exec}')
+expected:
+  output_posix:
+  - EXECUTABLE:True

@@ -1,0 +1,33 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range:
+        - 1
+        - 2
+      - name: Layer
+        type: STRING
+        range:
+        - fg
+        - bg
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'TASK:Frame={{Task.Param.Frame}},Layer={{Task.Param.Layer}}')
+expected:
+  output:
+  - TASK:Frame=1,Layer=fg
+  - TASK:Frame=1,Layer=bg
+  - TASK:Frame=2,Layer=fg
+  - TASK:Frame=2,Layer=bg
+  forbidden:
+  - TASK:Frame=3
+  - TASK:Frame=0

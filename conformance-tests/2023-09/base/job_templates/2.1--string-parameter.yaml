@@ -1,0 +1,15 @@
+specificationVersion: jobtemplate-2023-09
+name: Job-{{Param.Version}}
+parameterDefinitions:
+- name: Version
+  type: STRING
+  default: '1.0'
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print('{{Param.Version}}')"

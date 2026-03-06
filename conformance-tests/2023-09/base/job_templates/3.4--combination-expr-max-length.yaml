@@ -1,0 +1,62 @@
+specificationVersion: jobtemplate-2023-09
+name: CombinationExprMaxLength
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Param00WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX
+      type: INT
+      range: [1]
+    - name: Param01WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX
+      type: INT
+      range: [1]
+    - name: Param02WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX
+      type: INT
+      range: [1]
+    - name: Param03WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX
+      type: INT
+      range: [1]
+    - name: Param04WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX
+      type: INT
+      range: [1]
+    - name: Param05WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX
+      type: INT
+      range: [1]
+    - name: Param06WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX
+      type: INT
+      range: [1]
+    - name: Param07WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX
+      type: INT
+      range: [1]
+    - name: Param08WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX
+      type: INT
+      range: [1]
+    - name: Param09WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX
+      type: INT
+      range: [1]
+    - name: Param10WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX
+      type: INT
+      range: [1]
+    - name: Param11WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX
+      type: INT
+      range: [1]
+    - name: Param12WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX
+      type: INT
+      range: [1]
+    - name: Param13WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX
+      type: INT
+      range: [1]
+    - name: Param14WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX
+      type: INT
+      range: [1]
+    - name: Param15WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX
+      type: INT
+      range: [1]
+    combination: "Param00WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX       *         Param01WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX       *         Param02WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX       *         Param03WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX       *         Param04WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX       *         Param05WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX       *         Param06WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX       *         Param07WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX       *         Param08WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX       *         Param09WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX       *         Param10WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX       *         Param11WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX       *         Param12WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX       *         Param13WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX       *         Param14WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX        *         Param15WithLongNameToTestCombinationExpressionMaxLengthLimitXXXX"
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print(r'ok')"

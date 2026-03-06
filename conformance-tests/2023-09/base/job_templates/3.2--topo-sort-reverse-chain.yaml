@@ -1,0 +1,41 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: S1
+  dependencies:
+  - dependsOn: S2
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"
+- name: S2
+  dependencies:
+  - dependsOn: S3
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"
+- name: S3
+  dependencies:
+  - dependsOn: S4
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"
+- name: S4
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

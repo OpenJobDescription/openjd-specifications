@@ -1,0 +1,19 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: InputFile
+      type: PATH
+      range:
+      - /input/file1.exr
+      - /input/file2.exr
+      - /input/file3.exr
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print('{{Task.Param.InputFile}}')"

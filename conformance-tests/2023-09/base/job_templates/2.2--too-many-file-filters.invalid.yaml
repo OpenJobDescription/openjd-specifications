@@ -1,0 +1,81 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: MyPath
+  type: PATH
+  objectType: FILE
+  userInterface:
+    control: CHOOSE_INPUT_FILE
+    fileFilters:
+    - label: F01
+      patterns:
+      - '*.1'
+    - label: F02
+      patterns:
+      - '*.2'
+    - label: F03
+      patterns:
+      - '*.3'
+    - label: F04
+      patterns:
+      - '*.4'
+    - label: F05
+      patterns:
+      - '*.5'
+    - label: F06
+      patterns:
+      - '*.6'
+    - label: F07
+      patterns:
+      - '*.7'
+    - label: F08
+      patterns:
+      - '*.8'
+    - label: F09
+      patterns:
+      - '*.9'
+    - label: F10
+      patterns:
+      - '*.10'
+    - label: F11
+      patterns:
+      - '*.11'
+    - label: F12
+      patterns:
+      - '*.12'
+    - label: F13
+      patterns:
+      - '*.13'
+    - label: F14
+      patterns:
+      - '*.14'
+    - label: F15
+      patterns:
+      - '*.15'
+    - label: F16
+      patterns:
+      - '*.16'
+    - label: F17
+      patterns:
+      - '*.17'
+    - label: F18
+      patterns:
+      - '*.18'
+    - label: F19
+      patterns:
+      - '*.19'
+    - label: F20
+      patterns:
+      - '*.20'
+    - label: F21
+      patterns:
+      - '*.21'
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print('{{Param.MyPath}}')"

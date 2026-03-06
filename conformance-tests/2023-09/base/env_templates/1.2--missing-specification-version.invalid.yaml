@@ -1,0 +1,4 @@
+environment:
+  name: TestEnv
+  variables:
+    MY_VAR: value

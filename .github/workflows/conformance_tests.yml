@@ -1,0 +1,39 @@
+name: Conformance Tests
+
+on:
+  push:
+    branches: [ mainline ]
+    paths:
+      - conformance-tests/**
+  pull_request:
+    branches: [ mainline ]
+    paths:
+      - conformance-tests/**
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Setup Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install openjd-cli pyyaml
+
+    - name: Run full conformance test suite
+      # We expect some tests to fail with the openjd CLI at the moment. The CLI is also not in the scope
+      # of this repo, so PRs in this repo should not depend too specifically on its functionality. Still run
+      # the conformance tests against it to validate the example runner works and to see where the test cases
+      # and the CLI differ.
+      working-directory: conformance-tests
+      run: python run_openjd_cli_tests.py

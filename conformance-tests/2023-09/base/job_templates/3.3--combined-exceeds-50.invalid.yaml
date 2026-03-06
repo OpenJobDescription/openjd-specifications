@@ -1,0 +1,141 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  hostRequirements:
+    amounts:
+    - name: amount.cap0
+      min: 1
+    - name: amount.cap1
+      min: 1
+    - name: amount.cap2
+      min: 1
+    - name: amount.cap3
+      min: 1
+    - name: amount.cap4
+      min: 1
+    - name: amount.cap5
+      min: 1
+    - name: amount.cap6
+      min: 1
+    - name: amount.cap7
+      min: 1
+    - name: amount.cap8
+      min: 1
+    - name: amount.cap9
+      min: 1
+    - name: amount.cap10
+      min: 1
+    - name: amount.cap11
+      min: 1
+    - name: amount.cap12
+      min: 1
+    - name: amount.cap13
+      min: 1
+    - name: amount.cap14
+      min: 1
+    - name: amount.cap15
+      min: 1
+    - name: amount.cap16
+      min: 1
+    - name: amount.cap17
+      min: 1
+    - name: amount.cap18
+      min: 1
+    - name: amount.cap19
+      min: 1
+    - name: amount.cap20
+      min: 1
+    - name: amount.cap21
+      min: 1
+    - name: amount.cap22
+      min: 1
+    - name: amount.cap23
+      min: 1
+    - name: amount.cap24
+      min: 1
+    - name: amount.cap25
+      min: 1
+    attributes:
+    - name: attr.cap0
+      anyOf:
+      - v
+    - name: attr.cap1
+      anyOf:
+      - v
+    - name: attr.cap2
+      anyOf:
+      - v
+    - name: attr.cap3
+      anyOf:
+      - v
+    - name: attr.cap4
+      anyOf:
+      - v
+    - name: attr.cap5
+      anyOf:
+      - v
+    - name: attr.cap6
+      anyOf:
+      - v
+    - name: attr.cap7
+      anyOf:
+      - v
+    - name: attr.cap8
+      anyOf:
+      - v
+    - name: attr.cap9
+      anyOf:
+      - v
+    - name: attr.cap10
+      anyOf:
+      - v
+    - name: attr.cap11
+      anyOf:
+      - v
+    - name: attr.cap12
+      anyOf:
+      - v
+    - name: attr.cap13
+      anyOf:
+      - v
+    - name: attr.cap14
+      anyOf:
+      - v
+    - name: attr.cap15
+      anyOf:
+      - v
+    - name: attr.cap16
+      anyOf:
+      - v
+    - name: attr.cap17
+      anyOf:
+      - v
+    - name: attr.cap18
+      anyOf:
+      - v
+    - name: attr.cap19
+      anyOf:
+      - v
+    - name: attr.cap20
+      anyOf:
+      - v
+    - name: attr.cap21
+      anyOf:
+      - v
+    - name: attr.cap22
+      anyOf:
+      - v
+    - name: attr.cap23
+      anyOf:
+      - v
+    - name: attr.cap24
+      anyOf:
+      - v
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

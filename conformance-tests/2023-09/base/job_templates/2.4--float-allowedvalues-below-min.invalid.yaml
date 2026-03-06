@@ -1,0 +1,19 @@
+# Tests FLOAT parameter allowedValues item violates minValue (Spec 2.4)
+# Each allowedValues item must meet minValue constraint
+specificationVersion: jobtemplate-2023-09
+name: FloatAllowedValuesMinValue
+parameterDefinitions:
+  - name: Scale
+    type: FLOAT
+    minValue: 1.0
+    allowedValues:
+      - 2.0
+      - 0.5
+steps:
+  - name: TestStep
+    script:
+      actions:
+        onRun:
+          command: echo
+          args:
+            - "{{Param.Scale}}"

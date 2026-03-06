@@ -1,0 +1,6 @@
+specificationVersion: environment-2023-09
+parameterDefinitions: []
+environment:
+  name: TestEnv
+  variables:
+    MY_VAR: value

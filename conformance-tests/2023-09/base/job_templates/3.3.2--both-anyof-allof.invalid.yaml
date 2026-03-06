@@ -1,0 +1,18 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  hostRequirements:
+    attributes:
+    - name: attr.worker.capabilities
+      anyOf:
+      - a
+      allOf:
+      - b
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

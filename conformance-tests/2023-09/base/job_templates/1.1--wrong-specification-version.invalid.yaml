@@ -1,0 +1,11 @@
+specificationVersion: jobtemplate-2020-01
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

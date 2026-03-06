@@ -1,0 +1,17 @@
+{
+  "specificationVersion": "jobtemplate-2023-09",
+  "name": "JsonFormatTest",
+  "steps": [
+    {
+      "name": "Step1",
+      "script": {
+        "actions": {
+          "onRun": {
+            "command": "echo",
+            "args": ["hello"]
+          }
+        }
+      }
+    }
+  ]
+}

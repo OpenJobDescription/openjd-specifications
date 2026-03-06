@@ -1,0 +1,42 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Start
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"
+- name: BranchA
+  dependencies:
+  - dependsOn: Start
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"
+- name: BranchB
+  dependencies:
+  - dependsOn: Start
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"
+- name: End
+  dependencies:
+  - dependsOn: BranchA
+  - dependsOn: BranchB
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

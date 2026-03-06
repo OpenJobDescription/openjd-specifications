@@ -1,0 +1,10 @@
+specificationVersion: environment-2023-09
+environment:
+  name: TestEnv
+  script:
+    actions:
+      onEnter:
+        command: python
+        args:
+        - "-c"
+        - "print(r'entering')"

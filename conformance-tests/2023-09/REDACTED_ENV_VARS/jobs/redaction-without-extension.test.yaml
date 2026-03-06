@@ -1,0 +1,27 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: RedactionWithoutExtension
+  jobEnvironments:
+  - name: SecretEnv
+    script:
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - 'print(''openjd_redacted_env: SECRET_VAR=secret_value_xyz'')'
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - import os; print('VAR:' + os.environ.get('SECRET_VAR', 'NOT_SET'))
+expected:
+  output:
+  - 'openjd_redacted_env: SECRET_VAR=********'
+  - 'VAR:********'
+  forbidden:
+  - secret_value_xyz

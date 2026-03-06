@@ -1,0 +1,40 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range:
+        - 1
+        - 2
+      - name: Scene
+        type: STRING
+        range:
+        - a
+        - b
+      - name: Quality
+        type: STRING
+        range:
+        - low
+        - high
+      combination: (Frame, Scene) * Quality
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'TASK:Frame={{Task.Param.Frame}},Scene={{Task.Param.Scene}},Quality={{Task.Param.Quality}}')
+expected:
+  output:
+  - TASK:Frame=1,Scene=a,Quality=low
+  - TASK:Frame=1,Scene=a,Quality=high
+  - TASK:Frame=2,Scene=b,Quality=low
+  - TASK:Frame=2,Scene=b,Quality=high
+  forbidden:
+  - TASK:Frame=1,Scene=b
+  - TASK:Frame=2,Scene=a
+  - TASK:Frame=3

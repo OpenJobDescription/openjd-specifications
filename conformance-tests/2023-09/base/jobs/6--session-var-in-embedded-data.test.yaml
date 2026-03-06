@@ -1,0 +1,25 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      embeddedFiles:
+      - name: script
+        type: TEXT
+        data: 'import sys
+
+          print(f''SESSION_DIR:{{Session.WorkingDirectory}}'')
+
+          '
+      actions:
+        onRun:
+          command: python
+          args:
+          - '{{Task.File.script}}'
+expected:
+  output_posix:
+  - SESSION_DIR:/
+  output_windows:
+  - "SESSION_DIR:"
+  - ":\\"

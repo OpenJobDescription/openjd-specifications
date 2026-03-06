@@ -1,0 +1,77 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: P01
+      type: INT
+      range:
+      - 1
+    - name: P02
+      type: INT
+      range:
+      - 1
+    - name: P03
+      type: INT
+      range:
+      - 1
+    - name: P04
+      type: INT
+      range:
+      - 1
+    - name: P05
+      type: INT
+      range:
+      - 1
+    - name: P06
+      type: INT
+      range:
+      - 1
+    - name: P07
+      type: INT
+      range:
+      - 1
+    - name: P08
+      type: INT
+      range:
+      - 1
+    - name: P09
+      type: INT
+      range:
+      - 1
+    - name: P10
+      type: INT
+      range:
+      - 1
+    - name: P11
+      type: INT
+      range:
+      - 1
+    - name: P12
+      type: INT
+      range:
+      - 1
+    - name: P13
+      type: INT
+      range:
+      - 1
+    - name: P14
+      type: INT
+      range:
+      - 1
+    - name: P15
+      type: INT
+      range:
+      - 1
+    - name: P16
+      type: INT
+      range:
+      - 1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

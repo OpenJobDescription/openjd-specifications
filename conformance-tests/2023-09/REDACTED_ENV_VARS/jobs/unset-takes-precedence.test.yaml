@@ -1,0 +1,29 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - REDACTED_ENV_VARS
+  name: UnsetTakesPrecedence
+  jobEnvironments:
+  - name: SecretEnv
+    script:
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - 'print(''openjd_redacted_env: MY_VAR=secret_data''); print(''openjd_unset_env:
+            MY_VAR'')'
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - import os; print('MY_VAR:' + os.environ.get('MY_VAR', 'NOT_SET'))
+expected:
+  output:
+  - MY_VAR:NOT_SET
+  forbidden:
+  - secret_data

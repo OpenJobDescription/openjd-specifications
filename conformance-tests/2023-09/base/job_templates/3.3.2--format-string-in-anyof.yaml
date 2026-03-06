@@ -1,0 +1,20 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: Software
+  type: STRING
+  default: maya
+steps:
+- name: Step1
+  hostRequirements:
+    attributes:
+    - name: attr.custom.software
+      anyOf:
+      - '{{Param.Software}}'
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"
