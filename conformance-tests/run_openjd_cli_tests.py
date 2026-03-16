@@ -217,7 +217,7 @@ def main():
         sys.exit(0 if failed == 0 else 1)
     
     # Parse pattern: version/component/type/test_pattern
-    parts = args.pattern.split("/")
+    parts = args.pattern.strip("/").split("/")
     version_pat = parts[0] if len(parts) > 0 else "*"
     component_pat = parts[1] if len(parts) > 1 else "*"
     type_pat = parts[2] if len(parts) > 2 else "*"
