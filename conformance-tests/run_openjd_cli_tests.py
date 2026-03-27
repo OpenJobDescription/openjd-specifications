@@ -32,7 +32,7 @@ import yaml
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
-PLATFORM = "windows" if sys.platform == "win32" else "posix"
+OPERATING_SYSTEM = "windows" if sys.platform == "win32" else "posix"
 
 CONFORMANCE_DIR = Path(__file__).parent
 
@@ -53,8 +53,20 @@ def run_check(template_path: Path) -> tuple[bool, str]:
     return result.returncode == 0, result.stderr or result.stdout
 
 
-def run_job(test_path: Path) -> tuple[bool, str]:
+def should_skip_test(test: dict) -> bool:
+    """Check if a job test should be skipped on the current platform."""
+    run_on = test.get("runOn")
+    if run_on is None:
+        return False
+    return OPERATING_SYSTEM not in run_on
+
+
+def run_job(test_path: Path) -> tuple[bool, str] | None:
     test = load_yaml_or_json(test_path)
+
+    if should_skip_test(test):
+        return None
+
     expect_failure = ".invalid." in test_path.name
     
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -98,8 +110,8 @@ def run_job(test_path: Path) -> tuple[bool, str]:
         
         # Check expected output
         expected = test.get("expected", {})
-        expected_output = expected.get("output", []) + expected.get(f"output_{PLATFORM}", [])
-        forbidden = expected.get("forbidden", []) + expected.get(f"forbidden_{PLATFORM}", [])
+        expected_output = expected.get("output", []) + expected.get(f"output_{OPERATING_SYSTEM}", [])
+        forbidden = expected.get("forbidden", []) + expected.get(f"forbidden_{OPERATING_SYSTEM}", [])
         for line in expected_output:
             if line not in output:
                 return False, f"Missing expected output: {line}\n--- Actual output ---\n{output}"
@@ -143,8 +155,12 @@ def run_job_tests(directory: Path, pattern: str = None) -> tuple[int, int, list[
         name = test_path.name.replace(".invalid.test.yaml", "").replace(".test.yaml", "")
         if pattern and not fnmatch.fnmatch(test_path.name, pattern):
             continue
+        result = run_job(test_path)
+        if result is None:
+            print(f"  ⊘ {name} (skipped, not for {OPERATING_SYSTEM})", flush=True)
+            continue
         expect_failure = ".invalid." in test_path.name
-        success, output = run_job(test_path)
+        success, output = result
         ok = success != expect_failure
         
         if ok:
@@ -168,8 +184,12 @@ def run_single_file(file_path: Path) -> tuple[int, int, list[str]]:
     
     name = file_path.name
     if ".test.yaml" in name:
+        result = run_job(file_path)
+        if result is None:
+            print(f"  ⊘ {name} (skipped, not for {OPERATING_SYSTEM})")
+            return 0, 0, []
         expect_failure = ".invalid." in name
-        success, output = run_job(file_path)
+        success, output = result
         display_name = name.replace(".invalid.test.yaml", "").replace(".test.yaml", "")
     else:
         expect_failure = ".invalid." in name

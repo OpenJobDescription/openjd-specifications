@@ -1,0 +1,26 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - FEATURE_BUNDLE_1
+  name: TestJob
+  parameterDefinitions:
+  - name: NotifyPeriod
+    type: INT
+    minValue: 1
+    maxValue: 600
+    default: 120
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - "print('NOTIFY_OK')"
+          cancelation:
+            mode: NOTIFY_THEN_TERMINATE
+            notifyPeriodInSeconds: "{{Param.NotifyPeriod}}"
+expected:
+  output:
+  - NOTIFY_OK

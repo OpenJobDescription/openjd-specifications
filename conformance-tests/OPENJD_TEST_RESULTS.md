@@ -28,3 +28,19 @@ Test run: 2026-02-10 (openjd-cli 0.7.5)
 | `7--job-name-control-chars.invalid.yaml` | openjd | Same as above | Multiple control chars test. **Fix openjd**. |
 | `7--step-name-too-long.invalid.yaml` | openjd | §3.1: "Maximum length: 64 characters. 512 if using extension FEATURE_BUNDLE_1" | CLI applies relaxed limit (512) without requiring extension declaration. **Fix openjd** to enforce 64 limit unless FEATURE_BUNDLE_1 is declared. |
 | `ext-TASK_CHUNKING--missing-extension.invalid.yaml` | openjd | Extensions must be declared | Using `CHUNK[INT]` type without declaring TASK_CHUNKING extension. CLI should require extension declaration. **Fix openjd**. |
+
+### FEATURE_BUNDLE_1 Extension Failures (6)
+
+Test run: 2026-03-27 (openjd-cli 0.7.5)
+
+**FEATURE_BUNDLE_1 total: 36 passed, 5 failed**
+
+All 5 failures are the same root cause: the CLI applies FEATURE_BUNDLE_1 relaxed limits and features without requiring the extension to be declared. This is the same class of bug as the existing base test failures for `2--too-many-parameters.invalid.yaml`, `3.5--embedded-filename-too-long.invalid.yaml`, `7--identifier-too-long.invalid.yaml`, and `7--step-name-too-long.invalid.yaml`.
+
+| Test | Fix | Spec Reference | Analysis |
+|------|-----|----------------|----------|
+| `3.3.1--amount-min-format-string-without-extension.invalid.yaml` | openjd | §3.3.1: "Can only be a \<nonnegativefloatstring\> when using the extension FEATURE_BUNDLE_1" | CLI accepts format string in amount `min` without extension. **Fix openjd** to reject format strings unless FEATURE_BUNDLE_1 is declared. |
+| `5--timeout-format-string-without-extension.invalid.yaml` | openjd | §5: "Can only be a \<posintstring\> when using the extension FEATURE_BUNDLE_1" | CLI accepts format string in `timeout` without extension. **Fix openjd** to reject format strings unless FEATURE_BUNDLE_1 is declared. |
+| `5--notify-period-format-string-without-extension.invalid.yaml` | openjd | §5: "Can only be a \<posintstring\> when using the extension FEATURE_BUNDLE_1" | CLI accepts format string in `notifyPeriodInSeconds` without extension. **Fix openjd**. |
+| `6.1--end-of-line-without-extension.invalid.yaml` | openjd | §6.1: "Requires the FEATURE_BUNDLE_1 extension" | CLI accepts `endOfLine` property without extension declaration. **Fix openjd** to reject unless FEATURE_BUNDLE_1 is declared. |
+| `8--simple-action-without-extension.invalid.yaml` | openjd | §8: "This object is only available in the extension FEATURE_BUNDLE_1" | CLI accepts SimpleAction syntax sugar without extension declaration. **Fix openjd** to reject unless FEATURE_BUNDLE_1 is declared. |

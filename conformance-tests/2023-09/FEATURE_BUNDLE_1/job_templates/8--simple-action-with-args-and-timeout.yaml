@@ -1,0 +1,11 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+  - FEATURE_BUNDLE_1
+name: TestJob
+steps:
+- name: Step1
+  python:
+    args: ["--version"]
+    timeout: 30
+    script: |
+      print('hello')

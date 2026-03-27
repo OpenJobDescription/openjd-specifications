@@ -1,0 +1,15 @@
+runOn:
+  - windows
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - FEATURE_BUNDLE_1
+  name: TestJob
+  steps:
+  - name: Step1
+    powershell:
+      script: |
+        Write-Output 'POWERSHELL_ACTION_OK'
+expected:
+  output:
+  - POWERSHELL_ACTION_OK

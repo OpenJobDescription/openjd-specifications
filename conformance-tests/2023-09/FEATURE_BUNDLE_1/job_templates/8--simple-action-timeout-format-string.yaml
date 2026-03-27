@@ -1,0 +1,14 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+  - FEATURE_BUNDLE_1
+name: TestJob
+parameterDefinitions:
+- name: TimeoutSeconds
+  type: INT
+  minValue: 1
+steps:
+- name: Step1
+  python:
+    timeout: "{{Param.TimeoutSeconds}}"
+    script: |
+      print('hello')

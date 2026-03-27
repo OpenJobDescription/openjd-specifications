@@ -1,0 +1,15 @@
+runOn:
+  - posix
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - FEATURE_BUNDLE_1
+  name: TestJob
+  steps:
+  - name: Step1
+    bash:
+      script: |
+        echo 'BASH_ACTION_OK'
+expected:
+  output:
+  - BASH_ACTION_OK

@@ -122,6 +122,12 @@ pathMapping:
     source_path: /mnt/shared
     destination_path: /local/shared
 
+# Optional: restrict which operating systems this test runs on (default: all)
+# Valid values: "posix", "windows"
+runOn:
+  - posix
+  - windows
+
 # Optional: expected output assertions
 expected:
   output:
@@ -141,6 +147,8 @@ expected:
 ```
 
 Platform-specific assertions (`output_posix`, `output_windows`, `forbidden_posix`, `forbidden_windows`) are merged with the base `output` and `forbidden` lists at runtime based on the current platform. Use these when tests involve filesystem paths or other platform-dependent behavior.
+
+The `runOn` field restricts a test to run only on the listed operating systems. If omitted, the test runs on all platforms. Use this when a test requires a platform-specific command (e.g., `cmd` or `powershell` on Windows, `bash` on POSIX).
 
 ## Writing Your Own Test Runner
 

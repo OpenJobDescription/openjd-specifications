@@ -1,0 +1,39 @@
+runOn:
+  - posix
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - FEATURE_BUNDLE_1
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      embeddedFiles:
+      - name: script
+        type: TEXT
+        data: |
+          line1
+          line2
+        endOfLine: AUTO
+      - name: checker
+        type: TEXT
+        runnable: true
+        data: |
+          import sys
+          with open(sys.argv[1], 'rb') as f:
+              data = f.read()
+          if b'\r\n' in data: print('EOL:CRLF')
+          elif b'\r' in data: print('EOL:CR')
+          elif b'\n' in data: print('EOL:LF')
+          else: print('EOL:UNKNOWN')
+      actions:
+        onRun:
+          command: python
+          args:
+          - "{{Task.File.checker}}"
+          - "{{Task.File.script}}"
+expected:
+  output:
+  - "EOL:LF"
+  forbidden:
+  - "EOL:CRLF"

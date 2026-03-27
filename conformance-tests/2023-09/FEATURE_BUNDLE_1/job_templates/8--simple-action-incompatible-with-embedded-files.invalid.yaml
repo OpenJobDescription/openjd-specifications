@@ -1,0 +1,13 @@
+specificationVersion: jobtemplate-2023-09
+extensions:
+  - FEATURE_BUNDLE_1
+name: TestJob
+steps:
+- name: Step1
+  python:
+    script: |
+      print('hello')
+    embeddedFiles:
+    - name: extra
+      type: TEXT
+      data: content

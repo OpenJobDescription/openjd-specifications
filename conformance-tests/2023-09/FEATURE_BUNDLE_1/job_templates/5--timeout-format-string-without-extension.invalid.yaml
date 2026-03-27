@@ -1,0 +1,16 @@
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: TimeoutSeconds
+  type: INT
+  minValue: 1
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        timeout: "{{Param.TimeoutSeconds}}"
+        command: python
+        args:
+        - "-c"
+        - "print()"
