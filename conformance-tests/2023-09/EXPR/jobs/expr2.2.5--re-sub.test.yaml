@@ -12,9 +12,9 @@ template:
           args:
           - -c
           - |
-            print(r'SINGLE:{{ re_replace("frame_001", r"\d+", "002") }}')
-            print(r'MULTI:{{ re_replace("a1b2c3", r"\d", "X") }}')
-            print(r'NO_MATCH:{{ re_replace("hello", r"\d+", "X") }}')
+            print(r'SINGLE:{{ re_sub("frame_001", r"\d+", "002") }}')
+            print(r'MULTI:{{ re_sub("a1b2c3", r"\d", "X") }}')
+            print(r'NO_MATCH:{{ re_sub("hello", r"\d+", "X") }}')
 expected:
   output:
   - SINGLE:frame_002

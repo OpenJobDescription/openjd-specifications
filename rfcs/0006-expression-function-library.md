@@ -515,7 +515,7 @@ the convention used by JavaScript and Ruby.
 | `re_match(s: string, pattern: string) -> list[string]?` | Match at START of string, return captured groups or null |
 | `re_search(s: string, pattern: string) -> list[string]?` | Match ANYWHERE in string, return captured groups or null |
 | `re_findall(s: string, pattern: string) -> list[string] \| list[list[string]]` | Find all non-overlapping matches; returns full matches if no groups, list of captured group values (not full matches) if one group, list of group lists if multiple groups |
-| `re_replace(s: string, pattern: string, repl: string) -> string` | Replace all regex matches with replacement. The `repl` string is literal text — group references (`\1`, `\g<1>`, `$1`, `${1}`) are not supported and are errors. |
+| `re_sub(s: string, pattern: string, repl: string) -> string` | Replace all regex matches with replacement. The `repl` string is literal text — group references (`\1`, `\g<1>`, `$1`, `${1}`) are not supported and are errors. |
 | `re_escape(s: string) -> string` | Escape regex metacharacters for literal matching |
 | `re_split(s: string, pattern: string) -> list[string]` | Split string by regex pattern |
 | `re_split(s: string, pattern: string, maxsplit: int) -> list[string]` | Split string by regex pattern, at most maxsplit times |
@@ -588,7 +588,7 @@ re_findall("shot010_shot020_shot035_comp.nk", r"shot\d+")    # returns ["shot010
 re_findall("v1.2.3 and v4.5.6", r"v(\d+)\.(\d+)\.(\d+)")     # returns [["1", "2", "3"], ["4", "5", "6"]]
 
 # Replace frame numbers
-re_replace("frame_001", r"\d+", "002")          # returns "frame_002"
+re_sub("frame_001", r"\d+", "002")          # returns "frame_002"
 
 # Escape user input for literal matching
 re_escape("file[1].txt")                        # returns "file\\[1\\]\\.txt"

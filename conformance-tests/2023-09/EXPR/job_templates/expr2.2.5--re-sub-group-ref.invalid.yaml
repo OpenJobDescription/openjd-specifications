@@ -10,4 +10,4 @@ steps:
         command: python
         args:
         - -c
-        - "print(r\"{{ re_replace('hello', '(h)', '$1') }}\")"
+        - "print(r\"{{ re_sub('hello', '(h)', r'\\1') }}\")"
