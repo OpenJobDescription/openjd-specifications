@@ -1,3 +1,4 @@
+runOn: [windows]
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
@@ -6,7 +7,7 @@ template:
   parameterDefinitions:
   - name: Paths
     type: LIST[PATH]
-    default: ["renders/a.exr", "renders/b.exr"]
+    default: ["renders\\a.exr", "renders\\b.exr"]
   steps:
   - name: Step1
     parameterSpace:
@@ -30,16 +31,11 @@ template:
 expected:
   output:
   - LEN:2
-  - 'RAW:["renders/a.exr", "renders/b.exr"]'
-  - "TASK_RAW:renders/a.exr"
-  - "TASK_RAW:renders/b.exr"
-  - "TASK_STEM:a"
-  - "TASK_STEM:b"
-  output_posix:
-  - 'PATHS:["renders/a.exr", "renders/b.exr"]'
-  - "TASK:renders/a.exr"
-  - "TASK:renders/b.exr"
-  output_windows:
-  - 'PATHS:["renders\\a.exr", "renders\\b.exr"]'
+  - "RAW:[\"renders\\a.exr\", \"renders\\b.exr\"]"
+  - "PATHS:[\"renders\\a.exr\", \"renders\\b.exr\"]"
   - "TASK:renders\\a.exr"
   - "TASK:renders\\b.exr"
+  - "TASK_RAW:renders\\a.exr"
+  - "TASK_RAW:renders\\b.exr"
+  - "TASK_STEM:a"
+  - "TASK_STEM:b"

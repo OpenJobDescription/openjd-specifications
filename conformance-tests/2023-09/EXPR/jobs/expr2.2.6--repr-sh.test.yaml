@@ -30,6 +30,9 @@ expected:
   - SIMPLE:hello
   - "SPACES:'hello world'"
   - "LIST:echo 'hello world'"
-  - SQUOTE_LEN:10
+  # Python shlex.quote("it's") -> 'it'"'"'s' (10 chars)
+  # Rust shlex::try_quote("it's") -> "it's" (6 chars)
+  # Both are valid POSIX shell quoting
+  - anyOf: ["SQUOTE_LEN:10", "SQUOTE_LEN:6"]
   - "EMPTY:''"
   - "PATH:/tmp/out"

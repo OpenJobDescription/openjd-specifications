@@ -1,0 +1,55 @@
+runOn: [posix]
+# URI source path mapping with apply_path_mapping (Expression Language §2.3.2)
+# Tests URI format path mapping rules: matching, non-matching, multiple schemes,
+# and interaction with filesystem path rules.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'S3_MATCH:{{ apply_path_mapping("s3://my-bucket/assets/teapot.obj") }}')
+            print(r'S3_EXACT:{{ apply_path_mapping("s3://my-bucket/assets") }}')
+            print(r'S3_NESTED:{{ apply_path_mapping("s3://my-bucket/assets/sub/dir/file.exr") }}')
+            print(r'S3_NOMATCH_BUCKET:{{ apply_path_mapping("s3://other-bucket/assets/file.obj") }}')
+            print(r'S3_NOMATCH_PREFIX:{{ apply_path_mapping("s3://my-bucket/assets2/file.obj") }}')
+            print(r'HTTPS_MATCH:{{ apply_path_mapping("https://cdn.example.com/models/scene.obj") }}')
+            print(r'HTTPS_NOMATCH:{{ apply_path_mapping("https://other.com/models/scene.obj") }}')
+            print(r'POSIX_STILL_WORKS:{{ apply_path_mapping("/mnt/shared/project/file.exr") }}')
+            print(r'UNMAPPED:{{ apply_path_mapping("fsx://vol/data/file.bin") }}')
+pathMapping:
+  - source_path_format: URI
+    source_path: s3://my-bucket/assets
+    destination_path: /local/assets
+  - source_path_format: URI
+    source_path: https://cdn.example.com/models
+    destination_path: /cache/models
+  - source_path_format: POSIX
+    source_path: /mnt/shared
+    destination_path: /local/shared
+expected:
+  output:
+  - "S3_NOMATCH_BUCKET:s3://other-bucket/assets/file.obj"
+  - "S3_NOMATCH_PREFIX:s3://my-bucket/assets2/file.obj"
+  - "HTTPS_NOMATCH:https://other.com/models/scene.obj"
+  - "UNMAPPED:fsx://vol/data/file.bin"
+  output_posix:
+  - "S3_MATCH:/local/assets/teapot.obj"
+  - "S3_EXACT:/local/assets"
+  - "S3_NESTED:/local/assets/sub/dir/file.exr"
+  - "HTTPS_MATCH:/cache/models/scene.obj"
+  - "POSIX_STILL_WORKS:/local/shared/project/file.exr"
+  output_windows:
+  - "S3_MATCH:\\local\\assets\\teapot.obj"
+  - "S3_EXACT:\\local\\assets"
+  - "S3_NESTED:\\local\\assets\\sub\\dir\\file.exr"
+  - "HTTPS_MATCH:\\cache\\models\\scene.obj"
+  - "POSIX_STILL_WORKS:\\local\\shared\\project\\file.exr"

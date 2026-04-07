@@ -1,21 +1,24 @@
+runOn: [posix]
+
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob
-  parameterDefinitions:
-  - name: InputPath
-    type: PATH
   steps:
   - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: InputFile
+        type: PATH
+        range:
+        - /original/file_a
+        - /original/file_b
     script:
       actions:
         onRun:
           command: python
           args:
           - -c
-          - print(r'RESULT:{{Param.InputPath}}')
-
-parameters:
-  InputPath: /original/path
+          - print(r'TASK:{{Task.Param.InputFile}}')
 
 pathMapping:
 - source_path_format: POSIX
@@ -24,4 +27,5 @@ pathMapping:
 
 expected:
   output:
-  - RESULT:/mapped/path
+  - TASK:/mapped/file_a
+  - TASK:/mapped/file_b

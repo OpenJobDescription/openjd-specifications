@@ -32,8 +32,6 @@ expected:
   - LIST_RANGE:true
   - RANGE_LIST:true
   - SCALAR_LIST:false
-  - STR_PATH:true
-  - PATH_STR:true
   - ELEM_CROSS:true
   - NESTED_CROSS:true
   - BOOL_INT:false
@@ -42,3 +40,11 @@ expected:
   - NULL_ZERO:false
   - NULL_NULL:true
   - LIST_DIFF_LEN:false
+  # On POSIX, path("/a/b") keeps "/a/b" so string == path is true.
+  # On Windows, path("/a/b") normalizes to "\a\b" so string "/a/b" != path "\a\b".
+  output_posix:
+  - STR_PATH:true
+  - PATH_STR:true
+  output_windows:
+  - STR_PATH:false
+  - PATH_STR:false

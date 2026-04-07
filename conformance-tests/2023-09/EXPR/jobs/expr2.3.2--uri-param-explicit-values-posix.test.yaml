@@ -1,0 +1,59 @@
+runOn: [posix]
+# URI PATH parameters provided as explicit values (not defaults)
+# Explicit parameter values go through a different code path than defaults —
+# they are joined with current_working_dir instead of job_template_dir.
+# URI values must be preserved in both cases.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: S3File
+    type: PATH
+  - name: HttpFile
+    type: PATH
+  - name: UnmappedFile
+    type: PATH
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'S3_RAW:{{ RawParam.S3File }}')
+            print(r'S3_MAPPED:{{ Param.S3File }}')
+            print(r'S3_NAME:{{ Param.S3File.name }}')
+            print(r'HTTP_RAW:{{ RawParam.HttpFile }}')
+            print(r'HTTP_MAPPED:{{ Param.HttpFile }}')
+            print(r'UNMAPPED_RAW:{{ RawParam.UnmappedFile }}')
+            print(r'UNMAPPED_VALUE:{{ Param.UnmappedFile }}')
+            print(r'UNMAPPED_NAME:{{ Param.UnmappedFile.name }}')
+parameters:
+  S3File: "s3://my-bucket/assets/teapot.obj"
+  HttpFile: "https://cdn.example.com/models/scene.obj"
+  UnmappedFile: "fsx://vol/data/file.bin"
+pathMapping:
+  - source_path_format: URI
+    source_path: s3://my-bucket/assets
+    destination_path: /local/assets
+  - source_path_format: URI
+    source_path: https://cdn.example.com/models
+    destination_path: /cache/models
+expected:
+  output:
+  - "S3_RAW:s3://my-bucket/assets/teapot.obj"
+  - "S3_NAME:teapot.obj"
+  - "HTTP_RAW:https://cdn.example.com/models/scene.obj"
+  - "UNMAPPED_RAW:fsx://vol/data/file.bin"
+  - "UNMAPPED_VALUE:fsx://vol/data/file.bin"
+  - "UNMAPPED_NAME:file.bin"
+  output_posix:
+  - "S3_MAPPED:/local/assets/teapot.obj"
+  - "HTTP_MAPPED:/cache/models/scene.obj"
+  output_windows:
+  - "S3_MAPPED:\\local\\assets\\teapot.obj"
+  - "HTTP_MAPPED:\\cache\\models\\scene.obj"

@@ -1,0 +1,33 @@
+runOn: [windows]
+
+# RawParam preserves the original value; Param gets path-mapped.
+# Uses Windows-native paths to avoid POSIX-on-Windows normalization issues.
+
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: InputPath
+    type: PATH
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'RAW:{{RawParam.InputPath}}');print(r'MAPPED:{{Param.InputPath}}')
+
+parameters:
+  InputPath: 'D:\original\path'
+
+pathMapping:
+- source_path_format: WINDOWS
+  source_path: 'D:\original'
+  destination_path: 'E:\mapped'
+
+expected:
+  output:
+  - 'RAW:D:\original\path'
+  - 'MAPPED:E:\mapped\path'

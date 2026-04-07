@@ -1,3 +1,4 @@
+runOn: [windows]
 # URI PATH job parameters with implicit path mapping (Expression Language §1.2.1, §2.3.2)
 # When PATH parameters contain URIs and path mapping rules match, Param.<name>
 # receives the mapped local path while RawParam.<name> preserves the original URI.
@@ -41,27 +42,22 @@ template:
 pathMapping:
   - source_path_format: URI
     source_path: s3://my-bucket/assets
-    destination_path: /local/assets
+    destination_path: "E:\\local\\assets"
   - source_path_format: URI
     source_path: https://cdn.example.com/models
-    destination_path: /cache/models
+    destination_path: "E:\\cache\\models"
 expected:
   output:
   # RawParam always preserves the original URI
   - "S3_RAW:s3://my-bucket/assets/teapot.obj"
+  - "S3_MAPPED:E:\\local\\assets\\teapot.obj"
   - "S3_NAME:teapot.obj"
+  - "S3_PARENT:E:\\local\\assets"
   - "HTTP_RAW:https://cdn.example.com/models/scene.obj"
+  - "HTTP_MAPPED:E:\\cache\\models\\scene.obj"
   - "HTTP_NAME:scene.obj"
   # Unmapped URI passes through as-is with URI path semantics
   - "UNMAPPED_RAW:fsx://vol/data/file.bin"
   - "UNMAPPED_VALUE:fsx://vol/data/file.bin"
   - "UNMAPPED_NAME:file.bin"
   - 'UNMAPPED_PARTS:["fsx://vol", "data", "file.bin"]'
-  output_posix:
-  - "S3_MAPPED:/local/assets/teapot.obj"
-  - "S3_PARENT:/local/assets"
-  - "HTTP_MAPPED:/cache/models/scene.obj"
-  output_windows:
-  - "S3_MAPPED:\\local\\assets\\teapot.obj"
-  - "S3_PARENT:\\local\\assets"
-  - "HTTP_MAPPED:\\cache\\models\\scene.obj"

@@ -1,0 +1,36 @@
+runOn: [windows]
+# URI path: path mapping transforms URI to local path (Expression Language §2.3.2)
+# When a path mapping rule matches a URI prefix, the result is a local filesystem path
+# that uses the host's native path format.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: InputFile
+    type: PATH
+    default: "s3://my-bucket/assets/teapot.obj"
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'MAPPED:{{ Param.InputFile }}')
+            print(r'MAPPED_NAME:{{ Param.InputFile.name }}')
+            print(r'MAPPED_PARENT:{{ Param.InputFile.parent }}')
+            print(r'RAW:{{ RawParam.InputFile }}')
+pathMapping:
+- source_path_format: URI
+  source_path: s3://my-bucket/assets
+  destination_path: "E:\\shared\\assets"
+expected:
+  output:
+  - "MAPPED:E:\\shared\\assets\\teapot.obj"
+  - "MAPPED_NAME:teapot.obj"
+  - "MAPPED_PARENT:E:\\shared\\assets"
+  - "RAW:s3://my-bucket/assets/teapot.obj"

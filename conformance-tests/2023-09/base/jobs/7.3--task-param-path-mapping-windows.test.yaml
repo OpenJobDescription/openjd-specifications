@@ -1,3 +1,7 @@
+runOn: [windows]
+
+# Task PATH parameters with path mapping using Windows-native paths.
+
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob
@@ -8,8 +12,8 @@ template:
       - name: InputFile
         type: PATH
         range:
-        - /original/file_a
-        - /original/file_b
+        - 'D:\original\file_a'
+        - 'D:\original\file_b'
     script:
       actions:
         onRun:
@@ -19,11 +23,11 @@ template:
           - print(r'TASK:{{Task.Param.InputFile}}')
 
 pathMapping:
-- source_path_format: POSIX
-  source_path: /original
-  destination_path: /mapped
+- source_path_format: WINDOWS
+  source_path: 'D:\original'
+  destination_path: 'E:\mapped'
 
 expected:
   output:
-  - TASK:/mapped/file_a
-  - TASK:/mapped/file_b
+  - 'TASK:E:\mapped\file_a'
+  - 'TASK:E:\mapped\file_b'

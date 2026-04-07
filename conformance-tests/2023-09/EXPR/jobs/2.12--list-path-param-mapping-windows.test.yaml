@@ -1,3 +1,4 @@
+runOn: [windows]
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
@@ -6,7 +7,7 @@ template:
   parameterDefinitions:
   - name: Paths
     type: LIST[PATH]
-    default: ["/mnt/shared/a.exr", "/mnt/shared/b.exr"]
+    default: ["D:\\shared\\a.exr", "D:\\shared\\b.exr"]
   steps:
   - name: Step1
     parameterSpace:
@@ -26,19 +27,14 @@ template:
             print(r'TASK_MAPPED:{{ Task.Param.Path }}')
             print(r'TASK_RAW:{{ Task.RawParam.Path }}')
 pathMapping:
-  - source_path_format: POSIX
-    source_path: /mnt/shared
-    destination_path: /local/cache
+  - source_path_format: WINDOWS
+    source_path: "D:\\shared"
+    destination_path: "E:\\cache"
 expected:
   output:
-  - 'RAW:["/mnt/shared/a.exr", "/mnt/shared/b.exr"]'
-  - "TASK_RAW:/mnt/shared/a.exr"
-  - "TASK_RAW:/mnt/shared/b.exr"
-  output_posix:
-  - 'MAPPED:["/local/cache/a.exr", "/local/cache/b.exr"]'
-  - "TASK_MAPPED:/local/cache/a.exr"
-  - "TASK_MAPPED:/local/cache/b.exr"
-  output_windows:
-  - 'MAPPED:["\\local\\cache\\a.exr", "\\local\\cache\\b.exr"]'
-  - "TASK_MAPPED:\\local\\cache\\a.exr"
-  - "TASK_MAPPED:\\local\\cache\\b.exr"
+  - "RAW:[\"D:\\shared\\a.exr\", \"D:\\shared\\b.exr\"]"
+  - "MAPPED:[\"E:\\cache\\a.exr\", \"E:\\cache\\b.exr\"]"
+  - "TASK_MAPPED:E:\\cache\\a.exr"
+  - "TASK_MAPPED:E:\\cache\\b.exr"
+  - "TASK_RAW:D:\\shared\\a.exr"
+  - "TASK_RAW:D:\\shared\\b.exr"

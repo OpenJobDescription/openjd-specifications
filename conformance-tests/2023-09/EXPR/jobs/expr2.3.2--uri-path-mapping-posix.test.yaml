@@ -1,3 +1,4 @@
+runOn: [posix]
 # URI path: path mapping transforms URI to local path (Expression Language §2.3.2)
 # When a path mapping rule matches a URI prefix, the result is a local filesystem path
 # that uses the host's native path format.

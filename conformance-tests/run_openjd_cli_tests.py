@@ -68,64 +68,68 @@ def run_job(test_path: Path) -> tuple[bool, str] | None:
         return None
 
     expect_failure = ".invalid." in test_path.name
-    
+
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
-        
+
         # Write template
         template_path = tmpdir / "template.yaml"
         with open(template_path, "w") as f:
             yaml.dump(test["template"], f)
-        
+
         cmd = ["openjd", "run", str(template_path)]
-        
+
         # Parameters
         if "parameters" in test:
             params_path = tmpdir / "parameters.yaml"
             with open(params_path, "w") as f:
                 yaml.dump(test["parameters"], f)
             cmd.extend(["-p", f"file://{params_path}"])
-        
+
         # Environment templates
         for i, env in enumerate(test.get("environments", [])):
             env_path = tmpdir / f"env{i}.yaml"
             with open(env_path, "w") as f:
                 yaml.dump(env, f)
             cmd.extend(["--env", str(env_path)])
-        
+
         # Path mapping
         if "pathMapping" in test:
             pm_path = tmpdir / "pathmapping.json"
             with open(pm_path, "w") as f:
                 json.dump({"version": "pathmapping-1.0", "path_mapping_rules": test["pathMapping"]}, f)
             cmd.extend(["--path-mapping-rules", f"file://{pm_path}"])
-        
+
         result = subprocess.run(cmd, capture_output=True, text=True)
         output = result.stdout + result.stderr
-        
+
         # For invalid tests, any failure (non-zero exit code) is acceptable
         if expect_failure:
             # Return False (job failed) which is what we want for invalid tests
             return result.returncode == 0, output
-        
+
         # Check expected output
         expected = test.get("expected", {})
         expected_output = expected.get("output", []) + expected.get(f"output_{OPERATING_SYSTEM}", [])
         forbidden = expected.get("forbidden", []) + expected.get(f"forbidden_{OPERATING_SYSTEM}", [])
         for line in expected_output:
-            if line not in output:
+            # Support anyOf: {"anyOf": ["value1", "value2"]} — at least one must appear
+            if isinstance(line, dict) and "anyOf" in line:
+                if not any(alt in output for alt in line["anyOf"]):
+                    return False, f"Missing expected output (none of anyOf matched): {line['anyOf']}\n--- Actual output ---\n{output}"
+            elif line not in output:
                 return False, f"Missing expected output: {line}\n--- Actual output ---\n{output}"
         for line in forbidden:
             if line in output:
                 return False, f"Found forbidden output: {line}"
-        
+
         return True, output
 
 
 def run_template_tests(directory: Path, pattern: str = None) -> tuple[int, int, list[str]]:
     passed = failed = 0
     failed_tests = []
-    
+
     templates = sorted(list(directory.glob("*.yaml")) + list(directory.glob("*.json")))
     for template in templates:
         if pattern and not fnmatch.fnmatch(template.name, pattern):
@@ -133,7 +137,7 @@ def run_template_tests(directory: Path, pattern: str = None) -> tuple[int, int, 
         expect_failure = ".invalid." in template.name
         success, output = run_check(template)
         ok = success != expect_failure
-        
+
         if ok:
             passed += 1
             print(f"  ✓ {template.name}", flush=True)
@@ -143,14 +147,14 @@ def run_template_tests(directory: Path, pattern: str = None) -> tuple[int, int, 
             print(f"  ✗ {template.name}", flush=True)
             print(f"    Expected {'failure' if expect_failure else 'success'}, got {'success' if success else 'failure'}")
             print(f"    {output[:200]}")
-    
+
     return passed, failed, failed_tests
 
 
 def run_job_tests(directory: Path, pattern: str = None) -> tuple[int, int, list[str]]:
     passed = failed = 0
     failed_tests = []
-    
+
     for test_path in sorted(directory.glob("*.test.yaml")):
         name = test_path.name.replace(".invalid.test.yaml", "").replace(".test.yaml", "")
         if pattern and not fnmatch.fnmatch(test_path.name, pattern):
@@ -162,7 +166,7 @@ def run_job_tests(directory: Path, pattern: str = None) -> tuple[int, int, list[
         expect_failure = ".invalid." in test_path.name
         success, output = result
         ok = success != expect_failure
-        
+
         if ok:
             passed += 1
             print(f"  ✓ {name}", flush=True)
@@ -172,7 +176,7 @@ def run_job_tests(directory: Path, pattern: str = None) -> tuple[int, int, list[
             print(f"  ✗ {name}", flush=True)
             print(f"    Expected {'failure' if expect_failure else 'success'}, got {'success' if success else 'failure'}")
             print(f"    {output[:300]}")
-    
+
     return passed, failed, failed_tests
 
 
@@ -181,7 +185,7 @@ def run_single_file(file_path: Path) -> tuple[int, int, list[str]]:
     if not file_path.exists():
         print(f"File not found: {file_path}")
         return 0, 1, [str(file_path)]
-    
+
     name = file_path.name
     if ".test.yaml" in name:
         result = run_job(file_path)
@@ -195,14 +199,14 @@ def run_single_file(file_path: Path) -> tuple[int, int, list[str]]:
         expect_failure = ".invalid." in name
         success, output = run_check(file_path)
         display_name = name
-    
+
     ok = success != expect_failure
     if ok:
         print(f"  ✓ {display_name}")
     else:
         print(f"  ✗ {display_name}")
         print(f"    Expected {'failure' if expect_failure else 'success'}, got {'success' if success else 'failure'}")
-    
+
     print(f"\n--- Output ---\n{output}")
     return (1, 0, []) if ok else (0, 1, [str(file_path)])
 
@@ -225,57 +229,57 @@ def discover_test_dirs(base: Path) -> list[tuple[Path, str]]:
 
 def main():
     parser = argparse.ArgumentParser(description="Run OpenJD conformance tests")
-    parser.add_argument("pattern", nargs="?", default="*/*/*", 
+    parser.add_argument("pattern", nargs="?", default="*/*/*",
                         help="Pattern: {version}/{component}/{type}/{test} or file path")
     args = parser.parse_args()
-    
+
     # Check if it's a direct file path
     potential_path = CONFORMANCE_DIR / args.pattern
     if potential_path.is_file():
         passed, failed, failed_tests = run_single_file(potential_path)
         print(f"\nTotal: {passed} passed, {failed} failed")
         sys.exit(0 if failed == 0 else 1)
-    
+
     # Parse pattern: version/component/type/test_pattern
     parts = args.pattern.strip("/").split("/")
     version_pat = parts[0] if len(parts) > 0 else "*"
     component_pat = parts[1] if len(parts) > 1 else "*"
     type_pat = parts[2] if len(parts) > 2 else "*"
     test_pat = parts[3] if len(parts) > 3 else None
-    
+
     total_passed = total_failed = 0
     all_failed_tests = []
-    
+
     for test_dir, test_type in discover_test_dirs(CONFORMANCE_DIR):
         rel_path = test_dir.relative_to(CONFORMANCE_DIR)
         version, component, _ = rel_path.parts
-        
+
         if not fnmatch.fnmatch(version, version_pat):
             continue
         if not fnmatch.fnmatch(component, component_pat):
             continue
         if not fnmatch.fnmatch(test_type, type_pat):
             continue
-        
+
         print(f"\n{rel_path}:", flush=True)
-        
+
         if test_type == "jobs":
             passed, failed, failed_tests = run_job_tests(test_dir, test_pat)
         else:
             passed, failed, failed_tests = run_template_tests(test_dir, test_pat)
-        
+
         total_passed += passed
         total_failed += failed
         all_failed_tests.extend(failed_tests)
         print(f"  {passed} passed, {failed} failed")
-    
+
     print(f"\nTotal: {total_passed} passed, {total_failed} failed")
-    
+
     if all_failed_tests:
         print(f"\nFailed tests ({len(all_failed_tests)}):")
         for name in all_failed_tests:
             print(f"  - {name}")
-    
+
     sys.exit(0 if total_failed == 0 else 1)
 
 
