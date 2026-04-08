@@ -46,5 +46,5 @@ expected:
   - "PATH:[['/a', '/b']]"
   - "LIST_PATH:[[['/a'], ['/b']]]"
   output_windows:
-  - "PATH:[['\\a', '\\b']]"
-  - "LIST_PATH:[[['\\a'], ['\\b']]]"
+  - "PATH:[['\\\\a', '\\\\b']]"
+  - "LIST_PATH:[[['\\\\a'], ['\\\\b']]]"

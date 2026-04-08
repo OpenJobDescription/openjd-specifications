@@ -35,4 +35,4 @@ expected:
   output_posix:
   - 'PATH:["/a", "/b", "/c"]'
   output_windows:
-  - 'PATH:["\\a", "\\b", "\\c"]'
+  - "PATH:[\"\\a\", \"\\b\", \"\\c\"]"

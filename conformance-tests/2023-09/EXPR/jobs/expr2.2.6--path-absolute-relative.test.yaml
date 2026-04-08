@@ -39,7 +39,6 @@ expected:
   - REL_TO_URI_SAME:[true]
   - REL_TO_MIX:[false]
   - RELATIVE_URI:[file.txt]
-  - RELATIVE_URI_NESTED:[a/b/c]
   - RELATIVE_URI_SAME:[.]
   output_posix:
   - ABS_POSIX:[true]
@@ -51,6 +50,7 @@ expected:
   - REL_TO_UNC_F:[false]
   - RELATIVE_POSIX:[c/d]
   - RELATIVE_UNC:[dir/file]
+  - RELATIVE_URI_NESTED:[a/b/c]
   output_windows:
   - ABS_POSIX:[false]
   - ABS_WIN:[true]
@@ -61,3 +61,4 @@ expected:
   - REL_TO_UNC_F:[false]
   - RELATIVE_POSIX:[c\d]
   - RELATIVE_UNC:[dir\file]
+  - "RELATIVE_URI_NESTED:[a\\b\\c]"

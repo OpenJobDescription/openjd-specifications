@@ -58,6 +58,6 @@ expected:
   output_windows:
   # Filesystem paths: PureWindowsPath behavior
   - "POSIX_ABS:\\mnt\\data\\file.txt"
-  - 'POSIX_ABS_PARTS:["\\", "mnt", "data", "file.txt"]'
+  - "POSIX_ABS_PARTS:[\"\\\", \"mnt\", \"data\", \"file.txt\"]"
   - "POSIX_REL:relative\\path"
   - "COLON:\\mnt\\c:\\data"
