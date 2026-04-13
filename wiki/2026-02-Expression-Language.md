@@ -1301,14 +1301,17 @@ the first integer in the range, not the first character of the range string.
 | Signature | Description |
 |-----------|-------------|
 | `__getitem__(list: list[T], start: int?, stop: int?, step: int?) -> list[T]` | `list[start:stop:step]` |
-| `__getitem__(r: range_expr, start: int?, stop: int?, step: int?) -> list[int]` | `r[start:stop:step]` |
+| `__getitem__(r: range_expr, start: int?, stop: int?, step: int?) -> range_expr \| list[int]` | `r[start:stop:step]` |
 | `__getitem__(s: string, start: int?, stop: int?, step: int?) -> string` | `s[start:stop:step]` |
 
 Slice semantics follow Python. Out-of-bounds indices are clamped to valid range (no error).
 A step of 0 is an error.
 
 Note: Slicing a `range_expr` treats it as an integer list, not as a string. `r[1:3]` returns
-a list of the second and third integers in the range, not a substring of the range string.
+the second and third integers in the range, not a substring of the range string. With a positive
+step (including the default step of 1), the result is a `range_expr`. With a negative step
+(e.g., `r[::-1]`), the result is a `list[int]` because `range_expr` cannot represent descending
+sequences.
 
 ### 2.2. Built-in Functions
 
