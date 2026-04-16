@@ -167,7 +167,7 @@ allowedValues: [ <JobParameterStringValue>, ... ] # @optional
 minLength: <integer>,# @optional
 maxLength: <integer> # @optional
 userInterface: # @optional
-   control: enum("LINE_EDIT", "MULTILINE_EDIT", "DROPDOWN_LIST", "CHECK_BOX", "HIDDEN")
+   control: enum("LINE_EDIT", "MULTILINE_EDIT", "DROPDOWN_LIST", "CHECK_BOX", "HIDDEN") # @optional
    label: <UserInterfaceLabelStringValue> # @optional
    groupLabel: <UserInterfaceLabelStringValue> # @optional
 ```
@@ -239,7 +239,7 @@ maxLength: <integer> # @optional
 objectType: enum("FILE", "DIRECTORY") # @optional
 dataFlow: enum("NONE", "IN", "OUT", "INOUT") # @optional
 userInterface: # @optional
-   control: enum("CHOOSE_INPUT_FILE", "CHOOSE_OUTPUT_FILE", "CHOOSE_DIRECTORY", "DROPDOWN_LIST", "HIDDEN")
+   control: enum("CHOOSE_INPUT_FILE", "CHOOSE_OUTPUT_FILE", "CHOOSE_DIRECTORY", "DROPDOWN_LIST", "HIDDEN") # @optional
    label: <UserInterfaceLabelString> # @optional
    groupLabel: <UserInterfaceLabelStringValue> # @optional
    fileFilters: [ <JobPathParameterFileFilter>, ... ] # @optional
@@ -306,7 +306,7 @@ allowedValues: [ <integer> | <intstring>,... ] # @optional
 minValue: <integer> | <intstring> # @optional
 maxValue: <integer> | <intstring> # @optional
 userInterface:  # @optional
-   control: enum("SPIN_BOX", "DROPDOWN_LIST", "HIDDEN")
+   control: enum("SPIN_BOX", "DROPDOWN_LIST", "HIDDEN") # @optional
    label: <UserInterfaceLabelStringValue> # @optional
    groupLabel: <UserInterfaceLabelStringValue> # @optional
    singleStepDelta: <positiveint> # @optional
@@ -363,7 +363,7 @@ allowedValues: [ <float> | <floatstring>,... ] # @optional
 minValue: <float> | <floatstring> # @optional
 maxValue: <float> | <floatstring> # @optional
 userInterface: # @optional
-   control: enum(SPIN_BOX, DROPDOWN_LIST, HIDDEN)
+   control: enum(SPIN_BOX, DROPDOWN_LIST, HIDDEN) # @optional
    label: <UserInterfaceLabelStringValue> # @optional
    groupLabel: <UserInterfaceLabelStringValue> # @optional
    decimals: <integer> # @optional
@@ -464,7 +464,7 @@ type: "BOOL"
 description: <Description> # @optional
 default: <bool> # @optional
 userInterface: # @optional
-   control: enum("CHECK_BOX", "HIDDEN")
+   control: enum("CHECK_BOX", "HIDDEN") # @optional
    label: <UserInterfaceLabelStringValue> # @optional
    groupLabel: <UserInterfaceLabelStringValue> # @optional
 ```
@@ -510,7 +510,7 @@ default: <string> # @optional, must be valid <IntRangeExpr>
 minLength: <integer> # @optional
 maxLength: <integer> # @optional
 userInterface: # @optional
-   control: enum("LINE_EDIT", "HIDDEN")
+   control: enum("LINE_EDIT", "HIDDEN") # @optional
    label: <UserInterfaceLabelStringValue> # @optional
    groupLabel: <UserInterfaceLabelStringValue> # @optional
 ```
@@ -557,7 +557,7 @@ item: # @optional
   minLength: <integer> # @optional
   maxLength: <integer> # @optional
 userInterface: # @optional
-   control: enum("LINE_EDIT_LIST", "HIDDEN")
+   control: enum("LINE_EDIT_LIST", "HIDDEN") # @optional
    label: <UserInterfaceLabelStringValue> # @optional
    groupLabel: <UserInterfaceLabelStringValue> # @optional
 ```
@@ -604,7 +604,7 @@ item: # @optional
   maxLength: <integer> # @optional
 userInterface: # @optional
    control: enum("CHOOSE_INPUT_FILE_LIST", "CHOOSE_OUTPUT_FILE_LIST",
-                 "CHOOSE_DIRECTORY_LIST", "HIDDEN")
+                 "CHOOSE_DIRECTORY_LIST", "HIDDEN") # @optional
    label: <UserInterfaceLabelStringValue> # @optional
    groupLabel: <UserInterfaceLabelStringValue> # @optional
    fileFilters: [ <JobPathParameterFileFilter>, ... ] # @optional
@@ -660,7 +660,7 @@ item: # @optional
   minValue: <integer> # @optional
   maxValue: <integer> # @optional
 userInterface: # @optional
-   control: enum("SPIN_BOX_LIST", "HIDDEN")
+   control: enum("SPIN_BOX_LIST", "HIDDEN") # @optional
    label: <UserInterfaceLabelStringValue> # @optional
    groupLabel: <UserInterfaceLabelStringValue> # @optional
    singleStepDelta: <positiveint> # @optional
@@ -706,7 +706,7 @@ item: # @optional
   minValue: <float> # @optional
   maxValue: <float> # @optional
 userInterface: # @optional
-   control: enum("SPIN_BOX_LIST", "HIDDEN")
+   control: enum("SPIN_BOX_LIST", "HIDDEN") # @optional
    label: <UserInterfaceLabelStringValue> # @optional
    groupLabel: <UserInterfaceLabelStringValue> # @optional
    decimals: <integer> # @optional
@@ -750,7 +750,7 @@ default: [ <bool>, ... ] # @optional
 minLength: <integer> # @optional
 maxLength: <integer> # @optional
 userInterface: # @optional
-   control: enum("CHECK_BOX_LIST", "HIDDEN")
+   control: enum("CHECK_BOX_LIST", "HIDDEN") # @optional
    label: <UserInterfaceLabelStringValue> # @optional
    groupLabel: <UserInterfaceLabelStringValue> # @optional
 ```
@@ -801,7 +801,7 @@ item: # @optional
     minValue: <integer> # @optional
     maxValue: <integer> # @optional
 userInterface: # @optional
-   control: enum("HIDDEN")
+   control: enum("HIDDEN") # @optional
    label: <UserInterfaceLabelStringValue> # @optional
    groupLabel: <UserInterfaceLabelStringValue> # @optional
 ```
