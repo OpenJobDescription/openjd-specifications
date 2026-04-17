@@ -147,6 +147,8 @@ case-insensitive. For example, `INT`, `Int`, and `int` are all equivalent, as ar
 [RFC 0007](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0007-extend-parameter-types.md)
 for the design rationale.
 
+The `userInterface` property on parameter definitions provides hints to user interface implementations. Its fields are suggestions for how to present the parameter, not validation constraints. If a field does not apply to the chosen UI element, it should be ignored. Properties outside of `userInterface`, such as `allowedValues`, `minValue`, and `maxValue`, are constraints that must be enforced during validation.
+
 ### 2.1. `<JobStringParameterDefinition>`
 
 Defines a job parameter that allows input of a single string value to a Job Template.
@@ -183,8 +185,7 @@ Where:
    not in this list, if the list is defined. See: [&lt;JobParameterStringValue&gt;](#25-jobparameterstringvalue).
 5. *minLength* — The minimum allowable length of the parameter string value.
 6. *maxLength* — The maximum allowable length of the parameter string value.
-7. *userInterface* — User interface properties for this parameter. This metadata defines how a user interface element
-   should be constructed to allow a user to input a value for the parameter.
+7. *userInterface* — User interface hints for this parameter. See [§2](#2-jobparameterdefinition) for how implementations should treat these fields.
     1. *control* — The user interface control to use when editing this parameter.
        The default, if not provided, is "LINE_EDIT" when *allowedValues* is not provided, "DROPDOWN_LIST" when it is.
         1. "LINE_EDIT" — This is a freeform string line edit control. Cannot be used when *allowedValues* is provided.
