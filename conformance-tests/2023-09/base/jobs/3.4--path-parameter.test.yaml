@@ -18,8 +18,11 @@ template:
           - -c
           - print(r'TASK:InputFile={{Task.Param.InputFile}}')
 expected:
-  output:
+  output_posix:
   - TASK:InputFile=/path/a.exr
   - TASK:InputFile=/path/b.exr
+  output_windows:
+  - TASK:InputFile=\path\a.exr
+  - TASK:InputFile=\path\b.exr
   forbidden:
   - TASK:InputFile=/path/c.exr
