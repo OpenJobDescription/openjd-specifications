@@ -4,8 +4,8 @@ parameterDefinitions:
 - name: Enabled
   type: STRING
   allowedValues:
-  - TrUe
-  - FaLsE
+  - "TrUe"
+  - "FaLsE"
   userInterface:
     control: CHECK_BOX
 steps:
