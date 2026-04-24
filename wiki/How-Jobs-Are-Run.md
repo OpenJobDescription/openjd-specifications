@@ -45,6 +45,22 @@ The following diagram provides an overview of the steps taken to run a Session.
 
 ![Actions Run in a Session](./images/2023-09_how_jobs_are_run.png)
 
+## Session Environment Variables
+
+The following environment variables are automatically set for all **Actions** running within a **Session**:
+
+| **Environment Variable** | **Value** | **Corresponding Template Variable** |
+|---|---|---|
+| `OPENJD_SESSION_WORKING_DIR` | The absolute path to the **Session**'s **Working Directory**. | `Session.WorkingDirectory` |
+
+These environment variables are provided for nested subprocesses that cannot access Open Job Description template
+variables directly. Unlike template variables, environment variables are automatically inherited by child processes.
+
+As a rule of thumb, OpenJD favors template variables over environment variables. When jobs use template substitution, tools can look at the template and accurately determine data flow to understand and modify the template. When jobs use environment variables, there is no reliable way to do this. We use the Tooling parseable design tenet to guide choices like this.
+
+The `OPENJD_SESSION_WORKING_DIR` environment variable is an example of this consideration in practice. Unlike other template variables, the session working directory is already accessible without using a variable; session actions start their CWD set to the session working directory. This is the same value as the {{Session.WorkingDirectory}} template variable, so exposing it as an environment variable does not reduce the tooling parseability of Job Templates. Any future environment variable additions should be intentionally considered with the design tenets in mind rather than assumed to follow this precedent.
+
+
 ## Host Requirements
 
 Open Job Description provides a mechanism for a Step to impose requirements that must be satisfied for Tasks from the

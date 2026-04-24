@@ -1,0 +1,18 @@
+# Verify that OPENJD_SESSION_WORKING_DIR environment variable is set
+# and matches Session.WorkingDirectory
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - "import os; env_val = os.environ.get('OPENJD_SESSION_WORKING_DIR', 'MISSING'); template_val = r'{{Session.WorkingDirectory}}'; print(f'ENV_SET:{env_val != \"MISSING\"}'); print(f'VALUES_MATCH:{env_val == template_val}')"
+expected:
+  output:
+  - "ENV_SET:True"
+  - "VALUES_MATCH:True"
