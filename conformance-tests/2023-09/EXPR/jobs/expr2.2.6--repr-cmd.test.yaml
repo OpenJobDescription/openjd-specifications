@@ -15,9 +15,15 @@ template:
     - 'parens = repr_cmd("(foo)")'
     - 'pct = repr_cmd("100%")'
     - 'bang = repr_cmd("hello!")'
+    - 'bang_var = repr_cmd("!PATH!")'
+    - 'bang_caret = repr_cmd("a ^ b!")'
     - 'spaces = repr_cmd("hello world")'
     - |-
       newline = repr_cmd("a\nb")
+    - |-
+      newline_r = repr_cmd("a\rb")
+    - |-
+      newline_rn = repr_cmd("a\r\nb")
     - "list_val = repr_cmd([\"echo\", \"a & b\"])"
     script:
       actions:
@@ -36,8 +42,12 @@ template:
             print(r'PCT:{{ pct }}')
 
             print(r'BANG:{{ bang }}')
+            print(r'BANG_VAR:{{ bang_var }}')
+            print(r'BANG_CARET:{{ bang_caret }}')
             print(r'SPACES:{{ spaces }}')
-            print(r'NEWLINE_QUOTED:{{ newline == "\"a\nb\"" }}')
+            print(r'NEWLINE_STRIPPED:{{ newline }}')
+            print(r'NEWLINE_R_STRIPPED:{{ newline_r }}')
+            print(r'NEWLINE_RN_STRIPPED:{{ newline_rn }}')
             print(r'LIST:{{ list_val }}')
 expected:
   output:
@@ -49,7 +59,11 @@ expected:
   - "DQUOTE:\"say ^\"hi^\"\""
   - "PARENS:\"(foo)\""
   - "PCT:\"100%%\""
-  - "BANG:\"hello!\""
+  - "BANG:\"hello^^!\""
+  - "BANG_VAR:\"^^!PATH^^!\""
+  - "BANG_CARET:\"a ^^ b^^!\""
   - "SPACES:\"hello world\""
-  - "NEWLINE_QUOTED:true"
+  - "NEWLINE_STRIPPED:ab"
+  - "NEWLINE_R_STRIPPED:ab"
+  - "NEWLINE_RN_STRIPPED:ab"
   - "LIST:echo \"a & b\""

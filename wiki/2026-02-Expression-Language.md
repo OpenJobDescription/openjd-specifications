@@ -255,7 +255,7 @@ ExprValue(Decimal("3.140"))        # float (preserves decimal string)
 
 ```python
 ExprValue("42", type="int")        # coerce string to int
-ExprValue("3.14", type="float")    # coerce string to float  
+ExprValue("3.14", type="float")    # coerce string to float
 ExprValue("true", type="bool")     # coerce string to bool
 ExprValue("/tmp", type="path")     # string as path
 ExprValue("1-10", type="range_expr")  # string as range_expr
@@ -1605,16 +1605,25 @@ re_escape("file[1].txt")                        # returns "file\\[1\\]\\.txt"
 
 `repr_cmd` produces Windows CMD-safe strings suitable for use in `.bat` files.
 Strings containing special characters (`& | < > ^ " ( ) % !` or whitespace) are wrapped in
-double quotes. Inside double quotes, `^` and `"` are escaped with `^`, and `%` is doubled
+double quotes. Inside double quotes, `^` and `"` are escaped with `^`, `%` is doubled
 to `%%` (required for `.bat` file contexts where `%` triggers variable expansion even inside
-quotes). Other special characters are literal within quotes. Simple strings without special
+quotes), and `!` is escaped as `^^!` (required for contexts where `EnableDelayedExpansion` is
+active — the `^` must be doubled because `cmd.exe` processes `^` escapes before delayed
+expansion). Other special characters are literal within quotes. Newline characters (`\n` and
+`\r`) are stripped from the string before quoting, because `cmd.exe` has no escape sequence for
+embedding a literal newline in an argument and an unescaped newline inside double quotes would
+cause `cmd.exe` to treat the remainder as a new command. Simple strings without special
 characters are returned unquoted.
 
-Note: `repr_cmd` targets the default `cmd.exe` parsing rules without `EnableDelayedExpansion`.
-The `!` character is not escaped; if the output is used in a `.bat` file that enables delayed
-expansion (`SETLOCAL ENABLEDELAYEDEXPANSION`), `!` will be interpreted as a variable expansion
-trigger and there is no single escaping that works in both modes. Template authors should avoid
-delayed expansion in scripts that use `repr_cmd` output.
+**Limitations of `cmd.exe` quoting.** Unlike POSIX shells and PowerShell, `cmd.exe` does not
+support fully general string quoting. Modes such as `EnableDelayedExpansion` change how quoting
+and escaping are interpreted, and there is no single escaping strategy that is correct in all
+`cmd.exe` configurations simultaneously. `repr_cmd` escapes for default `cmd.exe` parsing rules
+as used in `.bat` files, and applies `^^!` escaping for `!` as a best-effort defense against
+delayed expansion. The transformations performed by `repr_cmd` do not preserve every input
+string in all `cmd.exe` modes. Template authors who need quoting guarantees beyond what
+`repr_cmd` provides should use a different script language such as PowerShell or Python, which
+have well-defined string escaping.
 
 `repr_pwsh` produces PowerShell literals with proper escaping. Strings and paths are wrapped in
 single quotes with embedded single quotes doubled. Booleans become `$true`/`$false`. Lists become
@@ -1627,6 +1636,8 @@ Examples:
 - `repr_sh(["echo", "hello world"])` returns `"echo 'hello world'"`
 - `repr_cmd("a & b")` returns `"\"a & b\""` (quoted, `&` is literal inside quotes)
 - `repr_cmd("a ^ b")` returns `"\"a ^^ b\""` (`^` escaped inside quotes)
+- `repr_cmd("hello!")` returns `"\"hello^^!\""` (`!` escaped as `^^!` for the delayed expansion context)
+- `repr_cmd("a\nb")` returns `"\"ab\""` (newlines stripped)
 - `repr_pwsh(["a", "b"])` returns `@('a', 'b')`
 - `repr_py("hello\nworld")` returns `"'hello\\nworld'"`
 - `repr_json([1, 2, 3])` returns `"[1, 2, 3]"`

@@ -631,13 +631,16 @@ Example: `repr_sh(["echo", "hello world"])` returns `"echo 'hello world'"`.
 `repr_cmd` produces Windows CMD-safe strings suitable for use in `.bat` files:
 
 - Strings containing special characters (`& | < > ^ " ( ) % !` or whitespace) are wrapped in double quotes.
-- Inside double quotes, `^` and `"` are escaped with a caret prefix, and `%` is doubled to `%%` (required for `.bat` file contexts). Other special characters are literal within quotes.
+- Inside double quotes, `^` and `"` are escaped with a caret prefix, `%` is doubled to `%%` (required for `.bat` file contexts), and `!` is escaped as `^^!` (required for contexts where `EnableDelayedExpansion` is active — the `^` must be doubled because `cmd.exe` processes `^` escapes before delayed expansion). Other special characters are literal within quotes.
+- Newline characters (`\n` and `\r`) are stripped from the string before quoting. A newline inside a double-quoted `cmd.exe` argument would cause `cmd.exe` to treat the content after the newline as a new command, which is a command injection vector. Because `cmd.exe` has no escape sequence for embedding a literal newline in an argument, stripping is the only safe option.
 - Simple strings without special characters are returned unquoted.
 - `repr_cmd("hello")` returns `hello`.
 - `repr_cmd("a & b")` returns `"a & b"` (`&` is literal inside quotes).
 - `repr_cmd("a ^ b")` returns `"a ^^ b"` (`^` escaped inside quotes).
 - `repr_cmd("100%")` returns `"100%%"` (`%` doubled for `.bat` files).
 - `repr_cmd('say "hi"')` returns `"say ^"hi^""`.
+- `repr_cmd("hello!")` returns `"hello^^!"` (`!` escaped for the delayed expansion context).
+- `repr_cmd("a\nb")` returns `"ab"` (newlines stripped).
 
 Example: `repr_cmd(["echo", "hello & world"])` returns `echo "hello & world"`.
 
@@ -650,6 +653,16 @@ concatenate the variable name with the path value inside `repr_cmd`:
 # Safe: OUTPUT_DIR is within the quotes and special characters in path are escaped
 set {{repr_cmd('OUTPUT_DIR=' + Param.OutputDirectory)}}
 ```
+
+**Limitations of `cmd.exe` quoting.** Unlike POSIX shells and PowerShell, `cmd.exe` does not
+support fully general string quoting. Modes such as `EnableDelayedExpansion` change how quoting
+and escaping are interpreted, and there is no single escaping strategy that is correct in all
+`cmd.exe` configurations simultaneously. `repr_cmd` escapes for default `cmd.exe` parsing rules
+as used in `.bat` files, and applies `^^!` escaping for `!` as a best-effort defense against
+delayed expansion. The transformations performed by `repr_cmd` do not preserve every input
+string in all `cmd.exe` modes. Template authors who need quoting guarantees beyond what
+`repr_cmd` provides should use a different script language such as PowerShell or Python, which
+have well-defined string escaping.
 
 `repr_pwsh` produces PowerShell literals with proper escaping:
 
