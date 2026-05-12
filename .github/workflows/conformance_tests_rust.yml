@@ -1,0 +1,49 @@
+name: Conformance Tests (Rust)
+
+on:
+  push:
+    branches: [ mainline ]
+    paths:
+      - conformance-tests/**
+  pull_request:
+    branches: [ mainline ]
+    paths:
+      - conformance-tests/**
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Install Rust stable
+      shell: bash
+      run: |
+        rustup toolchain install stable --profile minimal
+        rustup override set stable
+
+    - name: Install openjd CLI
+      shell: bash
+      run: cargo install openjd-cli
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+
+    - name: Run conformance tests (Unix)
+      if: runner.os != 'Windows'
+      working-directory: conformance-tests
+      run: uv run run_openjd_cli_tests.py
+
+    - name: Run conformance tests (Windows)
+      if: runner.os == 'Windows'
+      working-directory: conformance-tests
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $PSNativeCommandUseErrorActionPreference = $true
+        uv run run_openjd_cli_tests.py

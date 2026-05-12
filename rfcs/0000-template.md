@@ -49,6 +49,16 @@ briefly provide the rationale you used for the choice.
 Discuss prior art, both the good and the bad, in relation to the proposal. Does a feature
 like this exist in other systems? How is it expressed in those system(s)?
 
+## Implementation Impact
+
+Describe the expected implementation complexity for known OpenJD implementations:
+
+- **Python (openjd-model)**: [impact description]
+- **Rust (openjd-rs)**: [impact description]
+
+Are there features of this RFC that may be significantly harder to implement in one language
+vs another? Are there performance implications?
+
 ## Rejected Ideas
 
 Why certain ideas that were brought while discussing this RFC were not ultimately pursued.

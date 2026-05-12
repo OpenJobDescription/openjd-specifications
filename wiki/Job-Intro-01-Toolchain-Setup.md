@@ -1,14 +1,33 @@
 # Toolchain Setup
 
-To replicate the steps taken in this guide you will need to have the [Open Job Description CLI](https://pypi.org/project/openjd-cli/),
-[Python](https://www.python.org/), [Blender](https://www.blender.org/), and [FFmpeg](https://www.ffmpeg.org/) installed.
+To replicate the steps taken in this guide you will need to have the Open Job Description CLI,
+[Blender](https://www.blender.org/), and [FFmpeg](https://www.ffmpeg.org/) installed.
 Open Job Description's CLI provides easy to use subcommands for validating the syntax of a Job Template,
-running Tasks defined by a Job Template locally on your workstation, and more. The CLI is written in Python, so you will need to have
-Python 3.9 or higher available on your workstation; for information on how to install Python, please see the official
-[Python.org website](https://www.python.org/).
+running Tasks defined by a Job Template locally on your workstation, and more. There are two CLI implementations
+available — choose whichever fits your environment:
+
+## Option A: Python CLI
+
+The [Python CLI](https://pypi.org/project/openjd-cli/) requires Python 3.9 or higher; for information on how to
+install Python, please see the official [Python.org website](https://www.python.org/).
 
 We suggest installing the tooling into a Python virtual environment based on [venv](https://docs.python.org/3/library/venv.html)
 or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html#term-Miniforge).
+
+```bash
+pip install openjd-cli
+```
+
+## Option B: Rust CLI
+
+The [Rust CLI](https://crates.io/crates/openjd-cli) is a standalone binary.
+Install it with [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html):
+
+```bash
+cargo install openjd-cli
+```
+
+Both CLIs provide the same `check`, `summary`, and `run` subcommands used throughout this guide.
 
 For writing Job Templates by hand we also recommend using [Visual Studio Code](https://code.visualstudio.com/)
 and configuring it so that it can auto-complete the syntax of your Job Templates. To configure auto-complete, you

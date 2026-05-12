@@ -48,6 +48,9 @@ submit a pull request.*
 
 * [openjd-cli](https://github.com/OpenJobDescription/openjd-cli) - A command-line
   interface for running and working with Open Job Description templates.
+* [openjd-rs CLI](https://github.com/OpenJobDescription/openjd-rs) - A Rust
+  implementation providing a high-performance command-line interface for validating,
+  summarizing, and running Open Job Description templates.
 
 ### Libraries
 
@@ -59,6 +62,9 @@ submit a pull request.*
 * [openjd-adaptor-runtime](https://github.com/OpenJobDescription/openjd-adaptor-runtime-for-python) - A Python library
   for creating a command-line Adaptor to assist with integrating an existing application, such as a rendering
   application, into batch computing systems that run Jobs in a way that is compatible with Open Job Description Sessions.
+* [openjd-rs](https://github.com/OpenJobDescription/openjd-rs) - A Rust workspace
+  providing crates for the expression language (`openjd-expr`), data model
+  (`openjd-model`), and session runtime (`openjd-sessions`) for Open Job Description.
 
 ## Contributing
 
