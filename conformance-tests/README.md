@@ -50,6 +50,7 @@ Filenames encode the spec section they test:
 
 - `<spec-section>` - Reference to the [Template Schema](../wiki/2023-09-Template-Schemas.md) section (e.g., `1.1`, `3.3.2`, `7.3`)
 - `.invalid` - Test should FAIL validation/execution
+- `.invalid.test` - Job execution test that should FAIL at runtime (in `jobs/` directory). Use this when the template passes static validation but the error only fires during evaluation.
 - `.test` - Job execution test (in `jobs/` directory)
 
 For the `EXPR` extension, tests may reference either the Template Schema or the

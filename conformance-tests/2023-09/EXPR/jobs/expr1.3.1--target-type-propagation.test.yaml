@@ -1,0 +1,61 @@
+---
+# Per Expression Language §1.3.1 (Target Type Evaluation) and §1.3.2
+# (Evaluation Within Template Schemas), operands of BinOp, UnaryOp,
+# Compare, and the test slot of IfExp are evaluated WITHOUT inheriting
+# the parent's target type. Embedding these expressions in a format
+# string with surrounding text places them in an unconstrained context
+# (§1.3.2: "Each interpolated expression is evaluated without type
+# constraints to obtain its natural result, then converted to a
+# string."). If a buggy evaluator coerces operands to strings before
+# the operator runs, the arithmetic and comparison cases below will
+# fail with a type error instead of producing the expected output.
+#
+# Note: BINOP_DIV asserts `10 / 4 = 2.5` — per §2.1.1 __truediv__
+# always returns float even for int operands.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TargetTypePropagation
+  parameterDefinitions:
+  - name: Count
+    type: INT
+    default: 10
+  - name: Threshold
+    type: INT
+    default: 5
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            # BinOp operands must keep their numeric types
+            print(r'BINOP_SUB:{{ Param.Count - 1 }}')
+            print(r'BINOP_MUL:{{ Param.Count * 2 }}')
+            print(r'BINOP_DIV:{{ Param.Count / 4 }}')
+            # UnaryOp operand must keep its numeric type
+            print(r'UNARY_NEG:{{ -Param.Count }}')
+            print(r'UNARY_NOT:{{ not (Param.Count > Param.Threshold) }}')
+            # Compare operands must keep their numeric types
+            print(r'CMP_GT:{{ Param.Count > Param.Threshold }}')
+            print(r'CMP_LE:{{ Param.Count - 5 <= Param.Threshold }}')
+            # IfExp.test slot must be evaluated unconstrained, body/orelse
+            # inherit the outer string target
+            print(r'IFEXP:{{ "big" if Param.Count > Param.Threshold else "small" }}')
+            # Compound: arithmetic feeding a comparison feeding a ternary
+            print(r'CHAIN:{{ "over" if Param.Count - Param.Threshold > 3 else "under" }}')
+expected:
+  output:
+  - "BINOP_SUB:9"
+  - "BINOP_MUL:20"
+  - "BINOP_DIV:2.5"
+  - "UNARY_NEG:-10"
+  - "UNARY_NOT:false"
+  - "CMP_GT:true"
+  - "CMP_LE:true"
+  - "IFEXP:big"
+  - "CHAIN:over"

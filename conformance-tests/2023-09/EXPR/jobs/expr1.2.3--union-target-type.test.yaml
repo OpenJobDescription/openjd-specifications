@@ -1,0 +1,149 @@
+---
+# Per Expression Language §1.2.3 (Implicit Type Coercion), when the
+# target type is a union, a value whose type already matches one of the
+# union's members satisfies the target trivially (match-first). Otherwise
+# non-destructive coercion is attempted to each scalar member
+# (coerce-to-member). A buggy evaluator may reject every union target via
+# its strict-equality early return because the value's type doesn't equal
+# the union as a whole — exercising both paths here ensures all branches
+# are reachable.
+#
+# Targets exercised:
+#   - INT task `range`:  int | string | range_expr | list[int]  (match-first)
+#   - args item slot:    string? | list[string]  (coerce int→string, bool→string)
+#   - args item slot:    string? | list[string]  (null→skip via nulltype member)
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: UnionTargetType
+  parameterDefinitions:
+  - name: StrFrames
+    type: STRING
+    default: "1-3"
+  - name: IntCount
+    type: INT
+    default: 7
+  - name: RangeFrames
+    type: RANGE_EXPR
+    default: "10-11"
+  steps:
+  # 1. STRING value satisfies the `int | string | range_expr | list[int]`
+  #    union via match-first (string is a member).
+  - name: StringMember
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: V
+        type: INT
+        range: "{{ Param.StrFrames }}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print(r'STRING:{{Task.Param.V}}')"]
+  # 2. INT value satisfies the same union via match-first (int is a member).
+  - name: IntMember
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: V
+        type: INT
+        range: "{{ Param.IntCount }}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print(r'INT:{{Task.Param.V}}')"]
+  # 3. RANGE_EXPR value satisfies the union (range_expr is a member).
+  - name: RangeMember
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: V
+        type: INT
+        range: "{{ Param.RangeFrames }}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print(r'RANGE:{{Task.Param.V}}')"]
+  # 4. LIST[INT] value satisfies the union (list[int] is a member).
+  - name: ListMember
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: V
+        type: INT
+        range: "{{ [100, 101] }}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print(r'LIST:{{Task.Param.V}}')"]
+  # 5. Arithmetic into the union: BinOp evaluates with unconstrained
+  #    target type (per propagation rules), and the resulting INT
+  #    satisfies the int member of the range union.
+  - name: ArithIntoRange
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: V
+        type: INT
+        range: "{{ Param.IntCount + 1 }}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print(r'ARITH:{{Task.Param.V}}')"]
+  # 6. Coerce-to-member via args slot: the target for a bare expression
+  #    in an args item is `string? | list[string]`. An INT value does not
+  #    match any member directly, so coerce-to-member fires: int→string
+  #    is non-destructive per §1.2.3. A buggy evaluator that only checks
+  #    strict type equality against the union will reject this.
+  - name: CoerceIntInArgs
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import sys
+            for i, a in enumerate(sys.argv[1:]):
+                print(f'COERCE_A{i}:{a}')
+          - "{{ Param.IntCount }}"
+          - "{{ Param.IntCount + 3 }}"
+          - "{{ true }}"
+  # 7. Optional target: a null value satisfies `T | nulltype` (the union
+  #    representation of an optional type T?). For an args list item with
+  #    target `T? | list[T]`, a null result causes the item to be skipped.
+  - name: OptionalSkip
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import sys
+            for i, a in enumerate(sys.argv[1:]):
+                print(f'OPT_A{i}:{a}')
+            print(f'OPT_COUNT:{len(sys.argv) - 1}')
+          - "first"
+          - "{{ null if true else 'should-not-appear' }}"
+          - "last"
+expected:
+  output:
+  - "STRING:1"
+  - "STRING:2"
+  - "STRING:3"
+  - "INT:7"
+  - "RANGE:10"
+  - "RANGE:11"
+  - "LIST:100"
+  - "LIST:101"
+  - "ARITH:8"
+  - "COERCE_A0:7"
+  - "COERCE_A1:10"
+  - "COERCE_A2:true"
+  - "OPT_A0:first"
+  - "OPT_A1:last"
+  - "OPT_COUNT:2"
+  forbidden:
+  - "should-not-appear"

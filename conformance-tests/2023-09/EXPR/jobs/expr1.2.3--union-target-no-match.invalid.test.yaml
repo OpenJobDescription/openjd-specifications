@@ -1,0 +1,28 @@
+---
+# Per Expression Language §1.2.3, when a value cannot satisfy any member
+# of a union target type via match-first or non-destructive coercion,
+# evaluation must produce an error. Here a list[string] is provided where
+# the INT range field expects `int | string | range_expr | list[int]` —
+# list[string] is not a member, and cannot be coerced to list[int] because
+# the string elements are not numeric.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Names
+    type: LIST[STRING]
+    default: ["alice", "bob"]
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: V
+        type: INT
+        range: "{{ Param.Names }}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print(r'{{Task.Param.V}}')"]
