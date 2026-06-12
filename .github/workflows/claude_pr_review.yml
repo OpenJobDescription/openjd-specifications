@@ -1,0 +1,56 @@
+# Stage 2 caller for the Claude PR-review integration: the "review" workflow.
+#
+# Triggered by completion of the Stage-1 "collect" workflow. Because the trigger
+# is workflow_run, GitHub runs this file from the default branch (never a fork's
+# copy) and with this repo's secrets -- so a fork PR cannot alter the review
+# behavior, permissions, or credential setup.
+#
+# All the review logic (Bedrock auth, the pinned action, the restricted tool
+# surface, the read-only PR-head checkout, and per-run limits) lives in the
+# reusable workflow in aws-deadline/.github. This caller only forwards the
+# workflow_run identifiers and the role-ARN secret.
+name: Claude PR Review
+
+on:
+  workflow_run:
+    workflows: ["Claude PR Review (collect)"]
+    types:
+      - completed
+
+# Cancel a superseded review when the PR is pushed again, keyed on the trusted head repo + branch from the workflow_run payload (no pull_request.number here).
+concurrency:
+  group: claude-pr-review-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+# Least privilege. The reusable workflow re-declares the same scopes on its job;
+# these are the ceiling for the called workflow.
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  review:
+    # Only run if Stage 1 succeeded, and only for runs triggered by a
+    # pull_request. The collect workflow listens on pull_request alone today, but
+    # gating on the event here is defense in depth: if another trigger
+    # (workflow_dispatch, schedule, ...) is ever added to the collect workflow,
+    # this prevents a review from firing -- with the base repo's secrets and a
+    # fork-controlled head_sha -- from a non-PR context.
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request' }}
+    uses: aws-deadline/.github/.github/workflows/reusable_claude_pr_review.yml@mainline
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    with:
+      # Head repo and head SHA come from the server-populated workflow_run event
+      # payload, which a fork cannot forge. The review stage resolves the PR
+      # number and base SHA from these, so nothing fork-controlled is trusted.
+      head_repository: ${{ github.event.workflow_run.head_repository.full_name }}
+      head_sha: ${{ github.event.workflow_run.head_sha }}
+    secrets:
+      # OIDC role that can mint a Bedrock bearer token.
+      bedrock_role_arn: ${{ secrets.AWS_CLAUDE_PR_REVIEW_ROLE }}
