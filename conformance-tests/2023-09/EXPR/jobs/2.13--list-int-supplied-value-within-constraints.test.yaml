@@ -1,0 +1,32 @@
+# A user-SUPPLIED LIST[INT] value that satisfies the parameter's constraints
+# (item.maxValue and maxLength) must be accepted and usable in expressions.
+# Companion to the .invalid runtime constraint tests, ensuring the value-level
+# check does not over-reject valid values.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Values
+    type: LIST[INT]
+    maxLength: 5
+    item:
+      maxValue: 10
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'LEN:{{ len(Param.Values) }}')
+            print(r'SUM:{{ sum(Param.Values) }}')
+parameters:
+  Values: [3, 5, 7]
+expected:
+  output:
+  - LEN:3
+  - SUM:15

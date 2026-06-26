@@ -1,0 +1,26 @@
+# A user-SUPPLIED LIST[INT] value (not just the template default) must be
+# validated against the parameter's item constraints when the job is created.
+# Here item.maxValue is 10 and the supplied value contains 999, so job creation
+# must fail. Mirrors the openjd-rs reference, which enforces list item
+# constraints on supplied values via JobParameterDefinition::check_value_constraints.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Values
+    type: LIST[INT]
+    item:
+      maxValue: 10
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print()
+parameters:
+  Values: [1, 2, 999]

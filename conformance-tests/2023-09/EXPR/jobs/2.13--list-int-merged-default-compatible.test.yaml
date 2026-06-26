@@ -1,0 +1,46 @@
+# When the same EXPR LIST[INT] job parameter is defined in both an environment
+# template and the job template, a merged (last-defined) default that satisfies
+# the surviving definition's constraints must be accepted and used as the
+# parameter's value. Companion to the merged-default .invalid test, ensuring the
+# merge re-validation does not over-reject a compatible default.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Values
+    type: LIST[INT]
+    maxLength: 5
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'LEN:{{ len(Param.Values) }}')
+            print(r'SUM:{{ sum(Param.Values) }}')
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - EXPR
+  parameterDefinitions:
+  - name: Values
+    type: LIST[INT]
+    default: [1, 2, 3]
+  environment:
+    name: Env1
+    script:
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - print()
+expected:
+  output:
+  - LEN:3
+  - SUM:6

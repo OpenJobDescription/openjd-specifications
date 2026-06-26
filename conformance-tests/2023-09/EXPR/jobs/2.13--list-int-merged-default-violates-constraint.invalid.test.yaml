@@ -1,0 +1,43 @@
+# When the same EXPR LIST[INT] job parameter is defined in both an environment
+# template and the job template, the merged (last-defined) default must be
+# re-validated against the surviving definition's constraints. Here the
+# environment template supplies default [1,2,3,4,5] while the job template
+# constrains the parameter to maxLength 2 (and supplies no default). The
+# carried-over default violates maxLength, so creating the job must fail.
+# Mirrors the openjd-rs reference, which merges the default forward and then
+# value-checks it.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Values
+    type: LIST[INT]
+    maxLength: 2
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print()
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - EXPR
+  parameterDefinitions:
+  - name: Values
+    type: LIST[INT]
+    default: [1, 2, 3, 4, 5]
+  environment:
+    name: Env1
+    script:
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - print()

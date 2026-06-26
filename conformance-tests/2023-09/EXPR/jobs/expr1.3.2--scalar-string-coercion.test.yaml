@@ -1,0 +1,47 @@
+# Expression Language §1.3.2: format-string string coercion of EXPR scalar
+# results embedded in surrounding text.
+#
+# A boolean coerces to lowercase "true"/"false" (NOT Python-style "True"/
+# "False"), a null result coerces to the empty string, and a float preserves
+# its source spelling (e.g. trailing zeros). This guards against an
+# implementation stringifying the native value with a language-native repr.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Enabled
+    type: BOOL
+    default: true
+  - name: Disabled
+    type: BOOL
+    default: false
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'BOOL_PARAM:{{ Param.Enabled }}')
+            print(r'BOOL_FALSE:{{ Param.Disabled }}')
+            print(r'BOOL_LITERAL:{{ true }}')
+            print(r'NEGATION:{{ not Param.Enabled }}')
+            print(r'NULL:[{{ null }}]')
+            print(r'FLOAT:{{ 1.50 }}')
+expected:
+  output:
+  - "BOOL_PARAM:true"
+  - "BOOL_FALSE:false"
+  - "BOOL_LITERAL:true"
+  - "NEGATION:false"
+  - "NULL:[]"
+  - "FLOAT:1.50"
+  forbidden:
+  - "BOOL_PARAM:True"
+  - "BOOL_FALSE:False"
+  - "NULL:[None]"
+  - "NULL:[null]"

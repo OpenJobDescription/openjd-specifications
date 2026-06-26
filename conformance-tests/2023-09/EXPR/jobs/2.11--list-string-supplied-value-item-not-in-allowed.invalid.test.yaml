@@ -1,0 +1,24 @@
+# A user-SUPPLIED LIST[STRING] value must be validated against the parameter's
+# item.allowedValues constraint at job creation time. The supplied value
+# contains "z", which is not in the allowed set, so job creation must fail.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Tags
+    type: LIST[STRING]
+    item:
+      allowedValues: ["a", "b"]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print()
+parameters:
+  Tags: ["a", "z"]

@@ -1,0 +1,27 @@
+# A user-SUPPLIED RANGE_EXPR value must be validated against the integer
+# range-expression grammar at job creation time, not only the template default.
+# "1-abc" is not a valid range expression, so job creation must fail.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Frames
+    type: RANGE_EXPR
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range: "{{Param.Frames}}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print()
+parameters:
+  Frames: "1-abc"

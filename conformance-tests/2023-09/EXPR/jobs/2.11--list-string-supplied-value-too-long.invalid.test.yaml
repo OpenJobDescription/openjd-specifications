@@ -1,0 +1,23 @@
+# A user-SUPPLIED LIST[STRING] value must be validated against the parameter's
+# list-length (maxLength) constraint at job creation time. Here maxLength is 2
+# and the supplied value has 3 items, so job creation must fail.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Tags
+    type: LIST[STRING]
+    maxLength: 2
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print()
+parameters:
+  Tags: ["a", "b", "c"]
