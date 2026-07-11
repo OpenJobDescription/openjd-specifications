@@ -1,0 +1,27 @@
+# Step.Name is scoped to the Step Template, so it is not available in the let
+# bindings of a job-level environment's <EnvironmentScript> (Template Schemas
+# §3.6.2). Job.Name is fine here; Step.Name is not, because a jobEnvironment has
+# no enclosing Step.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Setup
+  script:
+    let:
+    - tag = Step.Name
+    actions:
+      onEnter:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ tag }}')"
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - hello

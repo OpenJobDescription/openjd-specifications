@@ -1,0 +1,33 @@
+# EXPR features that are all valid together in an environment template:
+# - let bindings (spec 4.2) chaining session symbols and job parameters
+# - full expressions (spec 7.3) in variables, actions, and embedded files
+# - Job.Name (spec 7.3.1) — the environment runs inside some job's session
+specificationVersion: environment-2023-09
+extensions:
+- EXPR
+parameterDefinitions:
+- name: SubDir
+  type: STRING
+  default: output
+- name: X
+  type: INT
+  default: 5
+environment:
+  name: TestEnv
+  variables:
+    DOUBLED: "{{ Param.X * 2 }}"
+    JOB: "{{ Job.Name.upper() }}"
+  script:
+    let:
+    - work_dir = Session.WorkingDirectory / Param.SubDir
+    - log_file = work_dir / (Job.Name + '.log')
+    embeddedFiles:
+    - name: setup
+      type: TEXT
+      data: "value={{ Param.X + 1 }} log={{ log_file }}"
+    actions:
+      onEnter:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ Param.X if Param.X > 0 else 0 }}')"

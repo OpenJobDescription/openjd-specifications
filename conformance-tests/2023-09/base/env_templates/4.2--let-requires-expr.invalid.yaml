@@ -1,0 +1,13 @@
+# EnvironmentScript 'let' requires the EXPR extension (spec 4.2).
+specificationVersion: environment-2023-09
+environment:
+  name: TestEnv
+  script:
+    let:
+    - x = 1
+    actions:
+      onEnter:
+        command: python
+        args:
+        - "-c"
+        - "print()"

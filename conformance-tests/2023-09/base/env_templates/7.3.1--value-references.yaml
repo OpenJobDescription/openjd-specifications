@@ -1,0 +1,23 @@
+# Value references available in environment template format strings (spec 7.3.1):
+# Session.* in variables, actions, and embedded files; Env.File.<name> resolving
+# to this environment's embedded files.
+specificationVersion: environment-2023-09
+environment:
+  name: TestEnv
+  variables:
+    WORKDIR: "{{ Session.WorkingDirectory }}"
+    HAS_RULES: "{{ Session.HasPathMappingRules }}"
+  script:
+    embeddedFiles:
+    - name: setup
+      type: TEXT
+      runnable: true
+      data: "#!/usr/bin/env bash\necho workdir={{ Session.WorkingDirectory }}\n"
+    actions:
+      onEnter:
+        command: "{{ Env.File.setup }}"
+      onExit:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ Session.PathMappingRulesFile }}')"

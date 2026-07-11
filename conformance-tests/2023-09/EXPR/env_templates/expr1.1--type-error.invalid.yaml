@@ -1,0 +1,18 @@
+# Type errors in environment template expressions are caught at validation
+# time using declared parameter types (Expression Language 1.1).
+specificationVersion: environment-2023-09
+extensions:
+- EXPR
+parameterDefinitions:
+- name: Name
+  type: STRING
+  default: hello
+environment:
+  name: TestEnv
+  script:
+    actions:
+      onEnter:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ Param.Name + 1 }}')"

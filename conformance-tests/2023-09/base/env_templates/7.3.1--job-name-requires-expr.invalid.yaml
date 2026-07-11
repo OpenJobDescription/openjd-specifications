@@ -1,0 +1,11 @@
+# Job.Name requires the EXPR extension. Without it, this is an undefined variable.
+specificationVersion: environment-2023-09
+environment:
+  name: TestEnv
+  script:
+    actions:
+      onEnter:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ Job.Name }}')"

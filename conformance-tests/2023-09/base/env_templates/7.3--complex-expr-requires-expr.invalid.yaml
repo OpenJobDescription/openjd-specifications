@@ -1,0 +1,16 @@
+# Without the EXPR extension, format strings only permit bare value references
+# (spec 7.3). An arithmetic expression must be rejected.
+specificationVersion: environment-2023-09
+parameterDefinitions:
+- name: X
+  type: INT
+  default: 5
+environment:
+  name: TestEnv
+  script:
+    actions:
+      onEnter:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ Param.X + 1 }}')"

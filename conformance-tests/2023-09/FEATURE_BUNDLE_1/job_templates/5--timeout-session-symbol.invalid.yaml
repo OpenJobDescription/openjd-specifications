@@ -1,0 +1,18 @@
+# timeout is a plain @fmtstring: it is resolved at job creation, before any
+# session exists. Session.* values only exist at task execution, so a timeout
+# referencing one must be rejected — even though the same reference is valid
+# in the action's command/args (@fmtstring[host]).
+specificationVersion: jobtemplate-2023-09
+extensions:
+- FEATURE_BUNDLE_1
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        timeout: "{{Session.WorkingDirectory}}"
+        command: python
+        args:
+        - "-c"
+        - "print()"

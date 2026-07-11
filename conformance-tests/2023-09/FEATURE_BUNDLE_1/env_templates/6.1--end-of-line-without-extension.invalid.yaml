@@ -1,0 +1,16 @@
+# endOfLine on an environment template embedded file requires FEATURE_BUNDLE_1 (spec 6.1).
+specificationVersion: environment-2023-09
+environment:
+  name: TestEnv
+  script:
+    embeddedFiles:
+    - name: setup
+      type: TEXT
+      data: "line1\nline2\n"
+      endOfLine: LF
+    actions:
+      onEnter:
+        command: python
+        args:
+        - "-c"
+        - "print()"

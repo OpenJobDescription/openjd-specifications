@@ -1,0 +1,15 @@
+# A format string referencing an undefined variable in embedded file data must fail validation.
+specificationVersion: environment-2023-09
+environment:
+  name: TestEnv
+  script:
+    embeddedFiles:
+    - name: setup
+      type: TEXT
+      data: "value is {{ Param.DoesNotExist }}"
+    actions:
+      onEnter:
+        command: python
+        args:
+        - "-c"
+        - "print()"

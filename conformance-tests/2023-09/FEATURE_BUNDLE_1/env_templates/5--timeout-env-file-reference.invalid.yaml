@@ -1,0 +1,20 @@
+# Env.File.* values only exist at task execution (the file is written to the
+# session working directory), but timeout is resolved at job creation. The
+# reference must be rejected even though it is valid in command/args.
+specificationVersion: environment-2023-09
+extensions:
+- FEATURE_BUNDLE_1
+environment:
+  name: TestEnv
+  script:
+    embeddedFiles:
+    - name: setup
+      type: TEXT
+      data: "echo entering"
+    actions:
+      onEnter:
+        timeout: "{{Env.File.setup}}"
+        command: python
+        args:
+        - "-c"
+        - "print()"

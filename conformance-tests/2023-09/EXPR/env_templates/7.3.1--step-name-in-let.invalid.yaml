@@ -1,0 +1,18 @@
+# Step.Name is scoped to the Step Template and is not available in an
+# <EnvironmentScript>.let binding (Template Schemas §3.6.2). A standalone
+# environment template has no enclosing Step, so referencing Step.Name in a let
+# binding value must fail validation. (Job.Name, by contrast, is valid here.)
+specificationVersion: environment-2023-09
+extensions:
+- EXPR
+environment:
+  name: TestEnv
+  script:
+    let:
+    - tag = Step.Name
+    actions:
+      onEnter:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ tag }}')"

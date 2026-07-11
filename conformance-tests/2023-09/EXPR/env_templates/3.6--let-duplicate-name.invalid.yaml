@@ -1,0 +1,16 @@
+# Duplicate 'let' binding names in an EnvironmentScript must fail validation (spec 3.6).
+specificationVersion: environment-2023-09
+extensions:
+- EXPR
+environment:
+  name: TestEnv
+  script:
+    let:
+    - x = 1
+    - x = 2
+    actions:
+      onEnter:
+        command: python
+        args:
+        - "-c"
+        - "print()"

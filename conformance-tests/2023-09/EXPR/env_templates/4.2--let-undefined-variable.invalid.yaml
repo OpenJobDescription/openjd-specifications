@@ -1,0 +1,15 @@
+# A 'let' binding referencing an undefined variable must fail validation.
+specificationVersion: environment-2023-09
+extensions:
+- EXPR
+environment:
+  name: TestEnv
+  script:
+    let:
+    - x = Param.DoesNotExist + 1
+    actions:
+      onEnter:
+        command: python
+        args:
+        - "-c"
+        - "print()"

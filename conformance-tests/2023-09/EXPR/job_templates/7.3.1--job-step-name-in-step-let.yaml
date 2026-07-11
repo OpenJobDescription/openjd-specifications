@@ -1,0 +1,34 @@
+# Job.Name and Step.Name are both concrete before let bindings evaluate, so they
+# may be referenced in the value of a let binding at every Step-side scope
+# (Template Schemas §3.6.2): <StepTemplate>.let, <StepScript>.let, and
+# <SimpleAction>.let.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+- FEATURE_BUNDLE_1
+name: TestJob
+steps:
+- name: Render
+  # --- <StepTemplate>.let referencing Job.Name and Step.Name ---
+  let:
+  - job_tag = Job.Name + '/' + Step.Name
+  script:
+    # --- <StepScript>.let referencing Job.Name and Step.Name ---
+    let:
+    - script_tag = Job.Name + ':' + Step.Name
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ script_tag }}')"
+    embeddedFiles:
+    - name: summary
+      type: TEXT
+      data: "template={{ job_tag }} script={{ script_tag }}"
+- name: Package
+  bash:
+    # --- <SimpleAction>.let referencing Job.Name and Step.Name ---
+    let:
+    - action_tag = Job.Name + '-' + Step.Name
+    script: "echo {{ action_tag }}"

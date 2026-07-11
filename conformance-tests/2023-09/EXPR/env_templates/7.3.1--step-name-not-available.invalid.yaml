@@ -1,0 +1,15 @@
+# Step.Name is scoped to the Step Template (spec 7.3.1). A standalone
+# environment template is not attached to a step, so Step.Name is undefined
+# even with EXPR.
+specificationVersion: environment-2023-09
+extensions:
+- EXPR
+environment:
+  name: TestEnv
+  script:
+    actions:
+      onEnter:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ Step.Name }}')"

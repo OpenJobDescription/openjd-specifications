@@ -1,0 +1,28 @@
+# FEATURE_BUNDLE_1 features that are all valid together in an environment
+# template:
+# - timeout as a format string referencing a job parameter (spec 5) — job
+#   parameters are known at job creation, when timeout is resolved
+# - endOfLine on an embedded file (spec 6.1)
+specificationVersion: environment-2023-09
+extensions:
+- FEATURE_BUNDLE_1
+parameterDefinitions:
+- name: TimeoutSeconds
+  type: INT
+  minValue: 1
+  default: 30
+environment:
+  name: TestEnv
+  script:
+    embeddedFiles:
+    - name: setup
+      type: TEXT
+      data: "line1\nline2\n"
+      endOfLine: LF
+    actions:
+      onEnter:
+        timeout: "{{Param.TimeoutSeconds}}"
+        command: python
+        args:
+        - "-c"
+        - "print()"

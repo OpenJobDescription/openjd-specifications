@@ -1,0 +1,21 @@
+# Without the EXPR extension, format strings in environment variables only
+# permit bare value references (spec 7.3). An arithmetic expression must be rejected.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: X
+  type: INT
+  default: 5
+jobEnvironments:
+- name: Setup
+  variables:
+    DOUBLED: "{{ Param.X * 2 }}"
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

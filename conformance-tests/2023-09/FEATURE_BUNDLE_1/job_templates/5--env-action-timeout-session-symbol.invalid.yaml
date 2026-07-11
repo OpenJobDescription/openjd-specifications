@@ -1,0 +1,27 @@
+# timeout on an environment action is a plain @fmtstring, resolved at job
+# creation. Session.* values only exist at task execution, so the reference
+# must be rejected even in an environment context where Session.* is valid
+# in the action's command/args.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- FEATURE_BUNDLE_1
+name: TestJob
+jobEnvironments:
+- name: Setup
+  script:
+    actions:
+      onEnter:
+        timeout: "{{Session.WorkingDirectory}}"
+        command: python
+        args:
+        - "-c"
+        - "print()"
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

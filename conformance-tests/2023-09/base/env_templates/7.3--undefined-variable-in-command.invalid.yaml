@@ -1,0 +1,8 @@
+# A format string referencing an undefined variable must fail validation.
+specificationVersion: environment-2023-09
+environment:
+  name: TestEnv
+  script:
+    actions:
+      onEnter:
+        command: "{{ Param.DoesNotExist }}"
