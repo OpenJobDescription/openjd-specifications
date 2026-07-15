@@ -1,5 +1,12 @@
 # RFC 0008: Windows variant of exit-status propagation.
-# The wrapped action exits non-zero; the wrap script must propagate it.
+# The wrapped action exits non-zero; the wrap hook must propagate it.
+#
+# The wrap hooks forward the wrapped action's command and args directly
+# (the argv analog of the `exec` idiom from RFC 0008 "Exit status
+# propagation"). A bare "{{ WrappedAction.Args }}" args element is a
+# list[string] and flattens inline (RFC 0005), so each wrapped args element
+# becomes exactly one argument and the wrapped process's exit status becomes
+# the hook's own.
 runOn:
 - windows
 
@@ -24,20 +31,14 @@ environments:
     script:
       actions:
         onWrapEnvEnter:
-          command: cmd
-          args:
-          - "/c"
-          - "{{ repr_cmd(WrappedAction.Command) }} {{ repr_cmd(WrappedAction.Args) }}"
+          command: "{{ WrappedAction.Command }}"
+          args: ["{{ WrappedAction.Args }}"]
         onWrapTaskRun:
-          command: cmd
-          args:
-          - "/c"
-          - "{{ repr_cmd(WrappedAction.Command) }} {{ repr_cmd(WrappedAction.Args) }}"
+          command: "{{ WrappedAction.Command }}"
+          args: ["{{ WrappedAction.Args }}"]
         onWrapEnvExit:
-          command: cmd
-          args:
-          - "/c"
-          - "{{ repr_cmd(WrappedAction.Command) }} {{ repr_cmd(WrappedAction.Args) }}"
+          command: "{{ WrappedAction.Command }}"
+          args: ["{{ WrappedAction.Args }}"]
 
 expected:
   taskFailure:
