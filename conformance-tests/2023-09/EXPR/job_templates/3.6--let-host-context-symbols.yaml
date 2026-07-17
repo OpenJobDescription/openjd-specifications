@@ -21,10 +21,16 @@ steps:
     let:
     - work_dir = Session.WorkingDirectory / 'output'
     - frame_file = Param.OutputDir / string(Task.Param.Frame)
+    - data_file = Task.File.Data
+    embeddedFiles:
+    - name: Data
+      type: TEXT
+      filename: data.txt
+      data: "hello"
     actions:
       onRun:
         command: echo
-        args: ["{{work_dir}}", "{{frame_file}}"]
+        args: ["{{work_dir}}", "{{frame_file}}", "{{data_file}}"]
 
 - name: SimpleActionLet
   parameterSpace:

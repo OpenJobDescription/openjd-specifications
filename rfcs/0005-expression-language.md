@@ -1964,8 +1964,11 @@ steps:
 ##### ScriptTemplate Extension
 
 When `let` appears in a `ScriptTemplate`, bindings are evaluated once per task (or once
-per environment action). The bound names are available in `actions` and can reference
-`Task.Param`:
+per environment action). The bound names are available in `actions` and `embeddedFiles`,
+and can reference `Task.Param.*` as well as the embedded file path symbols of the same
+script (`Task.File.*` in a step script, `Env.File.*` in an environment script) — the
+file path is determined before the bindings are evaluated, even though the file content
+is evaluated separately:
 
 ```yaml
 script:

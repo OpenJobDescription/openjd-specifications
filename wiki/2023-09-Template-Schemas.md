@@ -1458,16 +1458,17 @@ and where the bound names are available:
 | Location | Can Reference | Bound Names Available In |
 |----------|---------------|--------------------------|
 | `<StepTemplate>.let` | `Param.*`, `RawParam.*`, `Job.Name`, `Step.Name`, earlier bindings in same `let` | *stepEnvironments*, *hostRequirements*, *parameterSpace*, *script* (including nested `<StepScript>.let` or `<SimpleAction>.let`) |
-| `<StepScript>.let` | `Param.*`, `RawParam.*`, `Task.Param.*`, `Task.RawParam.*`, `Session.*`, `Job.Name`, `Step.Name`, step-level bindings, earlier bindings in same `let` | *actions*, *embeddedFiles* |
+| `<StepScript>.let` | `Param.*`, `RawParam.*`, `Task.Param.*`, `Task.RawParam.*`, `Session.*`, `Task.File.*`, `Job.Name`, `Step.Name`, step-level bindings, earlier bindings in same `let` | *actions*, *embeddedFiles* |
 | `<SimpleAction>.let` | `Param.*`, `RawParam.*`, `Task.Param.*`, `Task.RawParam.*`, `Session.*`, `Job.Name`, `Step.Name`, step-level bindings, earlier bindings in same `let` | *script*, *args* |
 | `<EnvironmentScript>.let` | `Param.*`, `RawParam.*`, `Session.*`, `Env.File.*`, `Job.Name`, earlier bindings in same `let` | *actions*, *embeddedFiles* |
 
 Note: `Task.Param.*` and `Task.RawParam.*` are only available in `<StepScript>` and `<SimpleAction>` contexts because task parameter
 values are not known until task execution time.
 
-Note: `Env.File.*` symbols in `<EnvironmentScript>.let` refer to embedded files defined in the same `<EnvironmentScript>`.
-The file path is determined before evaluation, so `let` bindings can reference the path where the file will be written,
-even though the file content (which may also contain format strings) is evaluated separately.
+Note: `Task.File.*` symbols in `<StepScript>.let` and `Env.File.*` symbols in `<EnvironmentScript>.let` refer to
+embedded files defined in the same script. The file path is determined before evaluation, so `let` bindings can
+reference the path where the file will be written, even though the file content (which may also contain format
+strings) is evaluated separately.
 
 Note: `Job.Name` is concrete at job creation, so it is available in every `let` scope. `Step.Name` is scoped to the
 Step Template (see [7.3.1](#731-value-references)), so it is available in the Step-side `let` scopes but not in
