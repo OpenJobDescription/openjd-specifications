@@ -1,0 +1,65 @@
+# RFC 0008 + Template Schemas 5.3/5 (FEATURE_BUNDLE_1): a wrap hook can
+# adopt the wrapped action's cancelation and timeout as its own by
+# forwarding the fields as whole-field expressions:
+#
+#   timeout: "{{WrappedAction.Timeout}}"
+#   cancelation:
+#     mode: "{{WrappedAction.Cancelation.Mode}}"
+#     notifyPeriodInSeconds: "{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}"
+#
+# Here the wrapped action declares NOTIFY_THEN_TERMINATE with an explicit
+# period and an explicit timeout, so the expressions resolve to the same
+# declared values and the wrap action runs under an equivalent
+# <Cancelation> and timeout. The template must be accepted and the task
+# must run via the wrap hook.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapCancelationRoundtripNotifyThenTerminate
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["placeholder"]
+          timeout: 300
+          cancelation:
+            mode: NOTIFY_THEN_TERMINATE
+            notifyPeriodInSeconds: 45
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  - FEATURE_BUNDLE_1
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: bash
+          args:
+          - "-c"
+          - "echo \"ROUNDTRIP MODE=<{{WrappedAction.Cancelation.Mode}}> NP=<{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}> T=<{{WrappedAction.Timeout}}>\""
+          timeout: "{{WrappedAction.Timeout}}"
+          cancelation:
+            mode: "{{WrappedAction.Cancelation.Mode}}"
+            notifyPeriodInSeconds: "{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}"
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+
+runOn:
+- posix
+
+expected:
+  output:
+  - "ROUNDTRIP MODE=<NOTIFY_THEN_TERMINATE> NP=<45> T=<300>"

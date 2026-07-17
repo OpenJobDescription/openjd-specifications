@@ -1,0 +1,57 @@
+# RFC 0008 + Template Schemas 5.3 (FEATURE_BUNDLE_1): cancelation round-trip
+# forwarding when the wrapped action declares no <Cancelation> at all. The
+# mode expression resolves to null, which drops the ENTIRE cancelation
+# object — mode is the object's required discriminator, so an omitted mode
+# cannot leave a partial object behind. The wrap action behaves exactly as
+# if its author had declared no <Cancelation> (runtime default: terminate),
+# and the null notify period is dropped along with it.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapCancelationRoundtripNoCancelation
+  steps:
+  - name: Step1
+    script:
+      actions:
+        # No cancelation: block at all.
+        onRun:
+          command: echo
+          args: ["placeholder"]
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  - FEATURE_BUNDLE_1
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: bash
+          args:
+          - "-c"
+          - "echo \"ROUNDTRIP MODE=<{{ WrappedAction.Cancelation.Mode or 'UNDECLARED' }}> NP=<{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}> T=<{{WrappedAction.Timeout}}>\""
+          # No timeout on the wrapped onRun: WrappedAction.Timeout is null,
+          # so the whole-field expression drops the field (hook default).
+          timeout: "{{WrappedAction.Timeout}}"
+          cancelation:
+            mode: "{{WrappedAction.Cancelation.Mode}}"
+            notifyPeriodInSeconds: "{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}"
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+
+runOn:
+- posix
+
+expected:
+  output:
+  - "ROUNDTRIP MODE=<UNDECLARED> NP=<> T=<>"

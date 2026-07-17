@@ -16,6 +16,9 @@ environments:
 - specificationVersion: environment-2023-09
   extensions:
   - WRAP_ACTIONS
+  # EXPR is declared so the missing-EXPR rule cannot mask the defect this
+  # test exercises: the only invalidity is the partial wrap-hook set.
+  - EXPR
   environment:
     name: PartialWrap
     script:

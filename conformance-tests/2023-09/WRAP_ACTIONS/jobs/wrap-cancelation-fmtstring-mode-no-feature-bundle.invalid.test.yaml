@@ -1,0 +1,46 @@
+# Template Schemas 5.3: the format-string form of a <CancelationMethod>
+# mode is gated on the FEATURE_BUNDLE_1 extension. A template using
+# mode: "{{...}}" with only WRAP_ACTIONS and EXPR declared must be
+# rejected.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapCancelationFmtstringModeNoFeatureBundle
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["placeholder"]
+          cancelation:
+            mode: TERMINATE
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: bash
+          args:
+          - "-c"
+          - "echo \"should not run\""
+          cancelation:
+            mode: "{{WrappedAction.Cancelation.Mode}}"
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+
+runOn:
+- posix

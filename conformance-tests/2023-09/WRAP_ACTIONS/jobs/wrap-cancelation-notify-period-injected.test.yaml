@@ -1,0 +1,50 @@
+# RFC 0008: WrappedAction.Cancelation.NotifyPeriodInSeconds surfaces the
+# effective grace period from the wrapped action's <Cancelation> when the
+# mode is NOTIFY_THEN_TERMINATE. Explicit value must forward as-is.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrappedActionNotifyPeriodInjected
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["placeholder"]
+          cancelation:
+            mode: NOTIFY_THEN_TERMINATE
+            notifyPeriodInSeconds: 45
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: bash
+          args:
+          - "-c"
+          # Use `<...>` sentinel wrap so an empty/null value renders as
+          # `NP=<>` unambiguously; a real value renders inside the brackets.
+          - "echo \"NP=<{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}>\""
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+
+runOn:
+- posix
+
+expected:
+  output:
+  - "NP=<45>"

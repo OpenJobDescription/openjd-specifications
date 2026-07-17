@@ -32,14 +32,35 @@ values identical except for the chunked Task parameter. It takes values from an 
 like "1-3" or 1-3,5,7" depending on whether the chunks are constrained to be contiguous or not.
 
 If exactly one Environment in the session stack defines the wrap hooks (`onWrapEnvEnter`, `onWrapTaskRun`,
-`onWrapEnvExit`, part of the WRAP_ACTIONS extension), the lifecycle actions of inner Environments and tasks
+`onWrapEnvExit`, part of the WRAP_ACTIONS extension introduced in
+[RFC 0008](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0008-environment-wrap-actions.md)),
+the lifecycle actions of inner Environments and tasks
 are intercepted: an inner Environment's `onEnter` is replaced by the wrapping Environment's
 `onWrapEnvEnter`, a task's `onRun` is replaced by the wrapping Environment's `onWrapTaskRun`, and an inner
 Environment's `onExit` is replaced by the wrapping Environment's `onWrapEnvExit`. The wrapping Environment's
 own `onEnter` and `onExit` are never wrapped; they always run normally. If more than one Environment
 in the session stack defines any wrap hook, the session is invalid and the scheduler must reject it
-before entering any Environment. If an Environment defines any wrap hook, it must define all three. See
-[RFC 0008](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0008-environment-wrap-actions.md).
+before entering any Environment. If an Environment defines any wrap hook, it must define all three.
+
+A wrap hook is treated as the action it replaces. A failed `onWrapEnvEnter` is an inner `onEnter`
+failure, a failed `onWrapTaskRun` is a task `onRun` failure, and a failed `onWrapEnvExit` is an inner
+`onExit` failure; the **Session** handles each failure exactly as it would in the unwrapped case. Wrap
+scripts must propagate the wrapped process's exit status as their own.
+
+Wrap hooks extend the **Session**'s cleanup guarantee symmetrically: if `onWrapEnvEnter` starts for an
+inner Environment, that inner Environment's `onWrapEnvExit` must run, and the wrapping Environment's own
+`onExit` must run on top of that. Resources allocated by the wrapping Environment's `onEnter` (for
+example, a container) must remain available until every `onWrapEnvExit` returns.
+
+The wrap hook's own cancelation method governs how the wrap script is canceled. The wrapped action's
+cancelation semantics are surfaced to the wrap script via the `WrappedAction.Cancelation.Mode` and
+`WrappedAction.Cancelation.NotifyPeriodInSeconds` template variables, so the wrap script may honor the
+inner action's cancelation semantics when it propagates the termination signal — for example, allowing
+a graceful notification period equal to `WrappedAction.Cancelation.NotifyPeriodInSeconds` before
+terminating when the wrapped action requested `NOTIFY_THEN_TERMINATE`. When the wrap script receives a
+termination signal, it must cause the wrapped process to receive a termination signal within the
+cancelation grace period; after the grace period the wrap script receives SIGKILL, which cannot be
+trapped.
 
 When the EXPR extension is used, format strings evaluated on the Worker Host support the full
 [expression language](2026-02-Expression-Language) including arithmetic, conditionals, function calls,
@@ -123,9 +144,11 @@ messages to convey information about the **Action** to the render management sys
 
 When the WRAP_ACTIONS extension is in use, schedulers must scan the stdout of the wrap script (`onWrapEnvEnter`,
 `onWrapTaskRun`, or `onWrapEnvExit`) for these macros, not the stdout of the wrapped process. Wrap scripts must
-forward the wrapped process's stdout and stderr verbatim, which causes macros emitted by the wrapped process
-to be recognized identically to macros emitted by the wrap script itself. See
-[RFC 0008](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0008-environment-wrap-actions.md).
+forward the wrapped process's stdout and stderr verbatim — without buffering, filtering, or transformation —
+which causes macros emitted by the wrapped process to be recognized identically to macros emitted by the wrap
+script itself. A wrap script may also emit these macros directly. The `WrappedAction.Environment` template
+variable includes every `openjd_env`-defined variable emitted by any earlier **Action** in the same
+**Session**, regardless of whether that **Action** ran normally or via a wrap hook.
 
 ## Path Mapping
 

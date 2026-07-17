@@ -1,0 +1,68 @@
+# RFC 0008: when the wrapped action's mode is NOTIFY_THEN_TERMINATE and it
+# omits notifyPeriodInSeconds, the runtime supplies the schema default for
+# the action's position (Template Schemas 5.3.2).
+#
+# For an inner environment's onExit the default is 30 seconds — the same
+# "otherwise" branch as onEnter. This test exists separately from the
+# onEnter variant because an implementation could plausibly special-case
+# per hook; the pair pins the default for both env-lifecycle positions.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrappedActionNotifyPeriodDefaultsOnExit30
+  jobEnvironments:
+  - name: InnerEnv
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: ["inner-enter"]
+        onExit:
+          command: inner-exit-cmd
+          args: ["--flag"]
+          cancelation:
+            mode: NOTIFY_THEN_TERMINATE
+            # No notifyPeriodInSeconds — expect runtime default 30 for a
+            # non-onRun action.
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["TASK"]
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          # The wrap replaces InnerEnv.onExit entirely; inner-exit-cmd is
+          # never invoked. We only observe the injected variable's value.
+          - "echo \"NP=<{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}>\""
+
+runOn:
+- posix
+
+expected:
+  output:
+  - "inner-enter"
+  - "TASK"
+  - "NP=<30>"

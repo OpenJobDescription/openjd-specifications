@@ -1,0 +1,58 @@
+# Template Schemas 5.3 (FEATURE_BUNDLE_1): a format-string cancelation
+# mode gets normal format string behavior — partial interpolation like
+# "{{ ... }}_THEN_TERMINATE" is valid, and the resolved value is checked
+# against the two mode names when the runtime prepares to run the action.
+# Only a whole-field expression ("{{ ... }}" with no surrounding text)
+# additionally gets string? null semantics. Here the partial mode resolves
+# to "NOTIFY_THEN_TERMINATE" and the wrap action runs normally.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapCancelationPartialFmtstringMode
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["placeholder"]
+          cancelation:
+            mode: NOTIFY_THEN_TERMINATE
+            notifyPeriodInSeconds: 45
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  - FEATURE_BUNDLE_1
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: bash
+          args:
+          - "-c"
+          - "echo \"PARTIAL MODE OK NP=<{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}>\""
+          cancelation:
+            # Partial interpolation ("{{ ... }}" followed by literal
+            # text): the segments concatenate to NOTIFY_THEN_TERMINATE.
+            mode: "{{ 'NOTIFY' }}_THEN_TERMINATE"
+            notifyPeriodInSeconds: "{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}"
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+
+runOn:
+- posix
+
+expected:
+  output:
+  - "PARTIAL MODE OK NP=<45>"

@@ -1,0 +1,57 @@
+# RFC 0008 + Template Schemas 5.3 (FEATURE_BUNDLE_1): cancelation round-trip
+# forwarding when the wrapped action declares TERMINATE. The mode expression
+# resolves to "TERMINATE"; the notifyPeriodInSeconds expression resolves to
+# null, so per whole-field expression semantics (int?) the field is treated
+# as not provided — the wrap action's effective cancelation is plain
+# TERMINATE, exactly mirroring the wrapped action.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapCancelationRoundtripTerminate
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["placeholder"]
+          cancelation:
+            mode: TERMINATE
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  - FEATURE_BUNDLE_1
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: bash
+          args:
+          - "-c"
+          - "echo \"ROUNDTRIP MODE=<{{WrappedAction.Cancelation.Mode}}> NP=<{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}> T=<{{WrappedAction.Timeout}}>\""
+          # No timeout on the wrapped onRun: WrappedAction.Timeout is null,
+          # so the whole-field expression drops the field (hook default).
+          timeout: "{{WrappedAction.Timeout}}"
+          cancelation:
+            mode: "{{WrappedAction.Cancelation.Mode}}"
+            notifyPeriodInSeconds: "{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}"
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+
+runOn:
+- posix
+
+expected:
+  output:
+  - "ROUNDTRIP MODE=<TERMINATE> NP=<> T=<>"

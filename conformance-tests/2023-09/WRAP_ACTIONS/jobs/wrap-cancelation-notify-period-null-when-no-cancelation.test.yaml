@@ -1,0 +1,49 @@
+# RFC 0008: WrappedAction.Cancelation.NotifyPeriodInSeconds is `null` when
+# the wrapped action defines no <Cancelation> at all. This case is distinct
+# from mode=TERMINATE (which is exercised by
+# wrap-cancelation-notify-period-null-when-terminate): here, no cancelation
+# was declared, so both Mode (string?) and NotifyPeriodInSeconds (int?)
+# are null.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrappedActionNotifyPeriodNullWhenNoCancelation
+  steps:
+  - name: Step1
+    script:
+      actions:
+        # No cancelation: block at all.
+        onRun:
+          command: echo
+          args: ["placeholder"]
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: bash
+          args:
+          - "-c"
+          - "echo \"NP=<{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}>\""
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+
+runOn:
+- posix
+
+expected:
+  output:
+  - "NP=<>"

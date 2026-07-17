@@ -1,0 +1,47 @@
+# RFC 0008: WrappedAction.Cancelation.Mode surfaces the wrapped action's
+# cancelation method. When the wrapped action declares
+# <CancelationMethodTerminate>, Mode is the string `TERMINATE`.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrappedActionCancelationModeTerminate
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["placeholder"]
+          cancelation:
+            mode: TERMINATE
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: bash
+          args:
+          - "-c"
+          - "echo \"MODE=<{{WrappedAction.Cancelation.Mode}}>\""
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+
+runOn:
+- posix
+
+expected:
+  output:
+  - "MODE=<TERMINATE>"

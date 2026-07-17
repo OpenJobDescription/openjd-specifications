@@ -26,7 +26,7 @@ the `WrappedAction.*` template variables:
 | `WrappedAction.Command`       | `string`       | The `command` from the wrapped action                               |
 | `WrappedAction.Args`          | `list[string]` | The `args` from the wrapped action                                  |
 | `WrappedAction.Environment`   | `list[string]` | `openjd_env`-defined variables as `["KEY=value", ...]`              |
-| `WrappedAction.Timeout`       | `int`          | Timeout of the wrapped action in seconds, or `0` if none            |
+| `WrappedAction.Timeout`       | `int?`         | Timeout of the wrapped action in seconds; `null` if none            |
 | `WrappedEnv.Name`             | `string`       | Name of the inner environment (only in `onWrapEnvEnter`/`onWrapEnvExit`)  |
 | `WrappedStep.Name`            | `string`       | Name of the step whose task is being wrapped (only in `onWrapTaskRun`) |
 
@@ -72,6 +72,7 @@ WRAP_ACTIONS/
 │   ├── 4.2--wrap-only-environment.yaml
 │   ├── 4.2--wrap-with-timeout.yaml
 │   ├── 4.2--empty-actions-no-wrap-no-enter-no-exit.invalid.yaml
+│   ├── 4.2--wrap-fmtstring-timeout-no-feature-bundle.invalid.yaml
 │   ├── 4.3--wrap-only-onwrap-task-run.invalid.yaml
 │   └── 4.3--wrap-missing-onwrap-exit.invalid.yaml
 └── jobs/                           # End-to-end execution tests
@@ -91,10 +92,24 @@ WRAP_ACTIONS/
     ├── wrap-task-args-preserved.test.yaml
     ├── wrap-task-environment-injected.test.yaml
     ├── wrap-task-action-timeout-injected.test.yaml
-    ├── wrap-task-action-timeout-zero-when-unset.test.yaml
+    ├── wrap-task-action-timeout-null-when-unset.test.yaml
     ├── wrap-timeout-injected-python.test.yaml
     ├── wrap-no-args.test.yaml
     ├── wrap-empty-environment-list.test.yaml
+    ├── wrap-cancelation-mode-terminate.test.yaml
+    ├── wrap-cancelation-mode-notify-then-terminate.test.yaml
+    ├── wrap-cancelation-mode-null-when-no-cancelation.test.yaml
+    ├── wrap-cancelation-notify-period-injected.test.yaml
+    ├── wrap-cancelation-notify-period-defaults-onrun-120.test.yaml
+    ├── wrap-cancelation-notify-period-defaults-onenter-30.test.yaml
+    ├── wrap-cancelation-notify-period-defaults-onexit-30.test.yaml
+    ├── wrap-cancelation-notify-period-null-when-terminate.test.yaml
+    ├── wrap-cancelation-notify-period-null-when-no-cancelation.test.yaml
+    ├── wrap-cancelation-roundtrip-notify-then-terminate.test.yaml
+    ├── wrap-cancelation-roundtrip-terminate.test.yaml
+    ├── wrap-cancelation-roundtrip-no-cancelation.test.yaml
+    ├── wrap-cancelation-roundtrip-period-only.test.yaml
+    ├── wrap-cancelation-partial-fmtstring-mode.test.yaml
     ├── wrap-openjd-env-from-wrapped-onenter-propagates.test.yaml
     │  # Exit-status propagation
     ├── wrap-exit-status-propagates.test.yaml
@@ -116,6 +131,7 @@ WRAP_ACTIONS/
     │  # Invalid templates / sessions the runner must reject
     ├── wrap-without-extension-fails.invalid.test.yaml
     ├── wrap-without-expr-extension.invalid.test.yaml
+    ├── wrap-cancelation-fmtstring-mode-no-feature-bundle.invalid.test.yaml
     ├── wrap-multiple-wrap-envs-rejected.invalid.test.yaml
     ├── wrap-job-and-step-env-rejected.invalid.test.yaml
     ├── wrap-partial-hooks-rejected.invalid.test.yaml
@@ -165,13 +181,53 @@ bundles in this directory:
   reach the wrap script with the right values
   (`wrap-task-command-injected`, `wrap-task-args-preserved`,
   `wrap-task-environment-injected`, `wrap-task-action-timeout-injected`,
-  `wrap-no-args`, `wrap-empty-environment-list`), and `WrappedAction.*` is
+  `wrap-timeout-injected-python`, `wrap-no-args`,
+  `wrap-empty-environment-list`), and `WrappedAction.*` is
   in scope in the env-lifecycle hooks too
   (`wrap-enter-receives-wrapped-action`,
   `wrap-exit-receives-wrapped-action`).
-- **Timeout sentinel**: `WrappedAction.Timeout` is `0` when the wrapped
-  action specifies no timeout (`wrap-task-action-timeout-zero-when-unset`,
-  `wrap-timeout-injected-python`).
+- **Timeout nullability**: `WrappedAction.Timeout` (typed `int?`) is `null`
+  when the wrapped action specifies no timeout — rendering empty in
+  interpolation and observable via EXPR null-coalescing
+  (`wrap-task-action-timeout-null-when-unset`).
+- **Cancelation mode injection**: `WrappedAction.Cancelation.Mode` (typed
+  `string?`) carries `TERMINATE` (`wrap-cancelation-mode-terminate`),
+  `NOTIFY_THEN_TERMINATE` (`wrap-cancelation-mode-notify-then-terminate`),
+  or `null` when the wrapped action defines no `<Cancelation>` — rendering
+  empty in interpolation and observable via EXPR null-coalescing
+  (`wrap-cancelation-mode-null-when-no-cancelation`).
+- **Cancelation notify-period injection**:
+  `WrappedAction.Cancelation.NotifyPeriodInSeconds` (typed `int?`) carries
+  the effective grace period when the wrapped action's mode is
+  `NOTIFY_THEN_TERMINATE` — including the runtime-supplied schema default
+  when the wrapped action omits the field (120 on a task's `onRun`, 30
+  otherwise) — and is `null` otherwise:
+  - `wrap-cancelation-notify-period-injected` (explicit value)
+  - `wrap-cancelation-notify-period-defaults-onrun-120` (schema default on a task)
+  - `wrap-cancelation-notify-period-defaults-onenter-30` (schema default on an env `onEnter`)
+  - `wrap-cancelation-notify-period-defaults-onexit-30` (schema default on an env `onExit`)
+  - `wrap-cancelation-notify-period-null-when-terminate` (null when `TERMINATE`)
+  - `wrap-cancelation-notify-period-null-when-no-cancelation` (null when no `<Cancelation>`)
+- **Cancelation + timeout round-trip forwarding** (Template Schemas §5.3
+  and §5, FEATURE_BUNDLE_1): a wrap hook adopts the wrapped action's
+  cancelation and timeout as its own via whole-field expressions
+  (`mode: "{{WrappedAction.Cancelation.Mode}}"` /
+  `notifyPeriodInSeconds: "{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}"` /
+  `timeout: "{{WrappedAction.Timeout}}"`),
+  with null-forwarding per RFC 0005 expression evaluation types (a null
+  timeout or notify period drops the field; a null mode drops the whole
+  `cancelation` object):
+  - `wrap-cancelation-roundtrip-notify-then-terminate` (both fields forwarded verbatim)
+  - `wrap-cancelation-roundtrip-terminate` (null period drops the field)
+  - `wrap-cancelation-roundtrip-no-cancelation` (null mode drops the whole `cancelation` object)
+  - `wrap-cancelation-roundtrip-period-only` (literal mode, forwarded period —
+    already legal under FEATURE_BUNDLE_1's `@fmtstring` notify period)
+  - `wrap-cancelation-fmtstring-mode-no-feature-bundle` (invalid: the
+    format-string `mode` form requires FEATURE_BUNDLE_1)
+  - `wrap-cancelation-partial-fmtstring-mode` (a format-string `mode` gets
+    normal format string behavior — partial interpolation like
+    `"{{ ... }}_THEN_TERMINATE"` is valid; the resolved value is checked
+    against the two mode names at run time)
 - **`openjd_env` propagation**: variables emitted by a wrapped `onEnter`
   surface in `WrappedAction.Environment` for subsequent wrapped actions
   (`wrap-openjd-env-from-wrapped-onenter-propagates`).
@@ -201,6 +257,9 @@ bundles in this directory:
   - `4.3--wrap-missing-onwrap-exit`: all-or-nothing rule (env side).
   - `4.2--empty-actions-no-wrap-no-enter-no-exit`: an `actions` block must
     define at least one action.
+  - `4.2--wrap-fmtstring-timeout-no-feature-bundle`: a format-string `timeout`
+    on a wrap hook requires `FEATURE_BUNDLE_1`; without it the hook `timeout`
+    must be a plain positive integer.
 
 ## Running the tests
 

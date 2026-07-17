@@ -1510,7 +1510,8 @@ The format string scopes available to format strings within an Environment are:
    entity.
 4. Names bound by `let` in the enclosing `<EnvironmentScript>`. Available with the `EXPR` extension.
 5. `WrappedAction.*` — Available within `onWrapEnvEnter`, `onWrapTaskRun`, and `onWrapEnvExit` only. Carries
-   the wrapped `<Action>`'s fields. Available with the `WRAP_ACTIONS` extension. See [RFC 0008](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0008-environment-wrap-actions.md).
+   the wrapped `<Action>`'s fields. Available with the `WRAP_ACTIONS` extension.
+   See [Wrap hook template variables](#431-wrap-hook-template-variables) for the available fields.
 6. `WrappedEnv.Name` — Available within `onWrapEnvEnter` and `onWrapEnvExit` only. The name of the inner
    environment whose action is being wrapped. Available with the `WRAP_ACTIONS` extension.
 7. `WrappedStep.Name` — Available within `onWrapTaskRun` only. The name of the step whose task is being
@@ -1576,17 +1577,11 @@ onExit: <Action> # optional
 1. *onEnter* — The action run when the environment is being entered on a host.
 2. *onWrapEnvEnter* — When provided, runs instead of the `onEnter` action of every *inner* environment that
    enters the session while this environment is active. Available only when using the `WRAP_ACTIONS`
-   extension. See [RFC 0008](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0008-environment-wrap-actions.md).
+   extension.
 3. *onWrapTaskRun* — When provided, runs instead of the task's `onRun` action for every task that runs
-   while this environment is active. Available only when using the `WRAP_ACTIONS` extension. See
-   [RFC 0008](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0008-environment-wrap-actions.md).
+   while this environment is active. Available only when using the `WRAP_ACTIONS` extension.
 4. *onWrapEnvExit* — When provided, runs instead of the `onExit` action of every *inner* environment that
-   exits while this environment is active. Available only when using the `WRAP_ACTIONS` extension. See
-   [RFC 0008](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0008-environment-wrap-actions.md).
-
-Each wrap hook receives the wrapped `<Action>`'s fields via the `WrappedAction.*` template variables.
-An environment that defines any wrap hook must define all three. See
-[RFC 0008](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0008-environment-wrap-actions.md).
+   exits while this environment is active. Available only when using the `WRAP_ACTIONS` extension.
 5. *onExit* — The action run when the environment is being exited on a host.
 
    > **NOTE:** When *onExit* action does not define a *timeout* the action will default to 300
@@ -1606,6 +1601,50 @@ An environment that defines any wrap hook must define all three. See
 >    Schedulers must reject templates that list `WRAP_ACTIONS` without also listing `EXPR`.
 > 4. The wrapping environment's own `onEnter` and `onExit` are never wrapped; they always run
 >    normally.
+
+#### 4.3.1. Wrap hook template variables
+
+Each wrap hook receives the wrapped `<Action>`'s fields as read-only template variables supplied by the
+runtime. The variables have identical names and semantics across all three hooks, so helper scripts can
+be reused unchanged.
+
+**Available in `onWrapEnvEnter`, `onWrapTaskRun`, and `onWrapEnvExit`:**
+
+| Variable                          | Type           | Description |
+|-----------------------------------|----------------|-------------|
+| `WrappedAction.Command`           | `string`       | The `command` from the wrapped action. |
+| `WrappedAction.Args`              | `list[string]` | The `args` from the wrapped action. |
+| `WrappedAction.Environment`       | `list[string]` | Environment variables defined by `openjd_env` earlier in the session, as `["KEY=value", ...]`. |
+| `WrappedAction.Timeout`           | `int?`         | The timeout in seconds specified on the wrapped action. `null` when the wrapped action specifies no timeout. See the *timeout* defaults table in [&lt;Action&gt;](#5-action). |
+| `WrappedAction.Cancelation.Mode`  | `string?`      | The cancelation method of the wrapped action (`TERMINATE` or `NOTIFY_THEN_TERMINATE`). `null` when the wrapped action defines no [&lt;CancelationMethod&gt;](#53-cancelationmethod). |
+| `WrappedAction.Cancelation.NotifyPeriodInSeconds` | `int?` | The effective `notifyPeriodInSeconds` of the wrapped action when its cancelation mode is `NOTIFY_THEN_TERMINATE`, with the [&lt;CancelationMethodNotifyThenTerminate&gt;](#532-cancelationmethodnotifythenterminate) defaults applied when the wrapped action omits the field. `null` when the mode is `TERMINATE` or the wrapped action defines no `<Cancelation>`. |
+
+**Additionally available in `onWrapEnvEnter` and `onWrapEnvExit`:**
+
+| Variable          | Type     | Description |
+|-------------------|----------|-------------|
+| `WrappedEnv.Name` | `string` | The `name` of the inner environment whose action is being wrapped. |
+
+**Additionally available in `onWrapTaskRun`:**
+
+| Variable           | Type     | Description |
+|--------------------|----------|-------------|
+| `WrappedStep.Name` | `string` | The `name` of the step whose task is being wrapped. |
+
+`WrappedAction.Environment` carries only `openjd_env`-defined variables from the current session, including
+variables emitted by earlier actions that themselves ran via a wrap hook. Host-inherited variables (`HOME`,
+`PATH`, `OPENJD_*`, etc.) and host filesystem paths referenced in `WrappedAction.Command` or
+`WrappedAction.Args` (for example, `{{Env.File.X}}` resolves to a host path) are not surfaced; the wrapping
+environment is responsible for forwarding or path-mapping them into the wrapped execution context.
+
+The `WrappedAction.*` namespace is the single, standardized surface for every field of the wrapped
+`<Action>`. When a future specification adds a field to `<Action>`, it must surface under the same
+namespace using the field's PascalCased name (e.g., `WrappedAction.LogMessageTimeout`). New fields gated
+by an `@extension` activate under this namespace exactly when that extension is active in the template.
+Wrap scripts may reference any field they recognize and must tolerate fields they do not.
+
+The wrap hooks and these template variables were introduced in
+[RFC 0008](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0008-environment-wrap-actions.md).
 
 ### 4.4. `<EnvironmentVariables>`
 
@@ -1657,6 +1696,11 @@ positive integer value in base-10, and:
 3. *timeout* — The positive number of seconds that the command is given to successfully run to completion. A command that
    does not return before the timeout is canceled and is treated as a failed
    run. Can only be a `<posintstring>` when using the extension `FEATURE_BUNDLE_1`.
+   When the value is a single whole-field interpolation expression (`"{{ ... }}"` with no
+   surrounding text), its target type is `int?` per the
+   [expression evaluation type](2026-02-Expression-Language#expression-evaluation-types) rules:
+   a `null` result is treated as if the field were not provided (the defaults below apply), and a
+   non-null result MUST be a positive integer.
 
    The default timeout, if not provided, depends on the action:
 
@@ -1676,8 +1720,10 @@ positive integer value in base-10, and:
    <sup>2</sup> Available with the `WRAP_ACTIONS` extension. The wrap hook's `timeout` field bounds
    the wrap script on the host (infrastructure-side); the `WrappedAction.Timeout` template variable
    carries the wrapped action's timeout (workload-side). When the wrapped action specified no
-   timeout, the variable evaluates to `0`.
-   See [RFC 0008](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0008-environment-wrap-actions.md).
+   timeout, the variable is `null` (it is typed `int?`). Wrap scripts must propagate the wrapped
+   timeout to the underlying execution runtime where the runtime exposes a timeout mechanism, and
+   should enforce it in-script when the runtime exposes none. Wrap scripts must treat `null` as
+   "no timeout" and omit the underlying runtime's timeout flag in that case.
 
 4. *cancelation* — If defined, provides details regarding how this action should be canceled. If not provided, then it is
    treated as though provided with `<CancelationMethodTerminate>`.
@@ -1712,6 +1758,42 @@ The cancellation method defines the process by which an action is canceled.
 ```bnf
 <CancelationMethod> ::= <CancelationMethodTerminate> | <CancelationMethodNotifyThenTerminate>
 ```
+
+The *mode* value selects between the two forms. When using the `FEATURE_BUNDLE_1` extension, *mode*
+may instead be a [Format String](#73-format-strings):
+
+```yaml
+mode: "TERMINATE" | "NOTIFY_THEN_TERMINATE"
+mode: "TERMINATE" | "NOTIFY_THEN_TERMINATE" | <fmtstring> # @fmtstring @extension FEATURE_BUNDLE_1
+notifyPeriodInSeconds: <posinteger> | <posintstring> # @optional @fmtstring @extension FEATURE_BUNDLE_1
+```
+
+When *mode* is a format string, the runtime resolves it when it prepares to run the action:
+
+1. If the resolved value is `"TERMINATE"` or `"NOTIFY_THEN_TERMINATE"`, the object is interpreted as
+   the corresponding `<CancelationMethod>` form, and MUST then validate against that form's schema.
+   A *notifyPeriodInSeconds* whole-field expression that resolves to `null` is treated as if the
+   field were not provided (the schema defaults apply).
+2. When the value is a single whole-field interpolation expression (`"{{ ... }}"` with no
+   surrounding text), its target type is `string?` per the
+   [expression evaluation type](2026-02-Expression-Language#expression-evaluation-types) rules: a
+   `null` result causes the entire `<CancelationMethod>` object to be treated as if it were not
+   provided — the action is canceled as if by `<CancelationMethodTerminate>`, exactly as when the
+   template author declares no *cancelation*.
+3. Any other resolved value is an error; the runtime MUST fail the action.
+
+The primary use of a format-string *mode* is RFC 0008 wrap hooks forwarding the wrapped action's
+cancelation verbatim (see [wrap hook template variables](#431-wrap-hook-template-variables)):
+
+```yaml
+cancelation:
+  mode: "{{WrappedAction.Cancelation.Mode}}"
+  notifyPeriodInSeconds: "{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}"
+```
+
+This forwards every case faithfully: a declared mode is reproduced verbatim; a `null` mode (the
+wrapped action declared no `<Cancelation>`) drops the whole *cancelation* object; and a `null`
+notify period (mode is `TERMINATE` or undeclared) drops that field so the schema default applies.
 
 #### 5.3.1. `<CancelationMethodTerminate>`
 
@@ -1753,6 +1835,11 @@ positive integer value in base-10, and:
    2. Defaults:
       * 120 if the Action is the "onRun" action of a `<StepActions>` object.
       * 30 otherwise.
+   3. When the value is a single whole-field interpolation expression (`"{{ ... }}"` with no
+      surrounding text), its target type is `int?` per the
+      [expression evaluation type](2026-02-Expression-Language#expression-evaluation-types) rules:
+      a `null` result is treated as if the field were not provided (the defaults above apply), and
+      a non-null result MUST be a positive integer within the maximum.
 
 The signals sent to the command are:
 
@@ -2132,7 +2219,11 @@ positive integer value in base-10, and:
    default expectation should be that OpenJobDescription sessions are able to
    end and cleanup within a bound duration of time.
 
-   <sup>2</sup> Available with the `WRAP_ACTIONS` extension. See [RFC 0008](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0008-environment-wrap-actions.md).
+   <sup>2</sup> Available with the `WRAP_ACTIONS` extension. The wrap hook's `timeout` field bounds
+   the wrap script on the host (infrastructure-side); the `WrappedAction.Timeout` template variable
+   carries the wrapped action's timeout (workload-side). When the wrapped action specified no
+   timeout, the variable is `null` (it is typed `int?`). See the *timeout* description in
+   [&lt;Action&gt;](#5-action).
 
 5. *cancelation* — If defined, provides details regarding how this action should
    be canceled. If not provided, then it is treated as though provided with `<CancelationMethodTerminate>`.

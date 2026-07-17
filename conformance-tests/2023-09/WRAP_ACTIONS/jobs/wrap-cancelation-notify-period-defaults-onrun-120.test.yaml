@@ -1,16 +1,23 @@
-# RFC 0008: when the wrapped action specifies no timeout, WrappedAction.Timeout
-# evaluates to 0 (the spec sentinel — `<posinteger>` cannot represent absence).
+# RFC 0008: when the wrapped action's mode is NOTIFY_THEN_TERMINATE and it
+# omits notifyPeriodInSeconds, the runtime supplies the schema default for
+# the action's position (Template Schemas 5.3.2:
+# `<CancelationMethodNotifyThenTerminate>`) so the wrap script always sees
+# the value the runtime would have enforced in the unwrapped case.
+#
+# For a task's onRun, the default is 120 seconds.
 template:
   specificationVersion: jobtemplate-2023-09
-  name: WrappedActionTimeoutZeroWhenUnset
+  name: WrappedActionNotifyPeriodDefaultsOnRun120
   steps:
   - name: Step1
     script:
       actions:
-        # Note: no timeout field on this onRun.
         onRun:
           command: echo
           args: ["placeholder"]
+          cancelation:
+            mode: NOTIFY_THEN_TERMINATE
+            # Deliberately no notifyPeriodInSeconds — expect runtime default 120.
 
 environments:
 - specificationVersion: environment-2023-09
@@ -30,7 +37,7 @@ environments:
           command: bash
           args:
           - "-c"
-          - "echo TIMEOUT={{WrappedAction.Timeout}}"
+          - "echo \"NP=<{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}>\""
         onWrapEnvExit:
           command: bash
           args:
@@ -42,4 +49,4 @@ runOn:
 
 expected:
   output:
-  - TIMEOUT=0
+  - "NP=<120>"

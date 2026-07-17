@@ -55,15 +55,12 @@ environment:
       onWrapEnvEnter:
         command: bash
         args: ["{{Env.File.Wrap}}"]
-        timeout: "{{WrappedAction.Timeout}}"
       onWrapTaskRun:
         command: bash
         args: ["{{Env.File.Wrap}}"]
-        timeout: "{{WrappedAction.Timeout}}"
       onWrapEnvExit:
         command: bash
         args: ["{{Env.File.Wrap}}"]
-        timeout: "{{WrappedAction.Timeout}}"
       onExit:
         command: bash
         args: ["{{Env.File.Exit}}"]
@@ -103,6 +100,15 @@ environment:
           set -euo pipefail
           docker container stop --timeout 30 "$DOCKER_CONTAINER_ID"
 ```
+
+The wrap hooks declare no `timeout`, so each inherits the default for its hook
+position (see [Timeout behavior](#timeout-behavior)). With the `FEATURE_BUNDLE_1`
+extension a hook may instead forward the wrapped action's timeout as its own
+via `timeout: "{{WrappedAction.Timeout}}"` — the variable is `int?`, so a
+declared timeout forwards verbatim and a `null` (no timeout on the wrapped
+action) drops the field, keeping the hook default. This example enforces the
+wrapped action's timeout from inside the wrap script instead (see
+[Timeout behavior](#timeout-behavior)).
 
 The job template that runs under this wrapping environment is unchanged from one
 that runs without wrapping. See the existing
@@ -290,8 +296,9 @@ helper scripts can be reused unchanged.
 | `WrappedAction.Command`           | `string`       | The `command` from the wrapped action. |
 | `WrappedAction.Args`              | `list[string]` | The `args` from the wrapped action. |
 | `WrappedAction.Environment`       | `list[string]` | Environment variables defined by `openjd_env` earlier in the session, as `["KEY=value", ...]`. See [Host environment variables and embedded file paths](#host-environment-variables-and-embedded-file-paths). |
-| `WrappedAction.Timeout`           | `int`          | The timeout in seconds specified on the wrapped action, or `0` if none. See [Timeout behavior](#timeout-behavior). |
-| `WrappedAction.Cancelation.Mode`  | `string`       | The cancelation method of the wrapped action (`TERMINATE` or `NOTIFY_THEN_TERMINATE`), or empty if the wrapped action defines no `<Cancelation>`. See [Cancelation behavior](#cancelation-behavior). |
+| `WrappedAction.Timeout`           | `int?`         | The timeout in seconds specified on the wrapped action. `null` when the wrapped action specifies no timeout — no bound is meaningful in that case. See [Timeout behavior](#timeout-behavior). |
+| `WrappedAction.Cancelation.Mode`  | `string?`      | The cancelation method of the wrapped action (`TERMINATE` or `NOTIFY_THEN_TERMINATE`). `null` when the wrapped action defines no `<Cancelation>` — the author declared nothing, so no method name is meaningful. See [Cancelation behavior](#cancelation-behavior). |
+| `WrappedAction.Cancelation.NotifyPeriodInSeconds` | `int?` | The effective `notifyPeriodInSeconds` of the wrapped action when its cancelation mode is `NOTIFY_THEN_TERMINATE`, with schema defaults applied when the wrapped action omits the field. `null` when the mode is `TERMINATE` or the wrapped action defines no `<Cancelation>` — a notify period does not apply to those cases, so no numeric value is meaningful. See [Cancelation behavior](#cancelation-behavior). |
 
 **Additionally available in `onWrapEnvEnter` and `onWrapEnvExit`:**
 
@@ -432,12 +439,93 @@ container) MUST remain available until every `onWrapEnvExit` returns.
 ### Cancelation behavior
 
 The wrap hook's own `<Cancelation>` governs how the session runtime cancels
-the wrap script. The wrapped action's own cancelation method is surfaced to
-the wrap script via the `WrappedAction.Cancelation.Mode` template variable,
-so the wrap script MAY honor the inner action's cancelation semantics when it
-propagates the termination signal (for example, allowing a graceful
-notification period before terminating when the wrapped action requested
-`NOTIFY_THEN_TERMINATE`).
+the wrap script. The wrapped action's own cancelation semantics are surfaced
+to the wrap script via two template variables:
+
+- `WrappedAction.Cancelation.Mode` — the wrapped action's cancelation method
+  (`TERMINATE` or `NOTIFY_THEN_TERMINATE`), or `null` if the wrapped action
+  defines no `<Cancelation>`. Note this differs from the runtime's default
+  cancelation semantics: an action with no `<Cancelation>` is canceled as if
+  by `<CancelationMethodTerminate>`, but the variable carries `null` — the
+  "not declared" value for optional data — so wrap scripts can distinguish
+  "author explicitly asked for `TERMINATE`" from "author declared nothing".
+  Interpolated into a format string, `null` renders as the empty string;
+  scripts can apply EXPR's null-coalescing `or` to substitute a fallback
+  (for example `{{ WrappedAction.Cancelation.Mode or 'TERMINATE' }}`).
+- `WrappedAction.Cancelation.NotifyPeriodInSeconds` — the wrapped action's
+  effective grace period between the notify and terminate signals. When the
+  wrapped action's mode is `NOTIFY_THEN_TERMINATE` and it omits
+  `notifyPeriodInSeconds`, the runtime supplies the schema default for the
+  wrapped action's position (120 for a task's `onRun`, 30 otherwise), so the
+  wrap script always sees the value the runtime would have enforced in the
+  unwrapped case. The variable is `null` when the mode is `TERMINATE` or
+  when the wrapped action defines no `<Cancelation>` — a notify period is
+  not meaningful in those cases, and typing it as `int?` avoids conflating
+  "no notify period applies" with a zero-length notify period.
+
+Together these let the wrap script faithfully reproduce the inner action's
+cancelation semantics when it propagates the termination signal: honoring a
+graceful notification period when the wrapped action requested
+`NOTIFY_THEN_TERMINATE` (for example,
+`docker container stop --timeout {{WrappedAction.Cancelation.NotifyPeriodInSeconds}}`),
+or terminating immediately when it requested `TERMINATE`.
+
+Because the variable is `int?`, a `null` value interpolated into a format
+string renders as the empty string — the example above would produce a
+malformed `--timeout` flag if evaluated outside a mode check. Wrap scripts
+that reference the variable unconditionally should either branch on
+`WrappedAction.Cancelation.Mode` first, or apply EXPR's null-coalescing
+`or` to supply a fallback:
+`docker container stop --timeout {{ WrappedAction.Cancelation.NotifyPeriodInSeconds or 30 }}`.
+
+Beyond referencing the variables inside script text, a wrap hook can adopt
+the wrapped action's cancelation semantics as its *own* `<Cancelation>` by
+forwarding both fields as whole-field expressions (requires the
+FEATURE_BUNDLE_1 extension, which gates the format-string `mode` form —
+see Template Schemas §5.3):
+
+```yaml
+onWrapTaskRun:
+  command: echo
+  args: ["{{WrappedAction.Command}}"]
+  timeout: "{{WrappedAction.Timeout}}"
+  cancelation:
+    mode: "{{WrappedAction.Cancelation.Mode}}"
+    notifyPeriodInSeconds: "{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}"
+```
+
+Whole-field expression evaluation (RFC 0005 "Expression Evaluation Types")
+forwards each variable's type and null-ness into the field, so this
+round-trip MUST work for every state of the wrapped action:
+
+| Wrapped action declares      | `mode:` resolves to        | `notifyPeriodInSeconds:` resolves to | Effective wrap-hook cancelation           |
+|------------------------------|----------------------------|--------------------------------------|-------------------------------------------|
+| `NOTIFY_THEN_TERMINATE`, period *P* (or schema default) | `"NOTIFY_THEN_TERMINATE"` | *P*                    | `NOTIFY_THEN_TERMINATE` with period *P*   |
+| `TERMINATE`                  | `"TERMINATE"`              | `null` → field dropped               | `TERMINATE`                               |
+| no `<Cancelation>`           | `null` → whole object dropped | `null`                            | undeclared (runtime default: terminate)   |
+
+`timeout:` forwards the same way: `WrappedAction.Timeout` is `int?`, so a
+declared timeout forwards verbatim and a `null` result (the wrapped action
+specified no timeout) drops the field, leaving the hook position's schema
+default in effect (see [Timeout behavior](#timeout-behavior)).
+
+A `null` `mode` drops the entire `cancelation` object — `mode` is the
+object's required discriminator, so an "omitted" mode cannot leave a
+partial object behind; the wrap action behaves exactly as if its author
+had declared no `<Cancelation>`. The runtime resolves these expressions
+when it prepares to run the wrap action and MUST fail the action if
+`mode` resolves to anything other than the two method names or `null`.
+
+These two variables surface every field of today's `<CancelationMethod>`
+schema. A structured alternative — forwarding the whole `<Cancelation>`
+object under a single variable — was considered and rejected for ergonomics:
+it would introduce another level of depth in the `WrappedAction.Cancelation`
+chain without carrying more information, and scalar variables compose
+directly with `repr_sh()`/`repr_py()` and EXPR arithmetic in wrap scripts.
+If a future specification adds fields to `<CancelationMethod>`, they surface
+as additional scalars under `WrappedAction.Cancelation.*` using the field's
+PascalCased name, per
+[Forwarding `<Action>` fields, current and future](#forwarding-action-fields-current-and-future).
 
 When the wrap script receives a termination signal (SIGTERM on POSIX,
 platform-equivalent on Windows), it MUST cause the wrapped process to
@@ -468,13 +556,20 @@ runtime where the runtime exposes a timeout mechanism (e.g.,
 enforce it in-script (`timeout {{WrappedAction.Timeout}}s ...`) when the
 runtime exposes none.
 
-When the wrapped action specified no timeout, `WrappedAction.Timeout`
-evaluates to `0`; wrap scripts MUST treat `0` as "no timeout" and omit
-the underlying runtime's timeout flag in that case (for example, omit
-`--timeout` from `docker container stop` rather than passing
-`--timeout 0`, which Docker interprets as "kill immediately").
-The sentinel `0` was chosen because the OpenJD `<posinteger>` schema cannot
-represent absent values.
+When the wrapped action specified no timeout, `WrappedAction.Timeout` is
+`null` — following the EXPR semantics for optional data, as with the
+`WrappedAction.Cancelation.*` variables. Interpolated into a format string,
+`null` renders as the empty string, so wrap scripts that reference the
+variable unconditionally MUST either branch on it first or apply EXPR's
+null-coalescing `or` to supply a fallback; and they MUST omit the
+underlying runtime's timeout flag when the value is `null` (for example,
+omit `--timeout` from `docker container stop` rather than passing
+`--timeout 0`, which Docker interprets as "kill immediately"). Typing the
+variable `int?` rather than using a `0` sentinel lets whole-field
+expression forwarding (`timeout: "{{WrappedAction.Timeout}}"`) work in
+every case: a declared timeout forwards verbatim, and a `null` result
+drops the field so the hook position's schema default applies — a `0`
+sentinel would be out of range for the `<posinteger>` field.
 
 Templates that omit `timeout` on a wrap hook inherit OpenJD's default for
 that hook position. The session runtime enforces the hook timeout by

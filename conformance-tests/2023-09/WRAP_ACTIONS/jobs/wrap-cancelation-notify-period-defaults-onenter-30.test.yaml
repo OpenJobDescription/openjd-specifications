@@ -1,0 +1,65 @@
+# RFC 0008: when the wrapped action's mode is NOTIFY_THEN_TERMINATE and it
+# omits notifyPeriodInSeconds, the runtime supplies the schema default for
+# the action's position (Template Schemas 5.3.2).
+#
+# For anything other than a task's onRun — including an inner environment's
+# onEnter — the default is 30 seconds. This test exercises the "otherwise"
+# branch by wrapping an inner environment's onEnter and echoing the
+# forwarded notify period from onWrapEnvEnter.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrappedActionNotifyPeriodDefaultsOnEnter30
+  jobEnvironments:
+  - name: InnerEnv
+    script:
+      actions:
+        onEnter:
+          command: inner-enter-cmd
+          args: ["--flag"]
+          cancelation:
+            mode: NOTIFY_THEN_TERMINATE
+            # No notifyPeriodInSeconds — expect runtime default 30 for a
+            # non-onRun action.
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["TASK"]
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          # The wrap replaces InnerEnv.onEnter entirely; the inner command
+          # is never invoked (inner-enter-cmd need not exist). We only
+          # observe the injected variable's value.
+          - "echo \"NP=<{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}>\""
+        onWrapTaskRun:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "true"
+
+runOn:
+- posix
+
+expected:
+  output:
+  - "NP=<30>"
+  - "TASK"

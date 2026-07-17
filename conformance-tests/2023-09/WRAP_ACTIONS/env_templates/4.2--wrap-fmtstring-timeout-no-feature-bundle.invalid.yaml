@@ -1,0 +1,27 @@
+# RFC 0008: a wrap hook's `timeout` is a plain positive integer. A format
+# string there is only valid with the FEATURE_BUNDLE_1 extension, which this
+# template does not declare, so validation must reject it. Forwarding
+# WrappedAction.Timeout into the hook's own timeout field (the variable is
+# int?; a null result drops the field so the hook default applies) is
+# therefore only available under FEATURE_BUNDLE_1 — see the
+# wrap-cancelation-roundtrip-* job tests for the gated round-trip behavior.
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- EXPR
+environment:
+  name: WrapFmtStringTimeout
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: echo
+        args: ["{{WrappedEnv.Name}}"]
+        timeout: "{{WrappedAction.Timeout}}"
+      onWrapTaskRun:
+        command: echo
+        args: ["{{WrappedAction.Command}}"]
+        timeout: "{{WrappedAction.Timeout}}"
+      onWrapEnvExit:
+        command: echo
+        args: ["{{WrappedEnv.Name}}"]
+        timeout: "{{WrappedAction.Timeout}}"

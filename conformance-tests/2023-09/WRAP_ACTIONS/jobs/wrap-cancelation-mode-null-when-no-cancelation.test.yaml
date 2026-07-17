@@ -1,0 +1,54 @@
+# RFC 0008: WrappedAction.Cancelation.Mode is `null` when the wrapped
+# action defines no <Cancelation>. Note this differs from the runtime's
+# default cancelation-method semantics: at runtime, an action with no
+# <Cancelation> is treated as `<CancelationMethodTerminate>` (Template
+# Schemas 5), but the template variable itself carries `null` — the "not
+# declared" value for optional data — so wrap scripts can distinguish
+# "author explicitly asked for TERMINATE" from "author declared nothing".
+# Interpolated into a format string, null renders as the empty string
+# (MODE=<>); EXPR's null-coalescing `or` makes the nullness observable
+# (COALESCED=<UNDECLARED>).
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrappedActionCancelationModeNullWhenNoCancelation
+  steps:
+  - name: Step1
+    script:
+      actions:
+        # No cancelation: block at all.
+        onRun:
+          command: echo
+          args: ["placeholder"]
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: bash
+          args:
+          - "-c"
+          - "echo \"MODE=<{{WrappedAction.Cancelation.Mode}}>\"; echo \"COALESCED=<{{ WrappedAction.Cancelation.Mode or 'UNDECLARED' }}>\""
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+
+runOn:
+- posix
+
+expected:
+  output:
+  - "MODE=<>"
+  - "COALESCED=<UNDECLARED>"

@@ -1,0 +1,51 @@
+# RFC 0008: when the wrapped action specifies no timeout,
+# WrappedAction.Timeout is `null` (the variable is typed int?, following
+# the EXPR semantics for optional data — the same convention as the
+# WrappedAction.Cancelation.* variables). Interpolated into a format
+# string, null renders as the empty string (TIMEOUT=<>); EXPR's
+# null-coalescing `or` makes the nullness observable
+# (TIMEOUT_OR=<NONE>).
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrappedActionTimeoutNullWhenUnset
+  steps:
+  - name: Step1
+    script:
+      actions:
+        # Note: no timeout field on this onRun.
+        onRun:
+          command: echo
+          args: ["placeholder"]
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: bash
+          args:
+          - "-c"
+          - "echo \"TIMEOUT=<{{WrappedAction.Timeout}}>\"; echo \"TIMEOUT_OR=<{{ WrappedAction.Timeout or 'NONE' }}>\""
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+
+runOn:
+- posix
+
+expected:
+  output:
+  - "TIMEOUT=<>"
+  - "TIMEOUT_OR=<NONE>"
