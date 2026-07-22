@@ -17,16 +17,16 @@ environment:
   script:
     actions:
       onEnter:
-        command: bash
-        args: ["-c", "echo own enter"]
+        command: python
+        args: ["-c", "print('own enter')"]
         cancelation:
           mode: "{{WrappedAction.Cancelation.Mode}}"
       onWrapEnvEnter:
-        command: bash
-        args: ["-c", "echo {{WrappedAction.Command}}"]
+        command: python
+        args: ["-c", "print({{repr_py(WrappedAction.Command)}})"]
       onWrapTaskRun:
-        command: bash
-        args: ["-c", "echo {{WrappedAction.Command}}"]
+        command: python
+        args: ["-c", "print({{repr_py(WrappedAction.Command)}})"]
       onWrapEnvExit:
-        command: bash
-        args: ["-c", "echo {{WrappedAction.Command}}"]
+        command: python
+        args: ["-c", "print({{repr_py(WrappedAction.Command)}})"]

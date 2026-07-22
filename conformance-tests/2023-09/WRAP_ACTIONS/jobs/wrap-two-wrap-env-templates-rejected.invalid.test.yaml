@@ -17,8 +17,8 @@ template:
     script:
       actions:
         onRun:
-          command: bash
-          args: ["-c", "echo TASK BODY RAN"]
+          command: python
+          args: ["-c", "print('TASK BODY RAN')"]
 environments:
 - specificationVersion: environment-2023-09
   extensions:
@@ -29,14 +29,14 @@ environments:
     script:
       actions:
         onWrapEnvEnter:
-          command: bash
-          args: ["-c", "echo WRAP A ENTER"]
+          command: python
+          args: ["-c", "print('WRAP A ENTER')"]
         onWrapTaskRun:
-          command: bash
-          args: ["-c", "echo WRAP A TASK"]
+          command: python
+          args: ["-c", "print('WRAP A TASK')"]
         onWrapEnvExit:
-          command: bash
-          args: ["-c", "echo WRAP A EXIT"]
+          command: python
+          args: ["-c", "print('WRAP A EXIT')"]
 - specificationVersion: environment-2023-09
   extensions:
   - WRAP_ACTIONS
@@ -46,13 +46,11 @@ environments:
     script:
       actions:
         onWrapEnvEnter:
-          command: bash
-          args: ["-c", "echo WRAP B ENTER"]
+          command: python
+          args: ["-c", "print('WRAP B ENTER')"]
         onWrapTaskRun:
-          command: bash
-          args: ["-c", "echo WRAP B TASK"]
+          command: python
+          args: ["-c", "print('WRAP B TASK')"]
         onWrapEnvExit:
-          command: bash
-          args: ["-c", "echo WRAP B EXIT"]
-runOn:
-- posix
+          command: python
+          args: ["-c", "print('WRAP B EXIT')"]

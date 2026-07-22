@@ -18,11 +18,11 @@ environment:
       data: "wrapped command is {{WrappedAction.Command}}"
     actions:
       onWrapEnvEnter:
-        command: bash
-        args: ["-c", "echo enter"]
+        command: python
+        args: ["-c", "print('enter')"]
       onWrapTaskRun:
-        command: bash
-        args: ["-c", "echo task"]
+        command: python
+        args: ["-c", "print('task')"]
       onWrapEnvExit:
-        command: bash
-        args: ["-c", "echo exit"]
+        command: python
+        args: ["-c", "print('exit')"]

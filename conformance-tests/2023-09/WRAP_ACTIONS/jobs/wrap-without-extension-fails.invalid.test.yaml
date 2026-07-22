@@ -8,8 +8,8 @@ template:
     script:
       actions:
         onRun:
-          command: echo
-          args: ["SHOULD_NOT_RUN"]
+          command: python
+          args: ["-c", "print('SHOULD_NOT_RUN')"]
 
 environments:
 - specificationVersion: environment-2023-09
@@ -19,14 +19,11 @@ environments:
     script:
       actions:
         onWrapEnvEnter:
-          command: echo
-          args: ["wrap-enter"]
+          command: python
+          args: ["-c", "print('wrap-enter')"]
         onWrapTaskRun:
-          command: echo
-          args: ["SHOULD_NOT_RUN"]
+          command: python
+          args: ["-c", "print('SHOULD_NOT_RUN')"]
         onWrapEnvExit:
-          command: echo
-          args: ["wrap-exit"]
-
-runOn:
-- posix
+          command: python
+          args: ["-c", "print('wrap-exit')"]

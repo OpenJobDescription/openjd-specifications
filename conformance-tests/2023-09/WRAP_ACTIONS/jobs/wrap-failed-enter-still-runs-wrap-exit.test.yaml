@@ -20,18 +20,18 @@ template:
     script:
       actions:
         onEnter:
-          command: bash
-          args: ["-c", "echo INNER ENTER BODY"]
+          command: python
+          args: ["-c", "print('INNER ENTER BODY')"]
         onExit:
-          command: bash
-          args: ["-c", "echo INNER EXIT BODY"]
+          command: python
+          args: ["-c", "print('INNER EXIT BODY')"]
   steps:
   - name: Step1
     script:
       actions:
         onRun:
-          command: bash
-          args: ["-c", "echo TASK BODY RAN"]
+          command: python
+          args: ["-c", "print('TASK BODY RAN')"]
 environments:
 - specificationVersion: environment-2023-09
   extensions:
@@ -42,22 +42,20 @@ environments:
     script:
       actions:
         onEnter:
-          command: bash
-          args: ["-c", "echo WRAPENV OWN ENTER RAN"]
+          command: python
+          args: ["-c", "print('WRAPENV OWN ENTER RAN')"]
         onWrapEnvEnter:
-          command: bash
-          args: ["-c", "echo WRAP ENTER FAILING; exit 7"]
+          command: python
+          args: ["-c", "import sys; print('WRAP ENTER FAILING'); sys.exit(7)"]
         onWrapTaskRun:
-          command: bash
-          args: ["-c", "echo WRAP TASK RAN"]
+          command: python
+          args: ["-c", "print('WRAP TASK RAN')"]
         onWrapEnvExit:
-          command: bash
-          args: ["-c", "echo WRAP EXIT RAN for {{WrappedEnv.Name}}"]
+          command: python
+          args: ["-c", "print('WRAP EXIT RAN for '+{{repr_py(WrappedEnv.Name)}})"]
         onExit:
-          command: bash
-          args: ["-c", "echo WRAPENV OWN EXIT RAN"]
-runOn:
-- posix
+          command: python
+          args: ["-c", "print('WRAPENV OWN EXIT RAN')"]
 expected:
   taskFailure:
     exitCode: 7

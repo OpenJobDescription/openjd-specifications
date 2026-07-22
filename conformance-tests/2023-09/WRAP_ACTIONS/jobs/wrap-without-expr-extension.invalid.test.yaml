@@ -10,24 +10,21 @@ template:
     script:
       actions:
         onEnter:
-          command: echo
-          args: ["enter"]
+          command: python
+          args: ["-c", "print('enter')"]
         onWrapEnvEnter:
-          command: echo
-          args: ["wrap-enter"]
+          command: python
+          args: ["-c", "print('wrap-enter')"]
         onWrapTaskRun:
-          command: echo
-          args: ["wrap-task"]
+          command: python
+          args: ["-c", "print('wrap-task')"]
         onWrapEnvExit:
-          command: echo
-          args: ["wrap-exit"]
+          command: python
+          args: ["-c", "print('wrap-exit')"]
   steps:
   - name: Step1
     script:
       actions:
         onRun:
-          command: echo
-          args: ["TASK"]
-
-runOn:
-- posix
+          command: python
+          args: ["-c", "print('TASK')"]

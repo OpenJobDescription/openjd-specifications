@@ -120,7 +120,7 @@ WRAP_ACTIONS/
     ├── wrap-env-let-bindings-in-hooks.test.yaml
     ├── wrap-openjd-env-from-wrapped-onenter-propagates.test.yaml
     ├── wrap-openjd-fail-from-wrapped-process.test.yaml
-    ├── wrap-environment-excludes-variables-map.test.yaml
+    ├── wrap-environment-includes-variables-map.test.yaml
     │  # Failure semantics & cleanup guarantees
     ├── wrap-failed-enter-still-runs-wrap-exit.test.yaml
     ├── wrap-inner-env-without-on-exit-skips-exit-hook.test.yaml
@@ -160,10 +160,11 @@ rule beyond action args (`env_templates/`):
     └── 4--wrappedaction-in-embedded-file.invalid.yaml
 ```
 
-Most execution tests use POSIX shell commands (`sh`, `echo`, `printf`) and
-are gated to `runOn: [posix]`. Cross-platform variants use Python
-(`*-python`), and the `*-windows` variants use `cmd` and are gated to
-`runOn: [windows]`.
+Most execution tests use POSIX shell commands (`sh`, `bash`, `echo`,
+`printf`) and are gated to `runOn: [posix]`. Fixtures that carry no
+`runOn` gate use `python`, the suite's portable interpreter — including
+the cross-platform `*-python` variants — and the `*-windows` variants
+use `cmd` and are gated to `runOn: [windows]`.
 
 ## Security test matrix — RFC §"Security Considerations"
 
@@ -277,9 +278,10 @@ bundles in this directory:
   `wrap-env-let-bindings-in-hooks`) — the wrapped step's symbol table
   knows nothing about them, so the runtime must carry the environment's
   own scope to its hooks.
-- **`WrappedAction.Environment` is openjd_env-only** (§4.3.1): an inner
-  environment's declarative `variables:` map must not surface in the
-  forwarded list (`wrap-environment-excludes-variables-map`).
+- **`WrappedAction.Environment` carries all session-defined variables**
+  (§4.3.1): `openjd_env` exports and an inner environment's declarative
+  `variables:` map both surface in the forwarded list
+  (`wrap-environment-includes-variables-map`).
 - **Session-level single-layer rule**: two wrap-defining environments
   supplied as *separate* environment templates — no single template is
   invalid, so only the session/runner can reject the stack

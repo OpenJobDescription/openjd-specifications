@@ -17,11 +17,11 @@ template:
     script:
       actions:
         onEnter:
-          command: bash
-          args: ["-c", "echo INNER ENTER BODY"]
+          command: python
+          args: ["-c", "print('INNER ENTER BODY')"]
         onExit:
-          command: bash
-          args: ["-c", "echo INNER EXIT BODY"]
+          command: python
+          args: ["-c", "print('INNER EXIT BODY')"]
   steps:
   - name: Step1
     script:
@@ -43,16 +43,14 @@ environments:
     script:
       actions:
         onWrapEnvEnter:
-          command: bash
-          args: ["-c", "echo PENTER {{Param.Prefix}}"]
+          command: python
+          args: ["-c", "print('PENTER '+{{repr_py(Param.Prefix)}})"]
         onWrapTaskRun:
-          command: bash
-          args: ["-c", "echo PTASK {{Param.Prefix}}"]
+          command: python
+          args: ["-c", "print('PTASK '+{{repr_py(Param.Prefix)}})"]
         onWrapEnvExit:
-          command: bash
-          args: ["-c", "echo PEXIT {{Param.Prefix}}"]
-runOn:
-- posix
+          command: python
+          args: ["-c", "print('PEXIT '+{{repr_py(Param.Prefix)}})"]
 expected:
   output:
   - "PENTER FROM_ENV_PARAM"

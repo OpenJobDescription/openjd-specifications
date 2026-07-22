@@ -306,7 +306,7 @@ helper scripts can be reused unchanged.
 |-----------------------------------|----------------|-------------|
 | `WrappedAction.Command`           | `string`       | The `command` from the wrapped action. |
 | `WrappedAction.Args`              | `list[string]` | The `args` from the wrapped action. |
-| `WrappedAction.Environment`       | `list[string]` | Environment variables defined by `openjd_env` earlier in the session, as `["KEY=value", ...]`. See [Host environment variables and embedded file paths](#host-environment-variables-and-embedded-file-paths). |
+| `WrappedAction.Environment`       | `list[string]` | Environment variables defined earlier in the session — `openjd_env` exports and environments' declarative `variables:` maps — as `["KEY=value", ...]`. See [Host environment variables and embedded file paths](#host-environment-variables-and-embedded-file-paths). |
 | `WrappedAction.Timeout`           | `int?`         | The timeout in seconds specified on the wrapped action. `null` when the wrapped action specifies no timeout — no bound is meaningful in that case. See [Timeout behavior](#timeout-behavior). |
 | `WrappedAction.Cancelation.Mode`  | `string?`      | The cancelation method of the wrapped action (`TERMINATE` or `NOTIFY_THEN_TERMINATE`). `null` when the wrapped action defines no `<Cancelation>` — the author declared nothing, so no method name is meaningful. See [Cancelation behavior](#cancelation-behavior). |
 | `WrappedAction.Cancelation.NotifyPeriodInSeconds` | `int?` | The effective `notifyPeriodInSeconds` of the wrapped action when its cancelation mode is `NOTIFY_THEN_TERMINATE`, with schema defaults applied when the wrapped action omits the field. `null` when the mode is `TERMINATE` or the wrapped action defines no `<Cancelation>` — a notify period does not apply to those cases, so no numeric value is meaningful. See [Cancelation behavior](#cancelation-behavior). |
@@ -330,8 +330,9 @@ this scope rule.
 
 ### Host environment variables and embedded file paths
 
-`WrappedAction.Environment` carries only `openjd_env`-defined variables from
-the current session. Host-inherited variables (`HOME`, `PATH`, `OPENJD_*`,
+`WrappedAction.Environment` carries only session-defined variables: variables
+exported with `openjd_env` and entries of entered environments' declarative
+`variables:` maps. Host-inherited variables (`HOME`, `PATH`, `OPENJD_*`,
 etc.) and host filesystem paths referenced in `WrappedAction.Command` or
 `WrappedAction.Args` (for example, `{{Env.File.X}}` resolves to a host path)
 are not surfaced and are the wrap environment's responsibility to forward or
@@ -402,8 +403,9 @@ script does not propagate it behaves as if the field were absent.
   emitted by the wrap script itself.
 - OpenJD session runtimes MUST include in `WrappedAction.Environment` every
   `openjd_env`-defined variable emitted by any earlier action in the same
-  session, regardless of whether that action ran normally or via a wrap
-  hook. This is what makes wrap composition useful: an inner Conda
+  session — regardless of whether that action ran normally or via a wrap
+  hook — and every entry of each entered environment's declarative
+  `variables:` map. This is what makes wrap composition useful: an inner Conda
   environment's `onWrapEnvEnter` can emit
   `openjd_env: CONDA_PREFIX=/opt/conda/env`, and the wrap script for every
   subsequent wrapped task can forward it into the wrapped execution

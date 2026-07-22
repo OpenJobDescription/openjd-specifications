@@ -1619,7 +1619,7 @@ be reused unchanged.
 |-----------------------------------|----------------|-------------|
 | `WrappedAction.Command`           | `string`       | The `command` from the wrapped action. |
 | `WrappedAction.Args`              | `list[string]` | The `args` from the wrapped action. |
-| `WrappedAction.Environment`       | `list[string]` | Environment variables defined by `openjd_env` earlier in the session, as `["KEY=value", ...]`. |
+| `WrappedAction.Environment`       | `list[string]` | Environment variables defined earlier in the session — `openjd_env` exports and environments' declarative `variables:` maps — as `["KEY=value", ...]`. |
 | `WrappedAction.Timeout`           | `int?`         | The timeout in seconds specified on the wrapped action. `null` when the wrapped action specifies no timeout. See the *timeout* defaults table in [&lt;Action&gt;](#5-action). |
 | `WrappedAction.Cancelation.Mode`  | `string?`      | The cancelation method of the wrapped action (`TERMINATE` or `NOTIFY_THEN_TERMINATE`). `null` when the wrapped action defines no [&lt;CancelationMethod&gt;](#53-cancelationmethod). |
 | `WrappedAction.Cancelation.NotifyPeriodInSeconds` | `int?` | The effective `notifyPeriodInSeconds` of the wrapped action when its cancelation mode is `NOTIFY_THEN_TERMINATE`, with the [&lt;CancelationMethodNotifyThenTerminate&gt;](#532-cancelationmethodnotifythenterminate) defaults applied when the wrapped action omits the field. `null` when the mode is `TERMINATE` or the wrapped action defines no `<Cancelation>`. |
@@ -1636,8 +1636,9 @@ be reused unchanged.
 |--------------------|----------|-------------|
 | `WrappedStep.Name` | `string` | The `name` of the step whose task is being wrapped. |
 
-`WrappedAction.Environment` carries only `openjd_env`-defined variables from the current session, including
-variables emitted by earlier actions that themselves ran via a wrap hook. Host-inherited variables (`HOME`,
+`WrappedAction.Environment` carries only session-defined variables: variables exported with `openjd_env` —
+including by earlier actions that themselves ran via a wrap hook — and entries of entered environments'
+declarative `variables:` maps. Host-inherited variables (`HOME`,
 `PATH`, `OPENJD_*`, etc.) and host filesystem paths referenced in `WrappedAction.Command` or
 `WrappedAction.Args` (for example, `{{Env.File.X}}` resolves to a host path) are not surfaced; the wrapping
 environment is responsible for forwarding or path-mapping them into the wrapped execution context.

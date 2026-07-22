@@ -1,0 +1,59 @@
+# Template Schemas 4.3.1: WrappedAction.Environment carries session-defined
+# variables — both `openjd_env` exports and an entered environment's
+# declarative `variables:` map. The two mechanisms always travel together:
+# a wrap script forwarding the session's variables into a container must
+# see everything the runtime would have applied to the real subprocess
+# environment, however it was declared. This fixture pins the inclusion:
+# the inner env declares STATIC_VAR via `variables:` and exports
+# DYNAMIC_VAR via openjd_env (emitted by its wrapped onEnter, forwarded
+# verbatim by the wrap hook); both must surface.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapEnvironmentIncludesVariablesMap
+  jobEnvironments:
+  - name: InnerVars
+    variables:
+      STATIC_VAR: hello
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('openjd_env: DYNAMIC_VAR=world')"]
+        onExit:
+          command: python
+          args: ["-c", "print('INNER EXIT BODY')"]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["placeholder"]
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        onWrapTaskRun:
+          command: python
+          args:
+          - "-c"
+          - "[print('ENVLINE='+v) for v in {{repr_py(WrappedAction.Environment)}}]"
+        onWrapEnvExit:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+expected:
+  output:
+  - "ENVLINE=DYNAMIC_VAR=world"
+  - "ENVLINE=STATIC_VAR=hello"

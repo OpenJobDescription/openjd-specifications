@@ -16,11 +16,11 @@ template:
     script:
       actions:
         onEnter:
-          command: bash
-          args: ["-c", "echo INNER ENTER BODY"]
+          command: python
+          args: ["-c", "print('INNER ENTER BODY')"]
         onExit:
-          command: bash
-          args: ["-c", "echo INNER EXIT BODY"]
+          command: python
+          args: ["-c", "print('INNER EXIT BODY')"]
   steps:
   - name: Step1
     script:
@@ -40,16 +40,14 @@ environments:
       - greeting = 'FROM_ENV_LET'
       actions:
         onWrapEnvEnter:
-          command: bash
-          args: ["-c", "echo LENTER {{ greeting }}"]
+          command: python
+          args: ["-c", "print('LENTER '+{{repr_py(greeting)}})"]
         onWrapTaskRun:
-          command: bash
-          args: ["-c", "echo LTASK {{ greeting }}"]
+          command: python
+          args: ["-c", "print('LTASK '+{{repr_py(greeting)}})"]
         onWrapEnvExit:
-          command: bash
-          args: ["-c", "echo LEXIT {{ greeting }}"]
-runOn:
-- posix
+          command: python
+          args: ["-c", "print('LEXIT '+{{repr_py(greeting)}})"]
 expected:
   output:
   - "LENTER FROM_ENV_LET"
