@@ -1,0 +1,73 @@
+# RFC 0008 "Stdout forwarding and macro propagation": macros are
+# recognized from wrap-hook stdout in the EXIT phase too — "any earlier
+# action in the same session" includes actions run via onWrapEnvExit.
+# Two inner environments: the inner-most (EnvBeta) exits first and its
+# wrapped onExit grand-child exports EXIT_VAR; the outer inner env
+# (EnvAlpha) exits after it, and its exit hook's WrappedAction.Environment
+# must contain EXIT_VAR. Catches a runtime that stops harvesting macros
+# once teardown begins. LIFO exit order is pinned through membership
+# causality alone: each hook dumps before running its wrapped action, so
+# EXIT_VAR can only ever appear in a dump if EnvBeta's onExit ran before
+# EnvAlpha's dump — i.e. exits are inner-most first.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapOpenjdEnvGrandChildUnderExitHook
+  jobEnvironments:
+  - name: EnvAlpha
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('ALPHA_ENTER_BODY')"]
+        onExit:
+          command: python
+          args: ["-c", "print('ALPHA_EXIT_BODY')"]
+  - name: EnvBeta
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('BETA_ENTER_BODY')"]
+        onExit:
+          command: python
+          args: ["-c", "print('openjd_env: EXIT_VAR=set-during-exit')"]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["placeholder"]
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        onWrapTaskRun:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        # Dump the forwarded variables tagged with which env is exiting,
+        # then run the wrapped onExit (whose macro is then forwarded).
+        onWrapEnvExit:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys\nfor e in {{repr_py(WrappedAction.Environment)}}:\n print('WAENV['+{{repr_py(WrappedEnv.Name)}}+']='+e)\nsys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+expected:
+  output:
+  - "WAENV[EnvAlpha]=EXIT_VAR=set-during-exit"
+  # No forbidden WAENV[EnvBeta] line: EnvBeta's dump runs before its own
+  # wrapped onExit by fixture construction (args are interpolated at
+  # launch), so no runtime behavior could ever produce it — such a line
+  # would be vacuous.

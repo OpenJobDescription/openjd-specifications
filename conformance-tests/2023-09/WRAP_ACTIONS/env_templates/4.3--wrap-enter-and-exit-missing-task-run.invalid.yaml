@@ -1,0 +1,20 @@
+# RFC 0008 all-or-nothing rule: defining onWrapEnvEnter and onWrapEnvExit
+# without onWrapTaskRun is invalid. This is the "env lifecycle only" subset
+# an author writes when they only want to intercept environment setup and
+# teardown — plausible, but rejected: the rule guarantees execution context
+# parity across every wrapped lifecycle phase, tasks included. Single
+# defect: the template is valid except for the missing onWrapTaskRun.
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- EXPR
+environment:
+  name: EnterExitNoTaskRun
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: echo
+        args: ["{{WrappedEnv.Name}}"]
+      onWrapEnvExit:
+        command: echo
+        args: ["{{WrappedEnv.Name}}"]

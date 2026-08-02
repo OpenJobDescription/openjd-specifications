@@ -1,0 +1,62 @@
+# RFC 0008 "Stdout forwarding and macro propagation" (negative control):
+# runtimes MUST scan the WRAP SCRIPT's stdout for macros and "MUST NOT
+# scan the grand-child's stdout directly". If the wrap script discards the
+# grand-child's stdout (here: redirected to DEVNULL), a macro the
+# grand-child emitted never reaches the wrap script's stdout, so the
+# runtime must never see it and the variable must NOT surface in
+# WrappedAction.Environment. Catches a runtime that locates and scans the
+# grand-child process's output stream directly — the design the RFC
+# explicitly rejected ("would require locating the grand-child across
+# heterogeneous runtimes").
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapDiscardedGrandChildStdoutLosesMacro
+  jobEnvironments:
+  - name: InnerEnv
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('openjd_env: LOST_VAR=should-not-surface')"]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["placeholder"]
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        # Run the wrapped onEnter but discard its stdout: its macro line
+        # must be lost.
+        onWrapEnvEnter:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}, stdout=subprocess.DEVNULL).returncode)"
+        onWrapTaskRun:
+          command: python
+          args:
+          - "-c"
+          - "for e in {{repr_py(WrappedAction.Environment)}}:\n print('WAENV='+e)\nprint('WAENV_DUMP_DONE')"
+        onWrapEnvExit:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+expected:
+  output:
+  - WAENV_DUMP_DONE
+  # Only the WAENV= form is forbidden: the raw macro string
+  # "LOST_VAR=should-not-surface" also occurs inside the resolved wrap-hook
+  # command line (via repr_py(WrappedAction.Args)), so forbidding it would
+  # false-fail any runner that echoes resolved commands into the log.
+  forbidden:
+  - WAENV=LOST_VAR

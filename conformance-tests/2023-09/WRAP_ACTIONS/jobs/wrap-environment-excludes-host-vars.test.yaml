@@ -1,0 +1,68 @@
+# RFC 0008 "Host environment variables and embedded file paths":
+# WrappedAction.Environment carries ONLY session-defined variables
+# (openjd_env exports and entered environments' declarative variables:
+# maps). Host-inherited variables — HOME, PATH, OPENJD_*, etc. — MUST NOT
+# be surfaced; forwarding them is the wrap environment's explicit
+# responsibility. Catches a runtime that builds the forwarded list from
+# os.environ (wholesale or merged with session variables): with session
+# variables present, such a runtime passes every inclusion fixture while
+# silently leaking the host environment. The forbidden: lines pin the
+# exclusion.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapEnvironmentExcludesHostVars
+  jobEnvironments:
+  - name: InnerEnv
+    variables:
+      STATIC_VAR: static-val
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('openjd_env: DYNAMIC_VAR=dyn-val')"]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["placeholder"]
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        # Forward the inner env's onEnter so its openjd_env macro is
+        # captured from the wrap script's stdout.
+        onWrapEnvEnter:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        # Dump every forwarded entry. Session variables must be present;
+        # host variables must not.
+        onWrapTaskRun:
+          command: python
+          args:
+          - "-c"
+          - "for e in {{repr_py(WrappedAction.Environment)}}:\n print('WAENV='+e)\nprint('WAENV_DUMP_DONE')"
+        onWrapEnvExit:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+expected:
+  output:
+  - WAENV=STATIC_VAR=static-val
+  - WAENV=DYNAMIC_VAR=dyn-val
+  - WAENV_DUMP_DONE
+  forbidden:
+  - WAENV=HOME=
+  - WAENV=PATH=
+  - WAENV=Path=
+  - WAENV=USER=
+  - WAENV=OPENJD
