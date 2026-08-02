@@ -1,0 +1,26 @@
+# Expression Language §2.2.2 (abs) + §2.1.1 (64-bit signed integer arithmetic):
+# the absolute value of int64 min (−2^63) is 2^63, which is outside the
+# 64-bit signed range, so the expression must be rejected. The operand is
+# built as (0 - 9223372036854775807 - 1) rather than written as the literal
+# -9223372036854775808: a parser that lexes the latter as unary-minus
+# applied to a 2^63 literal would reject it BEFORE abs ever runs, letting
+# the fixture pass with no abs overflow check at all. The arithmetic form
+# is a valid int64 computation (== int64 min), so the only possible error
+# is abs's own overflow.
+# The operator-level overflow family (expr2.1.1--int64-bounds) covers + - * ;
+# this is the function-level counterpart.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'ABS:{{ abs(0 - 9223372036854775807 - 1) }}')

@@ -1,0 +1,103 @@
+# Expression Language §2.2.6: repr_json round-trip through a real JSON parser.
+# The only sound test of JSON serialization is to parse the output back and
+# assert the ORIGINAL value returns. Each quoted value is passed as its own
+# argv element (no shell involved) and parsed with Python's json.loads.
+# Comparison is by value AND type, so true emitted as 1 fails.
+# Battery: the JSON escape branches (double quote, backslash, newline, tab),
+# shell metacharacters (must stay literal text), unicode (either raw UTF-8 or
+# \uXXXX escaping is conforming — both parse back identically), empty string,
+# and the non-string overloads (null/bool/int/float/list).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'j01 = repr_json("he said \"hi\"")'
+    - 'j02 = repr_json(r"back\slash")'
+    - 'j03 = repr_json("line1\nline2")'
+    - 'j04 = repr_json("tab\there")'
+    - 'j05 = repr_json("héllo 日本 👍")'
+    - 'j06 = repr_json("")'
+    - 'j07 = repr_json("; echo INJ $(pwn) `tick`")'
+    - 'j08 = repr_json("../../etc/passwd --rm")'
+    - 'j09 = repr_json(null)'
+    - 'j10 = repr_json(true)'
+    - 'j11 = repr_json(false)'
+    - 'j12 = repr_json(42)'
+    - 'j13 = repr_json(3.14)'
+    - 'j14 = repr_json([1, 2, 3])'
+    - 'j15 = repr_json(["a b", "c\"d"])'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import json
+            import sys
+            want = [
+                'he said "hi"',
+                "back\\slash",
+                "line1\nline2",
+                "tab\there",
+                "héllo 日本 👍",
+                "",
+                "; echo INJ $(pwn) `tick`",
+                "../../etc/passwd --rm",
+                None,
+                True,
+                False,
+                42,
+                3.14,
+                [1, 2, 3],
+                ["a b", 'c"d'],
+            ]
+            args = sys.argv[1:]
+            print("COUNT:" + str(len(args)))
+            for i, (a, w) in enumerate(zip(args, want), 1):
+                got = json.loads(a)
+                ok = got == w and type(got) is type(w)
+                label = "P" + str(i).zfill(2)
+                if ok:
+                    print(label + ":PASS")
+                else:
+                    print(label + ":FAIL got=" + repr(got) + " want=" + repr(w))
+          - "{{ j01 }}"
+          - "{{ j02 }}"
+          - "{{ j03 }}"
+          - "{{ j04 }}"
+          - "{{ j05 }}"
+          - "{{ j06 }}"
+          - "{{ j07 }}"
+          - "{{ j08 }}"
+          - "{{ j09 }}"
+          - "{{ j10 }}"
+          - "{{ j11 }}"
+          - "{{ j12 }}"
+          - "{{ j13 }}"
+          - "{{ j14 }}"
+          - "{{ j15 }}"
+expected:
+  output:
+  - COUNT:15
+  - P01:PASS
+  - P02:PASS
+  - P03:PASS
+  - P04:PASS
+  - P05:PASS
+  - P06:PASS
+  - P07:PASS
+  - P08:PASS
+  - P09:PASS
+  - P10:PASS
+  - P11:PASS
+  - P12:PASS
+  - P13:PASS
+  - P14:PASS
+  - P15:PASS
+  forbidden:
+  - FAIL

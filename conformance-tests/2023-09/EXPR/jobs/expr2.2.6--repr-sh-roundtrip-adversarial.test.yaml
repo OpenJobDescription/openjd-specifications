@@ -1,0 +1,81 @@
+# Expression Language §2.2.6: repr_sh adversarial round-trip through bash.
+# repr_sh is the quoting surface RFC 0008 relies on to safely reconstruct
+# command lines, so every escape branch is executed through the real shell:
+# metacharacters, command/variable substitution, nested quotes, backslash,
+# glob, path traversal, leading dash, unicode, empty/whitespace-only, tab,
+# newline. Each payload must come back byte-identical inside the brackets.
+# If quoting leaks, printf either word-splits (bracket line changes) or the
+# substitution executes (forbidden lines below appear).
+runOn: [posix]
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'q01 = repr_sh("; echo INJ")'
+    - 'q02 = repr_sh("a | b & c")'
+    - 'q03 = repr_sh("$(echo INJ)")'
+    - 'q04 = repr_sh("`echo INJ`")'
+    - 'q05 = repr_sh("$HOME")'
+    - 'q06 = repr_sh("it''s \"quoted\"")'
+    - 'q07 = repr_sh(r"back\slash")'
+    - 'q08 = repr_sh("*.txt")'
+    - 'q09 = repr_sh("../../etc/passwd")'
+    - 'q10 = repr_sh("--rm -rf")'
+    - 'q11 = repr_sh("héllo 日本 👍")'
+    - 'q12 = repr_sh("")'
+    - 'q13 = repr_sh("   ")'
+    - 'q14 = repr_sh("a\tb")'
+    - 'q15 = repr_sh("a\nb")'
+    script:
+      actions:
+        onRun:
+          command: bash
+          args:
+          - -c
+          - |
+            printf 'P01:[%s]\n' {{ q01 }}
+            printf 'P02:[%s]\n' {{ q02 }}
+            printf 'P03:[%s]\n' {{ q03 }}
+            printf 'P04:[%s]\n' {{ q04 }}
+            printf 'P05:[%s]\n' {{ q05 }}
+            printf 'P06:[%s]\n' {{ q06 }}
+            printf 'P07:[%s]\n' {{ q07 }}
+            printf 'P08:[%s]\n' {{ q08 }}
+            printf 'P09:[%s]\n' {{ q09 }}
+            printf 'P10:[%s]\n' {{ q10 }}
+            printf 'P11:[%s]\n' {{ q11 }}
+            printf 'P12:[%s]\n' {{ q12 }}
+            printf 'P13:[%s]\n' {{ q13 }}
+            printf 'P14:[%s]\n' {{ q14 }}
+            # The embedded-newline payload spans two output lines, and the CLI
+            # prefixes each log line, so it cannot be asserted as one substring.
+            # Compare byte-for-byte inside the shell instead.
+            v15={{ q15 }}
+            if [ "$v15" = $'a\nb' ]; then echo 'P15:PASS'; else echo 'P15:FAIL'; fi
+expected:
+  output:
+  - "P01:[; echo INJ]"
+  - "P02:[a | b & c]"
+  - "P03:[$(echo INJ)]"
+  - "P04:[`echo INJ`]"
+  - "P05:[$HOME]"
+  - "P06:[it's \"quoted\"]"
+  - "P07:[back\\slash]"
+  - "P08:[*.txt]"
+  - "P09:[../../etc/passwd]"
+  - "P10:[--rm -rf]"
+  - "P11:[héllo 日本 👍]"
+  - "P12:[]"
+  - "P13:[   ]"
+  - "P14:[a\tb]"
+  - "P15:PASS"
+  forbidden:
+  # These appear only if command/variable substitution executed instead of
+  # round-tripping as literal text.
+  - "P03:[INJ]"
+  - "P04:[INJ]"
+  - "P15:FAIL"

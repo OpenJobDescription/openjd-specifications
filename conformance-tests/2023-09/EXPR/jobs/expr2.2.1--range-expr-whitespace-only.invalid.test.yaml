@@ -1,0 +1,20 @@
+# Expression Language §2.2.1: range_expr(" ") (whitespace-only string) is an error.
+# The spec note says: range_expr("") is an error, range_expr(" ") is an error, and
+# range_expr([]) is an error — range expressions must contain at least one value.
+# Empty-string and empty-list rejection are covered elsewhere; this pins the
+# whitespace-only case.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'R:{{ range_expr(" ") }}')

@@ -1,0 +1,79 @@
+# Expression Language §2.2.6: repr_pwsh round-trip through a real PowerShell.
+# Each repr_pwsh() result is a PowerShell literal; it is assigned to a variable
+# by the actual PowerShell parser and compared (case-sensitively) against the
+# original value inside PowerShell. Non-string overloads also assert type:
+# $true must arrive as [bool], 42 as an integer, lists as arrays.
+# Adversarial strings: embedded single quote (the escape branch: doubled),
+# double quote, backtick (PowerShell's escape char), $env: expansion attempt
+# (single-quoted literals must NOT expand), metacharacters, unicode, empty.
+#
+# WINDOWS-UNVERIFIED: authored on a POSIX host where this test skips.
+runOn: [windows]
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'q01 = repr_pwsh("it''s")'
+    - 'q02 = repr_pwsh("say \"hi\"")'
+    - 'q03 = repr_pwsh("a`b")'
+    - 'q04 = repr_pwsh("$env:PATH")'
+    - 'q05 = repr_pwsh("a & b; c | d")'
+    - 'q06 = repr_pwsh("héllo 日本")'
+    - 'q07 = repr_pwsh("")'
+    - 'q08 = repr_pwsh(42)'
+    - 'q09 = repr_pwsh(3.14)'
+    - 'q10 = repr_pwsh(true)'
+    - 'q11 = repr_pwsh(false)'
+    - 'q12 = repr_pwsh(["a b", "c''d"])'
+    script:
+      actions:
+        onRun:
+          command: powershell
+          args:
+          - -NoProfile
+          - -Command
+          - |
+            $v01 = {{ q01 }}
+            if ($v01 -ceq 'it''s') { 'P01:PASS' } else { 'P01:FAIL [' + $v01 + ']' }
+            $v02 = {{ q02 }}
+            if ($v02 -ceq 'say "hi"') { 'P02:PASS' } else { 'P02:FAIL [' + $v02 + ']' }
+            $v03 = {{ q03 }}
+            if ($v03 -ceq 'a`b') { 'P03:PASS' } else { 'P03:FAIL [' + $v03 + ']' }
+            $v04 = {{ q04 }}
+            if ($v04 -ceq '$env:PATH') { 'P04:PASS' } else { 'P04:FAIL [' + $v04 + ']' }
+            $v05 = {{ q05 }}
+            if ($v05 -ceq 'a & b; c | d') { 'P05:PASS' } else { 'P05:FAIL [' + $v05 + ']' }
+            $v06 = {{ q06 }}
+            if ($v06 -ceq 'héllo 日本') { 'P06:PASS' } else { 'P06:FAIL [' + $v06 + ']' }
+            $v07 = {{ q07 }}
+            if ($v07 -ceq '') { 'P07:PASS' } else { 'P07:FAIL [' + $v07 + ']' }
+            $v08 = {{ q08 }}
+            if ($v08 -eq 42 -and $v08 -isnot [string]) { 'P08:PASS' } else { 'P08:FAIL [' + $v08 + ']' }
+            $v09 = {{ q09 }}
+            if ($v09 -eq 3.14 -and $v09 -isnot [string]) { 'P09:PASS' } else { 'P09:FAIL [' + $v09 + ']' }
+            $v10 = {{ q10 }}
+            if ($v10 -is [bool] -and $v10) { 'P10:PASS' } else { 'P10:FAIL [' + $v10 + ']' }
+            $v11 = {{ q11 }}
+            if ($v11 -is [bool] -and -not $v11) { 'P11:PASS' } else { 'P11:FAIL [' + $v11 + ']' }
+            $v12 = {{ q12 }}
+            if ($v12.Count -eq 2 -and $v12[0] -ceq 'a b' -and $v12[1] -ceq "c'd") { 'P12:PASS' } else { 'P12:FAIL' }
+expected:
+  output:
+  - P01:PASS
+  - P02:PASS
+  - P03:PASS
+  - P04:PASS
+  - P05:PASS
+  - P06:PASS
+  - P07:PASS
+  - P08:PASS
+  - P09:PASS
+  - P10:PASS
+  - P11:PASS
+  - P12:PASS
+  forbidden:
+  - FAIL
