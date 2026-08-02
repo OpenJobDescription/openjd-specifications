@@ -1,0 +1,23 @@
+# Section 2.12: item.allowedValues is "An array of the values that each item
+# is allowed to be". A default element outside the list must be rejected.
+# Differs from 2.12--list-path-item-allowed-values.yaml only in the
+# out-of-list element.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Scenes
+  type: LIST[PATH]
+  default: ["/assets/a.blend", "/assets/z.blend"]
+  item:
+    allowedValues: ["/assets/a.blend", "/assets/b.blend", "/assets/c.blend"]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"
