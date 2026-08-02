@@ -1,0 +1,36 @@
+# An EXPR-computed null on an optional scalar field drops the field entirely
+# (Expression Language §1.3.2: "For an optional field of type T ... If the
+# expression evaluates to None/null, the field is omitted as if it were not
+# specified."). The Action timeout is the only optional scalar format-string
+# field observable at runtime (it is @fmtstring under FEATURE_BUNDLE_1; base
+# EXPR has none). With the field dropped, onRun has no timeout and a 2-second
+# command completes. An implementation that keeps the field — coercing null
+# to 0/""/"None" — fails validation or kills the command instead.
+# See 5--timeout-expr-value-honored.test.yaml for the control proving that an
+# expression-computed timeout is honored when it is not null.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - FEATURE_BUNDLE_1
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: UseTimeout
+    type: BOOL
+    default: false
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          timeout: "{{ 30 if Param.UseTimeout else null }}"
+          command: python
+          args:
+          - -c
+          - |
+            import time
+            time.sleep(2)
+            print('DONE_NO_TIMEOUT')
+expected:
+  output:
+  - DONE_NO_TIMEOUT

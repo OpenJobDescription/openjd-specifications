@@ -1,0 +1,45 @@
+# Operator precedence and associativity pins from the expression grammar
+# (Expression Language §1.1). Each assertion selects a different production
+# nesting: * binds tighter than +; unary minus binds looser than ** (so
+# -2 ** 2 is -(2 ** 2)); ** is right-associative (2 ** 3 ** 2 is
+# 2 ** (3 ** 2) = 2 ** 9 = 512, not (2 ** 3) ** 2 = 64); - and // are left-associative; + binds
+# tighter than <; not binds looser than ==; and binds tighter than or;
+# parentheses override all of it.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'MUL_OVER_ADD:{{ 2 + 3 * 4 }}')
+            print(r'PAREN_ADD:{{ (2 + 3) * 4 }}')
+            print(r'NEG_POW:{{ -2 ** 2 }}')
+            print(r'NEG_PAREN_POW:{{ (-2) ** 2 }}')
+            print(r'POW_RIGHT_ASSOC:{{ 2 ** 3 ** 2 }}')
+            print(r'POW_PAREN_LEFT:{{ (2 ** 3) ** 2 }}')
+            print(r'SUB_LEFT_ASSOC:{{ 10 - 4 - 3 }}')
+            print(r'FLOORDIV_LEFT_ASSOC:{{ 100 // 10 // 5 }}')
+            print(r'ADD_OVER_CMP:{{ 1 + 2 < 2 + 3 }}')
+            print(r'NOT_OVER_EQ:{{ not 1 == 2 }}')
+            print(r'AND_OVER_OR:{{ true or false and false }}')
+expected:
+  output:
+  - "MUL_OVER_ADD:14"
+  - "PAREN_ADD:20"
+  - "NEG_POW:-4"
+  - "NEG_PAREN_POW:4"
+  - "POW_RIGHT_ASSOC:512"
+  - "POW_PAREN_LEFT:64"
+  - "SUB_LEFT_ASSOC:3"
+  - "FLOORDIV_LEFT_ASSOC:2"
+  - "ADD_OVER_CMP:true"
+  - "NOT_OVER_EQ:true"
+  - "AND_OVER_OR:true"

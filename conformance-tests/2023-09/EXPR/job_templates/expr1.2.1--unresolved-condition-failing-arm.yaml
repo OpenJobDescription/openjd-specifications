@@ -1,0 +1,28 @@
+# When the condition of an if/else is unresolved[bool], both branches are
+# evaluated; if one branch succeeds and the other fails, the failing branch's
+# error is suppressed and the result takes the succeeding branch's type
+# (Expression Language: Static Type Checking via Unresolved Values,
+# "Conditional Expressions with Unknown Conditions"). Here upper(int) has no
+# signature, so the else-arm fails to type-check — but the template must
+# still VALIDATE. An eager checker that reports errors from both arms
+# over-rejects. (Verified that upper(int) really is the failing arm: no
+# int->string call-position coercion exists — a standalone `upper(5)` let
+# binding is rejected with "No matching signature for upper(int)".)
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Frame
+      type: INT
+      range: "1-5"
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ Task.Param.Frame if Task.Param.Frame < 100 else upper(Task.Param.Frame) }}')"
