@@ -1,0 +1,23 @@
+# Expression Language §2.2.2 (floor) + §2.1.1 (64-bit signed integer range):
+# floor(x: float) -> int must produce an int64 value. 1e300 is a finite
+# float far outside the 64-bit signed range (~9.22e18), so the conversion
+# must be rejected rather than saturating or wrapping. ceil has its own
+# fixture (expr2.2.2--ceil-exceeds-int64): bundling both into one
+# abort-on-first-error template would leave the second function unpinned.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'f = floor(1e300)'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'F:{{ f }}')

@@ -1,0 +1,112 @@
+# Expression Language §2.2.6: repr_py round-trip through the real Python parser.
+# repr_py output is specified to follow Python's repr(); the only sound test is
+# to hand the quoted text back to Python and assert the ORIGINAL value returns.
+# Each quoted value is passed as its own argv element (no shell involved) and
+# parsed with ast.literal_eval — the genuine Python literal parser. Comparison
+# is by value AND type, so e.g. True emitted as 1 fails.
+# Battery: shell metacharacters (must stay literal), nested quotes, backslash,
+# glob, traversal, leading dash, unicode, empty, whitespace, tab,
+# plus the non-string overloads (null/bool/int/float/list).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'q01 = repr_py("; echo INJ")'
+    - 'q02 = repr_py("$(echo INJ) `tick`")'
+    - 'q03 = repr_py("it''s \"quoted\"")'
+    - 'q04 = repr_py(r"back\slash")'
+    - 'q05 = repr_py("*.txt ../../etc/passwd")'
+    - 'q06 = repr_py("--rm -rf")'
+    - 'q07 = repr_py("héllo 日本 👍")'
+    - 'q08 = repr_py("")'
+    - 'q09 = repr_py("   ")'
+    - 'q10 = repr_py("a\tb")'
+    # Embedded newline ("a\nb") is NOT tested here: openjd-rs emits a raw
+    # newline inside the quotes, which is not a valid Python string literal.
+    # See proposed/expr2.2.6--repr-py-newline-roundtrip.test.yaml.
+    - 'q11 = repr_py("per%cent $HOME")'
+    - 'q12 = repr_py(null)'
+    - 'q13 = repr_py(true)'
+    - 'q14 = repr_py(42)'
+    - 'q15 = repr_py(3.14)'
+    # List literals are homogeneous per §1.2.6, so a string list exercises the
+    # list overload (element quoting + nesting).
+    - 'q16 = repr_py(["a b", "c''d"])'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import ast
+            import sys
+            want = [
+                "; echo INJ",
+                "$(echo INJ) `tick`",
+                'it\'s "quoted"',
+                "back\\slash",
+                "*.txt ../../etc/passwd",
+                "--rm -rf",
+                "héllo 日本 👍",
+                "",
+                "   ",
+                "a\tb",
+                "per%cent $HOME",
+                None,
+                True,
+                42,
+                3.14,
+                ["a b", "c'd"],
+            ]
+            args = sys.argv[1:]
+            print("COUNT:" + str(len(args)))
+            for i, (a, w) in enumerate(zip(args, want), 1):
+                got = ast.literal_eval(a)
+                ok = got == w and type(got) is type(w)
+                label = "P" + str(i).zfill(2)
+                if ok:
+                    print(label + ":PASS")
+                else:
+                    print(label + ":FAIL got=" + repr(got) + " want=" + repr(w))
+          - "{{ q01 }}"
+          - "{{ q02 }}"
+          - "{{ q03 }}"
+          - "{{ q04 }}"
+          - "{{ q05 }}"
+          - "{{ q06 }}"
+          - "{{ q07 }}"
+          - "{{ q08 }}"
+          - "{{ q09 }}"
+          - "{{ q10 }}"
+          - "{{ q11 }}"
+          - "{{ q12 }}"
+          - "{{ q13 }}"
+          - "{{ q14 }}"
+          - "{{ q15 }}"
+          - "{{ q16 }}"
+expected:
+  output:
+  - COUNT:16
+  - P01:PASS
+  - P02:PASS
+  - P03:PASS
+  - P04:PASS
+  - P05:PASS
+  - P06:PASS
+  - P07:PASS
+  - P08:PASS
+  - P09:PASS
+  - P10:PASS
+  - P11:PASS
+  - P12:PASS
+  - P13:PASS
+  - P14:PASS
+  - P15:PASS
+  - P16:PASS
+  forbidden:
+  - FAIL

@@ -1,0 +1,50 @@
+# Expression Language §2.2.6: repr_sh round-trip through a real POSIX shell.
+# Quoting is only correct if the target shell agrees: the existing repr-sh
+# fixture substring-matches the quoted text; this one executes it. Each quoted
+# value is parsed by bash and printed back between brackets — the assertion is
+# that the ORIGINAL bytes return. The list overload is round-tripped with
+# `set --` to prove it parses back into exactly the original words.
+# Any valid POSIX quoting passes (both Python shlex.quote and Rust
+# shlex::try_quote forms round-trip identically).
+runOn: [posix]
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'q_simple = repr_sh("hello")'
+    - 'q_spaces = repr_sh("hello world")'
+    - 'q_squote = repr_sh("it''s")'
+    - 'q_empty = repr_sh("")'
+    - 'q_path = repr_sh(path("/tmp/dir with space/out.exr"))'
+    - 'q_list = repr_sh(["render", "-o", "out file.exr"])'
+    script:
+      actions:
+        onRun:
+          command: bash
+          args:
+          - -c
+          - |
+            printf 'SIMPLE:[%s]\n' {{ q_simple }}
+            printf 'SPACES:[%s]\n' {{ q_spaces }}
+            printf 'SQUOTE:[%s]\n' {{ q_squote }}
+            printf 'EMPTY:[%s]\n' {{ q_empty }}
+            printf 'PATH:[%s]\n' {{ q_path }}
+            set -- {{ q_list }}
+            printf 'LIST_ARGC:%s\n' "$#"
+            printf 'LIST_ARG:[%s]\n' "$@"
+expected:
+  output:
+  - "SIMPLE:[hello]"
+  - "SPACES:[hello world]"
+  - "SQUOTE:[it's]"
+  - "EMPTY:[]"
+  - "PATH:[/tmp/dir with space/out.exr]"
+  # The quoted list must parse back into exactly the 3 original words
+  - "LIST_ARGC:3"
+  - "LIST_ARG:[render]"
+  - "LIST_ARG:[-o]"
+  - "LIST_ARG:[out file.exr]"

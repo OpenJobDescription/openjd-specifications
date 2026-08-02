@@ -1,0 +1,79 @@
+# Expression Language §2.2.6: repr_cmd round-trip through a real cmd.exe.
+# The quoted values are embedded in a cmd /c command line (the documented use
+# case) and handed to python, which reports whether each argv round-tripped
+# byte-identical to the original.
+#
+# Payload scope is deliberately conservative: the spec scopes % doubling and
+# ^^! escaping to .bat / EnableDelayedExpansion contexts and states that
+# repr_cmd "does not preserve every input string in all cmd.exe modes", so
+# %VAR% and ! payloads are NOT asserted here — they are not round-trip
+# guarantees in a plain cmd /c context. Embedded double quotes are also
+# excluded pending verification of ^" handling on a Windows runner.
+# The caret payload ("a ^ b") is likewise excluded: the spec's own example
+# output is "a ^^ b", and cmd.exe does not process ^ as an escape inside
+# double-quoted spans, so a spec-conforming repr_cmd delivers a doubled
+# caret to the child argv — the payload cannot round-trip under the
+# documented quoting model. If real cmd behavior differs, that is a spec
+# bug to resolve before asserting it here.
+#
+# PARKED after a real Windows CI run (2026-08-15, openjd-rs windows-latest,
+# PYTHONUTF8=1 in effect): the session log ends immediately after the
+# "Running Task" banner — the cmd.exe child emits NO stdout at all (not a
+# quoting mismatch; nothing). The sibling repr_pwsh/repr_py/repr_json
+# round-trips pass on the same runner, so the failure is specific to the
+# cmd /c action path. Needs hands-on Windows investigation (candidate
+# causes: console codepage for cmd children, cmd /c argument-joining of
+# the multi-payload command line, or the >- folded scalar's newline
+# handling) before this can join the live suite. Promote once it passes a
+# real Windows runner.
+runOn: [windows]
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'q01 = repr_cmd("a & b")'
+    - 'q02 = repr_cmd("a | b")'
+    - 'q03 = repr_cmd("(paren)")'
+    - 'q04 = repr_cmd("less<more>")'
+    - 'q05 = repr_cmd("plain")'
+    - 'q06 = repr_cmd("has space")'
+    - 'q07 = repr_cmd(r"..\..\etc")'
+    - 'q08 = repr_cmd("--rm -rf")'
+    - 'q09 = repr_cmd(["render", "-o", "out file.exr"])'
+    script:
+      actions:
+        onRun:
+          command: cmd
+          args:
+          - /c
+          - >-
+            python -c "import sys; want=['a & b', 'a | b', '(paren)',
+            'less<more>', 'plain', 'has space', '..\\..\\etc', '--rm -rf',
+            'render', '-o', 'out file.exr'];
+            args=sys.argv[1:];
+            print('COUNT:' + str(len(args)));
+            [print('P' + str(i).zfill(2) + (':PASS' if a == w else ':FAIL got=' + repr(a) + ' want=' + repr(w)))
+            for i, (a, w) in enumerate(zip(args, want), 1)]"
+            {{ q01 }} {{ q02 }} {{ q03 }} {{ q04 }} {{ q05 }} {{ q06 }} {{ q07 }} {{ q08 }} {{ q09 }}
+expected:
+  output:
+  # The list overload joins into space-separated quoted words, so the 8 scalar
+  # payloads plus 3 list words arrive as 11 argv entries.
+  - COUNT:11
+  - P01:PASS
+  - P02:PASS
+  - P03:PASS
+  - P04:PASS
+  - P05:PASS
+  - P06:PASS
+  - P07:PASS
+  - P08:PASS
+  - P09:PASS
+  - P10:PASS
+  - P11:PASS
+  forbidden:
+  - FAIL

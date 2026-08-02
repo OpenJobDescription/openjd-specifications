@@ -1,0 +1,27 @@
+# Expression Language §2.2.1: int(value: float) converts to integer, error if not exact.
+# 9e18 is exactly representable as an IEEE-754 double (9e18 = 8789062500000000 * 2^10,
+# and 8789062500000000 < 2^53), its value is an exact integer, and it lies inside the
+# 64-bit signed range (int64 max is ~9.22e18). So int(9e18) must succeed and produce
+# exactly 9000000000000000000. Same for the negative counterpart.
+# This pins the near-boundary success case; overflow rejection above int64 max is
+# covered by the §2.2.2 int64 overflow fixtures.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'POS:{{ int(9e18) }}')
+            print(r'NEG:{{ int(-9e18) }}')
+expected:
+  output:
+  - POS:9000000000000000000
+  - NEG:-9000000000000000000

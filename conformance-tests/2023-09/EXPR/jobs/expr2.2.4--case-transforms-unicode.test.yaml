@@ -1,0 +1,39 @@
+# Expression Language §2.2.4: upper()/lower() on non-ASCII input.
+# Only unambiguous 1:1 Unicode simple case mappings are asserted here — these are
+# locale-independent and identical under both simple and full case mapping.
+#
+# Deliberately NOT asserted (spec does not currently specify):
+#   - upper("ß"): "SS" under Unicode full case mapping, "ß" under simple mapping.
+#     The spec table says only "Convert to uppercase" and does not pick a mapping.
+#   - Turkish dotted/dotless i (upper("i") -> "İ" in tr locale): locale-dependent
+#     and the spec does not fix a locale.
+# Both belong in the spec before they can be conformance-tested.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'UP_EACUTE:{{ upper("é") }}')
+            print(r'LOW_EACUTE:{{ lower("É") }}')
+            print(r'UP_AUML:{{ upper("ä") }}')
+            print(r'LOW_AUML:{{ lower("Ä") }}')
+            print(r'UP_NTILDE:{{ upper("señor") }}')
+            print(r'UP_CJK_PASSTHROUGH:{{ upper("日本") }}')
+expected:
+  output:
+  - UP_EACUTE:É
+  - LOW_EACUTE:é
+  - UP_AUML:Ä
+  - LOW_AUML:ä
+  - UP_NTILDE:SEÑOR
+  # CJK has no case; must pass through unchanged
+  - UP_CJK_PASSTHROUGH:日本
