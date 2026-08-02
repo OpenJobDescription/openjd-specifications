@@ -1,0 +1,17 @@
+# The subscript operator is defined only for list, range_expr, and string
+# receivers (Expression Language §2.1.7). There is no __getitem__ signature
+# for path, so 'path("/a/b")[0]' must be rejected. (Use .parts to index a
+# path's components.)
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - -c
+        - print(r'{{ path("/a/b")[0] }}')

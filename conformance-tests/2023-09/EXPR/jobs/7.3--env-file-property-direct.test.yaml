@@ -1,0 +1,41 @@
+# Direct property access on Env.File.<n> (path-typed) as a whole-field format
+# string and embedded in surrounding text (Template Schemas §7.3.1; Expression
+# Language §2.3.1). Mirrors the Task.File direct-access route for the
+# Environment symbol family, which had zero direct-access coverage.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  jobEnvironments:
+  - name: TestEnv
+    script:
+      embeddedFiles:
+      - name: config
+        type: TEXT
+        filename: envconf.txt
+        data: "hello"
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - |
+            import sys
+            print('DIRECT_STEM:' + sys.argv[1] + ':END')
+            print(r'EMBEDDED_NAME:{{ Env.File.config.name }}:END')
+          - "{{ Env.File.config.stem }}"
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print('RAN')
+expected:
+  output:
+  - "DIRECT_STEM:envconf:END"
+  - "EMBEDDED_NAME:envconf.txt:END"
+  - "RAN"

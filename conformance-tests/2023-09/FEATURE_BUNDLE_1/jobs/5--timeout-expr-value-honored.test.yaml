@@ -1,0 +1,33 @@
+# Control for 5--timeout-null-drops-field.test.yaml: when the conditional
+# takes the non-null arm, the computed timeout value must be applied to the
+# action (Template Schemas §5 Action timeout @fmtstring under
+# FEATURE_BUNDLE_1; Expression Language §1.3.2). A 1-second timeout must kill
+# a 10-second command — this catches an implementation that silently drops
+# the whole field whenever its value is an expression.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - FEATURE_BUNDLE_1
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: UseTimeout
+    type: BOOL
+    default: true
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          timeout: "{{ 1 if Param.UseTimeout else null }}"
+          command: python
+          args:
+          - -c
+          - |
+            import time
+            time.sleep(10)
+            print('SHOULD_NOT_PRINT')
+expected:
+  taskFailure: {}
+  forbidden:
+  - SHOULD_NOT_PRINT

@@ -1,0 +1,28 @@
+# Session.HasPathMappingRules must be true when path mapping rules are
+# supplied to the session (Template Schemas §7.3.1; Expression Language
+# §1.2.2 Session Symbols). Every other fixture asserts the false branch, so
+# "returns bool" was indistinguishable from "returns constant false".
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'HAS_PM:{{ Session.HasPathMappingRules }}')
+            print(r'HAS_PM_COND:{{ "yes" if Session.HasPathMappingRules else "no" }}')
+pathMapping:
+  - source_path_format: POSIX
+    source_path: /mnt/shared
+    destination_path: /local/cache
+expected:
+  output:
+  - "HAS_PM:true"
+  - "HAS_PM_COND:yes"
