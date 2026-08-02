@@ -1,0 +1,30 @@
+# Template Schemas §2 makes task parameter type names case-insensitive when EXPR
+# is enabled. This template demonstrates the four task parameter types of §3.4.1
+# spelled in mixed case, and must validate.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Frame
+      type: int
+      range: "1-3"
+    - name: Scale
+      type: Float
+      range: ["1.0", "2.0"]
+    - name: Layer
+      type: sTrInG
+      range: ["fg", "bg"]
+    - name: Scene
+      type: pAtH
+      range: ["/tmp/a.blend", "/tmp/b.blend"]
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"
