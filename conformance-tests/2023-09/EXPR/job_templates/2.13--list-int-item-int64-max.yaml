@@ -1,0 +1,25 @@
+# Section 2.13 + Expression Language 1.2.1: a LIST[INT] default element at
+# exactly 2^63-1 (the int64 maximum — the bound comes from the EXPR type
+# table, not 2.13 itself) must be ACCEPTED. Pins the full int64 element
+# range against int32-narrowed or float64-backed parsing. The reject twin
+# (element at 2^63) is parked in the expected-failures PR's proposed/
+# because both implementations currently accept it. Note: this tests the
+# element VALUE range, not an `item:` constraint block (LIST[INT] has one,
+# but it is not exercised here).
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Values
+  type: LIST[INT]
+  default: [1, 9223372036854775807]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

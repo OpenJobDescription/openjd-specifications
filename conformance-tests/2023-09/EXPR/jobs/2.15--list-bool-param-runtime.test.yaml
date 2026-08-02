@@ -1,0 +1,40 @@
+# LIST[BOOL] runtime: element values must reach the task coerced to bool.
+# Exercises a representative sample of the section 2.9/2.15 admitted
+# spellings (bool literal, "false", "yes", "off", "1", int 0); the float
+# 1.0/0.0 forms and the remaining string spellings are not covered here.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Flags
+    type: LIST[BOOL]
+    default: [true, "false", "yes", "off", "1", 0]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'LEN:{{ len(Param.Flags) }}')
+            print(r'F0:{{ Param.Flags[0] }}')
+            print(r'F1:{{ Param.Flags[1] }}')
+            print(r'F2:{{ Param.Flags[2] }}')
+            print(r'F3:{{ Param.Flags[3] }}')
+            print(r'F4:{{ Param.Flags[4] }}')
+            print(r'F5:{{ Param.Flags[5] }}')
+            print(r'NOT0:{{ not Param.Flags[0] }}')
+expected:
+  output:
+  - LEN:6
+  - F0:true
+  - F1:false
+  - F2:true
+  - F3:false
+  - F4:true
+  - F5:false
+  - NOT0:false

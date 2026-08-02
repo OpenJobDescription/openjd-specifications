@@ -1,0 +1,21 @@
+# Section 2.12: item.allowedValues constrains each path element to the given
+# values. Positive pair for 2.12--list-path-item-not-in-allowed.invalid.yaml.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Scenes
+  type: LIST[PATH]
+  default: ["/assets/a.blend", "/assets/b.blend"]
+  item:
+    allowedValues: ["/assets/a.blend", "/assets/b.blend", "/assets/c.blend"]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

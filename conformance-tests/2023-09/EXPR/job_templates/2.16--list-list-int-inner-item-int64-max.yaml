@@ -1,0 +1,24 @@
+# Section 2.16 + Expression Language 1.2.1: an inner element of a
+# LIST[LIST[INT]] default at exactly 2^63-1 must be ACCEPTED — the int64
+# bound (from the EXPR type table) applies one container level deeper than
+# 2.13's flat-list case, guarding nested validation paths. The reject twin
+# (inner element at 2^63) is parked in the expected-failures PR's
+# proposed/. Note: this tests the inner element VALUE range, not the
+# nested `item.item:` constraint block.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Matrix
+  type: LIST[LIST[INT]]
+  default: [[1, 9223372036854775807], [9223372036854775806]]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

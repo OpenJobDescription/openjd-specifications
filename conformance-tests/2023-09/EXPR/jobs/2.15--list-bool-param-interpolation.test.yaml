@@ -1,0 +1,30 @@
+# LIST[BOOL] interpolation: a bool list embedded in surrounding text renders
+# as a list literal with lowercase true/false elements, with string/int
+# spellings in the default already coerced to bool.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Flags
+    type: LIST[BOOL]
+    default: [true, "no", 1]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'FLAGS:{{ Param.Flags }}')
+# anyOf: the spec pins lowercase JSON booleans but shows list rendering
+# with ", " separators only by example (EL 1.3.2); a compact-JSON
+# implementation is not plausibly non-conformant, so both spacings pass.
+expected:
+  output:
+  - anyOf:
+    - "FLAGS:[true, false, true]"
+    - "FLAGS:[true,false,true]"

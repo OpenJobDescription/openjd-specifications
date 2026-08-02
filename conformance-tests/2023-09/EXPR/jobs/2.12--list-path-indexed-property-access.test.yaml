@@ -1,0 +1,34 @@
+# Section 2.12 / Expression Language section 2.3.1: path properties must be
+# reachable through a subscripted list element (Param.Paths[0].stem), not
+# only through a scalar path binding like Task.Param.Path.stem.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Paths
+    type: LIST[PATH]
+    default: ["renders/alpha.exr", "renders/beta.png"]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'STEM0:{{ Param.Paths[0].stem }}:END')
+            print(r'STEM1:{{ Param.Paths[1].stem }}:END')
+            print(r'SUFFIX0:{{ Param.Paths[0].suffix }}:END')
+            print(r'NAME1:{{ Param.Paths[1].name }}:END')
+# The :END terminators make each assertion exact: without them,
+# "STEM0:alpha" is a substring of the wrong answer "STEM0:alpha.exr", so
+# an implementation whose .stem returns .name would pass.
+expected:
+  output:
+  - STEM0:alpha:END
+  - STEM1:beta:END
+  - SUFFIX0:.exr:END
+  - NAME1:beta.png:END
