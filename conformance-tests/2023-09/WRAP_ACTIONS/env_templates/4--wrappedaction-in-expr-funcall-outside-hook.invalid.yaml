@@ -1,0 +1,31 @@
+# RFC 0008 Template variables: "Templates MUST NOT reference
+# WrappedAction.* outside the three wrap hooks. Schedulers MUST reject
+# templates that violate this scope rule." Here the out-of-scope reference
+# is buried inside an EXPR function call — repr_py(WrappedAction.Command)
+# in the env's own onEnter — not written as a bare {{WrappedAction.X}}
+# format string. Catches a validator that only scope-checks direct
+# variable interpolations and does not walk expression arguments (the
+# same blind spot as the historical Task.File.Run.name bug, which behaved
+# differently inside a function call than as a direct reference). Single
+# defect: the template is valid except for the WrappedAction.Command
+# reference inside the function call in onEnter.
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- EXPR
+environment:
+  name: WrapActionInFuncall
+  script:
+    actions:
+      onEnter:
+        command: python
+        args: ["-c", "print({{repr_py(WrappedAction.Command)}})"]
+      onWrapEnvEnter:
+        command: python
+        args: ["-c", "print({{repr_py(WrappedAction.Command)}})"]
+      onWrapTaskRun:
+        command: python
+        args: ["-c", "print({{repr_py(WrappedAction.Command)}})"]
+      onWrapEnvExit:
+        command: python
+        args: ["-c", "print({{repr_py(WrappedAction.Command)}})"]

@@ -1,0 +1,17 @@
+# RFC 0008 all-or-nothing rule: an environment that defines any wrap hook
+# must define all three (onWrapEnvEnter, onWrapTaskRun, onWrapEnvExit).
+# Defining only onWrapEnvEnter is invalid. Catches a validator that only
+# checks for the presence of onWrapTaskRun when deciding whether the
+# all-or-nothing rule applies. Single defect: the template is valid except
+# for the missing onWrapTaskRun and onWrapEnvExit hooks.
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- EXPR
+environment:
+  name: OnlyWrapEnter
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: echo
+        args: ["{{WrappedEnv.Name}}"]
