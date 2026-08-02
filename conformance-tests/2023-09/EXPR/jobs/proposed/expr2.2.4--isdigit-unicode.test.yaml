@@ -1,0 +1,40 @@
+# PARKED: spec ambiguity — NO divergence between the openjd implementations.
+#
+# Expression Language §2.2.4 specifies isdigit(s) as "True if all characters
+# are digits and string is non-empty" without defining "digit": ASCII 0-9 or
+# Unicode digit category (Nd)? §2.2.5 explicitly gives \d Unicode semantics,
+# which pulls one way; both openjd implementations pull the other.
+#
+# Observed for isdigit("٣") (U+0663 ARABIC-INDIC DIGIT THREE):
+#   openjd-rs:              false  (ASCII-only digit test)
+#   Python openjd CLI:      false  (agrees — ASCII-only)
+#   CPython str.isdigit:    True   (Unicode Nd/No digit test — the host
+#                                   language differs from both)
+#
+# The expected: block below asserts the Unicode reading as a strawman,
+# matching §2.2.5's Unicode posture — i.e. the OPPOSITE of the current
+# de facto agreement. If the spec ratifies ASCII-only (the likely outcome
+# given both implementations agree), flip the expectation instead of
+# promoting as-is. Do NOT move this fixture into jobs/ until the spec
+# defines "digit" (and likewise "alphabetic"/"alphanumeric"/"whitespace"
+# for the sibling predicates).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'ISDIGIT_ARABIC:{{ isdigit("٣") }}')
+            print(r'ISDIGIT_DEVANAGARI:{{ isdigit("३") }}')
+expected:
+  output:
+  - ISDIGIT_ARABIC:true
+  - ISDIGIT_DEVANAGARI:true

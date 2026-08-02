@@ -1,0 +1,45 @@
+# PARKED: implementation bug found by the repr_py round-trip battery.
+#
+# Expression Language §2.2.6: repr_py "follows the behavior of Python's repr".
+# Python's repr("a\nb") is 'a\nb' (backslash-n ESCAPED, 7 characters, one line).
+# BOTH implementations (openjd-rs and the Python CLI — 2026-08-12 sweep) emit
+# a RAW newline inside the single quotes — which is not a valid
+# Python string literal at all:
+#
+#   ast.literal_eval on the emitted output raises
+#   "SyntaxError: unterminated string literal (detected at line 1)"
+#
+# So the output cannot be embedded in a generated Python script, which is the
+# entire purpose of repr_py. Backslash, quote, and tab handling round-trip
+# correctly (tab is emitted raw rather than as \t, which deviates from repr()
+# but still parses back byte-identical); newline is the case that produces
+# invalid output. Classification: implementation bug in BOTH implementations
+# (spec is
+# explicit via the repr() reference). This fixture is the regression test to
+# move into jobs/ once fixed.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'q = repr_py("a\nb")'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import ast
+            import sys
+            got = ast.literal_eval(sys.argv[1])
+            print("NEWLINE:" + ("PASS" if got == "a\nb" else "FAIL got=" + repr(got)))
+          - "{{ q }}"
+expected:
+  output:
+  - NEWLINE:PASS
+  forbidden:
+  - FAIL

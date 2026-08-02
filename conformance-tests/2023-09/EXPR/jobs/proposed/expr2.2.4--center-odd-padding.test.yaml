@@ -1,0 +1,36 @@
+# PARKED: spec-silent behaviour with a live implementation divergence.
+#
+# Expression Language §2.2.4 specifies center(s, width) only as "Center, pad
+# with spaces to width" — it does not say which side receives the extra space
+# when the padding is odd.
+#
+# Observed for center("hi", 7) (5 pad spaces to split), 2026-08 measurements:
+#   CPython str.center:   "   hi  "  (3 left, 2 right — extra space LEFT;
+#                          left = (width - len) // 2 + ((width - len) & width & 1))
+#   openjd-rs:            "   hi  "  (matches CPython since upstream #305 +
+#                          the RFC 0005 coercion sync; verified again on the
+#                          current upstream/main build)
+#   Python openjd CLI:    "  hi   "  (2 left, 3 right — now the OUTLIER)
+#
+# The expected: block below asserts the CPython/openjd-rs behaviour, which
+# has become the de facto answer. Do NOT move this fixture into jobs/ until
+# the spec picks a side ("follow CPython" would make this promotable and the
+# Python CLI's split a plain bug).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'CENTER:[{{ center("hi", 7) }}]')
+expected:
+  output:
+  - "CENTER:[   hi  ]"
