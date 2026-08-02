@@ -1,0 +1,15 @@
+# CancelationMethodTerminate (5.3.1) has only the 'mode' key; notifyPeriodInSeconds with TERMINATE must be rejected.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"
+        cancelation:
+          mode: TERMINATE
+          notifyPeriodInSeconds: 30
