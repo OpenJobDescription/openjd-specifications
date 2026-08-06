@@ -52,15 +52,32 @@ environment:
       onEnter:
         command: bash
         args: ["{{Env.File.Enter}}"]
+      # Every WrappedAction.* reference lives here, in the hooks' args, where
+      # the wrap variables are in scope. wrap.sh itself stays static.
       onWrapEnvEnter:
         command: bash
-        args: ["{{Env.File.Wrap}}"]
+        args:
+          - "{{Env.File.Wrap}}"
+          - "{{ flatten([['-e', e] for e in WrappedAction.Environment]) }}"
+          - "--"
+          - "{{WrappedAction.Command}}"
+          - "{{WrappedAction.Args}}"
       onWrapTaskRun:
         command: bash
-        args: ["{{Env.File.Wrap}}"]
+        args:
+          - "{{Env.File.Wrap}}"
+          - "{{ flatten([['-e', e] for e in WrappedAction.Environment]) }}"
+          - "--"
+          - "{{WrappedAction.Command}}"
+          - "{{WrappedAction.Args}}"
       onWrapEnvExit:
         command: bash
-        args: ["{{Env.File.Wrap}}"]
+        args:
+          - "{{Env.File.Wrap}}"
+          - "{{ flatten([['-e', e] for e in WrappedAction.Environment]) }}"
+          - "--"
+          - "{{WrappedAction.Command}}"
+          - "{{WrappedAction.Args}}"
       onExit:
         command: bash
         args: ["{{Env.File.Exit}}"]
@@ -78,19 +95,28 @@ environment:
               bash -c 'sleep infinity')
           echo "openjd_env: DOCKER_CONTAINER_ID=$DOCKER_CONTAINER_ID"
 
-      # Shared wrap script for all three hooks: repr_sh() produces safely
-      # quoted argv tokens for every wrapped field.
+      # Shared wrap script for all three hooks. It contains no WrappedAction.*
+      # reference: embeddedFiles are shared by every action in the script,
+      # including onEnter/onExit where the wrap variables do not exist, so a
+      # reference here would be outside the hooks' scope (see
+      # [Template variables](#template-variables)). The wrapped action arrives
+      # as argv instead, which needs no shell quoting at all.
       - name: Wrap
         filename: wrap.sh
         type: TEXT
         data: |
           #!/usr/bin/env bash
           set -euo pipefail
-          docker container exec \
-              "$DOCKER_CONTAINER_ID" \
-              {{ repr_sh(flatten([['-e', e] for e in WrappedAction.Environment])) }} \
-              {{ repr_sh(WrappedAction.Command) }} \
-              {{ repr_sh(WrappedAction.Args) }}
+          # argv: [-e KEY=value ...] -- <command> [args ...]
+          # -e options MUST precede the container argument; docker treats
+          # everything after it as the command to run.
+          exec_cmd=(docker container exec)
+          while [ "$#" -gt 0 ] && [ "$1" != "--" ]; do
+              exec_cmd+=("$1")
+              shift
+          done
+          shift
+          exec "${exec_cmd[@]}" "$DOCKER_CONTAINER_ID" "$@"
 
       - name: Exit
         filename: exit.sh
@@ -98,8 +124,20 @@ environment:
         data: |
           #!/usr/bin/env bash
           set -euo pipefail
-          docker container stop --timeout 30 "$DOCKER_CONTAINER_ID"
+          docker container stop -t 30 "$DOCKER_CONTAINER_ID"
 ```
+
+Note where the wrapped action is interpolated. `WrappedAction.*` appears only in
+the hooks' `args:`, never in `wrap.sh` itself: an embedded file's `data:` is
+shared by every action in the script — including `onEnter` and `onExit`, where
+the wrap variables do not exist — so a reference there is outside the hooks'
+scope (see [Template variables](#template-variables)). `wrap.sh` is a static
+script that receives the wrapped action as argv, in the layout
+`[-e KEY=value ...] -- <command> [args ...]`; the `--` separator lets it
+distinguish the forwarded environment options from the command without knowing
+how many there are. Because the values arrive as argv rather than as text a
+shell must parse, no quoting is required on this path — list-valued
+interpolations expand to exactly one argv entry per element.
 
 The wrap hooks declare no `timeout`, so each inherits the default for its hook
 position (see [Timeout behavior](#timeout-behavior)). With the `FEATURE_BUNDLE_1`
@@ -483,16 +521,16 @@ Together these let the wrap script faithfully reproduce the inner action's
 cancelation semantics when it propagates the termination signal: honoring a
 graceful notification period when the wrapped action requested
 `NOTIFY_THEN_TERMINATE` (for example,
-`docker container stop --timeout {{WrappedAction.Cancelation.NotifyPeriodInSeconds}}`),
+`docker container stop -t {{WrappedAction.Cancelation.NotifyPeriodInSeconds}}`),
 or terminating immediately when it requested `TERMINATE`.
 
 Because the variable is `int?`, a `null` value interpolated into a format
 string renders as the empty string — the example above would produce a
-malformed `--timeout` flag if evaluated outside a mode check. Wrap scripts
+malformed `-t` flag if evaluated outside a mode check. Wrap scripts
 that reference the variable unconditionally should either branch on
 `WrappedAction.Cancelation.Mode` first, or apply EXPR's null-coalescing
 `or` to supply a fallback:
-`docker container stop --timeout {{ WrappedAction.Cancelation.NotifyPeriodInSeconds or 30 }}`.
+`docker container stop -t {{ WrappedAction.Cancelation.NotifyPeriodInSeconds or 30 }}`.
 
 Beyond referencing the variables inside script text, a wrap hook can adopt
 the wrapped action's cancelation semantics as its *own* `<Cancelation>` by
@@ -568,7 +606,7 @@ Two independent timeouts apply to a wrapped action:
 
 Wrap scripts MUST propagate the wrapped timeout to the underlying execution
 runtime where the runtime exposes a timeout mechanism (e.g.,
-`docker container stop --timeout {{WrappedAction.Timeout}}`), and SHOULD
+`docker container stop -t {{WrappedAction.Timeout}}`), and SHOULD
 enforce it in-script (`timeout {{WrappedAction.Timeout}}s ...`) when the
 runtime exposes none.
 
@@ -579,8 +617,8 @@ When the wrapped action specified no timeout, `WrappedAction.Timeout` is
 variable unconditionally MUST either branch on it first or apply EXPR's
 null-coalescing `or` to supply a fallback; and they MUST omit the
 underlying runtime's timeout flag when the value is `null` (for example,
-omit `--timeout` from `docker container stop` rather than passing
-`--timeout 0`, which Docker interprets as "kill immediately"). Typing the
+omit `-t` from `docker container stop` rather than passing
+`-t 0`, which Docker interprets as "kill immediately"). Typing the
 variable `int?` rather than using a `0` sentinel lets whole-field
 expression forwarding (`timeout: "{{WrappedAction.Timeout}}"`) work in
 every case: a declared timeout forwards verbatim, and a `null` result
@@ -690,8 +728,17 @@ values containing `=` are preserved.
 
 ### Command escaping via `repr_sh` rather than raw interpolation
 
-The wrap script must reconstruct the wrapped action's command line inside a shell
-script. This is inherently dangerous: if `WrappedAction.Command` or
+A wrap hook whose target accepts an argv array — `docker container exec`, a
+direct `exec`, a launcher that takes `--` — needs no quoting at all: forwarding
+`{{WrappedAction.Command}}` and `{{WrappedAction.Args}}` through the hook's
+`args:` expands the list to exactly one argv entry per element, and no shell
+ever parses them. This is the form the [Basic Example](#basic-example) uses and
+is the recommended default.
+
+A hook whose target instead accepts a *shell command line* — `ssh host '<line>'`,
+`sh -c '<line>'`, a remote shell, a batch scheduler submit string — must
+reconstruct that line, and doing so is inherently dangerous: if
+`WrappedAction.Command` or
 `WrappedAction.Args` contain shell metacharacters (`"`, `'`, `` ` ``, `&`,
 `|`, `>`, `<`, `*`, `?`, `(`, `)`, `\`, newlines), raw interpolation
 breaks the script or, worse, executes unintended commands.
@@ -709,9 +756,16 @@ from RFC 0006, which handle each shell's different escaping rules.
 
 ### Quoting wrapped commands is the template author's responsibility
 
-The wrap script reconstructs the wrapped action's command line inside the
-wrap action's `command`/`args` (or, more commonly, inside an embedded shell
-script). The template author is responsible for quoting `WrappedAction.*`
+`WrappedAction.*` may be interpolated only within a wrap hook's own
+`command`/`args` — never inside an embedded file's `data:`, which is shared by
+every action in the script, including the environment's own `onEnter`/`onExit`
+where the wrap variables do not exist (see
+[Template variables](#template-variables)). A wrap script is therefore static,
+and receives the wrapped action through its argv.
+
+When the hook's target accepts an argv array, that forwarding needs no quoting
+at all. When the target accepts a shell command line, the template author is
+responsible for quoting `WrappedAction.*`
 values correctly so that shell metacharacters (`"`, `'`, `` ` ``, `&`, `|`,
 `>`, `<`, `*`, `?`, `(`, `)`, `\`, newlines) in user-supplied commands do
 not break the script or, worse, cause the shell to execute unintended
@@ -731,9 +785,10 @@ declared in [Backward compatibility](#backward-compatibility) so that every
 template that uses wrap hooks has these functions available.
 
 Patterns like `bash -c "{{WrappedAction.Command}} {{WrappedAction.Args}}"`,
-which interpolate raw values into a shell-parsed string, are unsafe and
-should be replaced with the `repr_sh`-based forms shown in the
-[Basic Example](#basic-example). Wrap scripts written in a language that
+which interpolate raw values into a shell-parsed string, are unsafe. Replace
+them either with argv forwarding, as in the
+[Basic Example](#basic-example), or — when a shell command line is genuinely
+required — with the `repr_sh`-based forms. Wrap scripts written in a language that
 exposes a native argv-array API (Python's
 `subprocess.Popen([cmd, *args])`, Rust's `std::process::Command::args`,
 etc.) avoid the shell-quoting problem by sidestepping the shell entirely.
