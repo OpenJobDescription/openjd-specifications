@@ -1508,8 +1508,8 @@ for operators with fixed signatures. The rules for propagating target types to c
 | `Compare` | All operands: `None` (unconstrained) |
 | `BinOp` | All operands: `None` (unconstrained) |
 | `UnaryOp` | Operand: `None` (unconstrained) |
-| `Call` (function) | Arguments: computed from candidate signatures |
-| `Call` (method) | Receiver: `None`, other args: computed from signatures |
+| `Call` (function) | Arguments: computed from candidate signatures' parameter types as written. A parameter type containing a type variable names a family of types (`list[T1]` is any list type), not one to coerce toward, so it leaves its position unconstrained; signature resolution still enforces it. The caller's target filters which signatures contribute; it is never bound through a signature's return type into its parameters. If no signature survives the filter, arguments are evaluated unconstrained (the target-type mismatch then surfaces as a coercion error on the call's result). |
+| `Call` (method) | Receiver: `None`, other args: `None` (unconstrained) |
 | `Subscript` | Value: `None`, index/slice: `{INT}` or `{INT?}` |
 | `List` | Elements: element type extracted from parent target types |
 | `ListComp` | Element expr: element type from parent, iter: `None`, conditions: `{BOOL}` |
@@ -1526,6 +1526,37 @@ For example, in `"{{ Param.Count - 1 }}"` where the target type is `{STRING}`:
 2. `1` is evaluated unconstrained → returns `int`
 3. `__sub__(int, int)` is called → returns `int`
 4. Result `int` is coerced to `string` for the target context
+
+The same principle governs function-call arguments. The caller's target
+describes the call's *result*, so it may select which signatures are
+plausible (by return type), but it must never alter how the arguments
+themselves evaluate beyond what the signatures' own parameter types say. In
+particular, for a generic signature such as `sorted(list: list[T1]) ->
+list[T1]`, the target is **not** unified with the return type to bind `T1`:
+`sorted([10, 2])` with target `{LIST[STRING]}` evaluates its argument
+unconstrained, sorts numerically, and coerces the *result* to
+`["2", "10"]`. Binding `T1 = string` into the argument would instead coerce
+the list first and sort lexicographically (`["10", "2"]`) — the target
+would have changed the computation, not just the type of its result.
+
+A parameter type containing a type variable constrains an argument to a
+family of types — `list[T1]` to any list type — which is not a type to
+coerce toward, so such positions are evaluated unconstrained. Signature
+resolution still enforces the constraint: `sorted("abc")` fails whether or
+not a target is supplied, and an argument a signature accepts by coercion
+(`range_expr` where `list[int]` is required) is still coerced there.
+
+**Signature resolution is independent of the target type.** Once arguments
+are evaluated, the implementation is selected by multiple dispatch over the
+argument types alone (see `resolve_and_call` below); a signature's return
+type never participates in resolution. The candidate filter above is a
+best-effort aid for evaluating arguments, not a resolution step: when no
+signature survives the filter, the arguments are evaluated unconstrained
+and the call is resolved and executed normally, with the target-type
+mismatch reported by the final result coercion. This ordering produces the
+more precise diagnostic — e.g. `min([1, 2])` with target `{LIST[STRING]}`
+reports that the `int` result cannot coerce to `list[string]`, rather than
+a generic "no matching signature" error.
 
 **Symbol Table**
 
@@ -1571,26 +1602,49 @@ def evaluate_expression(
                 # Evaluate operands without target type constraints
                 arg_values = [evaluate_expression(arg, None, symtabs) for arg in args]
             else:
-                # Regular function: find candidates and compute arg typesets
+                # Regular function: compute arg typesets from the signatures
+                # whose arity matches and whose return type is compatible
+                # with the caller's target. The target filters which
+                # signatures contribute — it is never unified with a
+                # signature's return type to bind type variables into the
+                # parameters.
                 candidates = [sig for sig in FUNCTION_SIGNATURES[func]
                               if len(sig.param_types) == len(args)
                                  and (ts is None or sig.return_type in ts
                                       or can_coerce(sig.return_type, ts))]
-                if not candidates:
-                    raise TypeError(f"No matching signature for {func}")
 
-                # Compute TypeSet for each argument position
+                # Compute TypeSet for each argument position from the
+                # parameter types as written. A symbolic parameter type
+                # (one containing a type variable) names a family of
+                # types rather than one to coerce toward — list[T1] means
+                # any list type — so it makes the position unconstrained;
+                # resolve_and_call still enforces it below. If no
+                # signature survived the filter, all positions are
+                # unconstrained: the call still resolves and executes
+                # normally, and the target-type mismatch surfaces as a
+                # coercion error on the call's result (a more precise
+                # diagnostic than failing here).
                 arg_typesets = []
                 for i in range(len(args)):
-                    arg_ts = {sig.param_types[i] for sig in candidates}
-                    arg_typesets.append(arg_ts)
+                    pos_types = {sig.param_types[i] for sig in candidates}
+                    if not pos_types or any(is_symbolic(t) for t in pos_types):
+                        arg_typesets.append(None)  # unconstrained
+                    else:
+                        arg_typesets.append(pos_types)
 
                 # Evaluate arguments with computed TypeSets
                 arg_values = [evaluate_expression(args[i], arg_typesets[i], symtabs)
                               for i in range(len(args))]
 
-            # Find best matching signature and call (coercion allowed on all args)
-            return resolve_and_call(func, arg_values, is_method_call=False)
+            # Find best matching signature and call (coercion allowed on
+            # all args). Resolution considers every arity-matching
+            # signature for the function — not just the target-filtered
+            # candidates above — and matches on argument types only:
+            # return types and the caller's target play no part in it.
+            all_sigs = [sig for sig in FUNCTION_SIGNATURES[func]
+                        if len(sig.param_types) == len(args)]
+            return resolve_and_call(func, all_sigs, arg_values,
+                                    is_method_call=False)
 
         case Call(Attribute(value, attr), args):
             # Method call: x.f(y, ...) -> f(x, y, ...)
@@ -1724,6 +1778,12 @@ def extract_element_typeset(ts: TypeSet) -> TypeSet:
     if ts is None:
         return None
     return {t.type_params[0] for t in ts if t.type_code == LIST}
+
+def is_symbolic(t: ExprType) -> bool:
+    # True if the type contains a type variable (T, T1, T2, T3),
+    # e.g. list[T1] in "sorted(list: list[T1]) -> list[T1]".
+    return t.type_code in (TYPEVAR_T, TYPEVAR_T1, TYPEVAR_T2, TYPEVAR_T3) \
+        or any(is_symbolic(p) for p in t.type_params)
 
 def can_coerce(from_type: ExprType, to_type: ExprType) -> bool:
     if from_type == to_type:

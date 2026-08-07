@@ -1,0 +1,46 @@
+# Expression Language §1.3.1: the target type describes the expression's
+# result, never its computation. Each bare "{{expr}}" args item has target
+# type `string? | list[string]` (§1.3.2), so a `list[string]` target is in
+# play — but it must not be unified with `sorted(list[T1]) -> list[T1]`'s
+# return type to bind T1=string into the argument. The argument evaluates
+# unconstrained, the sort is numeric, and only the *result* coerces to
+# list[string] and flattens into the args. An implementation that binds the
+# target through the return type would coerce [10, 2] to ["10", "2"] first
+# and sort lexicographically, producing args in the order 10, 2.
+#
+# The min() item additionally pins that overload resolution and execution do
+# not depend on the target: min's signatures return a type variable, so a
+# target-filtered candidate set may be empty, but the call must still
+# evaluate normally with the int result coercing to string.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Ints
+    type: LIST[INT]
+    default: [10, 2]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import sys
+            print('ARGS:' + ','.join(sys.argv[1:]))
+          - "{{ sorted(Param.Ints) }}"
+          - SEP
+          - "{{ Param.Ints.sorted() }}"
+          - SEP
+          - "{{ min(Param.Ints) }}"
+expected:
+  output:
+  - "ARGS:2,10,SEP,2,10,SEP,2"
+  forbidden:
+  # Lexicographic order would mean the list[string] target was bound
+  # through the return type and coerced the argument before sorting.
+  - "ARGS:10,2"

@@ -920,6 +920,17 @@ by the calling context. The target type guides implicit type coercion (see
 must produce a value of type `T` or a type that can be implicitly coerced to `T`. When the
 target type is `T?`, the expression may also produce `None`/`null`.
 
+The target type is a statement about the expression's *result*: it guides
+which coercions are applied to values, but it never changes what the
+expression computes. Operands of operators, subscript receivers and indices,
+and function arguments are evaluated without inheriting the caller's target
+(see RFC 0005 §"Target Type Propagation Rules" for the per-node rules), and
+function overloads are selected by the argument types alone — a function's
+return type and the caller's target play no part in selecting the
+implementation. For example, `sorted([10, 2])` sorts numerically regardless
+of the target type; a `list[string]` target coerces the sorted result to
+`["2", "10"]` rather than coercing the input and sorting lexicographically.
+
 The expression language does not define how target types are determined — that is the
 responsibility of the embedding context. [Section 1.3.2](#132-evaluation-within-template-schemas)
 defines the target type rules for the [Template Schemas](2023-09-Template-Schemas).
