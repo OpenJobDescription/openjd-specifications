@@ -354,6 +354,19 @@ changes, so it is always safe to evaluate for type checking alone. Because parts
 that involve only concrete values are fully evaluated even when other parts are unresolved, this
 catches many errors during template validation — before parameter values are even selected.
 
+Target-type coercion applies the same conversion table to `unresolved[T]` values at the type
+level: the payload remains unresolved, but its constraint is narrowed to the coercion result
+(e.g. `unresolved[int]` against a `string` target becomes `unresolved[string]`). When the
+constraint is a union, coercion is existential: it succeeds if at least one member can coerce
+to the target, discarding the possibilities that cannot — `unresolved[int | list[int]]`
+against an `int` target yields `unresolved[int]`. Checks that require a concrete payload are
+deferred until the value resolves: `unresolved[string]` narrows to `unresolved[int]`, but the
+resolved string must still parse as an integer; likewise any `unresolved[list[S]]` is accepted
+against any `list[U]` target, since the value could resolve to the empty list, which coerces
+to every list type. Type-level coercion may therefore accept a
+pair that the concrete value later rejects, but it must never reject a pair the concrete value
+would accept — that would fail a template at validation time that would have run correctly.
+
 **Conditional Expressions with Unknown Conditions:**
 
 When the condition of an `if`/`else` expression evaluates to `unresolved[bool]`, the evaluator
@@ -841,7 +854,12 @@ coercion is performed where the intent is obvious. The following implicit conver
 - `int` → `float` when the target types do not include `int`
 - `path` → `string` when the target types do not include `path`
 - `range_expr` → `string` when the target types do not include `range_expr` (produces canonical form like `"1-5"`)
-- `range_expr` → `list[int]` when the target types include `list[int]` but not `range_expr`
+- `range_expr` → `list[int]` when the target types include `list[int]` but not `range_expr`.
+  This is the only list type a `range_expr` implicitly coerces to: a `list[T]` target with any
+  other element type (e.g. `list[float]` or `list[string]`) is an error. (A `list[any]` target
+  is also accepted, since a `list[int]` value already satisfies it.) Implicit rules do not
+  chain, so the materialized `list[int]` is not further widened element-wise. Use the explicit
+  conversion `list(r)` to get a `list[int]` value that the `list[T]` → `list[U]` rule then applies to.
 - `list[T]` → `list[U]` when each element `T` can be coerced to `U` (e.g., `list[path]` → `list[string]`)
 - `list[nulltype]` → `list[T]` for any `T` (empty list literal is compatible with any list type)
 - Any scalar value when the target types have a single scalar type. The value is coerced

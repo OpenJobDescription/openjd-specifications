@@ -762,7 +762,14 @@ conversions are attempted:
 - `int` → `float` when the target types do not include `int`
 - `path` → `string` when the target types do not include `path`
 - `range_expr` → `string` when the target types do not include `range_expr` (produces canonical form like `"1-5"`)
-- `range_expr` → `list[int]` when the target types include `list[int]` but not `range_expr`
+- `range_expr` → `list[int]` when the target types include `list[int]` but not `range_expr`.
+  This is the only list type a `range_expr` implicitly coerces to: a `list[T]` target with any
+  other element type (e.g. `list[float]` or `list[string]`) is an error. (A `list[any]` target
+  is also accepted, since a `list[int]` value already satisfies it.) Implicit rules do not
+  chain, so the materialized `list[int]` is not further widened element-wise toward the target.
+  A template that wants the widened list can chain the explicit conversion
+  `list(value: range_expr) -> list[int]` (RFC 0006) — e.g. `list(r)` in a `list[string]`
+  context — where the `list[T]` → `list[U]` rule below then applies to the conversion's result.
 - `list[T]` → `list[U]` when each element `T` can be coerced to `U` (e.g., `list[path]` → `list[string]`)
 - `list[nulltype]` → `list[T]` for any `T` (empty list literal is compatible with any list type)
 - Any scalar value when the target types have a single scalar type (without counting `nulltype` or `list[T]` for any `T`).
@@ -776,6 +783,42 @@ conversions are attempted:
 - `[v1, v2, v3, ...]` any values when the target types have a single `list` type (without counting `list[nulltype]`).
   Every value is coerced non-destructively to `T` where that type is `list[T]`. This applies recursively
   for nested lists. The non-destructive coercions are the same as defined for scalar values above.
+
+A **type variable** target (`T`, `T1`, `T2`, `T3`) has no coercion rule, for concrete and
+unresolved values alike. Type variables are placeholders in generic function signatures,
+resolved to concrete types by signature matching before any value is coerced (see the
+Target Type Propagation Rules in [Expression Evaluation](#expression-evaluation)), so reaching coercion with
+one still unbound is always an error. Accepting a type-variable target for unresolved values
+would let validation pass an expression that can only fail once the value is known.
+
+#### Coercion of Unresolved Values
+
+Target-type coercion applies the same conversion table to `unresolved[T]` values at the type
+level: the payload remains unresolved, but its constraint is narrowed to the coercion result.
+For example, `unresolved[int]` against a `string` target becomes `unresolved[string]`, and a
+`range_expr` → `list[int]` coercion of an unresolved value yields `unresolved[list[int]]`.
+
+When the constraint is a union, coercion is existential: it succeeds if at least one member of
+the union can coerce to the target, and the possibilities that cannot are discarded. Coercing
+`unresolved[int | string]` to an `int` target yields `unresolved[int]`, and
+`unresolved[int | list[int]]` to `int` also yields `unresolved[int]` — the `int` possibility
+succeeds even though `list[int]` cannot. Only when no member can coerce does the coercion fail.
+
+Checks that require a concrete payload are deferred until the value resolves. For example,
+`unresolved[string]` narrows to `unresolved[int]` against an `int` target, but once resolved,
+the string must still parse as an integer. Similarly, any `unresolved[list[S]]` is accepted
+against any `list[U]` target, even when `S` has no coercion rule to `U`: the value could
+resolve to the empty list, which coerces to every list type, so element compatibility can
+only be checked once the payload is known. A source and target with no type-level coercion
+rule at all, such as `unresolved[list[int]]` against `int`, is rejected during validation.
+
+The two evaluation paths are deliberately asymmetric, and only in one direction. Type-level
+coercion may accept a pair that the concrete value later rejects, because the deciding
+information is a payload the placeholder does not carry. It must never reject a pair the
+concrete value would accept: doing so fails a template at validation time that would have run
+correctly, which no later stage can recover from. Any such case is a defect in the type-level
+rules, not a deliberate narrowing — the `range_expr` → `list[int]` and type-variable-target
+rules above apply identically on both paths for this reason.
 
 #### Method Call Coercion Restriction
 
