@@ -755,34 +755,109 @@ The `T` type for a `list[T]` must satisfy:
 ### Implicit Type Coercion
 
 Implicit non-destructive type coercion is performed where the intent is obvious. The caller
-provides a set of target types it expects, and we use this to affect coercion decisions.
-When the expression result does not directly match a target type, the following implicit
-conversions are attempted:
+provides the target type it expects, which need not be a single concrete type: it may be
+`any`, a union such as `string?` or `string? | list[string]`, or a list whose element type
+is either of those. Coercion asks two questions about the expression result, in this order.
 
-- `int` → `float` when the target types do not include `int`
-- `path` → `string` when the target types do not include `path`
-- `range_expr` → `string` when the target types do not include `range_expr` (produces canonical form like `"1-5"`)
-- `range_expr` → `list[int]` when the target types include `list[int]` but not `range_expr`.
-  This is the only list type a `range_expr` implicitly coerces to: a `list[T]` target with any
-  other element type (e.g. `list[float]` or `list[string]`) is an error. (A `list[any]` target
-  is also accepted, since a `list[int]` value already satisfies it.) Implicit rules do not
-  chain, so the materialized `list[int]` is not further widened element-wise toward the target.
+**1. Satisfaction.** Does the result's type already satisfy the target? If so, the value is
+used unchanged and no conversion is attempted. A type satisfies a target when:
+
+- the target is `any`, which every type satisfies;
+- the target is a union and *any* one of its members is satisfied, so an `int` satisfies
+  `int | string` and a `null` satisfies `T?`;
+- both are lists and the result's element type satisfies the target's element type, so a
+  `list[int]` satisfies `list[any]` and `list[int | string]`;
+- or the two types are equal.
+
+A result's type is never itself a union: concrete values have a single runtime type, and
+for the not-yet-known values checked during validation, a union constraint is decomposed
+into its members before these steps apply (see
+[Coercion of Unresolved Values](#coercion-of-unresolved-values)).
+
+Satisfaction is directional: `int` satisfies `any`, but `any` does not satisfy `int`. It is
+therefore not the same relation as the symmetric matching used to bind type variables during
+signature matching, and an implementation must not use one for the other — the symmetric
+relation would accept a `list[T1]` target by binding `T1` and discarding the binding.
+
+Because satisfaction is checked first, a result whose type the target already admits is
+never converted: an `int` against `int | string` stays an `int` rather than becoming a
+string. Consequently, a conversion is only ever attempted toward a type the result does
+not already have.
+
+**2. Conversion.** Otherwise the result is converted toward one of the target's
+*destinations*. A destination is a single non-union type toward which one of the
+conversions below can be attempted. A non-union target is its own only destination. A union
+target contributes each of its members, because producing any one of them satisfies the
+union. Destinations are attempted in order and the first that converts gives the result; a
+destination that fails is not an error so long as a later one succeeds, and the coercion
+fails only if none converts.
+
+Destinations are attempted in a fixed order with two levels. **Non-list destinations come
+before list destinations**: converting to a scalar produces a single value whose cost does
+not depend on the source, while converting to a list materializes its elements and may
+exceed an implementation's size limits, so this ordering keeps the outcome independent of
+how large the value is. Within each of the two groups, the order is determined by the
+result's type, following two principles: a value prefers to stay within its own kind — a
+number remains a number before it becomes text — and a conversion that can fail is
+attempted before one that always succeeds, because a universal fallback attempted first
+would make every destination after it unreachable.
+
+| Result type | Destinations, in order | Notes |
+|-------------|------------------------|-------|
+| `bool` | `string` | only conversion |
+| `int` | `float`, then `string` | stays a number first; text is the universal fallback |
+| `float` | `int`, then `string` | `int` succeeds only for exact whole values, so `3.0` against `int \| string` gives `3` while `3.5` gives `"3.5"` |
+| `string` | `int`, then `float`, then `bool`, then `range_expr`, then `path` | every string that parses as `int` also parses as `float`, so `int` must come first; `bool` and `range_expr` are selective parses, tried after the numeric ones; every string is a valid `path`, so `path` comes last |
+| `path` | `string` | only conversion |
+| `range_expr` | `string`, then `list[int]` | the non-list-first rule; when a target offers both, the `list[int]` destination is unreachable, and a template that wants the list uses the explicit `list()` conversion (RFC 0006) |
+| `list[S]` | list destinations in `S`'s order, applied to their element types | `list[float]` against `list[int] \| list[string]` attempts `list[int]` first |
+
+So `5` against `float | string` becomes `5.0`, and `"5"` against `int | float` becomes `5`
+while `"5.0"` becomes `5.0` — the stricter parse is attempted first, and the string's own
+lexical form routes it. An empty list (`list[nulltype]`) converts to every list type and
+the result is the empty list regardless; the nominal element type it carries follows the
+first list destination in the union's normalized member order.
+
+`nulltype` is never a destination, because no conversion produces `null`. A `null` result
+reaches a `T?` target by satisfying it, and a `nulltype` member is otherwise ignored when
+converting; in particular, a `string` whose text happens to be `"null"` does not become
+`null`. Likewise a type variable, `noreturn`, `unresolved[T]`, or a `list` parameterized by
+any of those contributes no destination, so a target composed only of such types cannot be
+coerced to at all.
+
+Because destinations are considered one at a time, a union target accepts at least
+everything each of its members accepts on its own. Adding an alternative to a target never
+takes away a conversion that was previously accepted, though it can change which
+destination is chosen, and with it the resulting value.
+
+The non-destructive conversions are:
+
+- `bool`/`int`/`float`/`path`/`range_expr` → `string` (a `range_expr` produces its canonical
+  form, like `"1-5"`)
+- `string` → `path`
+- `float`/`string` → `int` (error if the value cannot be represented exactly, e.g. `3.75`,
+  `""`, `"nothing"`, `"3.1"`)
+- `int`/`string` → `float` (error if the string cannot be parsed, e.g. `""`, `"nothing"`)
+- `string` → `bool`, accepting the same case-insensitive spellings as the explicit `bool()`
+  conversion (RFC 0006): `"true"`/`"yes"`/`"on"`/`"1"` become `true` and
+  `"false"`/`"no"`/`"off"`/`"0"` become `false` (error otherwise)
+- `string` → `range_expr` (error if the string does not parse as a range expression, e.g.
+  `""`, `"1-"`)
+- `range_expr` → `list[int]`. This is the only list type a `range_expr` implicitly coerces
+  to, so the destination is accepted exactly when a `list[int]` value would satisfy it —
+  `list[int]`, `list[any]`, and `list[int | string]` — and rejected for any other element
+  type, such as `list[float]` or `list[string]`. Implicit rules do not chain, so the
+  materialized `list[int]` is not further widened element-wise toward the destination.
   A template that wants the widened list can chain the explicit conversion
   `list(value: range_expr) -> list[int]` (RFC 0006) — e.g. `list(r)` in a `list[string]`
   context — where the `list[T]` → `list[U]` rule below then applies to the conversion's result.
-- `list[T]` → `list[U]` when each element `T` can be coerced to `U` (e.g., `list[path]` → `list[string]`)
+- `list[T]` → `list[U]` when each element `T` can be coerced to `U` (e.g., `list[path]` → `list[string]`).
+  This applies recursively for nested lists.
 - `list[nulltype]` → `list[T]` for any `T` (empty list literal is compatible with any list type)
-- Any scalar value when the target types have a single scalar type (without counting `nulltype` or `list[T]` for any `T`).
-  The value is coerced non-destructively to that type using the non-destructive coercion rules below.
-  For example, in a format string context where the target type is `string?`,
-  an `int` result is coerced to `string`.
-  - `bool`/`int`/`float`/`path` → `string`
-  - `string` → `path`
-  - `float`/`string` → `int` (error if value cannot be represented exactly, e.g. `3.75`, `""`, `"nothing"`, `"3.1"`)
-  - `int`/`string` → `float` (error if string cannot be parsed, e.g. `""`, `"nothing"`)
-- `[v1, v2, v3, ...]` any values when the target types have a single `list` type (without counting `list[nulltype]`).
-  Every value is coerced non-destructively to `T` where that type is `list[T]`. This applies recursively
-  for nested lists. The non-destructive coercions are the same as defined for scalar values above.
+
+For example, in a format string context where the target type is `string?`, an `int` result
+is coerced to `string`: it does not satisfy `string?`, whose destinations are just `string`
+once the `nulltype` member is set aside, and `int` → `string` is in the table above.
 
 A **type variable** target (`T`, `T1`, `T2`, `T3`) has no coercion rule, for concrete and
 unresolved values alike. Type variables are placeholders in generic function signatures,
@@ -791,12 +866,35 @@ Target Type Propagation Rules in [Expression Evaluation](#expression-evaluation)
 one still unbound is always an error. Accepting a type-variable target for unresolved values
 would let validation pass an expression that can only fail once the value is known.
 
+This holds at any nesting depth: a `list[T1]` target is no more usable than a `T1` target,
+since a list cannot be produced without knowing its element type. An implementation must
+reject a `list` destination whose element type mentions an unbound type variable, rather
+than binding the variable and discarding the binding.
+
 #### Coercion of Unresolved Values
 
-Target-type coercion applies the same conversion table to `unresolved[T]` values at the type
-level: the payload remains unresolved, but its constraint is narrowed to the coercion result.
-For example, `unresolved[int]` against a `string` target becomes `unresolved[string]`, and a
+Target-type coercion applies the same two steps to `unresolved[T]` values at the type level:
+the payload remains unresolved, but its constraint is narrowed to the coercion result. For
+example, `unresolved[int]` against a `string` target becomes `unresolved[string]`, and a
 `range_expr` → `list[int]` coercion of an unresolved value yields `unresolved[list[int]]`.
+
+The narrowed constraint is the type the applicable step produces, which is not always the
+target. Satisfaction leaves the value alone, so its constraint keeps the source type: an
+`unresolved[list[int]]` against a `list[any]` target stays `unresolved[list[int]]` rather than
+widening to `unresolved[list[any]]`, matching the concrete `list[int]` value that would be
+returned unchanged. Conversion yields the type its own rule produces, so an
+`unresolved[range_expr]` against `list[any]` becomes `unresolved[list[int]]`, because
+materializing a range only ever produces a `list[int]`.
+
+The narrowed constraint always satisfies the target, and it always describes the concrete
+result: the concrete result's type satisfies the narrowed constraint. The type level cannot
+see the payload that decides which destination of a union target wins, so conversion narrows
+to the union of every destination with a type-level rule, rather than betting on any one of
+them — anything narrower would misdescribe some resolved value. Against an `int | string`
+target an `unresolved[float]` narrows to `unresolved[int | string]`: a `3.0` payload takes
+the `float` → `int` rule while a `3.5` payload fails it and falls through to `string`, and
+both outcomes lie within the constraint. For a non-union target exactly one destination
+exists, so the constraint is exactly the type evaluation will produce.
 
 When the constraint is a union, coercion is existential: it succeeds if at least one member of
 the union can coerce to the target, and the possibilities that cannot are discarded. Coercing

@@ -849,27 +849,53 @@ representation of frame ranges. Use `list(Task.Param.Frame)` to convert to a lis
 #### 1.2.3. Implicit Type Coercion
 
 As a glue expression language intended for convenience, implicit non-destructive type
-coercion is performed where the intent is obvious. The following implicit conversions are supported:
+coercion is performed where the intent is obvious.
 
-- `int` → `float` when the target types do not include `int`
-- `path` → `string` when the target types do not include `path`
-- `range_expr` → `string` when the target types do not include `range_expr` (produces canonical form like `"1-5"`)
-- `range_expr` → `list[int]` when the target types include `list[int]` but not `range_expr`.
-  This is the only list type a `range_expr` implicitly coerces to: a `list[T]` target with any
-  other element type (e.g. `list[float]` or `list[string]`) is an error. (A `list[any]` target
-  is also accepted, since a `list[int]` value already satisfies it.) Implicit rules do not
-  chain, so the materialized `list[int]` is not further widened element-wise. Use the explicit
-  conversion `list(r)` to get a `list[int]` value that the `list[T]` → `list[U]` rule then applies to.
-- `list[T]` → `list[U]` when each element `T` can be coerced to `U` (e.g., `list[path]` → `list[string]`)
+Each field gives the expression a target type, which may be a single type, an optional type
+like `string?`, or a choice like `string? | list[string]` for a list item. Coercion happens in
+two steps:
+
+1. **If the result already fits the target, it is used as is.** A value fits when its type is
+   the target, or is one of the target's choices, or the target is `any`. A `list[int]` also
+   fits `list[any]` and `list[int | string]`, since its elements fit the element type.
+2. **Otherwise the result is converted** toward one of the target's types, using the
+   conversions below. Where the target offers a choice, each is tried in turn and the first
+   that works is used. Non-list types are tried before list types, and within that, the
+   result's type sets the order: a number prefers to stay a number before becoming text, and
+   conversions that always succeed (anything → `string`, any `string` → `path`) are tried
+   last, since trying them first would make the others unreachable. So `5` against
+   `float | string` becomes `5.0`, `"5"` against `int | float` becomes `5` while `"5.0"`
+   becomes `5.0`, and `list[float]` against `list[int] | list[string]` tries `list[int]`
+   first. The full ordering table is in RFC 0005.
+
+Because of the first step, a value is never converted when the target already accepts it —
+an `int` stays an `int` for an `int | string` target rather than becoming a string.
+
+A `nulltype` choice is never converted *into*: `null` reaches a `T?` target only by already
+being `null`, so a string whose text happens to be `"null"` stays a string. Because non-list
+types are tried first, a `range_expr` against `list[int] | string` becomes the string `"1-5"`
+rather than the expanded list.
+
+The conversions are:
+
+- `bool`/`int`/`float`/`path`/`range_expr` → `string` (a `range_expr` produces its canonical
+  form, like `"1-5"`)
+- `string` → `path`
+- `float`/`string` → `int` (error if value cannot be represented exactly, e.g. `3.75`, `""`, `"3.1"`)
+- `int`/`string` → `float` (error if string cannot be parsed, e.g. `""`, `"nothing"`)
+- `string` → `bool`, accepting the same case-insensitive spellings as the explicit `bool()`
+  conversion: `"true"`/`"yes"`/`"on"`/`"1"` become `true` and `"false"`/`"no"`/`"off"`/`"0"`
+  become `false` (error otherwise)
+- `string` → `range_expr` (error if the string is not a valid range expression, like `"1-10"`)
+- `range_expr` → `list[int]`. This is the only list type a `range_expr` implicitly coerces to,
+  so it is accepted for a target a `list[int]` would fit — `list[int]`, `list[any]`, or
+  `list[int | string]` — and is an error for any other element type, such as `list[float]` or
+  `list[string]`. Implicit rules do not chain, so the materialized `list[int]` is not further
+  widened element-wise. Use the explicit conversion `list(r)` to get a `list[int]` value that
+  the `list[T]` → `list[U]` rule then applies to.
+- `list[T]` → `list[U]` when each element `T` can be coerced to `U` (e.g., `list[path]` → `list[string]`).
+  This applies recursively for nested lists.
 - `list[nulltype]` → `list[T]` for any `T` (empty list literal is compatible with any list type)
-- Any scalar value when the target types have a single scalar type. The value is coerced
-  non-destructively to that type:
-  - `bool`/`int`/`float`/`path` → `string`
-  - `string` → `path`
-  - `float`/`string` → `int` (error if value cannot be represented exactly, e.g. `3.75`, `""`, `"3.1"`)
-  - `int`/`string` → `float` (error if string cannot be parsed, e.g. `""`, `"nothing"`)
-- `[v1, v2, ...]` any values when the target types have a single `list` type. Every value is
-  coerced non-destructively to `T` where that type is `list[T]`. This applies recursively for nested lists.
 
 #### 1.2.4. Method Call Coercion Restriction
 
