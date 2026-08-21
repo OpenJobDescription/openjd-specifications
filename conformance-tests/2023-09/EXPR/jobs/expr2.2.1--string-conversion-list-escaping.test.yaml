@@ -1,0 +1,53 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    # The path list is built in step-level let (TEMPLATE scope) so that path()
+    # uses PurePosixPath for cross-platform consistency (Expression Language
+    # §2.3.2), while rendering still uses native separators.
+    let:
+    - 'paths = [path("/out/a.exr"), path("/out/b.exr")]'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import json
+            # Triple-quoted raw strings so the expressions can contain quotes
+            # and backslashes without Python-level escaping.
+            values = [
+                ('QUOTE', r'''{{ string(['a"b']) }}'''),
+                ('BACKSLASH', r'''{{ string(['a\\b']) }}'''),
+                ('NEWLINE', r'''{{ string(['a\nb']) }}'''),
+                ('TAB', r'''{{ string(['a\tb']) }}'''),
+                ('NUL', r'''{{ string(['\x00']) }}'''),
+                ('NESTED', r'''{{ string([['a"b']]) }}'''),
+                ('PATHS', r'''{{ paths }}'''),
+            ]
+            for name, rendered in values:
+                print(name + ':' + rendered)
+                # Every rendering must be parseable JSON.
+                json.loads(rendered)
+            print('ALL_VALID_JSON')
+expected:
+  output:
+  # `"` and `\` are escaped, so the rendering is valid JSON rather than a
+  # string that terminates early.
+  - 'QUOTE:["a\"b"]'
+  - 'BACKSLASH:["a\\b"]'
+  # Control characters use the JSON short escapes, or \uXXXX where none exists.
+  - 'NEWLINE:["a\nb"]'
+  - 'TAB:["a\tb"]'
+  - 'NUL:["\u0000"]'
+  - 'NESTED:[["a\"b"]]'
+  - 'ALL_VALID_JSON'
+  output_posix:
+  - 'PATHS:["/out/a.exr", "/out/b.exr"]'
+  output_windows:
+  # Backslash path separators must be escaped.
+  - "PATHS:[\"\\\\out\\\\a.exr\", \"\\\\out\\\\b.exr\"]"

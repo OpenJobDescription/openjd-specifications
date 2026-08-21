@@ -15,6 +15,9 @@ template:
     - 'path_val = repr_pwsh(path("/tmp/out"))'
     - "range_val = repr_pwsh(range_expr(\"1-10\"))"
     - "list_val = repr_pwsh([\"a\", \"b\"])"
+    - "nested_val = repr_pwsh([[\"a\", \"b\"], [\"c\"]])"
+    - "nested_single = repr_pwsh([[1, 2]])"
+    - "nested_quote = repr_pwsh([[\"it's\"]])"
     script:
       actions:
         onRun:
@@ -31,6 +34,9 @@ template:
             print(r"PATH:{{ path_val }}")
             print(r"RANGE:{{ range_val }}")
             print(r"LIST:{{ list_val }}")
+            print(r"NESTED:{{ nested_val }}")
+            print(r"NESTED_SINGLE:{{ nested_single }}")
+            print(r"NESTED_QUOTE:{{ nested_quote }}")
 expected:
   output:
   - "STR:'hello'"
@@ -42,3 +48,9 @@ expected:
   - "PATH:'/tmp/out'"
   - "RANGE:'1-10'"
   - "LIST:@('a', 'b')"
+  # Nested lists recurse into PowerShell array syntax rather than JSON display
+  # form. A one-element outer list needs the unary comma to defeat PowerShell's
+  # array flattening: @(@(1, 2)) is @(1, 2), but @(,@(1, 2)) preserves nesting.
+  - "NESTED:@(@('a', 'b'), @('c'))"
+  - "NESTED_SINGLE:@(,@(1, 2))"
+  - "NESTED_QUOTE:@(,@('it''s'))"

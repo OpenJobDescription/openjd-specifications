@@ -32,8 +32,8 @@ pathMapping:
     destination_path: "E:\\cache"
 expected:
   output:
-  - "RAW:[\"D:\\shared\\a.exr\", \"D:\\shared\\b.exr\"]"
-  - "MAPPED:[\"E:\\cache\\a.exr\", \"E:\\cache\\b.exr\"]"
+  - "RAW:[\"D:\\\\shared\\\\a.exr\", \"D:\\\\shared\\\\b.exr\"]"
+  - "MAPPED:[\"E:\\\\cache\\\\a.exr\", \"E:\\\\cache\\\\b.exr\"]"
   - "TASK_MAPPED:E:\\cache\\a.exr"
   - "TASK_MAPPED:E:\\cache\\b.exr"
   - "TASK_RAW:D:\\shared\\a.exr"

@@ -1,0 +1,43 @@
+runOn: [windows]
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    # Round-trip check: the literals repr_pwsh produces must be parsed by a
+    # real PowerShell interpreter back into the same structure. Before the
+    # nested-list fix, repr_pwsh([["a", "b"], ["c"]]) rendered the inner lists
+    # in JSON display form (@(["a", "b"], ["c"])), a PowerShell syntax error.
+    let:
+    - 'nested_val = repr_pwsh([["a", "b"], ["c"]])'
+    - 'nested_single = repr_pwsh([[1, 2]])'
+    script:
+      actions:
+        onRun:
+          command: powershell
+          args:
+          - -NoProfile
+          - -Command
+          - |
+            $ErrorActionPreference = 'Stop'
+            $v = {{ nested_val }}
+            Write-Output ("COUNT:" + $v.Count)
+            Write-Output ("FIRST:" + ($v[0] -join '|'))
+            Write-Output ("FIRST_COUNT:" + $v[0].Count)
+            Write-Output ("SECOND:" + ($v[1] -join '|'))
+            $s = {{ nested_single }}
+            Write-Output ("SINGLE_COUNT:" + $s.Count)
+            Write-Output ("SINGLE_INNER:" + ($s[0] -join '|'))
+expected:
+  output:
+  # @(@('a', 'b'), @('c')): two elements, the first itself a two-element array.
+  - "COUNT:2"
+  - "FIRST:a|b"
+  - "FIRST_COUNT:2"
+  - "SECOND:c"
+  # @(,@(1, 2)): the unary comma keeps the outer list at one element instead
+  # of flattening to @(1, 2).
+  - "SINGLE_COUNT:1"
+  - "SINGLE_INNER:1|2"

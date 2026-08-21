@@ -1394,6 +1394,23 @@ sequences.
 
 Note: `int(3.75)` is an error. Use `floor`, `ceil`, or `round` for lossy conversions.
 
+Note: `string()` on a list produces a JSON array: elements separated by `, `,
+`bool`/`int`/`float` bare, nested lists recursed, and `string` and `path`
+elements double-quoted with `"`, `\`, and characters below `U+0020` escaped.
+The result must parse as JSON. For example:
+
+```python
+string(['a"b'])                  # ["a\"b"]
+string([path('C:\out\a.exr')])   # ["C:\\out\\a.exr"]
+```
+
+Escaping non-ASCII is optional, since JSON accepts those characters directly:
+`["café"]` and `["caf\u00e9"]` are both valid. Use `repr_json` (section 2.2.6)
+where the `\uXXXX` form is required.
+
+Format string interpolation with surrounding text (section 1.3.2) uses this same
+conversion, so `"items: {{ MyList }}"` and `"items: " + string(MyList)` agree.
+
 Note: `bool()` string conversion accepts the following case-insensitive values:
 `"1"`, `"true"`, `"on"`, `"yes"` become `true`; `"0"`, `"false"`, `"off"`, `"no"` become `false`.
 All other string values are rejected with an error.
@@ -1682,7 +1699,10 @@ have well-defined string escaping.
 
 `repr_pwsh` produces PowerShell literals with proper escaping. Strings and paths are wrapped in
 single quotes with embedded single quotes doubled. Booleans become `$true`/`$false`. Lists become
-PowerShell array syntax `@(...)`.
+PowerShell array syntax `@(...)`, with nested lists rendered recursively in the same form. A
+one-element list whose element is itself a list uses the unary comma form `@(,...)`, because
+`@(@(1, 2))` flattens to `@(1, 2)` under PowerShell's array-flattening rules while `@(,@(1, 2))`
+preserves the nesting.
 
 `repr_py` follows the behavior of Python's
 [repr](https://docs.python.org/3/library/functions.html#repr).
@@ -1694,6 +1714,8 @@ Examples:
 - `repr_cmd("hello!")` returns `"\"hello^^!\""` (`!` escaped as `^^!` for the delayed expansion context)
 - `repr_cmd("a\nb")` returns `"\"ab\""` (newlines stripped)
 - `repr_pwsh(["a", "b"])` returns `@('a', 'b')`
+- `repr_pwsh([["a", "b"], ["c"]])` returns `@(@('a', 'b'), @('c'))`
+- `repr_pwsh([[1, 2]])` returns `@(,@(1, 2))` (unary comma preserves the single-element nesting)
 - `repr_py("hello\nworld")` returns `"'hello\\nworld'"`
 - `repr_json([1, 2, 3])` returns `"[1, 2, 3]"`
 

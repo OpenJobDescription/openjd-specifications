@@ -61,5 +61,5 @@ expected:
   - 'HOMO_PATH:["/a", "/b"]'
   - 'NESTED_PATH:[["/a"], ["/b"]]'
   output_windows:
-  - "HOMO_PATH:[\"\\a\", \"\\b\"]"
-  - "NESTED_PATH:[[\"\\a\"], [\"\\b\"]]"
+  - "HOMO_PATH:[\"\\\\a\", \"\\\\b\"]"
+  - "NESTED_PATH:[[\"\\\\a\"], [\"\\\\b\"]]"
