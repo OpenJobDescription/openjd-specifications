@@ -1,0 +1,73 @@
+# String classification functions must match Python str method semantics on
+# Unicode (non-ASCII) input, per the note in section 2.2.4. Expected values
+# are CPython's answers for the same inputs.
+#
+# Characters used (as \uXXXX escapes so this file stays ASCII):
+#   U+0663 ARABIC-INDIC DIGIT THREE          Nd, Numeric_Type=Decimal
+#   U+00B2 SUPERSCRIPT TWO                   No, Numeric_Type=Digit
+#   U+00BD VULGAR FRACTION ONE HALF          No, Numeric_Type=Numeric
+#   U+216B ROMAN NUMERAL TWELVE              Nl, Numeric_Type=Numeric
+#   U+0345 COMBINING GREEK YPOGEGRAMMENI     Mn, Other_Alphabetic
+#   U+24B6 CIRCLED LATIN CAPITAL LETTER A    So, Other_Alphabetic
+#   U+4E94 CJK UNIFIED IDEOGRAPH-4E94 (five) Lo, uncased letter
+#   U+01C5 LATIN CAPITAL D WITH SMALL Z CARON Lt, titlecase (cased)
+#   U+0295 LATIN LETTER PHARYNGEAL VOICED FRICATIVE Ll
+#   U+001C-U+001F information separators      Cc, Python isspace
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'ISDIGIT_ARABIC:[{{ "\u0663".isdigit() }}]')
+            print(r'ISDIGIT_MIXED:[{{ "12\u0663".isdigit() }}]')
+            print(r'ISDIGIT_SUPER2:[{{ "\u00b2".isdigit() }}]')
+            print(r'ISDIGIT_HALF:[{{ "\u00bd".isdigit() }}]')
+            print(r'ISDIGIT_ROMAN:[{{ "\u216b".isdigit() }}]')
+            print(r'ISALPHA_ROMAN:[{{ "\u216b".isalpha() }}]')
+            print(r'ISALPHA_COMBINING:[{{ "\u0345".isalpha() }}]')
+            print(r'ISALPHA_CIRCLED:[{{ "\u24b6".isalpha() }}]')
+            print(r'ISALPHA_CJK:[{{ "\u4e94".isalpha() }}]')
+            print(r'ISALNUM_ARABIC:[{{ "\u0663".isalnum() }}]')
+            print(r'ISALNUM_HALF:[{{ "\u00bd".isalnum() }}]')
+            print(r'ISALNUM_ROMAN:[{{ "\u216b".isalnum() }}]')
+            print(r'ISALNUM_CIRCLED:[{{ "\u24b6".isalnum() }}]')
+            print(r'ISSPACE_SEPARATORS:[{{ "\u001c\u001d\u001e\u001f".isspace() }}]')
+            print(r'ISSPACE_NBSP:[{{ "\u00a0".isspace() }}]')
+            print(r'ISUPPER_WITH_UNCASED:[{{ "A\u4e94".isupper() }}]')
+            print(r'ISUPPER_TITLECASE:[{{ "\u01c5".isupper() }}]')
+            print(r'ISLOWER_WITH_UNCASED:[{{ "a\u4e94".islower() }}]')
+            print(r'ISLOWER_TITLECASE:[{{ "\u01c5".islower() }}]')
+            print(r'ISLOWER_PHARYNGEAL:[{{ "\u0295".islower() }}]')
+            print(r'ISLOWER_UNCASED_ONLY:[{{ "\u4e94".islower() }}]')
+expected:
+  output:
+  - ISDIGIT_ARABIC:[true]
+  - ISDIGIT_MIXED:[true]
+  - ISDIGIT_SUPER2:[true]
+  - ISDIGIT_HALF:[false]
+  - ISDIGIT_ROMAN:[false]
+  - ISALPHA_ROMAN:[false]
+  - ISALPHA_COMBINING:[false]
+  - ISALPHA_CIRCLED:[false]
+  - ISALPHA_CJK:[true]
+  - ISALNUM_ARABIC:[true]
+  - ISALNUM_HALF:[true]
+  - ISALNUM_ROMAN:[true]
+  - ISALNUM_CIRCLED:[false]
+  - ISSPACE_SEPARATORS:[true]
+  - ISSPACE_NBSP:[true]
+  - ISUPPER_WITH_UNCASED:[true]
+  - ISUPPER_TITLECASE:[false]
+  - ISLOWER_WITH_UNCASED:[true]
+  - ISLOWER_TITLECASE:[false]
+  - ISLOWER_PHARYNGEAL:[true]
+  - ISLOWER_UNCASED_ONLY:[false]
