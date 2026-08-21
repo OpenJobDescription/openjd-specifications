@@ -456,12 +456,12 @@ The `list[nulltype]` overloads handle empty lists, matching Python semantics.
 | `removesuffix(s: string, suffix: string) -> string` | Remove suffix if present, otherwise return unchanged |
 | `startswith(s: string, prefix: string) -> bool` | Test if string starts with prefix |
 | `endswith(s: string, suffix: string) -> bool` | Test if string ends with suffix |
-| `isdigit(s: string) -> bool` | True if all characters are digits and string is non-empty |
-| `isalpha(s: string) -> bool` | True if all characters are alphabetic and string is non-empty |
-| `isalnum(s: string) -> bool` | True if all characters are alphanumeric and string is non-empty |
-| `isspace(s: string) -> bool` | True if all characters are whitespace and string is non-empty |
-| `isupper(s: string) -> bool` | True if all cased characters are uppercase and there is at least one cased character |
-| `islower(s: string) -> bool` | True if all cased characters are lowercase and there is at least one cased character |
+| `isdigit(s: string) -> bool` | True if all characters are digits and string is non-empty, per Python `str.isdigit` (Unicode `Numeric_Type` of `Decimal` or `Digit` — includes non-ASCII decimal digits and superscripts) |
+| `isalpha(s: string) -> bool` | True if all characters are alphabetic and string is non-empty, per Python `str.isalpha` (Unicode general category `Lu`/`Ll`/`Lt`/`Lm`/`Lo`) |
+| `isalnum(s: string) -> bool` | True if all characters are alphanumeric and string is non-empty, per Python `str.isalnum` (alphabetic per `isalpha`, or any Unicode `Numeric_Type`) |
+| `isspace(s: string) -> bool` | True if all characters are whitespace and string is non-empty, per Python `str.isspace` (category `Zs`/`Zl`/`Zp` or bidirectional class WS/B/S — includes U+001C–U+001F) |
+| `isupper(s: string) -> bool` | True if all cased characters are uppercase and there is at least one cased character, per Python `str.isupper` (see the cased-character note below) |
+| `islower(s: string) -> bool` | True if all cased characters are lowercase and there is at least one cased character, per Python `str.islower` (see the cased-character note below) |
 | `isascii(s: string) -> bool` | True if all characters are ASCII (U+0000–U+007F), or string is empty |
 | `count(s: string, sub: string) -> int` | Count non-overlapping occurrences of substring. The `sub` argument must be non-empty; an empty `sub` is an error. |
 | `find(s: string, sub: string) -> int` | Return lowest index of substring, or -1 if not found. The `sub` argument must be non-empty; an empty `sub` is an error. |
@@ -507,6 +507,23 @@ Note: The `join` function intentionally differs from Python's `str.join()`. In P
 `join` is a string method (`",".join(list)`), but OpenJD uses `list.join(sep)` instead.
 This design enables natural method chaining like `items.split(';').join(',')` and matches
 the convention used by JavaScript and Ruby.
+
+Note: The character classification functions (`isdigit`, `isalpha`, `isalnum`, `isspace`,
+`isupper`, `islower`) have exactly the semantics of the Python `str` methods of the same
+name, evaluated over the Unicode Character Database. They are not ASCII-only, and they do
+not correspond to other languages' character predicates (for example, Rust's `Alphabetic`
+property is a superset of `isalpha`'s `L*` categories). In particular:
+- `isdigit` is true for any decimal digit, e.g. U+0663 ARABIC-INDIC DIGIT THREE.
+- `isalnum` is broader than `isalpha` OR `isdigit`: characters whose `Numeric_Type` is
+  `Numeric`, such as U+00BD VULGAR FRACTION ONE HALF, are alphanumeric but neither
+  alphabetic nor digits.
+- A character is *cased* if it has the Unicode `Uppercase` or `Lowercase` property or
+  general category `Lt` (titlecase). `isupper` and `islower` ignore uncased characters
+  (digits, ideographs, punctuation), and titlecase characters are cased but neither
+  uppercase nor lowercase.
+Implementations must derive these classifications from Unicode Character Database data
+equivalent to a current CPython release. Differences between Unicode versions for newly
+assigned code points are permitted.
 
 #### Regular Expression Functions
 
