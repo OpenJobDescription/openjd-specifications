@@ -1497,8 +1497,8 @@ Examples:
 |-----------|-------------|
 | `upper(s: string) -> string` | Convert to uppercase |
 | `lower(s: string) -> string` | Convert to lowercase |
-| `capitalize(s: string) -> string` | Capitalize first character, lowercase rest |
-| `title(s: string) -> string` | Capitalize first character of each word |
+| `capitalize(s: string) -> string` | Titlecase first character, lowercase rest, per Python `str.capitalize` (see the case mapping note below) |
+| `title(s: string) -> string` | Titlecase the first character of each word, lowercase the rest, per Python `str.title`: a word starts after any uncased character (see the case mapping note below) |
 | `strip(s: string) -> string` | Remove leading/trailing whitespace |
 | `strip(s: string, chars: string) -> string` | Remove leading/trailing characters in `chars` |
 | `lstrip(s: string) -> string` | Remove leading whitespace |
@@ -1575,6 +1575,19 @@ property is a superset of `isalpha`'s `L*` categories). In particular:
 Implementations must derive these classifications from Unicode Character Database data
 equivalent to a current CPython release. Differences between Unicode versions for newly
 assigned code points are permitted.
+
+Note: The case mapping functions `title` and `capitalize` likewise have exactly the
+semantics of Python's `str.title` and `str.capitalize`:
+- Word boundaries in `title` are determined by cased-ness, not alphanumeric-ness: a
+  character is titlecased when the preceding character is not cased, so digits,
+  punctuation, and uncased letters all start a new word (`title("1st")` is `"1St"`).
+- Word-start characters use the full Unicode titlecase mapping, not the uppercase
+  mapping: `title("ǆab")` is `"ǅab"` (U+01C5, titlecase) and `capitalize("ßx")` is
+  `"Ssx"`.
+- `capitalize` titlecases the first character and lowercases the rest (Python ≥ 3.8
+  semantics).
+- Lowercasing applies the Unicode Final_Sigma context rule: `title("OΣ K")` is
+  `"Oς K"`.
 
 #### 2.2.5. Regular Expression Functions
 
