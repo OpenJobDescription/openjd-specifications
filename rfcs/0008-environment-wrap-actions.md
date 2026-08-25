@@ -280,7 +280,8 @@ The following terms are used throughout this specification.
 
 ```diff
   <EnvironmentActions> ::= the object:
-    onEnter: <Action>
+-   onEnter: <Action>
++   onEnter: <Action> # @optional
 +   onWrapEnvEnter: <Action>    # @optional @extension WRAP_ACTIONS
 +   onWrapTaskRun: <Action>     # @optional @extension WRAP_ACTIONS
 +   onWrapEnvExit: <Action>     # @optional @extension WRAP_ACTIONS
@@ -296,6 +297,10 @@ The following terms are used throughout this specification.
 4. *onWrapEnvExit*: if provided, runs instead of the `onExit` action of every
    *inner* environment that exits while this environment is active.
 5. *onExit*: the action to run when exiting the environment.
+
+At least one of *onEnter* or *onExit* must be provided. Defining a complete set
+of wrap hooks (subject to the all-or-nothing rule below) also satisfies this
+requirement.
 
 Each wrap hook receives the wrapped action's context via the
 `WrappedAction.*` template variables (see

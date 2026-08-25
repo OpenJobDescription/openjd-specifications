@@ -1569,11 +1569,11 @@ embeddedFiles: [ <EmbeddedFile>, ... ] # @optional
 An `<EnvironmentActions>` is the object:
 
 ```yaml
-onEnter: <Action>
+onEnter: <Action> # @optional
 onWrapEnvEnter: <Action>    # @optional @extension WRAP_ACTIONS
 onWrapTaskRun: <Action>     # @optional @extension WRAP_ACTIONS
 onWrapEnvExit: <Action>     # @optional @extension WRAP_ACTIONS
-onExit: <Action> # optional
+onExit: <Action> # @optional
 ```
 
 1. *onEnter* — The action run when the environment is being entered on a host.
@@ -1590,6 +1590,9 @@ onExit: <Action> # optional
    seconds, or five minutes. Job schedulers may provide the ability to cancel jobs/steps/tasks. A
    reasonable default expectation should be that OpenJobDescription sessions are able to end and
    cleanup within a bound amount of time.
+
+Subject to the constraint that at least one of *onEnter* or *onExit* must be provided. (With the
+`WRAP_ACTIONS` extension, a complete set of wrap hooks also satisfies this requirement.)
 
 > **`WRAP_ACTIONS` extension constraints.**
 >
