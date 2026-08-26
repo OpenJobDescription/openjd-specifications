@@ -64,7 +64,7 @@ These two fixtures state the normalizing reading. They should not be promoted ou
 
 - [§3.3.2 L1014](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1014) attributes[].anyOf is @fmtstring in base 2023-09, no extension gate
 - [§3.3.2 L1015](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1015) attributes[].allOf, same
-- [§3.3.2.2 L1054](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1054) `<AttributeCapabilityValue>` pattern the resolved value must satisfy
+- [§3.3.2.2 L1059](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1059) `<AttributeCapabilityValue>` pattern the resolved value must satisfy
 - [§3.4.1.1 L1110](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1110) `<IntRangeList>` elements are `<integer> | <intstring>`
 - [§3.4.1.2 L1184](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1184) `<FloatRangeList>` elements are `<float> | <floatstring>`
 - [§2.3 L306](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L306) `<intstring>` is defined only as a base-10 string representation

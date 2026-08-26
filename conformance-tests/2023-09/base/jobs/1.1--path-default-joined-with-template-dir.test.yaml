@@ -1,4 +1,4 @@
-# §7.4 L2014 states that at job creation "PATH parameter defaults are joined with the job
+# §7.4 L2017 states that at job creation "PATH parameter defaults are joined with the job
 # template directory". That join is a value transform, so the raw template and the resolved job
 # differ, and a consumer reading the raw default gets a relative path.
 #
@@ -13,8 +13,8 @@
 # resolves symlinks and reports /private/var/..., the other reports /var/...
 #
 # Spec references, Template Schemas 2023-09:
-#   §7.4 L2014  PATH parameter defaults are joined with the job template directory at job creation
-#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L2014
+#   §7.4 L2017  PATH parameter defaults are joined with the job template directory at job creation
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L2017
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob

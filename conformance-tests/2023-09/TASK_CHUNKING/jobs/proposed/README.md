@@ -33,7 +33,7 @@ specific to the bound check rather than to resolution itself.
 
 - [§3.4.1.5 L1263](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1263) chunks.defaultTaskCount is @fmtstring, so the bound defers past decode
 - [§3.4.1.5 L1276](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1276) defaultTaskCount minimum value: 1, the bound not re-checked after resolution
-- [§7.4 L2014](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L2014) format strings not annotated @fmtstring[host] resolve at job creation
+- [§7.4 L2017](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L2017) format strings not annotated @fmtstring[host] resolve at job creation
 
 Line numbers are a locator for where each claim was verified. The section numbers are the
 durable reference if the spec is re-flowed.
