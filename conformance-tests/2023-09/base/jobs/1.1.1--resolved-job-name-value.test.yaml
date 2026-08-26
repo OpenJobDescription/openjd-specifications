@@ -1,16 +1,22 @@
-# The job template `name` is annotated @fmtstring (Template Schemas L38) and resolves at
-# job creation. Existing base fixtures assert a PARALLEL substitution of the same parameter
-# into a task argument, which proves the parameter resolved somewhere but says nothing about
-# the name field. EXPR/jobs/7.3.1--job-name-step-name.test.yaml asserts the resolved name
-# properly, but needs the EXPR extension to read {{ Job.Name }}.
+# The job template `name` is annotated @fmtstring (§1.1 L38) and resolves at job creation.
+# Existing base fixtures assert a PARALLEL substitution of the same parameter into a task
+# argument, which proves the parameter resolved somewhere but says nothing about the name field.
+# EXPR/jobs/7.3.1--job-name-step-name.test.yaml asserts the resolved name properly, but needs
+# the EXPR extension to read {{ Job.Name }}.
 #
-# This asserts the name field itself at base level, through the implementation's own report
-# of the job it ran. Both reference CLIs emit the resolved name twice, once as
-# `Running job '<name>'` and once as `Job: <name>` in the results block, so the assertion is
-# written with anyOf and either satisfies it.
+# This asserts the name field itself at base level, through the implementation's own report of
+# the job it ran. Both reference CLIs emit the resolved name twice, once as `Running job
+# '<name>'` and once as `Job: <name>` in the results block, so the assertion is written with
+# anyOf and either satisfies it.
 #
 # The parameters block overrides both defaults. The default-derived name is forbidden, so a
 # fixture that resolved against defaults instead of submitted values fails.
+#
+# Spec references, Template Schemas 2023-09:
+#   §1.1 L38  the job template name field is @fmtstring
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L38
+#   §7.4 L2014  resolved at job creation, since it is not annotated @fmtstring[host]
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L2014
 template:
   specificationVersion: jobtemplate-2023-09
   name: Job-{{Param.Project}}-{{Param.Version}}

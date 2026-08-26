@@ -1,14 +1,19 @@
 # <JobIntParameterDefinition>.minValue and .maxValue are `<integer> | <intstring>` in base
-# 2023-09 (Template Schemas L308-309). When the bound is written as a string and the submitted
-# value arrives as a number, the comparison must be numeric. A naive implementation that
-# compares the string bound against the value lexically accepts and rejects the wrong things.
+# 2023-09 (§2.3 L308-309). When the bound is written as a string and the submitted value arrives
+# as a number, the comparison must be numeric. A naive implementation that compares the string
+# bound against the value lexically accepts and rejects the wrong things.
 #
 # Bounds here are the strings '10' and '100', and the submitted value is the number 50, which
-# satisfies both. The paired negative is
-# 1.1--int-intstring-bounds-violation.invalid.test.yaml.
+# satisfies both. The paired negative is 1.1--int-intstring-bounds-violation.invalid.test.yaml.
 #
 # '010' is used for the lower bound so a lexical comparison against '50' would order them
 # differently from the numeric comparison, making the two paths distinguishable.
+#
+# Spec references, Template Schemas 2023-09:
+#   §2.3 L308  minValue is `<integer> | <intstring>`
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L308
+#   §2.3 L309  maxValue is `<integer> | <intstring>`
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L309
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob

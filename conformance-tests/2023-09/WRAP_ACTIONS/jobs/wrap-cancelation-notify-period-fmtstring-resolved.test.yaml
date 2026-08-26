@@ -1,18 +1,28 @@
-# cancelation.notifyPeriodInSeconds is annotated @fmtstring under FEATURE_BUNDLE_1
-# (Template Schemas L1776), so it may be a parameter reference. Neither `openjd run` nor
-# `openjd summary` surfaces the field directly, so the resolved value would normally be
-# unobservable and only assertable at level 2.
+# cancelation.notifyPeriodInSeconds is annotated @fmtstring under FEATURE_BUNDLE_1 (§5.3.2
+# L1835), so it may be a parameter reference. Neither `openjd run` nor `openjd summary` surfaces
+# the field directly, so the resolved value would normally be unobservable and only assertable
+# at level 2.
 #
 # WrappedAction.Cancelation.NotifyPeriodInSeconds (RFC 0008) closes that: the reflection
 # variable carries the EFFECTIVE value, after schema defaults and after format-string
 # resolution, so a wrap script can read back what the job actually got.
 #
 # The parameter's own default is 120 and the submitted value is 47. Both are forbidden as
-# outputs alongside the unresolved literal, so the fixture fails if the implementation
-# resolves nothing, resolves to the default, or reflects a stale value.
+# outputs alongside the unresolved literal, so the fixture fails if the implementation resolves
+# nothing, resolves to the default, or reflects a stale value.
 #
-# Companion to WRAP_ACTIONS/jobs/wrap-cancelation-notify-period-injected.test.yaml, which
-# covers the same reflection path for a literal notifyPeriodInSeconds.
+# Companion to WRAP_ACTIONS/jobs/wrap-cancelation-notify-period-injected.test.yaml, which covers
+# the same reflection path for a literal notifyPeriodInSeconds.
+#
+# Spec references, Template Schemas 2023-09:
+#   §5.3.2 L1835  notifyPeriodInSeconds may be `<posintstring>` under FEATURE_BUNDLE_1, @fmtstring
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1835
+#   §4.3.1 L1630  WrappedAction.Cancelation.NotifyPeriodInSeconds reflection variable
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1630
+#   §2.3 L306  INT parameter value is `<integer> | <intstring>`
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L306
+#   RFC 0008  wrap hook template variables
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0008-environment-wrap-actions.md
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:

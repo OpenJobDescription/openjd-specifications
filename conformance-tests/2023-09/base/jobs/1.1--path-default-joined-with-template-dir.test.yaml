@@ -1,16 +1,20 @@
-# Template Schemas L2014 states that at job creation "PATH parameter defaults are joined
-# with the job template directory". That join is a value transform, so the raw template and
-# the resolved job differ, and a consumer reading the raw default gets a relative path.
+# §7.4 L2014 states that at job creation "PATH parameter defaults are joined with the job
+# template directory". That join is a value transform, so the raw template and the resolved job
+# differ, and a consumer reading the raw default gets a relative path.
 #
-# The existing fixture 1.1--validation-valid-path-default-within-template-dir.test.yaml
-# cannot catch a missing join: its default is `./output` and it asserts the substring
-# `/output`, which the un-joined `./output` also contains. An implementation that skipped the
-# join entirely passes it.
+# The existing fixture 1.1--validation-valid-path-default-within-template-dir.test.yaml cannot
+# catch a missing join: its default is `./output` and it asserts the substring `/output`, which
+# the un-joined `./output` also contains. An implementation that skipped the join entirely
+# passes it.
 #
 # This fixture removes that escape. The default carries no leading `./`, so `RESULT:inputs/`
 # appears only if the value was not joined, and it is forbidden. Only the path suffix is
 # asserted, because the absolute prefix legitimately differs between implementations: one
 # resolves symlinks and reports /private/var/..., the other reports /var/...
+#
+# Spec references, Template Schemas 2023-09:
+#   §7.4 L2014  PATH parameter defaults are joined with the job template directory at job creation
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L2014
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob

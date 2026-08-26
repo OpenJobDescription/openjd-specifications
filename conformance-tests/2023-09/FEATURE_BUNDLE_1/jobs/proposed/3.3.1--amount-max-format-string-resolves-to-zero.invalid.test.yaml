@@ -1,6 +1,6 @@
-# hostRequirements.amounts[].max is typed <positivefloat> (Template Schemas L959-960), and
-# section 3.3.1 confirms it separately from min, which is <nonnegativefloat>. So 0 is legal for
-# min and illegal for max.
+# hostRequirements.amounts[].max is typed <positivefloat> (§3.3.1 L959-960), and §3.3.1 confirms
+# it separately from min, which is <nonnegativefloat>. So 0 is legal for min and illegal for
+# max.
 #
 # Under FEATURE_BUNDLE_1 max may be a format string, and the positivity constraint cannot be
 # checked at decode because the value is not yet known. It must be re-checked after resolution
@@ -10,6 +10,14 @@
 # for a resolved value. A literal max: 0 is already rejected at decode by
 # base/job_templates/3.3.1--amount-max-zero.invalid.yaml, so only the resolved path is
 # unguarded.
+#
+# Spec references, Template Schemas 2023-09:
+#   §3.3.1 L959  amounts[].max is `<positivefloat>`, so 0 is illegal
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L959
+#   §3.3.1 L957  amounts[].min is `<nonnegativefloat>`, so 0 IS legal there
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L957
+#   §3.3.1 L960  max may be a format string under FEATURE_BUNDLE_1, so the bound defers past decode
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L960
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:

@@ -7,7 +7,7 @@ Promotion is `git mv` up one directory with no edit to the fixture.
 
 | Fixture | Construct | Observed |
 |---|---|---|
-| `default-task-count-format-string-resolves-to-zero.invalid.test.yaml` | `chunks.defaultTaskCount: "{{Param.ChunkSize}}"` where the parameter default is `0`, against the documented minimum of 1 (Template Schemas L1276) | openjd-model Python rejects at job creation. The Rust CLI reports `Template ... passes validation checks` and then runs, logging `Frame(CHUNK[INT]) = 1-1`, so the resolved `0` is treated as `1` |
+| `default-task-count-format-string-resolves-to-zero.invalid.test.yaml` | `chunks.defaultTaskCount: "{{Param.ChunkSize}}"` where the parameter default is `0`, against the documented minimum of 1 (§3.4.1.5 L1276) | openjd-model Python rejects at job creation. The Rust CLI reports `Template ... passes validation checks` and then runs, logging `Frame(CHUNK[INT]) = 1-1`, so the resolved `0` is treated as `1` |
 
 ## Classification
 
@@ -28,3 +28,12 @@ A green twin ships in `../default-task-count-format-string.test.yaml`, which ass
 that a format-string `defaultTaskCount` resolves and produces the expected chunk
 boundaries. That case passes both implementations, so the divergence recorded here is
 specific to the bound check rather than to resolution itself.
+
+## Spec references, Template Schemas 2023-09
+
+- [§3.4.1.5 L1263](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1263) chunks.defaultTaskCount is @fmtstring, so the bound defers past decode
+- [§3.4.1.5 L1276](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1276) defaultTaskCount minimum value: 1, the bound not re-checked after resolution
+- [§7.4 L2014](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L2014) format strings not annotated @fmtstring[host] resolve at job creation
+
+Line numbers are a locator for where each claim was verified. The section numbers are the
+durable reference if the spec is re-flowed.

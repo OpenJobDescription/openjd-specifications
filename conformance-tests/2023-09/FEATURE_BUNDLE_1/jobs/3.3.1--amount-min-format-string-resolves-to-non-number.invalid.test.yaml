@@ -1,11 +1,16 @@
-# hostRequirements.amounts[].min may be a format string under FEATURE_BUNDLE_1 (Template
-# Schemas L958). The numeric constraint cannot be checked at decode, so it must be checked
-# after resolution at job creation. Here the parameter resolves to a non-numeric string and
-# the run must fail.
+# hostRequirements.amounts[].min may be a format string under FEATURE_BUNDLE_1 (§3.3.1 L958).
+# The numeric constraint cannot be checked at decode, so it must be checked after resolution at
+# job creation. Here the parameter resolves to a non-numeric string and the run must fail.
 #
-# This is the negative half of the amount-resolution gap. The positive half, asserting that
-# min and max resolve to the CORRECT numbers, is not writable today: no openjd CLI surfaces
-# resolved host requirements, in summary --output json or anywhere else.
+# This is the negative half of the amount-resolution gap. The positive half, asserting that min
+# and max resolve to the CORRECT numbers, is not writable today: no openjd CLI surfaces resolved
+# host requirements, in summary --output json or anywhere else.
+#
+# Spec references, Template Schemas 2023-09:
+#   §3.3.1 L958  amounts[].min may be `<nonnegativefloatstring>` under FEATURE_BUNDLE_1, @fmtstring
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L958
+#   §7.4 L2014  format strings not annotated @fmtstring[host] resolve at job creation
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L2014
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
