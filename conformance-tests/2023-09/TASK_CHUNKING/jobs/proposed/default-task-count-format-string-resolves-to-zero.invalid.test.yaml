@@ -1,0 +1,33 @@
+# chunks.defaultTaskCount has a minimum of 1. When the value is written as a format string
+# the bound cannot be checked at decode, because the value is not yet known, so it must be
+# checked after resolution at job creation. This case supplies a parameter that resolves to
+# 0 and must therefore fail.
+#
+# .invalid.test.yaml rather than .invalid.yaml: the template is statically valid and the
+# error only fires once the expression is evaluated.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - TASK_CHUNKING
+  name: ChunkTest
+  parameterDefinitions:
+  - name: ChunkSize
+    type: INT
+    default: 0
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: CHUNK[INT]
+        range: 1-8
+        chunks:
+          defaultTaskCount: "{{Param.ChunkSize}}"
+          rangeConstraint: CONTIGUOUS
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'CHUNK:{{Task.Param.Frame}}')
