@@ -18,7 +18,8 @@ template:
   parameterDefinitions:
   - name: CpuMax
     type: INT
-    default: 0
+    # <intstring> form, so the positivity check must survive both coercions.
+    default: '0'
   steps:
   - name: Step1
     hostRequirements:

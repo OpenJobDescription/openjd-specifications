@@ -17,7 +17,9 @@ template:
   parameterDefinitions:
   - name: TargetRuntime
     type: INT
-    default: 0
+    # <intstring> form: the string must parse to 0 before the format string can resolve to
+    # it, so this fixture covers both coercion layers rather than only the second.
+    default: '00'
   steps:
   - name: Step1
     parameterSpace:
