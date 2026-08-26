@@ -1,0 +1,35 @@
+# <JobIntParameterDefinition>.minValue and .maxValue are `<integer> | <intstring>` in base
+# 2023-09 (Template Schemas L308-309). When the bound is written as a string and the submitted
+# value arrives as a number, the comparison must be numeric. A naive implementation that
+# compares the string bound against the value lexically accepts and rejects the wrong things.
+#
+# Bounds here are the strings '10' and '100', and the submitted value is the number 50, which
+# satisfies both. The paired negative is
+# 1.1--int-intstring-bounds-violation.invalid.test.yaml.
+#
+# '010' is used for the lower bound so a lexical comparison against '50' would order them
+# differently from the numeric comparison, making the two paths distinguishable.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Count
+    type: INT
+    minValue: '010'
+    maxValue: '100'
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'COUNT:{{Param.Count}}')
+parameters:
+  Count: 50
+expected:
+  output:
+  - 'COUNT:50'
+  forbidden:
+  - '{{Param.'

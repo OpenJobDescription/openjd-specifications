@@ -1,0 +1,39 @@
+# <FloatRangeList> elements are `<float> | <floatstring>` in base 2023-09 (Template Schemas
+# L1184), with no extension gate. The suite has 1,044 FloatRangeList elements and not one uses
+# the string form.
+#
+# Same question as the IntRangeList case in this directory: <floatstring> is a string
+# representation of a base-10 number, so '02.50' represents 2.5 and the task parameter should
+# carry that number rather than the source text.
+#
+# Note for reviewers: the direction of normalization is not consistent across the two
+# implementations today, and it is not consistent across FIELDS either. For range-list elements
+# one implementation preserves the literal and the other normalizes; for a FLOAT parameter
+# DEFAULT the two swap sides. An already-landed fixture,
+# EXPR/jobs/expr1.3.4--float-passthrough.test.yaml, pins the verbatim behaviour for a parameter
+# default by asserting PARAM:3.500 from default "3.500". So a spec ruling is needed on whether
+# <floatstring> normalizes, and if it does, the landed fixture and this one cannot both be
+# right. This fixture states the normalizing reading; it should not merge until that is settled.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Weight
+        type: FLOAT
+        range: ['1.5', '02.50']
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'W:{{Task.Param.Weight}}')
+expected:
+  output:
+  - 'W:1.5'
+  - 'W:2.5'
+  forbidden:
+  - 'W:02.50'

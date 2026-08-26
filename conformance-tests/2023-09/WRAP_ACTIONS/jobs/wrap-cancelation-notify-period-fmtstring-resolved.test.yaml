@@ -1,0 +1,66 @@
+# cancelation.notifyPeriodInSeconds is annotated @fmtstring under FEATURE_BUNDLE_1
+# (Template Schemas L1776), so it may be a parameter reference. Neither `openjd run` nor
+# `openjd summary` surfaces the field directly, so the resolved value would normally be
+# unobservable and only assertable at level 2.
+#
+# WrappedAction.Cancelation.NotifyPeriodInSeconds (RFC 0008) closes that: the reflection
+# variable carries the EFFECTIVE value, after schema defaults and after format-string
+# resolution, so a wrap script can read back what the job actually got.
+#
+# The parameter's own default is 120 and the submitted value is 47. Both are forbidden as
+# outputs alongside the unresolved literal, so the fixture fails if the implementation
+# resolves nothing, resolves to the default, or reflects a stale value.
+#
+# Companion to WRAP_ACTIONS/jobs/wrap-cancelation-notify-period-injected.test.yaml, which
+# covers the same reflection path for a literal notifyPeriodInSeconds.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - FEATURE_BUNDLE_1
+  name: WrapNotifyPeriodFmtstringResolved
+  parameterDefinitions:
+  - name: NotifyPeriod
+    type: INT
+    minValue: 1
+    maxValue: 600
+    default: 120
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["placeholder"]
+          cancelation:
+            mode: NOTIFY_THEN_TERMINATE
+            notifyPeriodInSeconds: "{{Param.NotifyPeriod}}"
+parameters:
+  NotifyPeriod: 47
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: bash
+          args: ["-c", "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"]
+        onWrapTaskRun:
+          command: bash
+          # `<...>` sentinel wrap so an empty or null value renders unambiguously as `NP=<>`.
+          args: ["-c", "echo \"NP=<{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}>\""]
+        onWrapEnvExit:
+          command: bash
+          args: ["-c", "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"]
+runOn:
+- posix
+expected:
+  output:
+  - "NP=<47>"
+  forbidden:
+  - "NP=<{{"
+  - "NP=<>"
+  - "NP=<120>"

@@ -7,9 +7,12 @@ Promotion is `git mv` up one directory with no edit to the fixture.
 
 | Fixture | Construct | Observed |
 |---|---|---|
-| `3.3.2--format-string-in-anyof-resolves-to-invalid-value.invalid.test.yaml` | `hostRequirements.attributes[].anyOf` element written as `"{{Param.Software}}"`, resolving to `not valid!`, against the `<AttributeCapabilityValue>` pattern in section 3.3.2.2 | openjd-model Python rejects at job creation with `Value not valid! is not a valid attribute capability value.` The Rust CLI accepts the resolved value and runs the job to completion |
+| `3.3.2--format-string-in-anyof-resolves-to-invalid-value.invalid.test.yaml` | `attributes[].anyOf` element written as `"{{Param.Software}}"`, resolving to `not valid!`, against the `<AttributeCapabilityValue>` pattern in section 3.3.2.2 | Python rejects at job creation with `Value not valid! is not a valid attribute capability value.` The Rust CLI accepts the resolved value and runs the job |
+| `3.3.2--format-string-in-allof-resolves-to-invalid-value.invalid.test.yaml` | Same, for `allOf` at L1015 | Same. Swept across four invalid resolved values, a space, an exclamation mark, 120 characters and a leading digit: Python rejects all four, Rust runs all four |
+| `3.4.1.1--int-range-intstring-elements-normalized.test.yaml` | `<IntRangeList>` elements in the `<intstring>` string form, `['1', '02', '003']` | Rust substitutes `1`, `2`, `3`. Python substitutes `1`, `02`, `003`, so a task command line receives `--frame 02` |
+| `3.4.1.2--float-range-floatstring-elements-normalized.test.yaml` | `<FloatRangeList>` elements in the `<floatstring>` string form, `['1.5', '02.50']` | Rust substitutes `1.5`, `2.5`. Python substitutes `1.5`, `02.50` |
 
-## Classification
+## Classification: the two capability-value fixtures
 
 Implementation fix.
 
@@ -32,3 +35,27 @@ resolved `anyOf` value is *correct*. No `openjd` CLI surfaces resolved host
 requirements, in `summary --output json` or anywhere else, and the runner asserts only
 on stdout and task status, so the resolved value has no observable effect on a
 single-host run. The negative case above is the reachable half.
+
+
+## Classification: the two range-element fixtures
+
+Spec decision needed, then an implementation fix on one side or the other.
+
+`<intstring>` and `<floatstring>` are defined only as "a string whose value is the string
+representation of an integer / floating point value in base-10". Nothing is said about
+whether the string form normalizes, so `['02']` yielding `2` and yielding `02` are both
+defensible readings of the text as written.
+
+Two facts make this worth a ruling rather than a shrug. First, the value reaches a task
+command line, so the two readings produce different renderer invocations for the same
+template. Second, the implementations do not merely disagree, they disagree in opposite
+directions on different fields: for range-list elements Python preserves the literal and
+Rust normalizes, while for a FLOAT parameter `default` Python normalizes and Rust preserves.
+
+There is also a conflict with a landed fixture. `EXPR/jobs/expr1.3.4--float-passthrough.test.yaml`
+asserts `PARAM:3.500` from `default: "3.500"`, which pins the verbatim reading for a parameter
+default. If the spec rules that `<floatstring>` normalizes, that fixture and
+`3.4.1.2--...` here cannot both be correct.
+
+These two fixtures state the normalizing reading. They should not be promoted out of
+`proposed/` until the spec says which reading is conformant.

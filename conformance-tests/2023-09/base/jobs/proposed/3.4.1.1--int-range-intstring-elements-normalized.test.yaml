@@ -1,0 +1,35 @@
+# <IntRangeList> elements are `<integer> | <intstring>` in base 2023-09 (Template Schemas
+# L1110), with no extension gate. The suite has 2,417 IntRangeList elements and not one uses
+# the string form, so nothing asserts what a string element resolves to.
+#
+# <intstring> is defined as "a string whose value is the string representation of an integer
+# value in base-10", so '02' and '003' represent the integers 2 and 3, and the task parameter
+# should carry those integers rather than the source text.
+#
+# This is the value that reaches a task command line, so a wrong answer here means a renderer
+# is invoked with --frame 02 instead of --frame 2.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range: ['1', '02', '003']
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'FRAME:{{Task.Param.Frame}}')
+expected:
+  output:
+  - 'FRAME:1'
+  - 'FRAME:2'
+  - 'FRAME:3'
+  forbidden:
+  - 'FRAME:02'
+  - 'FRAME:003'

@@ -1,0 +1,32 @@
+# <JobIntParameterDefinition>.default is `<integer> | <intstring>` in base 2023-09 (Template
+# Schemas L306) with no extension gate. The string form is a distinct coercion surface: a
+# consumer reading the raw template sees "007" where the resolved job carries 7.
+#
+# The suite has template-level coverage of the string form
+# (base/job_templates/2.3--int-param-with-default-string.yaml) and no job-level coverage of
+# any string-form definition field, so nothing asserts what the string resolves TO.
+#
+# `007` is chosen over `7` so the assertion distinguishes a parsed integer from a passed-through
+# literal. `COUNT:007` is forbidden.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Count
+    type: INT
+    default: '007'
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'COUNT:{{Param.Count}}')
+expected:
+  output:
+  - 'COUNT:7'
+  forbidden:
+  - 'COUNT:007'
+  - '{{Param.'
