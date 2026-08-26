@@ -1,0 +1,29 @@
+# <JobIntParameterDefinition>.allowedValues is `[ <integer> | <intstring>, ... ]` in base
+# 2023-09 (Template Schemas L307). Membership must be decided numerically when the list holds
+# the string form and the submitted value arrives as a number.
+#
+# The list is ['1', '2', '4'] as strings, and the submitted value is the number 3, which is
+# absent. The job must be rejected at job creation. The paired positive case, submitting a
+# member, is covered at template level by
+# base/job_templates/2.3--allowed-values-intstring.yaml.
+#
+# '04' is used for the third element so an implementation comparing string forms rather than
+# parsed integers would also fail to match a submitted 4, which the mutation check exercises.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Count
+    type: INT
+    allowedValues: ['1', '2', '04']
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'COUNT:{{Param.Count}}')
+parameters:
+  Count: 3

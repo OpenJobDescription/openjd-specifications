@@ -1,0 +1,34 @@
+# hostRequirements.amounts[].max is typed <positivefloat> (Template Schemas L959-960), and
+# section 3.3.1 confirms it separately from min, which is <nonnegativefloat>. So 0 is legal for
+# min and illegal for max.
+#
+# Under FEATURE_BUNDLE_1 max may be a format string, and the positivity constraint cannot be
+# checked at decode because the value is not yet known. It must be re-checked after resolution
+# at job creation. Here the parameter resolves to 0.
+#
+# This is the only assertion in the suite that distinguishes max semantics from min semantics
+# for a resolved value. A literal max: 0 is already rejected at decode by
+# base/job_templates/3.3.1--amount-max-zero.invalid.yaml, so only the resolved path is
+# unguarded.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - FEATURE_BUNDLE_1
+  name: TestJob
+  parameterDefinitions:
+  - name: CpuMax
+    type: INT
+    default: 0
+  steps:
+  - name: Step1
+    hostRequirements:
+      amounts:
+      - name: amount.worker.vcpu
+        max: "{{Param.CpuMax}}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'RAN')

@@ -1,0 +1,28 @@
+# Negative pair for 1.1--int-intstring-bounds-satisfied.test.yaml.
+#
+# minValue and maxValue are written as the strings '010' and '100', and the submitted value is
+# the number 200. The bound must be interpreted numerically and the value rejected at job
+# creation. An implementation that fails to parse a string bound, or that compares it
+# lexically, admits this job.
+#
+# .invalid.test.yaml rather than .invalid.yaml: the template is statically valid and the error
+# only fires once the submitted value is bound.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Count
+    type: INT
+    minValue: '010'
+    maxValue: '100'
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'COUNT:{{Param.Count}}')
+parameters:
+  Count: 200
