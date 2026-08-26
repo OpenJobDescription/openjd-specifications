@@ -18,8 +18,8 @@
 # Spec references, Template Schemas 2023-09:
 #   §3.4.1.2 L1184  `<FloatRangeList>` elements are `<float> | <floatstring>`
 #     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1184
-#   §2.4 L363  `<floatstring>` is defined only as a base-10 string representation
-#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L363
+#   §2.4 L375  `<floatstring>` is a string representation of a float or integer in base-10
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L375
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob
