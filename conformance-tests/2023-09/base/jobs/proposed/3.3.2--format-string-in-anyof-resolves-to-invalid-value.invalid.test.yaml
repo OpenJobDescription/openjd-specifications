@@ -1,16 +1,21 @@
-# hostRequirements.attributes[].anyOf is annotated @fmtstring in base 2023-09 (Template
-# Schemas L1014), with no extension gate. Its element type <AttributeCapabilityValue>
-# (section 3.3.2.2) constrains the value to the identifier-like pattern, and that constraint
-# cannot be checked at decode when the element is a format string. It must therefore be
-# checked after resolution at job creation.
+# hostRequirements.attributes[].anyOf is annotated @fmtstring in base 2023-09 (§3.3.2 L1014),
+# with no extension gate. Its element type <AttributeCapabilityValue> (§3.3.2.2) constrains the
+# value to the identifier-like pattern, and that constraint cannot be checked at decode when the
+# element is a format string. It must therefore be checked after resolution at job creation.
 #
-# Here the parameter resolves to "not valid!", which contains a space and an exclamation
-# mark, so the run must fail.
+# Here the parameter resolves to "not valid!", which contains a space and an exclamation mark,
+# so the run must fail.
 #
-# NOTE ON CURRENT STATE: this case is expected to FAIL against the Rust CLI, which accepts
-# the resolved value and runs the job. The Python CLI rejects it with "Value not valid! is
-# not a valid attribute capability value." That divergence is the defect this case exists to
-# expose; it is not a broken test.
+# NOTE ON CURRENT STATE: this case is expected to FAIL against the Rust CLI, which accepts the
+# resolved value and runs the job. The Python CLI rejects it with "Value not valid! is not a
+# valid attribute capability value." That divergence is the defect this case exists to expose;
+# it is not a broken test.
+#
+# Spec references, Template Schemas 2023-09:
+#   §3.3.2 L1014  attributes[].anyOf is @fmtstring in base 2023-09, no extension gate
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1014
+#   §3.3.2.2 L1054  `<AttributeCapabilityValue>` pattern the resolved value must satisfy
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1054
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob

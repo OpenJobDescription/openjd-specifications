@@ -1,16 +1,24 @@
-# hostRequirements.attributes[].allOf is annotated @fmtstring in base 2023-09 (Template
-# Schemas L1015), the same as anyOf at L1014, with no extension gate. Its element type
-# <AttributeCapabilityValue> is constrained to the identifier-like pattern in section 3.3.2.2,
-# and that pattern cannot be checked at decode when the element is a format string, so it must
-# be re-checked after resolution at job creation.
+# hostRequirements.attributes[].allOf is annotated @fmtstring in base 2023-09 (§3.3.2 L1015),
+# the same as anyOf at §3.3.2 L1014, with no extension gate. Its element type
+# <AttributeCapabilityValue> is constrained to the identifier-like pattern in §3.3.2.2, and that
+# pattern cannot be checked at decode when the element is a format string, so it must be
+# re-checked after resolution at job creation.
 #
 # Here the parameter resolves to "not valid!", violating the pattern on both the space and the
 # exclamation mark.
 #
-# Companion to 3.3.2--format-string-in-anyof-resolves-to-invalid-value.invalid.test.yaml in
-# this directory. anyOf and allOf are separate spec fields with separate validators, so they
-# are covered separately rather than assumed symmetric, but the observed divergence is the same
-# and reviewers may prefer to treat both as one issue.
+# Companion to 3.3.2--format-string-in-anyof-resolves-to-invalid-value.invalid.test.yaml in this
+# directory. anyOf and allOf are separate spec fields with separate validators, so they are
+# covered separately rather than assumed symmetric, but the observed divergence is the same and
+# reviewers may prefer to treat both as one issue.
+#
+# Spec references, Template Schemas 2023-09:
+#   §3.3.2 L1015  attributes[].allOf is @fmtstring in base 2023-09, no extension gate
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1015
+#   §3.3.2 L1014  the anyOf counterpart, covered separately as a distinct field
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1014
+#   §3.3.2.2 L1054  `<AttributeCapabilityValue>` pattern the resolved value must satisfy
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1054
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob

@@ -7,7 +7,7 @@ Promotion is `git mv` up one directory with no edit to the fixture.
 
 | Fixture | Construct | Observed |
 |---|---|---|
-| `3.3.1--amount-max-format-string-resolves-to-zero.invalid.test.yaml` | `amounts[].max: "{{Param.CpuMax}}"` where the parameter default is `0`, against the `<positivefloat>` type at L959 | openjd-model Python rejects at job creation. The Rust CLI accepts the resolved `0` and runs the job to completion |
+| `3.3.1--amount-max-format-string-resolves-to-zero.invalid.test.yaml` | `amounts[].max: "{{Param.CpuMax}}"` where the parameter default is `0`, against the `<positivefloat>` type at §3.3.1 L959 | openjd-model Python rejects at job creation. The Rust CLI accepts the resolved `0` and runs the job to completion |
 
 ## Classification
 
@@ -35,3 +35,12 @@ Not covered by any fixture, here or in `../`: the positive case asserting a reso
 is the correct number. No `openjd` CLI surfaces resolved host requirements, and the runner
 asserts only on stdout and task status, so a host requirement has no observable effect on a
 single-host run. The negative cases are the reachable half.
+
+## Spec references, Template Schemas 2023-09
+
+- [§3.3.1 L959](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L959) amounts[].max is `<positivefloat>`, so 0 is illegal
+- [§3.3.1 L957](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L957) amounts[].min is `<nonnegativefloat>`, so 0 IS legal there
+- [§3.3.1 L960](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L960) max may be a format string under FEATURE_BUNDLE_1, so the bound defers past decode
+
+Line numbers are a locator for where each claim was verified. The section numbers are the
+durable reference if the spec is re-flowed.

@@ -1,14 +1,18 @@
 # Strengthened: the expected substrings alone could not distinguish a joined path from an
 # un-joined one. The default is `./output`, and the POSIX assertion `/output` is a substring of
-# the literal `./output`, so an implementation that skipped the template-directory join
-# entirely still passed. Verified by running this fixture with the task hardcoded to print
+# the literal `./output`, so an implementation that skipped the template-directory join entirely
+# still passed. Verified by running this fixture with the task hardcoded to print
 # `OUTPUT:./output`, which passed.
 #
-# The forbidden entries close that. `OUTPUT:./` and `OUTPUT:output` can only appear if the
-# value reaching the task was not joined with the job template directory.
+# The forbidden entries close that. `OUTPUT:./` and `OUTPUT:output` can only appear if the value
+# reaching the task was not joined with the job template directory.
 #
 # See also 1.1--path-default-joined-with-template-dir.test.yaml, which asserts the same
 # behaviour with a default carrying no `./` prefix.
+#
+# Spec references, Template Schemas 2023-09:
+#   §7.4 L2014  PATH parameter defaults are joined with the job template directory at job creation
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L2014
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob

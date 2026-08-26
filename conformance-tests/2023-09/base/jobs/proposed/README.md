@@ -8,7 +8,7 @@ Promotion is `git mv` up one directory with no edit to the fixture.
 | Fixture | Construct | Observed |
 |---|---|---|
 | `3.3.2--format-string-in-anyof-resolves-to-invalid-value.invalid.test.yaml` | `attributes[].anyOf` element written as `"{{Param.Software}}"`, resolving to `not valid!`, against the `<AttributeCapabilityValue>` pattern in section 3.3.2.2 | Python rejects at job creation with `Value not valid! is not a valid attribute capability value.` The Rust CLI accepts the resolved value and runs the job |
-| `3.3.2--format-string-in-allof-resolves-to-invalid-value.invalid.test.yaml` | Same, for `allOf` at L1015 | Same. Swept across four invalid resolved values, a space, an exclamation mark, 120 characters and a leading digit: Python rejects all four, Rust runs all four |
+| `3.3.2--format-string-in-allof-resolves-to-invalid-value.invalid.test.yaml` | Same, for `allOf` at §3.3.2 L1015 | Same. Swept across four invalid resolved values, a space, an exclamation mark, 120 characters and a leading digit: Python rejects all four, Rust runs all four |
 | `3.4.1.1--int-range-intstring-elements-normalized.test.yaml` | `<IntRangeList>` elements in the `<intstring>` string form, `['1', '02', '003']` | Rust substitutes `1`, `2`, `3`. Python substitutes `1`, `02`, `003`, so a task command line receives `--frame 02` |
 | `3.4.1.2--float-range-floatstring-elements-normalized.test.yaml` | `<FloatRangeList>` elements in the `<floatstring>` string form, `['1.5', '02.50']` | Rust substitutes `1.5`, `2.5`. Python substitutes `1.5`, `02.50` |
 
@@ -16,7 +16,7 @@ Promotion is `git mv` up one directory with no edit to the fixture.
 
 Implementation fix.
 
-`anyOf` is annotated `@fmtstring` in base 2023-09 at Template Schemas L1014, with no
+`anyOf` is annotated `@fmtstring` in base 2023-09 at (§3.3.2 L1014, with no
 extension gate, and its element type is constrained to the identifier-like pattern in
 section 3.3.2.2. That pattern cannot be checked at decode when the element is a format
 string, so it must be re-checked after resolution at job creation. The Python path does
@@ -59,3 +59,15 @@ default. If the spec rules that `<floatstring>` normalizes, that fixture and
 
 These two fixtures state the normalizing reading. They should not be promoted out of
 `proposed/` until the spec says which reading is conformant.
+
+## Spec references, Template Schemas 2023-09
+
+- [§3.3.2 L1014](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1014) attributes[].anyOf is @fmtstring in base 2023-09, no extension gate
+- [§3.3.2 L1015](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1015) attributes[].allOf, same
+- [§3.3.2.2 L1054](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1054) `<AttributeCapabilityValue>` pattern the resolved value must satisfy
+- [§3.4.1.1 L1110](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1110) `<IntRangeList>` elements are `<integer> | <intstring>`
+- [§3.4.1.2 L1184](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1184) `<FloatRangeList>` elements are `<float> | <floatstring>`
+- [§2.3 L306](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L306) `<intstring>` is defined only as a base-10 string representation
+
+Line numbers are a locator for where each claim was verified. The section numbers are the
+durable reference if the spec is re-flowed.
