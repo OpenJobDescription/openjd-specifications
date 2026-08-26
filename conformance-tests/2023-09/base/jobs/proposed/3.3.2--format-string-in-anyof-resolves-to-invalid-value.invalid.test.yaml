@@ -14,8 +14,8 @@
 # Spec references, Template Schemas 2023-09:
 #   §3.3.2 L1014  attributes[].anyOf is @fmtstring in base 2023-09, no extension gate
 #     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1014
-#   §3.3.2.2 L1054  `<AttributeCapabilityValue>` pattern the resolved value must satisfy
-#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1054
+#   §3.3.2.2 L1059  `<AttributeCapabilityValue>` pattern the resolved value must satisfy
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1059
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob

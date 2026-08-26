@@ -16,8 +16,8 @@
 #     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1263
 #   §2.3 L306  INT parameter default is `<integer> | <intstring>`
 #     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L306
-#   §7.4 L2014  format strings not annotated @fmtstring[host] resolve at job creation
-#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L2014
+#   §7.4 L2017  format strings not annotated @fmtstring[host] resolve at job creation
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L2017
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
