@@ -35,7 +35,10 @@ template:
             mode: NOTIFY_THEN_TERMINATE
             notifyPeriodInSeconds: "{{Param.NotifyPeriod}}"
 parameters:
-  NotifyPeriod: 47
+  # <intstring> form on the SUBMITTED value, not just the definition default. Three
+  # coercions chain here: the string parses to 47, the format string on the action resolves
+  # to it, and the reflection variable reports the effective value.
+  NotifyPeriod: '047'
 environments:
 - specificationVersion: environment-2023-09
   extensions:
