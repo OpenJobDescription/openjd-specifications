@@ -1,0 +1,42 @@
+# chunks.defaultTaskCount is annotated @fmtstring (Template Schemas L1263), so it may be
+# a parameter reference and must be resolved at job creation. This case pins the resolved
+# value by its observable effect: ChunkSize=3 over the range 1-8 can only produce the
+# boundaries 1-3, 4-6, 7-8. An implementation that reads the pre-resolution template value
+# fails here rather than at some later stage.
+#
+# Status-only by design: a 3-chunk run cannot self-assert, because each task sees only its
+# own output (see the conformance-tests README).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - TASK_CHUNKING
+  name: ChunkTest
+  parameterDefinitions:
+  - name: ChunkSize
+    type: INT
+    default: 3
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: CHUNK[INT]
+        range: 1-8
+        chunks:
+          defaultTaskCount: "{{Param.ChunkSize}}"
+          rangeConstraint: CONTIGUOUS
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'CHUNK:{{Task.Param.Frame}}')
+expected:
+  output:
+  - 'CHUNK:1-3'
+  - 'CHUNK:4-6'
+  - 'CHUNK:7-8'
+  forbidden:
+  - 'CHUNK:1-8'
+  - 'CHUNK:9'

@@ -1,0 +1,34 @@
+# hostRequirements.attributes[].anyOf is annotated @fmtstring in base 2023-09 (Template
+# Schemas L1014), with no extension gate. Its element type <AttributeCapabilityValue>
+# (section 3.3.2.2) constrains the value to the identifier-like pattern, and that constraint
+# cannot be checked at decode when the element is a format string. It must therefore be
+# checked after resolution at job creation.
+#
+# Here the parameter resolves to "not valid!", which contains a space and an exclamation
+# mark, so the run must fail.
+#
+# NOTE ON CURRENT STATE: this case is expected to FAIL against the Rust CLI, which accepts
+# the resolved value and runs the job. The Python CLI rejects it with "Value not valid! is
+# not a valid attribute capability value." That divergence is the defect this case exists to
+# expose; it is not a broken test.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Software
+    type: STRING
+    default: "not valid!"
+  steps:
+  - name: Step1
+    hostRequirements:
+      attributes:
+      - name: attr.custom.software
+        anyOf:
+        - '{{Param.Software}}'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'RAN')

@@ -1,0 +1,30 @@
+# hostRequirements.amounts[].min may be a format string under FEATURE_BUNDLE_1 (Template
+# Schemas L958). The numeric constraint cannot be checked at decode, so it must be checked
+# after resolution at job creation. Here the parameter resolves to a non-numeric string and
+# the run must fail.
+#
+# This is the negative half of the amount-resolution gap. The positive half, asserting that
+# min and max resolve to the CORRECT numbers, is not writable today: no openjd CLI surfaces
+# resolved host requirements, in summary --output json or anywhere else.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - FEATURE_BUNDLE_1
+  name: TestJob
+  parameterDefinitions:
+  - name: CpuMin
+    type: STRING
+    default: "abc"
+  steps:
+  - name: Step1
+    hostRequirements:
+      amounts:
+      - name: amount.worker.vcpu
+        min: "{{Param.CpuMin}}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'RAN')
