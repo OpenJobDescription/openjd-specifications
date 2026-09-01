@@ -315,7 +315,8 @@ userInterface:  # @optional
 
 ```
 
-Where `<intstring>` is a string whose value is the string representation of an integer value in base-10, and:
+Where `<intstring>` is a string whose value is the string representation of an integer value in base-10
+(see [Numeric strings](#75-numeric-strings) for how such a value is rendered), and:
 
 1. *name* — The name by which the parameter is referenced. See: [&lt;Identifier&gt;](#71-identifier).
 2. *description* — A description to apply to the parameter. It has no functional purpose, but may appear in UI elements.
@@ -373,7 +374,8 @@ userInterface: # @optional
 ```
 
 Where `<floatstring>` is a string whose value is the string representation of a floating point or integer value in
-base-10, and:
+base-10 (see [Numeric strings](#75-numeric-strings) for how such a value is rendered, including the decimal places it
+was written with), and:
 
 1. *name* — The name by which the parameter is referenced. See: [&lt;Identifier&gt;](#71-identifier).
 2. *description* — A description to apply to the parameter. It has no functional purpose, but may appear in UI elements.
@@ -1112,7 +1114,8 @@ With:
 
 Where `<intstring>` is a string whose value is the string representation of an integer value in base-10,
 `<TaskParameterStringValue>` (See [&lt;TaskParameterStringValue&gt;](#342-taskparameterstringvalue)) must resolve to the
-string representation of an integer value in base-10, and:
+string representation of an integer value in base-10, both are rendered as described in
+[Numeric strings](#75-numeric-strings), and:
 
 1. *name* — The name of the parameter.
 2. *type* — The literal "INT", defining this parameter as integer valued.
@@ -1186,7 +1189,9 @@ With:
 
 Where `<floatstring>` is a string whose value is the string representation of a floating point value in base-10,
 `<TaskParameterStringValue>` (See [&lt;TaskParameterStringValue&gt;](#342-taskparameterstringvalue)) must resolve to the
-string representation of a floating point value in base-10, and:
+string representation of a floating point value in base-10, both are rendered as described in
+[Numeric strings](#75-numeric-strings) — which preserves the decimal places the element was written with, so a range
+element of `'2.50'` gives a Task the value `2.50` — and:
 
 1. *name* — The name of the parameter.
 2. *type* — The literal "FLOAT", defining this parameter as floating point valued.
@@ -2025,6 +2030,45 @@ execution time on the worker host.
 With the `EXPR` extension enabled, expressions that reference values not yet known at a given
 stage are type-checked using the declared types of those values, catching type errors as early
 as possible. See the [Expression Language](2026-02-Expression-Language) specification for details.
+
+### 7.5. Numeric strings
+
+`<intstring>`, `<floatstring>`, and `<posintstring>` are the string forms of a number. A field
+that accepts one of them accepts the number written as text wherever it would otherwise accept an
+`<integer>`, `<float>`, or `<positiveint>` literal.
+
+Such a value is eventually rendered back into text — into a format string result, and from there
+onto a Task's command line — so what it renders as is part of what the Template asked for. Two
+rules govern the zeros in it, and they differ:
+
+1. **Redundant leading zeros are not part of the value, and are removed.** An `<intstring>` of
+   `'007'` is the value 7, and renders `7`. A leading zero that is not redundant is kept: the `0`
+   in a `<floatstring>` of `'0.50'` is the whole of its integer part, and `'000'` denotes 0. So a
+   `<floatstring>` of `'02.50'` renders `2.50`.
+
+2. **The decimal places a `<floatstring>` is written with are part of what it asks for, and are
+   preserved.** A `<floatstring>` of `'2.50'` renders `2.50`, not `2.5`, and one of `'3.500'`
+   renders `3.500`. Renderers and other Task commands commonly require a fixed number of decimal
+   places, and writing the value as a string is how a Template asks for one. A `<float>` literal
+   cannot do this, because the number of decimal places a literal was written with is not
+   preserved through parsing — a `<float>` of `2.50` is the same value as `2.5`.
+
+An `<intstring>` and a `<posintstring>` have no decimal places, so rule 1 is the whole of their
+behaviour: each renders as the integer it denotes.
+
+Rule 2 is the reason the two rules are not one rule. Both kinds of zero are redundant to the
+*value*, but only the leading ones are redundant to the *request*: `'02'` and `'2'` ask for the
+same thing, while `'2.50'` and `'2.5'` do not.
+
+Two things are deliberately left unspecified in this revision, because no conformance fixture
+pins them and implementations differ:
+
+* Whether a numeric string written in exponent notation renders in exponent notation. A
+  `<floatstring>` of `'1E+2'` may render `1E+2` or `100`.
+* Whether an explicit leading `+` is preserved. A `<floatstring>` of `'+2.50'` may render
+  `+2.50` or `2.50`.
+
+A Template that needs a specific answer to either should write the value it wants.
 
 ## 8. `<SimpleAction>`
 

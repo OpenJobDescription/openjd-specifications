@@ -1,0 +1,86 @@
+# The two kinds of zero in an <intstring>/<floatstring> range element are not the same thing, and
+# this pins both directions at once (Template Schemas §7.5, added alongside this fixture).
+#
+#   Leading zeros are not part of the value and are removed. '02' on an INT range is the task
+#   value 2; forwarding the text invokes a renderer with `--frame 02`. Already pinned for a
+#   parameter default by base/jobs/2.3--int-param-intstring-default-resolves.test.yaml, which
+#   asserts COUNT:7 from default '007'.
+#
+#   The decimal places a <floatstring> is written with are preserved. '2.50' renders 2.50, not
+#   2.5. This is the reason the string form exists — a <float> literal cannot ask for a fixed
+#   number of decimal places, because 2.50 and 2.5 are the same literal after parsing, and
+#   renderers commonly require a fixed number. Already pinned for a parameter default by
+#   EXPR/jobs/expr1.3.4--float-passthrough.test.yaml, which asserts PARAM:3.500 from default
+#   "3.500". This fixture extends the same rule to a range element.
+#
+# '0.50' is included because its leading zero is NOT redundant — it is the whole integer part —
+# so an implementation that strips leading zeros by text must still leave one digit behind.
+#
+# Note for reviewers: the assertions bracket the value (`W[2.50]`) rather than delimiting it with
+# a colon. The test runner matches expected output as a substring, so a bare `W:2.5` matches a
+# line reading `W:2.50` and the fixture would pass against either behaviour. The closing bracket
+# is what makes the `forbidden` entries below actually forbid anything.
+#
+# Deliberately not covered, because §7.5 leaves them unspecified and implementations differ:
+# exponent notation ('1E+2'), an explicit leading '+' ('+2.50'), and zero-valued <floatstring>s
+# ('0.00'), where one implementation collapses the value to 0.0 and loses the written scale.
+#
+# Spec references, Template Schemas 2023-09:
+#   §7.5  Numeric strings — how a numeric string's value is rendered, and the two zero rules
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L2034
+#   §3.4.1.1 L1112  `<IntRangeList>` elements are `<integer> | <intstring>`
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1112
+#   §3.4.1.2 L1187  `<FloatRangeList>` elements are `<float> | <floatstring>`
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1187
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  steps:
+  - name: FloatRange
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Weight
+        type: FLOAT
+        range: ['2.50', '03.500', '0.50', '1.5']
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'W[{{Task.Param.Weight}}]')
+  - name: IntRange
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range: ['1', '02', '003']
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'F[{{Task.Param.Frame}}]')
+expected:
+  output:
+  # A <floatstring> keeps the decimal places it was written with, and loses only
+  # the leading zero of '03.500'.
+  - 'W[2.50]'
+  - 'W[3.500]'
+  - 'W[0.50]'
+  - 'W[1.5]'
+  # An <intstring> renders as the integer it denotes.
+  - 'F[1]'
+  - 'F[2]'
+  - 'F[3]'
+  forbidden:
+  # Normalizing a <floatstring> to the number it denotes: the decimal places are
+  # part of what the element asked for.
+  - 'W[2.5]'
+  - 'W[3.5]'
+  - 'W[0.5]'
+  # Forwarding the source text unchanged: the leading zeros are not.
+  - 'W[03.500]'
+  - 'F[02]'
+  - 'F[003]'
