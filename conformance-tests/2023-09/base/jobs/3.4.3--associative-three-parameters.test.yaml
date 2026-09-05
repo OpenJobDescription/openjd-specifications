@@ -35,3 +35,11 @@ expected:
   forbidden:
   - TASK:A=0,B=y,C=True
   - TASK:A=2,B=0,C=True
+  - TASK:A=1,B=x,C=False
+  - TASK:A=1,B=y,C=False
+  - TASK:A=2,B=x,C=True
+  # The next two close the last partial-association escape: an
+  # implementation zipping (A,C) while producting B emits exactly
+  # (1,y,True) and (2,x,False) beyond the expected pair.
+  - TASK:A=1,B=y,C=True
+  - TASK:A=2,B=x,C=False
