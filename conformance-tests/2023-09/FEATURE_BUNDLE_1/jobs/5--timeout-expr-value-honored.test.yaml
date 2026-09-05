@@ -1,16 +1,11 @@
-# Control for 5--timeout-null-drops-field.test.yaml: when the conditional
-# takes the non-null arm, the computed timeout value must be applied to the
-# action (Template Schemas §5 Action timeout @fmtstring under
-# FEATURE_BUNDLE_1; Expression Language §1.3.2). A 1-second timeout must kill
-# a 10-second command — this catches an implementation that silently drops
-# the whole field whenever its value is an expression.
+# Action timeout is @fmtstring under FEATURE_BUNDLE_1 (Template Schemas §5) and
+# Expression Language §1.3.2 requires a non-null expression value to reach it.
 #
-# The marker is built at run time instead of written as a literal: the runner's
-# `forbidden` check is a substring search over the whole `openjd run` output,
-# and on Windows openjd-sessions logs the resolved command line at INFO, so a
-# literal marker trips the check even when the action was killed on time. On
-# POSIX the command goes into a temp .sh whose contents log only at DEBUG,
-# which is why a literal marker passed on Linux and failed on Windows.
+# Control for 5--timeout-null-drops-field.test.yaml: a computed 1-second timeout
+# over a 10-second command. The marker is joined at run time because Windows
+# logs the resolved command line at INFO and would otherwise match it.
+#
+# The action must be killed: the task fails and the marker never prints.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
