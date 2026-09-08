@@ -55,7 +55,7 @@ template:
             # prefixes each log line, so it cannot be asserted as one substring.
             # Compare byte-for-byte inside the shell instead.
             v15={{ q15 }}
-            if [ "$v15" = $'a\nb' ]; then echo 'P15:PASS'; else echo 'P15:FAIL'; fi
+            if [ "$v15" = $'a\nb' ]; then echo 'P15:PASS'; else echo 'P15:FA''IL'; fi
 expected:
   output:
   - "P01:[; echo INJ]"
