@@ -1,0 +1,27 @@
+# Section 3.3.1 admits the string forms `<nonnegativefloatstring>` for amounts[].min and
+# `<positivefloatstring>` for .max under FEATURE_BUNDLE_1, so the min <= max check that
+# base/job_templates/3.3.1--amount-min-greater-than-max.invalid.yaml pins for numeric literals
+# has to run on the parsed values here.
+#
+# min is '010.0' and max is '5.0', the only defect.
+#
+# The template must be rejected. Lexically '010.0' sorts below '5.0', so a lexical comparison
+# reads min as under max and accepts it.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- FEATURE_BUNDLE_1
+name: TestJob
+steps:
+- name: Step1
+  hostRequirements:
+    amounts:
+    - name: amount.worker.vcpu
+      min: '010.0'
+      max: '5.0'
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"
