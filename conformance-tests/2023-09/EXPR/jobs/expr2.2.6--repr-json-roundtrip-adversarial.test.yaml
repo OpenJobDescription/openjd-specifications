@@ -65,7 +65,7 @@ template:
                 if ok:
                     print(label + ":PASS")
                 else:
-                    print(label + ":FAIL got=" + repr(got) + " want=" + repr(w))
+                    print(label + ":FA" "IL got=" + repr(got) + " want=" + repr(w))
           - "{{ j01 }}"
           - "{{ j02 }}"
           - "{{ j03 }}"

@@ -56,7 +56,7 @@ template:
             'render', '-o', 'out file.exr'];
             args=sys.argv[1:];
             print('COUNT:' + str(len(args)));
-            [print('P' + str(i).zfill(2) + (':PASS' if a == w else ':FAIL got=' + repr(a) + ' want=' + repr(w)))
+            [print('P' + str(i).zfill(2) + (':PASS' if a == w else ':FA' 'IL got=' + repr(a) + ' want=' + repr(w)))
             for i, (a, w) in enumerate(zip(args, want), 1)]"
             {{ q01 }} {{ q02 }} {{ q03 }} {{ q04 }} {{ q05 }} {{ q06 }} {{ q07 }} {{ q08 }} {{ q09 }}
 expected:

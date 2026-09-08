@@ -72,7 +72,7 @@ template:
                 if ok:
                     print(label + ":PASS")
                 else:
-                    print(label + ":FAIL got=" + repr(got) + " want=" + repr(w))
+                    print(label + ":FA" "IL got=" + repr(got) + " want=" + repr(w))
           - "{{ q01 }}"
           - "{{ q02 }}"
           - "{{ q03 }}"
