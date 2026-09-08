@@ -1,0 +1,30 @@
+# Section 2.4 declares minValue as `<float> | <floatstring>`, so a string bound has to be
+# parsed and compared numerically.
+#
+# The bounds are the strings '010.0' and '100.0' and the submitted value is the number 5.5,
+# below the minimum. Positive twin: 1.1--float-floatstring-bounds-satisfied.test.yaml.
+#
+# Job creation must fail. Lexically '5.5' sorts above '010.0', so a lexical comparison admits
+# the job, as does an implementation that cannot parse a string bound at all.
+#
+# .invalid.test.yaml, not .invalid.yaml: the template is valid on its own and the error only
+# fires once the submitted value is bound.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Scale
+    type: FLOAT
+    minValue: '010.0'
+    maxValue: '100.0'
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'SCALE:{{Param.Scale}}:END')
+parameters:
+  Scale: 5.5
