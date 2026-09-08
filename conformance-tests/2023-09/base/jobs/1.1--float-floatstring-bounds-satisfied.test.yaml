@@ -1,0 +1,32 @@
+# Section 2.4 declares minValue and maxValue as `<float> | <floatstring>`, ungated in base
+# 2023-09, and the section 2 preamble (L151) makes both constraints validation must enforce.
+#
+# The bounds are the strings '010.0' and '100.0' and the submitted value is the number 50.5.
+# Negative twin: 1.1--float-floatstring-bounds-violation.invalid.test.yaml.
+#
+# The job must be created and print 50.5. A lexical comparison orders '50.5' above '100.0' and
+# rejects the job instead, which is the failure this pins.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Scale
+    type: FLOAT
+    minValue: '010.0'
+    maxValue: '100.0'
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'SCALE:{{Param.Scale}}:END')
+parameters:
+  Scale: 50.5
+expected:
+  output:
+  - 'SCALE:50.5:END'
+  forbidden:
+  - '{{Param.'
