@@ -1497,8 +1497,8 @@ Examples:
 |-----------|-------------|
 | `upper(s: string) -> string` | Convert to uppercase |
 | `lower(s: string) -> string` | Convert to lowercase |
-| `capitalize(s: string) -> string` | Capitalize first character, lowercase rest |
-| `title(s: string) -> string` | Capitalize first character of each word |
+| `capitalize(s: string) -> string` | Titlecase first character, lowercase rest, per Python `str.capitalize` (see the case mapping note below) |
+| `title(s: string) -> string` | Titlecase the first character of each word, lowercase the rest, per Python `str.title`: a word starts after any uncased character (see the case mapping note below) |
 | `strip(s: string) -> string` | Remove leading/trailing whitespace |
 | `strip(s: string, chars: string) -> string` | Remove leading/trailing characters in `chars` |
 | `lstrip(s: string) -> string` | Remove leading whitespace |
@@ -1509,12 +1509,12 @@ Examples:
 | `removesuffix(s: string, suffix: string) -> string` | Remove suffix if present, otherwise return unchanged |
 | `startswith(s: string, prefix: string) -> bool` | Test if string starts with prefix |
 | `endswith(s: string, suffix: string) -> bool` | Test if string ends with suffix |
-| `isdigit(s: string) -> bool` | True if all characters are digits and string is non-empty |
-| `isalpha(s: string) -> bool` | True if all characters are alphabetic and string is non-empty |
-| `isalnum(s: string) -> bool` | True if all characters are alphanumeric and string is non-empty |
-| `isspace(s: string) -> bool` | True if all characters are whitespace and string is non-empty |
-| `isupper(s: string) -> bool` | True if all cased characters are uppercase and there is at least one cased character |
-| `islower(s: string) -> bool` | True if all cased characters are lowercase and there is at least one cased character |
+| `isdigit(s: string) -> bool` | True if all characters are digits and string is non-empty, per Python `str.isdigit` (Unicode `Numeric_Type` of `Decimal` or `Digit` — includes non-ASCII decimal digits and superscripts) |
+| `isalpha(s: string) -> bool` | True if all characters are alphabetic and string is non-empty, per Python `str.isalpha` (Unicode general category `Lu`/`Ll`/`Lt`/`Lm`/`Lo`) |
+| `isalnum(s: string) -> bool` | True if all characters are alphanumeric and string is non-empty, per Python `str.isalnum` (alphabetic per `isalpha`, or any Unicode `Numeric_Type`) |
+| `isspace(s: string) -> bool` | True if all characters are whitespace and string is non-empty, per Python `str.isspace` (category `Zs`/`Zl`/`Zp` or bidirectional class WS/B/S — includes U+001C–U+001F) |
+| `isupper(s: string) -> bool` | True if all cased characters are uppercase and there is at least one cased character, per Python `str.isupper` (see the cased-character note below) |
+| `islower(s: string) -> bool` | True if all cased characters are lowercase and there is at least one cased character, per Python `str.islower` (see the cased-character note below) |
 | `isascii(s: string) -> bool` | True if all characters are ASCII (U+0000–U+007F), or string is empty |
 | `count(s: string, sub: string) -> int` | Count non-overlapping occurrences of substring. The `sub` argument must be non-empty; an empty `sub` is an error. |
 | `find(s: string, sub: string) -> int` | Return lowest index of substring, or -1 if not found. The `sub` argument must be non-empty; an empty `sub` is an error. |
@@ -1558,6 +1558,36 @@ This enables natural method chaining like `items.split(';').join(',')`.
 Note: Method calls on integer and float literals require parentheses around the literal
 (e.g., `(42).zfill(5)` not `42.zfill(5)`) because the parser interprets `42.` as the start
 of a float literal.
+
+Note: The character classification functions (`isdigit`, `isalpha`, `isalnum`, `isspace`,
+`isupper`, `islower`) have exactly the semantics of the Python `str` methods of the same
+name, evaluated over the Unicode Character Database. They are not ASCII-only, and they do
+not correspond to other languages' character predicates (for example, Rust's `Alphabetic`
+property is a superset of `isalpha`'s `L*` categories). In particular:
+- `isdigit` is true for any decimal digit, e.g. U+0663 ARABIC-INDIC DIGIT THREE.
+- `isalnum` is broader than `isalpha` OR `isdigit`: characters whose `Numeric_Type` is
+  `Numeric`, such as U+00BD VULGAR FRACTION ONE HALF, are alphanumeric but neither
+  alphabetic nor digits.
+- A character is *cased* if it has the Unicode `Uppercase` or `Lowercase` property or
+  general category `Lt` (titlecase). `isupper` and `islower` ignore uncased characters
+  (digits, ideographs, punctuation), and titlecase characters are cased but neither
+  uppercase nor lowercase.
+Implementations must derive these classifications from Unicode Character Database data
+equivalent to a current CPython release. Differences between Unicode versions for newly
+assigned code points are permitted.
+
+Note: The case mapping functions `title` and `capitalize` likewise have exactly the
+semantics of Python's `str.title` and `str.capitalize`:
+- Word boundaries in `title` are determined by cased-ness, not alphanumeric-ness: a
+  character is titlecased when the preceding character is not cased, so digits,
+  punctuation, and uncased letters all start a new word (`title("1st")` is `"1St"`).
+- Word-start characters use the full Unicode titlecase mapping, not the uppercase
+  mapping: `title("ǆab")` is `"ǅab"` (U+01C5, titlecase) and `capitalize("ßx")` is
+  `"Ssx"`.
+- `capitalize` titlecases the first character and lowercases the rest (Python ≥ 3.8
+  semantics).
+- Lowercasing applies the Unicode Final_Sigma context rule: `title("OΣ K")` is
+  `"Oς K"`.
 
 #### 2.2.5. Regular Expression Functions
 
