@@ -40,15 +40,3 @@ the current de facto agreement. Classification: **spec decision needed**
 (define "digit"; ASCII-only is the likely ratification given both
 implementations agree, in which case flip the expectation rather than
 promote as-is).
-
-## `expr2.2.6--repr-py-newline-roundtrip.test.yaml` — bug in BOTH
-
-§2.2.6: repr_py "follows the behavior of Python's repr", whose example
-escapes `\n`. BOTH implementations emit a raw newline inside the quoted
-literal, producing invalid Python (`ast.literal_eval` raises
-SyntaxError). Classification: **implementation bug in both**; the spec is
-explicit. Promote once fixed. End-to-end twin through WRAP_ACTIONS
-forwarding: `WRAP_ACTIONS/jobs/proposed/
-wrap-repr-py-escapes-newline-in-wrapped-args.test.yaml` (wrap-actions
-expected-failures PR) — note that twin is additionally gated on the §5.2
-ArgString newline question.
