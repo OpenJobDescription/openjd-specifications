@@ -1,18 +1,14 @@
-# PARKED — fails against openjd-rs (implementation bug); see proposed/README.md.
+# Expression Language §2.2.6 defines repr_py as following Python's repr, and RFC
+# 0008's reference forwarding pattern round-trips WrappedAction.Args through it.
 #
-# Expression Language §2.2 (String Functions): "repr_py follows the
-# behavior of Python's repr", with the worked example
-# repr_py("hello\nworld") returning 'hello\\nworld' — control characters
-# in the value MUST be escaped in the emitted Python literal. RFC 0008's
-# reference forwarding pattern round-trips WrappedAction.Args through
-# repr_py; a wrapped action whose arg carries a real newline (a multi-line
-# python -c program, the suite's own portable-fixture convention) must
-# survive the round-trip and run.
+# The wrapped action's arg is a two-line python -c program, the suite's own
+# portable-fixture convention. All three hooks forward it. Paired with
+# EXPR/jobs/expr2.2.6--repr-py-newline-roundtrip, which pins the same rule
+# without the forwarding layer.
 #
-# Against openjd-rs the newline is embedded RAW into the generated Python
-# source, which dies with "SyntaxError: EOL while scanning string
-# literal" — the grand-child never runs. Catches a repr implementation
-# that quotes but does not escape.
+# The grand-child must run and print GRAND_CHILD_RAN. A repr that quotes without
+# escaping embeds the newline raw, and the generated program dies with
+# SyntaxError before reaching subprocess.run.
 template:
   specificationVersion: jobtemplate-2023-09
   name: WrapReprPyEscapesNewlineInWrappedArgs
