@@ -8,6 +8,8 @@
 #
 # The round-trip must print NEWLINE:PASS. A repr that quotes without escaping
 # emits a raw newline, and CPython raises SyntaxError before the comparison runs.
+# The failure marker is split across two literals because Windows echoes the
+# child command line into the output the harness scans for forbidden strings.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
@@ -27,7 +29,7 @@ template:
             import ast
             import sys
             got = ast.literal_eval(sys.argv[1])
-            print("NEWLINE:" + ("PASS" if got == "a\nb" else "FAIL got=" + repr(got)))
+            print("NEWLINE:" + ("PASS" if got == "a\nb" else "FA" "IL got=" + repr(got)))
           - "{{ q }}"
 expected:
   output:
