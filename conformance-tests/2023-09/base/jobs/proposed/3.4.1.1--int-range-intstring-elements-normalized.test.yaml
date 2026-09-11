@@ -1,0 +1,41 @@
+# <IntRangeList> elements are `<integer> | <intstring>` in base 2023-09 (Template Schemas
+# §3.4.1.1 L1110), with no extension gate. The suite has 2,417 IntRangeList elements and not one
+# uses the string form, so nothing asserts what a string element resolves to.
+#
+# <intstring> is defined as "a string whose value is the string representation of an integer
+# value in base-10", so '02' and '003' represent the integers 2 and 3, and the task parameter
+# should carry those integers rather than the source text.
+#
+# This is the value that reaches a task command line, so a wrong answer here means a renderer is
+# invoked with --frame 02 instead of --frame 2.
+#
+# Spec references, Template Schemas 2023-09:
+#   §3.4.1.1 L1110  `<IntRangeList>` elements are `<integer> | <intstring>`
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L1110
+#   §2.3 L318  `<intstring>` is a string representation of an integer in base-10
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L318
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range: ['1', '02', '003']
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'FRAME:{{Task.Param.Frame}}')
+expected:
+  output:
+  - 'FRAME:1'
+  - 'FRAME:2'
+  - 'FRAME:3'
+  forbidden:
+  - 'FRAME:02'
+  - 'FRAME:003'
