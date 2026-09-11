@@ -1,0 +1,29 @@
+# Section 2.4 declares allowedValues as `[ <float> | <floatstring>, ... ]` and a value absent
+# from the list is an error.
+#
+# The list is ['1.5', '2.5', '04.5'] and the submitted value is the number 3.5, absent under
+# every reading. Positive twin: 1.1--float-floatstring-allowedvalues-member.test.yaml.
+#
+# Job creation must fail. An implementation that skips a string-form allowedValues list because
+# it cannot parse the elements admits the job.
+#
+# .invalid.test.yaml, not .invalid.yaml: the template is valid on its own and the error only
+# fires once the submitted value is bound.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Scale
+    type: FLOAT
+    allowedValues: ['1.5', '2.5', '04.5']
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'SCALE:{{Param.Scale}}:END')
+parameters:
+  Scale: 3.5

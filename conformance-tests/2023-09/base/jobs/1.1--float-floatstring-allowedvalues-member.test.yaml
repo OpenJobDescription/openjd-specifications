@@ -1,0 +1,32 @@
+# Section 2.4 declares allowedValues as `[ <float> | <floatstring>, ... ]`, so membership is
+# decided on the parsed value, not on the string form.
+#
+# The list is ['1.5', '2.5', '04.5'] and the submitted value is the number 4.5, which equals
+# '04.5' numerically and matches no element textually. Negative twin:
+# 1.1--float-floatstring-allowedvalues-violation.invalid.test.yaml.
+#
+# The job must be created and print 4.5. An implementation comparing string forms finds no
+# match and wrongly rejects it.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Scale
+    type: FLOAT
+    allowedValues: ['1.5', '2.5', '04.5']
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'SCALE:{{Param.Scale}}:END')
+parameters:
+  Scale: 4.5
+expected:
+  output:
+  - 'SCALE:4.5:END'
+  forbidden:
+  - '{{Param.'
