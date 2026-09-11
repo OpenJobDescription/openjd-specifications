@@ -1,0 +1,56 @@
+# RFC 0008 "Wrap ordering with multiple environments": a wrapping
+# environment intercepts the lifecycle actions of environments INNER to
+# it. A job-scoped wrap env is outer to every step-scoped env, so a
+# stepEnvironment's onEnter/onExit must run via the job env's
+# onWrapEnvEnter/onWrapEnvExit with WrappedEnv.Name naming the step env.
+# The existing placement fixtures put the wrap env itself in
+# jobEnvironments or stepEnvironments; none cross the two scopes. Catches
+# a runtime that only wraps environments in the same scope tier as the
+# wrapping environment.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapJobEnvWrapsStepEnv
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  jobEnvironments:
+  - name: JobWrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args: ["-c", "print('WENTER='+{{repr_py(WrappedEnv.Name)}})"]
+        onWrapTaskRun:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys\nprint('WTASK_RAN')\nsys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        onWrapEnvExit:
+          command: python
+          args: ["-c", "print('WEXIT='+{{repr_py(WrappedEnv.Name)}})"]
+  steps:
+  - name: Step1
+    stepEnvironments:
+    - name: InnerStepEnv
+      script:
+        actions:
+          onEnter:
+            command: python
+            args: ["-c", "print('STEP_ENV_ENTER_BODY')"]
+          onExit:
+            command: python
+            args: ["-c", "print('STEP_ENV_EXIT_BODY')"]
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_BODY_RAN')"]
+expected:
+  output:
+  - WENTER=InnerStepEnv
+  - WEXIT=InnerStepEnv
+  - WTASK_RAN
+  - TASK_BODY_RAN
+  forbidden:
+  - STEP_ENV_ENTER_BODY
+  - STEP_ENV_EXIT_BODY
