@@ -1,0 +1,38 @@
+# Expression Language §2.2.4: padding functions with non-ASCII (CJK wide) input.
+# len() is specified in unicode codepoints, so padding width must also count
+# codepoints — NOT display columns (CJK characters render two columns wide) and
+# NOT bytes ("日本" is 6 UTF-8 bytes, which would already exceed width 5).
+# (Codepoint counting for PADDING is an inference from len's definition —
+# §2.2.4 never states the width unit for ljust/rjust/center/zfill; a spec
+# sentence would make this normative rather than inferred.)
+#   ljust("日本", 5)  -> "日本" + 3 spaces   (2 codepoints + 3 pad = 5)
+#   rjust("日本", 5)  -> 3 spaces + "日本"
+#   center("日本", 4) -> 1 space each side  (even split; the odd-split side is
+#                        spec-unspecified, see proposed/expr2.2.4--center-odd-padding)
+#   zfill("日", 3)    -> "00日"
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'LJUST:[{{ ljust("日本", 5) }}]')
+            print(r'RJUST:[{{ rjust("日本", 5) }}]')
+            print(r'CENTER:[{{ center("日本", 4) }}]')
+            print(r'ZFILL:[{{ zfill("日", 3) }}]')
+            print(r'LEN_LJUST:{{ len(ljust("日本", 5)) }}')
+expected:
+  output:
+  - "LJUST:[日本   ]"
+  - "RJUST:[   日本]"
+  - "CENTER:[ 日本 ]"
+  - "ZFILL:[00日]"
+  - LEN_LJUST:5

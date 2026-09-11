@@ -1,0 +1,26 @@
+# Expression Language §2.2.5: the regex syntax is the intersection of Python's
+# `re` and Rust's `regex` crate, and lookahead ((?=...), (?!...)) is explicitly
+# listed as "Not supported". A template using a lookahead pattern is therefore
+# non-conforming and must be rejected.
+#
+# DIALECT-DIVERGENCE PROBE: Python's `re` natively ACCEPTS lookahead, so a
+# Python-backed implementation must actively screen patterns to reject this —
+# passing it straight to `re` would silently accept it and diverge.
+# openjd-rs rejects with: "Unsupported regex feature: lookahead".
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'm = re_search("foo123", r"foo(?=\d)")'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'M:{{ m }}')

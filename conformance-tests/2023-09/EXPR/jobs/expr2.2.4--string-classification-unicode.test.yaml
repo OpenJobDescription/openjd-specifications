@@ -1,0 +1,46 @@
+# Expression Language §2.2.4: classification predicates on non-ASCII data.
+#   - isascii is explicitly specified as U+0000–U+007F, so any non-ASCII
+#     character must make it false.
+#   - isalpha says "all characters are alphabetic"; CJK ideographs and accented
+#     Latin letters are Unicode-alphabetic. This is consistent with §2.2.5's
+#     explicit Unicode posture for \w and \d. CAVEAT: the spec wording is
+#     exactly parallel to isdigit's, which is treated as ambiguous (see
+#     below) — the ALPHA assertions are kept only because both reference
+#     implementations agree (Python str.isalpha and Rust char::is_alphabetic
+#     are both Unicode); a spec sentence defining "alphabetic" should ratify
+#     this. If the spec instead rules ASCII-only, these lines flip.
+#
+# NOT asserted here: isdigit on non-ASCII digits (e.g. Arabic-Indic "٣").
+# Python's str.isdigit("٣") is True while openjd-rs returns false — a live
+# implementation divergence on spec-ambiguous text ("all characters are digits").
+# See proposed/expr2.2.4--isdigit-unicode.test.yaml.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'ASCII_PLAIN:{{ isascii("abc123") }}')
+            print(r'ASCII_ARABIC_DIGIT:{{ isascii("٣") }}')
+            print(r'ASCII_CAFE:{{ isascii("café") }}')
+            print(r'ASCII_CJK:{{ isascii("日本") }}')
+            print(r'ASCII_MIXED:{{ isascii("abc👍") }}')
+            print(r'ALPHA_CJK:{{ isalpha("日本") }}')
+            print(r'ALPHA_ACCENT:{{ isalpha("café") }}')
+expected:
+  output:
+  - ASCII_PLAIN:true
+  - ASCII_ARABIC_DIGIT:false
+  - ASCII_CAFE:false
+  - ASCII_CJK:false
+  - ASCII_MIXED:false
+  - ALPHA_CJK:true
+  - ALPHA_ACCENT:true
