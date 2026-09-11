@@ -1,0 +1,38 @@
+# Expression Language §2.2.6 defines repr_py as following Python's repr, so a
+# control character in the value must be escaped in the emitted literal.
+#
+# repr_py("a\nb") is handed to ast.literal_eval, CPython's own parser, and the
+# result compared to the input. Paired with
+# WRAP_ACTIONS/jobs/wrap-repr-py-escapes-newline-in-wrapped-args, which pins the
+# same rule through RFC 0008's forwarding pattern.
+#
+# The round-trip must print NEWLINE:PASS. A repr that quotes without escaping
+# emits a raw newline, and CPython raises SyntaxError before the comparison runs.
+# The failure marker is split across two literals because Windows echoes the
+# child command line into the output the harness scans for forbidden strings.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'q = repr_py("a\nb")'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import ast
+            import sys
+            got = ast.literal_eval(sys.argv[1])
+            print("NEWLINE:" + ("PASS" if got == "a\nb" else "FA" "IL got=" + repr(got)))
+          - "{{ q }}"
+expected:
+  output:
+  - NEWLINE:PASS
+  forbidden:
+  - FAIL

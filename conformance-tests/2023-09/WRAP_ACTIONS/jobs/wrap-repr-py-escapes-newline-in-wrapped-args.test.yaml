@@ -1,0 +1,50 @@
+# Expression Language §2.2.6 defines repr_py as following Python's repr, and RFC
+# 0008's reference forwarding pattern round-trips WrappedAction.Args through it.
+#
+# The wrapped action's arg is a two-line python -c program, the suite's own
+# portable-fixture convention. All three hooks forward it. Paired with
+# EXPR/jobs/expr2.2.6--repr-py-newline-roundtrip, which pins the same rule
+# without the forwarding layer.
+#
+# The grand-child must run and print GRAND_CHILD_RAN. A repr that quotes without
+# escaping embeds the newline raw, and the generated program dies with
+# SyntaxError before reaching subprocess.run.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapReprPyEscapesNewlineInWrappedArgs
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - "-c"
+          - "import sys\nprint('GRAND_CHILD_RAN')"
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        onWrapTaskRun:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        onWrapEnvExit:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+expected:
+  output:
+  - GRAND_CHILD_RAN
