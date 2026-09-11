@@ -18,6 +18,9 @@ template:
             print(r'OR_ZERO:{{ 0 or 5 }}')
             print(r'OR_EMPTY:[{{ "" or "fallback" }}]')
             print(r'AND_NULL:[{{ null and "hello" }}]')
+            print(r'AND_NULL_IS_NULL:{{ (null and "hello") == null }}')
+            print(r'AND_NULL_SENT:{{ (null and "hello") or "SENT" }}')
+            print(r'AND_FALSE:{{ false and "hello" }}')
             print(r'AND_TRUE:{{ true and "hello" }}')
             print(r'AND_STR:{{ "hello" and "world" }}')
             print(r'BOOL:{{ true or false }}')
@@ -29,6 +32,9 @@ expected:
   - 'OR_ZERO:0'
   - 'OR_EMPTY:[]'
   - 'AND_NULL:[]'
+  - 'AND_NULL_IS_NULL:true'
+  - 'AND_NULL_SENT:SENT'
+  - 'AND_FALSE:false'
   - 'AND_TRUE:hello'
   - 'AND_STR:world'
   - 'BOOL:true'

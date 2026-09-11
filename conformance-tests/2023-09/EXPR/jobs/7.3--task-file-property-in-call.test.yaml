@@ -1,0 +1,29 @@
+# Direct property access on a path-typed symbol as a function-call argument
+# (Template Schemas §7.3.1; Expression Language §2.2.1, §2.2.4, §2.3.1).
+# The route by which a symbol is reached selects which validator code path
+# checks it; the function-call route must accept Task.File.<n>.<prop>.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      embeddedFiles:
+      - name: config
+        type: TEXT
+        filename: config.txt
+        data: "hello"
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'UPPER:{{ upper(Task.File.config.stem) }}:END')
+            print(r'LEN:{{ len(Task.File.config.name) }}:END')
+expected:
+  output:
+  - "UPPER:CONFIG:END"
+  - "LEN:10:END"
