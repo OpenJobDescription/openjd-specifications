@@ -16,6 +16,9 @@ Both Templates are expressed as UTF-8 documents in either
 [ECMA-404 JavaScript Object Notation (JSON)](https://www.json.org/json-en.html) or
 [YAML Ain't Markup Language (YAML) 1.2](https://yaml.org/) interchange format.
 
+Throughout this document, a "character" is a single Unicode code point; all length limits expressed in characters
+(e.g. "Maximum length: 128 characters") are counts of Unicode code points, not bytes.
+
 Notations used in this document to annotate aspects of the schema definition:
 
 * `@fmtstring` - The value of the annotated property is a Format String. See [Format Strings](#73-format-strings).
