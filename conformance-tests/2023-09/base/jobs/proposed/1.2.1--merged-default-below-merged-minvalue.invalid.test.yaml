@@ -1,0 +1,41 @@
+# A merged job parameter definition's default must satisfy the merged constraints
+# (§1.2.1), the same intersection that applies to a supplied value.
+#
+# The job template is processed last and widens the environment template's [10, 100] to
+# [0, 1000], and its default 5 satisfies its own minValue. Only the merged minimum of 10
+# makes it invalid. The supplied-value twin is
+# base/jobs/1.2.1--constraint-widening-int-range-binds.invalid.test.yaml, which both
+# implementations refuse.
+#
+# The job must be refused. openjd-rs runs it and prints COUNT[5]:
+# preprocess_job_parameters calls check_constraints on a supplied value and never on a
+# default, so a default is only ever checked against its own template's bounds at decode.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Count
+    type: INT
+    minValue: 0
+    maxValue: 1000
+    default: 5
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'COUNT[{{Param.Count}}]')
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: Count
+    type: INT
+    minValue: 10
+    maxValue: 100
+  environment:
+    name: TestEnv
+    variables:
+      COUNT: '{{Param.Count}}'

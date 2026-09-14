@@ -1,0 +1,38 @@
+# A merged job parameter definition's default must satisfy the merged constraints
+# (§1.2.1), the same intersection that applies to a supplied value.
+#
+# The job template is processed last and relaxes the environment template's minLength 5 to
+# 2, and its 3-character default satisfies its own minLength. Only the merged minimum of 5
+# makes it invalid. The supplied-value twin is
+# base/jobs/1.2.1--constraint-widening-minlength-binds.invalid.test.yaml, which both
+# implementations refuse.
+#
+# The job must be refused. openjd-rs runs it and prints VALUE[abc], for the reason its INT
+# sibling 1.2.1--merged-default-below-merged-minvalue.invalid.test.yaml records.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Value
+    type: STRING
+    minLength: 2
+    default: abc
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'VALUE[{{Param.Value}}]')
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: Value
+    type: STRING
+    minLength: 5
+  environment:
+    name: TestEnv
+    variables:
+      VAL: '{{Param.Value}}'
