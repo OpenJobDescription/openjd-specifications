@@ -1,0 +1,27 @@
+# Expression Language section 2.2.4 defines center(s, width) as "Center, pad
+# with spaces to width" without saying which side takes the extra space when
+# the padding is odd. #177 settles such ambiguities by matching Python, making
+# CPython str.center the reference.
+#
+# center("hi", 7) leaves 5 pad spaces to split. Brackets stop the assertion
+# from matching a shorter or longer string.
+#
+# The extra space goes LEFT. A right-heavy implementation prints [  hi   ].
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'CENTER:[{{ center("hi", 7) }}]')
+expected:
+  output:
+  - "CENTER:[   hi  ]"
