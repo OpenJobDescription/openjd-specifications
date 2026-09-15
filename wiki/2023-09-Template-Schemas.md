@@ -16,6 +16,9 @@ Both Templates are expressed as UTF-8 documents in either
 [ECMA-404 JavaScript Object Notation (JSON)](https://www.json.org/json-en.html) or
 [YAML Ain't Markup Language (YAML) 1.2](https://yaml.org/) interchange format.
 
+Throughout this document, a "character" is a single Unicode code point; all length limits expressed in characters
+(e.g. "Maximum length: 128 characters") are counts of Unicode code points, not bytes.
+
 Notations used in this document to annotate aspects of the schema definition:
 
 * `@fmtstring` - The value of the annotated property is a Format String. See [Format Strings](#73-format-strings).
@@ -872,6 +875,9 @@ Where:
         1. No two Environments in this list may have the same value for the `name` property.
         2. The Environments defined in this list must not have the same `name` as a Job Environment defined in the same
            Job Template.
+    * Note: The scope of a Step Environment's `name` is the Step that defines it. Different Steps may each define a
+      Step Environment with the same `name`; a Session only ever contains the Step Environments of a single Step, so
+      these names never collide.
 6. *hostRequirements* — Describes the requirements on Worker host's capabilities that must be satisfied for the Task(s) of
    the Step to be scheduled to the host. See: [&lt;HostRequirements&gt;](#33-hostrequirements).
 7. *parameterSpace* — Defines the parameterization of the Step's action; the available parameters, the values that they
@@ -1494,7 +1500,8 @@ variables: <EnvironmentVariables> # @optional
 
 Where:
 
-1. *name* — An identifier given to the environment that is unique within the Environment's defined scope.
+1. *name* — An identifier given to the environment that is unique within the Environment's defined scope: the Job
+   Template for a Job Environment, and the Step Template for a Step Environment.
 2. *description* — A description to apply to the environment. It has no functional purpose, but may appear in UI elements.
    See: [&lt;Description&gt;](#72-description).
 3. *script* — The action that is taken by this Environment when it is run on a Worker host.
