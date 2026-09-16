@@ -1,0 +1,8 @@
+# SimpleAction sugar keys (bash/cmd/node/powershell/python) require FEATURE_BUNDLE_1; in base they must be rejected.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  bash:
+    script: |
+      echo hello

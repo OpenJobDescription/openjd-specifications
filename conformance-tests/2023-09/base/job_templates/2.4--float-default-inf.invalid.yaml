@@ -1,0 +1,16 @@
+# A FLOAT parameter default of infinity is not a base-10 floating point value and must be rejected.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: MyParam
+  type: FLOAT
+  default: .inf
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print('{{Param.MyParam}}')"

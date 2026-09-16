@@ -33,3 +33,6 @@ expected:
   forbidden:
   - TASK:A=0,B=z
   - TASK:A=2,B=0
+  - TASK:A=1,B=y
+  - TASK:A=2,B=x
+  - TASK:A=3,B=x
