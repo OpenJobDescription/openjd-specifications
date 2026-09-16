@@ -1,0 +1,23 @@
+# The int type is a 64-bit signed integer (Expression Language §1.2.1;
+# RFC 0005 "64-bit Signed Integer Type", dropped from the published form).
+# A job parameter default of 2^63 = 9223372036854775808 is out of range and
+# must be rejected at template validation. YAML parsers yield
+# arbitrary-precision integers silently, so this is the axis where an
+# implementation is most likely to let an out-of-range value through.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: TooBig
+  type: INT
+  default: 9223372036854775808
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ Param.TooBig }}')"
