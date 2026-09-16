@@ -4,10 +4,16 @@
 #
 # <intstring> is defined as "a string whose value is the string representation of an integer
 # value in base-10", so '02' and '003' represent the integers 2 and 3, and the task parameter
-# should carry those integers rather than the source text.
+# should carry those integers rather than the source text. A leading zero is redundant to the
+# value, so it does not survive resolution.
 #
 # This is the value that reaches a task command line, so a wrong answer here means a renderer is
 # invoked with --frame 02 instead of --frame 2.
+#
+# Assertions bracket the value because the runner substring-matches, so a bare 'FRAME:2' would
+# also be satisfied by an implementation printing 'FRAME:20'.
+#
+# Both implementations resolve these to 1, 2 and 3.
 #
 # Spec references, Template Schemas 2023-09:
 #   §3.4.1.1 L1110  `<IntRangeList>` elements are `<integer> | <intstring>`
@@ -30,12 +36,12 @@ template:
           command: python
           args:
           - -c
-          - print(r'FRAME:{{Task.Param.Frame}}')
+          - print(r'FRAME[{{Task.Param.Frame}}]')
 expected:
   output:
-  - 'FRAME:1'
-  - 'FRAME:2'
-  - 'FRAME:3'
+  - 'FRAME[1]'
+  - 'FRAME[2]'
+  - 'FRAME[3]'
   forbidden:
-  - 'FRAME:02'
-  - 'FRAME:003'
+  - 'FRAME[02]'
+  - 'FRAME[003]'

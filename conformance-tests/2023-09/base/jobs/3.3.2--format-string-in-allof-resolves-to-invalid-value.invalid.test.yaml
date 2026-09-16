@@ -9,8 +9,7 @@
 #
 # Companion to 3.3.2--format-string-in-anyof-resolves-to-invalid-value.invalid.test.yaml in this
 # directory. anyOf and allOf are separate spec fields with separate validators, so they are
-# covered separately rather than assumed symmetric, but the observed divergence is the same and
-# reviewers may prefer to treat both as one issue.
+# covered separately rather than assumed symmetric. Both implementations reject both fields.
 #
 # Spec references, Template Schemas 2023-09:
 #   §3.3.2 L1015  attributes[].allOf is @fmtstring in base 2023-09, no extension gate

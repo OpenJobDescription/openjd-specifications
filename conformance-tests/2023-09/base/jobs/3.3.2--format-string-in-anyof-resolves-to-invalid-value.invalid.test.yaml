@@ -6,10 +6,9 @@
 # Here the parameter resolves to "not valid!", which contains a space and an exclamation mark,
 # so the run must fail.
 #
-# NOTE ON CURRENT STATE: this case is expected to FAIL against the Rust CLI, which accepts the
-# resolved value and runs the job. The Python CLI rejects it with "Value not valid! is not a
-# valid attribute capability value." That divergence is the defect this case exists to expose;
-# it is not a broken test.
+# Both implementations reject it, and both name the field: Python with "Value not valid! is not
+# a valid attribute capability value", openjd-rs with "value 'not valid!' contains invalid
+# characters". openjd-rs deferred the check and never resumed it until #349.
 #
 # Spec references, Template Schemas 2023-09:
 #   §3.3.2 L1014  attributes[].anyOf is @fmtstring in base 2023-09, no extension gate
