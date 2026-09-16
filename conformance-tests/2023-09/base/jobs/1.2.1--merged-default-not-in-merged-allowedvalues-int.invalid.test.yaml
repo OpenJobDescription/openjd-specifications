@@ -1,0 +1,43 @@
+# A merged job parameter definition must be internally consistent, so its
+# default has to satisfy the merged constraints (section 1.2.1).
+#
+# The INT allowedValues axis: the environment template allows [1, 2, 3] and the
+# job template, processed last, allows [1, 2, 3, 4] with default 4. The default
+# is in its own list, so only the merged intersection makes it invalid.
+#
+# Job creation must refuse it. An implementation whose default check covers
+# STRING allowedValues but not INT runs the job and prints QUALITY[4].
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Quality
+    type: INT
+    default: 4
+    allowedValues:
+    - 1
+    - 2
+    - 3
+    - 4
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'QUALITY[{{Param.Quality}}]')
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: Quality
+    type: INT
+    allowedValues:
+    - 1
+    - 2
+    - 3
+  environment:
+    name: TestEnv
+    variables:
+      QUALITY: '{{Param.Quality}}'
