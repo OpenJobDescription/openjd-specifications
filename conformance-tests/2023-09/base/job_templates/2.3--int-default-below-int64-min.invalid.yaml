@@ -1,0 +1,24 @@
+# Section 2.3 types INT properties as <integer> and states no bound. Both
+# reference implementations store INT as int64, the range the Expression
+# Language type table defines.
+#
+# Sets default: -9223372036854775809, one below int64 min. The -2^63 accept twin
+# is added by PR #161.
+#
+# Validation must refuse it. Both implementations accept it, so a value that
+# cannot round-trip int64 storage reaches job creation.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: MyParam
+  type: INT
+  default: -9223372036854775809
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print('{{Param.MyParam}}')"
