@@ -1,0 +1,60 @@
+# RFC 0008 "Stdout forwarding and macro propagation": the runtime scans
+# the wrap script's stdout for ALL OpenJD macros — openjd_progress and
+# openjd_status included — whether the wrap script emits them itself or
+# forwards them from the wrapped grand-child.
+#
+# Honest scope note: this conformance runner observes only the session
+# log; recognition of progress/status has no further observable EFFECT
+# there (unlike openjd_env, whose recognition is pinned effect-wise by
+# sibling fixtures). What this fixture pins is the MUST that the wrap
+# layer forwards macro-shaped lines VERBATIM — a wrap layer or runtime
+# that consumes, reorders into, buffers away, or transforms
+# openjd_progress/openjd_status lines (e.g. stripping recognized macros
+# from the log) fails. Recognition-as-effect belongs in implementation
+# tests. Caveat: a runtime that recognizes these macros and deliberately
+# consumes them out of its log is arguably conformant with the RFC yet
+# fails this fixture; if such a runtime appears, this fixture should be
+# relaxed rather than the runtime changed.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapProgressStatusMacrosForwarded
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - "-c"
+          - "print('openjd_progress: 55.5'); print('openjd_status: STATUS_FROM_GRAND_CHILD')"
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        # The wrap script emits a status macro itself, then forwards the
+        # grand-child's stdout (which carries progress + status macros).
+        onWrapTaskRun:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys\nprint('openjd_status: STATUS_FROM_WRAP_SCRIPT')\nsys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        onWrapEnvExit:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+expected:
+  output:
+  - "openjd_status: STATUS_FROM_WRAP_SCRIPT"
+  - "openjd_progress: 55.5"
+  - "openjd_status: STATUS_FROM_GRAND_CHILD"

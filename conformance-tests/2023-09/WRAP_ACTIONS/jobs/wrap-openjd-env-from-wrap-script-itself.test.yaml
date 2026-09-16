@@ -1,0 +1,55 @@
+# RFC 0008 "Stdout forwarding and macro propagation": "A wrap script MAY
+# emit stdout macros directly." A macro emitted by the wrap script itself
+# — here `openjd_env:` from onWrapEnvEnter, the Basic Example's
+# DOCKER_CONTAINER_ID pattern — must be recognized by the runtime and
+# surface in WrappedAction.Environment for subsequent wrapped actions.
+# This is an EFFECT-based recognition test (the variable observably lands
+# in the forwarded list), not a text-presence check. Catches a runtime
+# that scans only forwarded grand-child output, or only unwrapped actions'
+# stdout, for macros.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapOpenjdEnvFromWrapScriptItself
+  jobEnvironments:
+  - name: InnerEnv
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('INNER_ENTER_BODY')"]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["placeholder"]
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        # The wrap script itself emits the macro; the wrapped onEnter is
+        # intentionally not executed (interception replaces it).
+        onWrapEnvEnter:
+          command: python
+          args:
+          - "-c"
+          - "print('openjd_env: WRAP_SELF_VAR=from-wrap-script')"
+        onWrapTaskRun:
+          command: python
+          args:
+          - "-c"
+          - "for e in {{repr_py(WrappedAction.Environment)}}:\n print('WAENV='+e)"
+        onWrapEnvExit:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+expected:
+  output:
+  - WAENV=WRAP_SELF_VAR=from-wrap-script

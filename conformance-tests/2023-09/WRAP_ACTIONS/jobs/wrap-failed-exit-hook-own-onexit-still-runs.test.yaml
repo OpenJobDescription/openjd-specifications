@@ -1,0 +1,66 @@
+# RFC 0008 "Failure semantics" + "Lifecycle and cleanup guarantees",
+# scenario row 3: "onWrapEnvExit fails → Wrapping environment's onExit
+# still runs." A failed onWrapEnvExit is an inner onExit failure; the
+# session handles it exactly as an unwrapped onExit failure, and the
+# wrapping environment's own onExit MUST still run on top — a runner that
+# aborts teardown at the failed exit hook leaks whatever the wrap env's
+# onEnter allocated (the container). taskFailure (without exitCode) pins
+# that the run surfaces the teardown failure; the specific code cannot be
+# pinned portably because teardown-phase failures are not reported through
+# the "exited with code: N" line the runner's exitCode assertion parses
+# (openjd-rs reports them as "onExit failed: exit code: N").
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapFailedExitHookOwnOnExitStillRuns
+  jobEnvironments:
+  - name: InnerEnv
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('INNER_ENTER_BODY')"]
+        onExit:
+          command: python
+          args: ["-c", "print('INNER_EXIT_BODY')"]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_BODY_RAN')"]
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('WRAPENV_OWN_ENTER_RAN')"]
+        onWrapEnvEnter:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        onWrapTaskRun:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        # The exit hook itself fails.
+        onWrapEnvExit:
+          command: python
+          args: ["-c", "import sys; print('WRAP_EXIT_FAILING'); sys.exit(5)"]
+        onExit:
+          command: python
+          args: ["-c", "print('WRAPENV_OWN_EXIT_RAN')"]
+expected:
+  taskFailure: {}
+  output:
+  - TASK_BODY_RAN
+  - WRAP_EXIT_FAILING
+  - WRAPENV_OWN_EXIT_RAN
