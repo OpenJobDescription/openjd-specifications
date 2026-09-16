@@ -1,0 +1,41 @@
+# Expression Language §2.2.4: is* predicate clauses that are easy to get wrong.
+#   - isupper/islower require "at least one cased character", so a digits-only
+#     string is false for BOTH (not true for either).
+#   - isdigit/isalpha/isalnum/isspace require "string is non-empty", so "" is
+#     false for all four; isupper/islower on "" have no cased character -> false.
+#   - isascii is the exception: specified as true when "all characters are ASCII
+#     (U+0000–U+007F), or string is empty".
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'UPPER_DIGITS:{{ isupper("123") }}')
+            print(r'LOWER_DIGITS:{{ islower("123") }}')
+            print(r'E_ISDIGIT:{{ isdigit("") }}')
+            print(r'E_ISALPHA:{{ isalpha("") }}')
+            print(r'E_ISALNUM:{{ isalnum("") }}')
+            print(r'E_ISSPACE:{{ isspace("") }}')
+            print(r'E_ISUPPER:{{ isupper("") }}')
+            print(r'E_ISLOWER:{{ islower("") }}')
+            print(r'E_ISASCII:{{ isascii("") }}')
+expected:
+  output:
+  - UPPER_DIGITS:false
+  - LOWER_DIGITS:false
+  - E_ISDIGIT:false
+  - E_ISALPHA:false
+  - E_ISALNUM:false
+  - E_ISSPACE:false
+  - E_ISUPPER:false
+  - E_ISLOWER:false
+  - E_ISASCII:true

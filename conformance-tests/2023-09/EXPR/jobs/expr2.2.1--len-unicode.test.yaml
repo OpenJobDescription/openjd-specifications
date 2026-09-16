@@ -1,0 +1,36 @@
+# Expression Language §2.2.1: len(s: string) returns the number of unicode CODEPOINTS.
+# This is the first fixture with non-ASCII data in the EXPR suite. It distinguishes
+# codepoint counting from byte counting (UTF-8) and from UTF-16 code-unit counting:
+#   - "日本語" is 3 codepoints (9 UTF-8 bytes)
+#   - "👍" (U+1F44D) is 1 codepoint (4 UTF-8 bytes, 2 UTF-16 code units / a surrogate
+#     pair — a UTF-16-based implementation would report 2)
+#   - "e" + U+0301 combining acute is 2 codepoints (1 grapheme cluster — a
+#     grapheme-based implementation would report 1)
+#   - U+1D54F (𝕏) is 1 codepoint (astral plane)
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'CJK:{{ len("日本語") }}')
+            print(r'EMOJI:{{ len("👍") }}')
+            print(r'COMBINING:{{ len("e\u0301") }}')
+            print(r'ASTRAL:{{ len("\U0001D54F") }}')
+            print(r'MIXED:{{ len("a👍日e\u0301") }}')
+expected:
+  output:
+  - CJK:3
+  - EMOJI:1
+  - COMBINING:2
+  - ASTRAL:1
+  # a(1) + emoji(1) + CJK(1) + e(1) + combining mark(1) = 5 codepoints
+  - MIXED:5

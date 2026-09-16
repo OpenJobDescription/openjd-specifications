@@ -1,0 +1,18 @@
+# Expression Language §2.2.2 (sum) + §2.1.1 (64-bit signed integer arithmetic):
+# sum(values: list[int]) accumulating past int64 max (2^63 - 1) must be rejected.
+# 9223372036854775807 + 1 = 2^63 overflows the 64-bit signed range.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'SUM:{{ sum([9223372036854775807, 1]) }}')

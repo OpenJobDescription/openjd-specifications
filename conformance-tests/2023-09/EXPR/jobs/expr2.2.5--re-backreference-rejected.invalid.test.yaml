@@ -1,0 +1,27 @@
+# Expression Language §2.2.5: backreferences (\1, \2, ...) in patterns are
+# explicitly listed as "Not supported" (Python `re` feature absent from Rust's
+# `regex` crate). A template using a backreference pattern must be rejected.
+#
+# DIALECT-DIVERGENCE PROBE: Python's `re` natively ACCEPTS backreferences
+# (r"(abc)\1" matches "abcabc"), so a Python-backed implementation must actively
+# screen patterns to reject this. Rust's `regex` crate fails to compile it.
+# openjd-rs rejects with: "Unsupported regex feature: backreferences".
+# Note the raw string r"(abc)\1" — in a non-raw string "\1" is not a defined
+# §1.1.5 escape and would not reach the regex engine as backslash-one.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'm = re_search("abcabc", r"(abc)\1")'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'M:{{ m }}')
