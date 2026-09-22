@@ -1,0 +1,35 @@
+# Action timeout is @fmtstring under FEATURE_BUNDLE_1 (Template Schemas §5) and
+# Expression Language §1.3.2 requires a non-null expression value to reach it.
+#
+# Control for 5--timeout-null-drops-field.test.yaml: a computed 1-second timeout
+# over a 10-second command. The marker is joined at run time because Windows
+# logs the resolved command line at INFO and would otherwise match it.
+#
+# The action must be killed: the task fails and the marker never prints.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - FEATURE_BUNDLE_1
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: UseTimeout
+    type: BOOL
+    default: true
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          timeout: "{{ 1 if Param.UseTimeout else null }}"
+          command: python
+          args:
+          - -c
+          - |
+            import time
+            time.sleep(10)
+            print('SHOULD_NOT' + '_PRINT')
+expected:
+  taskFailure: {}
+  forbidden:
+  - SHOULD_NOT_PRINT

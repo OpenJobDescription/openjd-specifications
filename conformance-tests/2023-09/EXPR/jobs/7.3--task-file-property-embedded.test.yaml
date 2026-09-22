@@ -1,0 +1,31 @@
+# Direct property access on a path-typed symbol embedded in a format string
+# with surrounding text (Template Schemas §7.3.1; Expression Language §1.3.2,
+# §2.3.1). The embedded form takes the natural-result-then-stringify route,
+# distinct from the whole-field route.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      embeddedFiles:
+      - name: config
+        type: TEXT
+        filename: config.txt
+        data: "hello"
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'NAME:{{ Task.File.config.name }}:END')
+            print(r'STEM:{{ Task.File.config.stem }}:END')
+            print(r'SUFFIX:{{ Task.File.config.suffix }}:END')
+expected:
+  output:
+  - "NAME:config.txt:END"
+  - "STEM:config:END"
+  - "SUFFIX:.txt:END"

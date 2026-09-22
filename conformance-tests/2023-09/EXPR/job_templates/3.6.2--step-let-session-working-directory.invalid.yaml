@@ -1,0 +1,18 @@
+# A <StepTemplate>.let binding may reference only Param.*, RawParam.*,
+# Job.Name, Step.Name, and earlier bindings (Template Schemas §3.6.2).
+# Session.WorkingDirectory is a host-context symbol and must be rejected here.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  let:
+  - wd = Session.WorkingDirectory
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ wd }}')"
