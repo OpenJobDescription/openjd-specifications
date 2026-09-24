@@ -1,0 +1,26 @@
+# §3.3.2.1: an attribute capability name that is a format string is checked after it has been
+# resolved. The resolved name is a valid custom attribute capability name, so job creation succeeds.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: AttributeName
+    type: STRING
+    default: 'attr.custom.gpu_type'
+  steps:
+  - name: Step1
+    hostRequirements:
+      attributes:
+      - name: '{{Param.AttributeName}}'
+        anyOf:
+        - value1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'RESULT:created')
+expected:
+  output:
+  - RESULT:created

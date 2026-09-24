@@ -1,0 +1,29 @@
+# §3.3.2.1: a name that resolves to a standard attribute capability is subject to that
+# capability's allowed values. The name resolves to attr.worker.os.family and the required value
+# is not one of its values, so job creation must fail.
+#
+# .invalid.test.yaml, not .invalid.yaml: the template is valid on its own and the error only
+# fires once the submitted value is bound.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: AttributeName
+    type: STRING
+    default: 'attr.custom.os_family'
+  steps:
+  - name: Step1
+    hostRequirements:
+      attributes:
+      - name: '{{Param.AttributeName}}'
+        anyOf:
+        - plan9
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'RESULT:created')
+parameters:
+  AttributeName: attr.worker.os.family

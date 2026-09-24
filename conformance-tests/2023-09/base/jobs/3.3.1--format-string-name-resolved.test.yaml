@@ -1,0 +1,25 @@
+# §3.3.1.1: an amount capability name that is a format string is checked after it has been
+# resolved. The resolved name is a valid custom amount capability name, so job creation succeeds.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: AmountName
+    type: STRING
+    default: 'amount.custom.licenses'
+  steps:
+  - name: Step1
+    hostRequirements:
+      amounts:
+      - name: '{{Param.AmountName}}'
+        min: 1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'RESULT:created')
+expected:
+  output:
+  - RESULT:created

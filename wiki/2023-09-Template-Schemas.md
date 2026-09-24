@@ -941,8 +941,10 @@ With the constraints:
 1. If this object is provided in a Job Template, then at least one of the *amounts* or *attributes* properties must be
    defined.
 2. The sum of the lengths of the *amounts* and *attributes* arrays must not exceed 50 elements.
-3. No two elements in the *amounts* array may have the same value for the *name* property.
-4. No two elements in the *attributes* array may have the same value for the *name* property.
+3. No two elements in the *amounts* array may have the same value for the *name* property, after the *name* format
+   strings have been resolved.
+4. No two elements in the *attributes* array may have the same value for the *name* property, after the *name* format
+   strings have been resolved.
 
 #### 3.3.1. `<AmountRequirement>`
 
@@ -959,7 +961,7 @@ multiple running Sessions onto hosts at the same time.
 An `<AmountRequirement>` is the object:
 
 ```yaml
-name: <AmountCapabilityName>
+name: <AmountCapabilityName> # @fmtstring
 min: <nonnegativefloat> # @optional
 min: <nonnegativefloat> | <nonnegativefloatstring>  # @optional @fmtstring @extension FEATURE_BUNDLE_1
 max: <positivefloat> # @optional
@@ -984,7 +986,7 @@ Subject to the constraint that at least one of *min* or *max* must be provided.
 
 ##### 3.3.1.1. `<AmountCapabilityName>`
 
-A string subject to the following constraints.
+A [Format String](#73-format-strings) subject to the following constraints, after the format string has been resolved.
 
 1. Minimum length: 1 character.
 2. Maximum length: 100 characters.
@@ -1016,7 +1018,7 @@ specific value(s) of the attribute for it to be scheduled to the host.
 An `<AttributeRequirement>` is the object:
 
 ```yaml
-name: <AttributeCapabilityName>
+name: <AttributeCapabilityName> # @fmtstring
 anyOf: [ <AttributeCapabilityValue>, ... ] # @optional @fmtstring
 allOf: [ <AttributeCapabilityValue>, ... ] # @optional @fmtstring
 ```
@@ -1037,7 +1039,7 @@ Subject to the constraint that at least one of *anyOf* or *allOf* must be provid
 
 ##### 3.3.2.1. `<AttributeCapabilityName>`
 
-A string subject to the following constraints.
+A [Format String](#73-format-strings) subject to the following constraints, after the format string has been resolved.
 
 1. Minimum length: 1 character.
 2. Maximum length: 100 characters.

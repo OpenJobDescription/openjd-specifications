@@ -1,0 +1,25 @@
+# §3.3.1.1: only part of the amount capability name is a format string. The resolved name
+# amount.custom.licenses is valid, so job creation succeeds.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: LicenseKind
+    type: STRING
+    default: 'licenses'
+  steps:
+  - name: Step1
+    hostRequirements:
+      amounts:
+      - name: 'amount.custom.{{Param.LicenseKind}}'
+        min: 1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'RESULT:created')
+expected:
+  output:
+  - RESULT:created
