@@ -1,6 +1,6 @@
 # §3.3.2.1: the name pattern applies to the resolved name. The submitted value resolves to an
 # amount capability name, which does not match the attribute capability name pattern, so job
-# creation must fail. Positive twin: 3.3.2--format-string-name-resolved.test.yaml.
+# creation must fail. Positive twin: 3.3.2--format-string-attribute-name-resolved.test.yaml.
 #
 # .invalid.test.yaml, not .invalid.yaml: the template is valid on its own and the error only
 # fires once the submitted value is bound.

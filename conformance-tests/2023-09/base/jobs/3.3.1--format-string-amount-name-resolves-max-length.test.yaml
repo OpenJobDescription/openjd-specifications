@@ -1,6 +1,6 @@
 # §3.3.1.1: the 100 character limit applies to the resolved name. This name resolves to exactly
 # 100 characters, so job creation succeeds. Negative twin:
-# 3.3.1--format-string-name-resolves-too-long.invalid.test.yaml.
+# 3.3.1--format-string-amount-name-resolves-too-long.invalid.test.yaml.
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob
