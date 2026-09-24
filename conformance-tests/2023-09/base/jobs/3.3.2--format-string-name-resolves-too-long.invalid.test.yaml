@@ -1,0 +1,29 @@
+# §3.3.2.1: the 100 character limit applies to the resolved name. The submitted value resolves
+# to 101 characters, so job creation must fail. Positive twin:
+# 3.3.2--format-string-name-resolves-max-length.test.yaml.
+#
+# .invalid.test.yaml, not .invalid.yaml: the template is valid on its own and the error only
+# fires once the submitted value is bound.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: AttributeName
+    type: STRING
+    default: 'attr.custom.gpu_type'
+  steps:
+  - name: Step1
+    hostRequirements:
+      attributes:
+      - name: '{{Param.AttributeName}}'
+        anyOf:
+        - value1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'RESULT:created')
+parameters:
+  AttributeName: attr.custom.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa

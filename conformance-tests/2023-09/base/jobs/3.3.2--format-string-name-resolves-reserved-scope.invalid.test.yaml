@@ -1,0 +1,29 @@
+# §3.3.2.1: the reserved scopes apply to the resolved name. The submitted value resolves to a
+# non-standard name in the reserved 'worker' scope, so job creation must fail. Positive twin:
+# 3.3.2--format-string-name-resolved.test.yaml.
+#
+# .invalid.test.yaml, not .invalid.yaml: the template is valid on its own and the error only
+# fires once the submitted value is bound.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: AttributeName
+    type: STRING
+    default: 'attr.custom.gpu_type'
+  steps:
+  - name: Step1
+    hostRequirements:
+      attributes:
+      - name: '{{Param.AttributeName}}'
+        anyOf:
+        - value1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'RESULT:created')
+parameters:
+  AttributeName: attr.worker.gpu_type
