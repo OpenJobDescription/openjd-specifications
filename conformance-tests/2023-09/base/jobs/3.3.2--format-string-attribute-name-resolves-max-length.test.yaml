@@ -1,9 +1,6 @@
-# §3.3.2.1: the reserved scopes apply to the resolved name. The submitted value resolves to a
-# non-standard name in the reserved 'worker' scope, so job creation must fail. Positive twin:
-# 3.3.2--format-string-name-resolved.test.yaml.
-#
-# .invalid.test.yaml, not .invalid.yaml: the template is valid on its own and the error only
-# fires once the submitted value is bound.
+# §3.3.2.1: the 100 character limit applies to the resolved name. This name resolves to exactly
+# 100 characters, so job creation succeeds. Negative twin:
+# 3.3.2--format-string-attribute-name-resolves-too-long.invalid.test.yaml.
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob
@@ -26,4 +23,7 @@ template:
           - -c
           - print(r'RESULT:created')
 parameters:
-  AttributeName: attr.worker.gpu_type
+  AttributeName: attr.custom.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+expected:
+  output:
+  - RESULT:created
