@@ -36,6 +36,6 @@ steps:
           print(r'{{ string(min(Param.X, 10)) }}')
           print(r'{{ len(split(Param.Name, "l")) }}')
           # Type conversion functions
-          print(r'{{ int(Param.Y) }}')
+          print(r'{{ int(float(Param.X)) }}')
           print(r'{{ float(Param.X) }}')
           print(r'{{ bool(Param.X) }}')
