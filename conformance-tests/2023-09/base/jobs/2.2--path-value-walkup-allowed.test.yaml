@@ -1,0 +1,40 @@
+# 2.2: the relative-only and no-walk-up rules apply to defaults, not to
+# submitted values. A submitted ../x is accepted and joined with the current
+# working directory. Cwd is submitted as "." so the script can check the join.
+# Both sides are normalized for the comparison; normalization of submitted
+# values is covered by 2.2--path-value-relative-joined-with-cwd.
+
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Cwd
+    type: PATH
+  - name: Up
+    type: PATH
+  - name: Interior
+    type: PATH
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import os
+            n = os.path.normpath
+            c = r'{{Param.Cwd}}'
+            print('UP:[%s]' % (n(r'{{Param.Up}}') == n(os.path.join(c, '..', 'x'))))
+            print('INTERIOR:[%s]' % (n(r'{{Param.Interior}}') == n(os.path.join(c, '..', '..', 'y'))))
+
+parameters:
+  Cwd: .
+  Up: ../x
+  Interior: a/../../../y
+
+expected:
+  output:
+  - UP:[True]
+  - INTERIOR:[True]

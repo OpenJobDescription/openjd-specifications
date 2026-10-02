@@ -1,0 +1,23 @@
+runOn: [windows]
+
+# 2.2: on Windows, a walk-up written with mixed separators (a/..\..\b) escapes
+# the job template's directory. Catches implementations that normalize only
+# one separator. The script prints a constant so the default is the only thing
+# that can fail.
+
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: OutputDir
+    type: PATH
+    default: "a/..\\..\\b"
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'OUTPUT:success')

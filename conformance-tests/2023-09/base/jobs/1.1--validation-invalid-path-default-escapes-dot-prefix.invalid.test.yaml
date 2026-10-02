@@ -1,0 +1,21 @@
+# 2.2: a leading "./" does not keep a default inside the job template's
+# directory; ./../b normalizes to ../b. Catches implementations that treat a
+# "./" prefix as proof the path is within the directory. The script prints a
+# constant so the default is the only thing that can fail.
+
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: OutputDir
+    type: PATH
+    default: ./../b
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'OUTPUT:success')

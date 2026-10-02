@@ -1,0 +1,22 @@
+runOn: [windows]
+
+# 2.2: on Windows, backslash-separated and mixed-separator walk-ups escape the
+# job template's directory the same as forward-slash ones. The script prints a
+# constant so the default is the only thing that can fail.
+
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: OutputDir
+    type: PATH
+    default: "a\\..\\..\\b"
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'OUTPUT:success')
