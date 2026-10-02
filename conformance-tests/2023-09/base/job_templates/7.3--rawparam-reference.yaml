@@ -3,7 +3,7 @@ name: TestJob
 parameterDefinitions:
 - name: MyPath
   type: PATH
-  default: /some/path
+  default: some/path
 steps:
 - name: Step1
   script:

@@ -5,7 +5,7 @@ name: TestJob
 parameterDefinitions:
 - name: Files
   type: LIST[PATH]
-  default: /tmp/file
+  default: tmp/file
 steps:
 - name: Step1
   script:

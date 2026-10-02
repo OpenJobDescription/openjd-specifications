@@ -221,7 +221,8 @@ defined and matching path mapping rules applied to it.
 The value of a Job Parameter of this type referenced in format strings as both:
 
 1. `Param.<name>` — the value of the parameter with applicable path mapping applied to it; and
-2. `RawParam.<name>` — the value of the parameter exactly as it was input to the job, with no path mapping applied to it.
+2. `RawParam.<name>` — the value of the parameter after the join described under *default* and *allowedValues*
+   below, with no path mapping applied to it.
 
 **`@extension EXPR` — URI values**: When the EXPR extension is enabled, PATH parameter values
 may be URIs (values with a `scheme://` prefix, e.g. `s3://bucket/key`). URI values are not
@@ -257,11 +258,24 @@ Where:
 2. *description* — A description to apply to the parameter. It has no functional purpose, but may appear in UI elements.
    See: [&lt;Description&gt;](#72-description).
 3. *default* — Default value to use for the parameter if the submission does not include a value for it.
-   See: [&lt;JobParameterStringValue&gt;](#25-jobparameterstringvalue).
+   See: [&lt;JobParameterStringValue&gt;](#25-jobparameterstringvalue). When a Job is created from the template,
+   a non-empty default that is not a URI is resolved as follows. Template validation does not apply these rules.
+    1. The default must be a relative path. An absolute path is an error.
+    2. The default is joined with the directory containing the Job Template, and the result is lexically
+       normalized: `.` components are removed and `..` components are applied, without resolving symbolic links.
+    3. The normalized result must be the Job Template's directory or a path within it. Otherwise it is an error;
+       for example, `../x` and `a/../../x` are errors.
+
+   A value supplied for the parameter when submitting a Job is not subject to these rules. It may be absolute or
+   relative; a relative value is joined with the current working directory of the submission and lexically
+   normalized in the same way. URI values are never joined; see *URI values* above.
 4. *allowedValues* — An array of the values that the parameter is allowed to be. It is an error to provide a value that is
    not in this list, if the list is defined. See: [&lt;JobParameterStringValue&gt;](#25-jobparameterstringvalue).
-5. *minLength* — The minimum allowable length of the parameter string value.
-6. *maxLength* — The maximum allowable length of the parameter string value.
+   The check is applied after the value has been joined as described under *default* (with the Job Template's
+   directory for a default, or with the current working directory for a submitted relative value), so a
+   relative value can only satisfy *allowedValues* if the list contains the joined path.
+5. *minLength* — The minimum allowable length of the parameter string value. Checked after the join, as for *allowedValues*.
+6. *maxLength* — The maximum allowable length of the parameter string value. Checked after the join, as for *allowedValues*.
 7. *objectType* — The type of object the path represents; either a FILE or a DIRECTORY. Default is DIRECTORY.
 8. *dataFlow* — Whether the object the path represented serves as input, output or both for the Job. Default is NONE.
 9. *userInterface — User interface properties for this parameter*
@@ -624,8 +638,13 @@ Where:
 3. *objectType* — The type of object the paths represent; either FILE or DIRECTORY. Default is DIRECTORY.
 4. *dataFlow* — Whether the objects the paths represent serve as input, output or both for the Job. Default is NONE.
 5. *default* — Default value to use for the parameter if the submission does not include a value for it.
+   Each element is resolved by the rules for the *default* of a
+   [`<JobPathParameterDefinition>`](#22-jobpathparameterdefinition), applied to that element. It is an error
+   if any element violates them. An empty list is a valid default.
 6. *minLength*/*maxLength* — Constrain the number of paths in the list.
-7. *item* — Constraints for each item in the list.
+7. *item* — Constraints for each item in the list. As for a `<JobPathParameterDefinition>`, these are checked
+   against each element after it has been joined with the Job Template's directory (for a default) or the
+   current working directory (for a submitted relative value).
     1. *allowedValues* — An array of the values that each item is allowed to be.
     2. *minLength*/*maxLength* — Constrain the string length of each path.
 8. *userInterface* — User interface properties for this parameter.
@@ -645,9 +664,15 @@ Where:
 The value of a Job Parameter of this type is referenced in format strings as:
 
 1. `Param.<name>` — Returns a `list[path]` type value with path mapping applied.
-2. `RawParam.<name>` — Returns a `list[string]` type value without path mapping.
+2. `RawParam.<name>` — Returns a `list[string]` type value holding each element after it has been joined
+   as described under *default* and *item*, without path mapping.
 3. `Param.<name>[i]` — Returns the i-th element as `path`.
 4. `len(Param.<name>)` — Returns the count of elements.
+
+Each element of a `LIST[PATH]` value is processed as the value of a `PATH` parameter is: a relative element of a
+submitted value is joined with the current working directory of the submission, a relative element of the
+*default* is joined with the Job Template's directory, and path mapping rules are applied to each element
+independently.
 
 ### 2.13. `<JobListIntParameterDefinition>` `@extension EXPR`
 
@@ -2023,7 +2048,7 @@ different sets of values are known, which determines which format strings can be
 | Stage | When | Known Values | Unknown Values | What Happens |
 |-------|------|-------------|----------------|--------------|
 | **Template validation** | `openjd check` or equivalent | Literal values, parameter type declarations | `Param.*`, `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*` | Syntax validation, structural checks. With the `EXPR` extension: type checking of expressions using declared parameter types. `Job.Name` and `Step.Name` are available as `unresolved[string]`. |
-| **Job creation** | Job submission with parameter values | `Param.*`, `RawParam.*` | `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*` | Parameter values are bound. Format strings not annotated `@fmtstring[host]` are resolved (e.g., `name`, `parameterSpace` ranges). PATH parameter defaults are joined with the job template directory; PATH parameter values are joined with the current working directory. With the `EXPR` extension: `let` bindings in `<StepTemplate>` are evaluated; expressions in TEMPLATE scope are fully evaluated; `Job.Name` and `Step.Name` are concrete. |
+| **Job creation** | Job submission with parameter values | `Param.*`, `RawParam.*` | `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*` | Parameter values are bound. Format strings not annotated `@fmtstring[host]` are resolved (e.g., `name`, `parameterSpace` ranges). PATH and `LIST[PATH]` parameter defaults must be relative and are joined with the job template directory (see [§2.2](#22-jobpathparameterdefinition)); relative PATH and `LIST[PATH]` parameter values are joined with the current working directory. With the `EXPR` extension: `let` bindings in `<StepTemplate>` are evaluated; expressions in TEMPLATE scope are fully evaluated; `Job.Name` and `Step.Name` are concrete. |
 | **Task execution** | On the worker host | All values: `Param.*`, `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*`, path mapping rules | *(none)* | Format strings annotated `@fmtstring[host]` are resolved. Path mapping rules are applied to PATH-type parameters. Embedded files are written. With the `EXPR` extension: `let` bindings in `<StepScript>` and `<EnvironmentScript>` are evaluated; all remaining expressions are fully evaluated. |
 
 The `@fmtstring` and `@fmtstring[host]` annotations in this specification indicate which stage

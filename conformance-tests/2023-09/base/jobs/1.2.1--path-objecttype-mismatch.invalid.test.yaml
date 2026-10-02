@@ -5,7 +5,7 @@ template:
   - name: Path
     type: PATH
     objectType: DIRECTORY
-    default: /tmp/test
+    default: tmp/test
   steps:
   - name: Step1
     script:
@@ -21,7 +21,7 @@ environments:
   - name: Path
     type: PATH
     objectType: FILE
-    default: /tmp/test
+    default: tmp/test
   environment:
     name: TestEnv
     variables:

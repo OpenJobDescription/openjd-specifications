@@ -6,10 +6,10 @@ parameterDefinitions:
 # Minimal
 - name: Minimal
   type: LIST[PATH]
-# With default
+# With default (relative; see 2.12)
 - name: WithDefault
   type: LIST[PATH]
-  default: ["/tmp/a.exr", "/tmp/b.exr"]
+  default: ["renders/a.exr", "renders/b.exr"]
 # Empty default
 - name: EmptyDefault
   type: LIST[PATH]
@@ -17,45 +17,49 @@ parameterDefinitions:
 # Single element
 - name: SingleElement
   type: LIST[PATH]
-  default: ["/tmp/only.exr"]
+  default: ["renders/only.exr"]
+# Explicitly relative (leading ./)
+- name: DotRelative
+  type: LIST[PATH]
+  default: ["./renders/a.exr", "./renders/b.exr"]
 # objectType and dataFlow
 - name: FileIn
   type: LIST[PATH]
   objectType: FILE
   dataFlow: IN
-  default: ["/input/a.exr"]
+  default: ["input/a.exr"]
 - name: FileOut
   type: LIST[PATH]
   objectType: FILE
   dataFlow: OUT
-  default: ["/output/a.exr"]
+  default: ["output/a.exr"]
 - name: FileInOut
   type: LIST[PATH]
   objectType: FILE
   dataFlow: INOUT
-  default: ["/data/a.exr"]
+  default: ["data/a.exr"]
 - name: DirNone
   type: LIST[PATH]
   objectType: DIRECTORY
   dataFlow: NONE
-  default: ["/mnt/share"]
+  default: ["share"]
 # Length constraints
 - name: WithMinMax
   type: LIST[PATH]
-  default: ["/a", "/b"]
+  default: ["a", "b"]
   minLength: 1
   maxLength: 50
 # Item constraints
 - name: ItemLength
   type: LIST[PATH]
-  default: ["/tmp/file"]
+  default: ["tmp/file"]
   item:
     minLength: 1
     maxLength: 200
 # Both constraints
 - name: FullyConstrained
   type: LIST[PATH]
-  default: ["/opt/a", "/opt/b"]
+  default: ["opt/a", "opt/b"]
   minLength: 1
   maxLength: 10
   item:
@@ -64,14 +68,14 @@ parameterDefinitions:
 # Description
 - name: WithDescription
   type: LIST[PATH]
-  default: ["/tmp"]
+  default: ["tmp"]
   description: A list of paths
 # UI controls
 - name: WithInputFileList
   type: LIST[PATH]
   objectType: FILE
   dataFlow: IN
-  default: ["/tmp/a"]
+  default: ["tmp/a"]
   userInterface:
     control: CHOOSE_INPUT_FILE_LIST
     label: Input Files
@@ -79,18 +83,18 @@ parameterDefinitions:
   type: LIST[PATH]
   objectType: FILE
   dataFlow: OUT
-  default: ["/tmp/a"]
+  default: ["tmp/a"]
   userInterface:
     control: CHOOSE_OUTPUT_FILE_LIST
 - name: WithDirList
   type: LIST[PATH]
   objectType: DIRECTORY
-  default: ["/tmp"]
+  default: ["tmp"]
   userInterface:
     control: CHOOSE_DIRECTORY_LIST
 - name: WithHidden
   type: LIST[PATH]
-  default: ["/tmp"]
+  default: ["tmp"]
   userInterface:
     control: HIDDEN
 steps:

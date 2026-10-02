@@ -6,7 +6,7 @@ parameterDefinitions:
   - name: InputPath
     type: PATH
     maxLength: 5
-    default: /tmp/toolong
+    default: tmp/toolong
 steps:
   - name: TestStep
     script:

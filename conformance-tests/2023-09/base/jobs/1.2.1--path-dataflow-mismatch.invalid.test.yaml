@@ -5,7 +5,7 @@ template:
   - name: Path
     type: PATH
     dataFlow: OUT
-    default: /tmp/test
+    default: tmp/test
   steps:
   - name: Step1
     script:
@@ -21,7 +21,7 @@ environments:
   - name: Path
     type: PATH
     dataFlow: IN
-    default: /tmp/test
+    default: tmp/test
   environment:
     name: TestEnv
     variables:

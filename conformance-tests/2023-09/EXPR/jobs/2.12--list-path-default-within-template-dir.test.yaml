@@ -1,0 +1,48 @@
+# 2.12: relative elements of a LIST[PATH] default are joined with the job
+# template's directory and lexically normalized (2.2). Elements that stay
+# inside the directory, including "./" and an interior "..", are accepted.
+# RawParam holds the joined elements. Companion to
+# base/jobs/1.1--validation-valid-path-default-within-template-dir.
+# TemplateDir has default ".", which resolves to the directory itself, so the
+# script can check each joined element exactly without knowing the directory.
+
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: TemplateDir
+    type: PATH
+    default: .
+  - name: Paths
+    type: LIST[PATH]
+    default: ["./output", "sub/dir", "sub/../other"]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import os
+            t = r'{{Param.TemplateDir}}'
+            print('LEN:[{{ len(Param.Paths) }}]')
+            print('TDIR_ABS:[' + str(os.path.isabs(t)) + ']')
+            print('J0:[%s]' % (r'{{ Param.Paths[0] }}' == os.path.join(t, 'output')))
+            print('J1:[%s]' % (r'{{ Param.Paths[1] }}' == os.path.join(t, 'sub', 'dir')))
+            print('J2:[%s]' % (r'{{ Param.Paths[2] }}' == os.path.join(t, 'other')))
+            print('RAW_J0:[%s]' % (r'{{ RawParam.Paths[0] }}' == os.path.join(t, 'output')))
+            print('RAW_J2:[%s]' % (r'{{ RawParam.Paths[2] }}' == os.path.join(t, 'other')))
+
+expected:
+  output:
+  - LEN:[3]
+  - TDIR_ABS:[True]
+  - J0:[True]
+  - J1:[True]
+  - J2:[True]
+  - RAW_J0:[True]
+  - RAW_J2:[True]

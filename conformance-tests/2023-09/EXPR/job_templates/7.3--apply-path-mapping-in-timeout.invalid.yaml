@@ -10,7 +10,7 @@ name: TestJob
 parameterDefinitions:
 - name: Val
   type: PATH
-  default: /tmp/x
+  default: tmp/x
 steps:
 - name: Step1
   script:

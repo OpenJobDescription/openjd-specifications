@@ -1212,7 +1212,7 @@ For example string, int, float, or path, and with [RFC 7](0007-extend-parameter-
 bool, range_expr, and the list types.
 
 For `PATH` parameters, `Param.<name>` has type `path` with path mapping rules applied, while
-`RawParam.<name>` has type `string` containing the original unmapped value. The raw value is
+`RawParam.<name>` has type `string` containing the unmapped value after relative path resolution. The raw value is
 a string because it may be a path for a different operating system that cannot be parsed as
 a local path. Similarly for `LIST[PATH]`, `Param.<name>` is `list[path]` while `RawParam.<name>`
 is `list[string]`.
