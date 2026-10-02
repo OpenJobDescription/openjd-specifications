@@ -1,0 +1,26 @@
+# 2.12: item.allowedValues is checked after each default element is joined
+# with the job template's directory, as for a PATH default (2.2). The joined
+# absolute paths are not in the list, so job creation fails even though the
+# template passes validation. The script prints a constant so the parameter is
+# the only thing that can fail.
+
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Scenes
+    type: LIST[PATH]
+    default: ["assets/a.blend"]
+    item:
+      allowedValues: ["assets/a.blend", "assets/b.blend"]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'OUTPUT:success')

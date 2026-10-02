@@ -9,7 +9,7 @@ name: TestJob
 parameterDefinitions:
 - name: OutputDir
   type: PATH
-  default: /renders
+  default: renders
 steps:
 - name: ScriptLet
   parameterSpace:

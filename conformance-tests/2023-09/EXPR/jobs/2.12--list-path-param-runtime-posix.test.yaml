@@ -1,4 +1,10 @@
 runOn: [posix]
+
+# 2.2/2.12: each relative LIST[PATH] default element is joined with the job
+# template's directory, and RawParam holds the joined elements. The directory
+# is unknown here, so assert absoluteness and names, and forbid the unjoined
+# form.
+
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
@@ -25,22 +31,36 @@ template:
             print(r'LEN:{{ len(Param.Paths) }}')
             print(r'PATHS:{{ Param.Paths }}')
             print(r'RAW:{{ RawParam.Paths }}')
+            print(r'ABS0:[{{ Param.Paths[0].is_absolute() }}]')
+            print(r'ABS1:[{{ Param.Paths[1].is_absolute() }}]')
+            print(r'RAW_ABS0:[{{ path(RawParam.Paths[0]).is_absolute() }}]')
+            print(r'RAW_ABS1:[{{ path(RawParam.Paths[1]).is_absolute() }}]')
+            print(r'NAME0:[{{ Param.Paths[0].name }}]')
+            print(r'NAME1:[{{ Param.Paths[1].name }}]')
+            print(r'PARENT0:[{{ Param.Paths[0].parent.name }}]')
             print(r'TASK:{{ Task.Param.Path }}')
-            print(r'TASK_RAW:{{ Task.RawParam.Path }}')
-            print(r'TASK_STEM:{{ Task.Param.Path.stem }}')
+            print(r'TASK_ABS:[{{ Task.Param.Path.is_absolute() }}]')
+            print(r'TASK_STEM:[{{ Task.Param.Path.stem }}]')
+
 expected:
   output:
   - LEN:2
-  - 'RAW:["renders/a.exr", "renders/b.exr"]'
-  - "TASK_RAW:renders/a.exr"
-  - "TASK_RAW:renders/b.exr"
-  - "TASK_STEM:a"
-  - "TASK_STEM:b"
-  output_posix:
-  - 'PATHS:["renders/a.exr", "renders/b.exr"]'
-  - "TASK:renders/a.exr"
-  - "TASK:renders/b.exr"
-  output_windows:
-  - 'PATHS:["renders\\a.exr", "renders\\b.exr"]'
-  - "TASK:renders\\a.exr"
-  - "TASK:renders\\b.exr"
+  - ABS0:[true]
+  - ABS1:[true]
+  - RAW_ABS0:[true]
+  - RAW_ABS1:[true]
+  - NAME0:[a.exr]
+  - NAME1:[b.exr]
+  - PARENT0:[renders]
+  - TASK_ABS:[true]
+  - TASK_STEM:[a]
+  - TASK_STEM:[b]
+  - /renders/a.exr
+  - /renders/b.exr
+  forbidden:
+  - 'PATHS:["renders/a.exr"'
+  - 'RAW:["renders/a.exr"'
+  - TASK:renders/a.exr
+  - TASK:renders/b.exr
+  - ABS0:[false]
+  - TASK_ABS:[false]

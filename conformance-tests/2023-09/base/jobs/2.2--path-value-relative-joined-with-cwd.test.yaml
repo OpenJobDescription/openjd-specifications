@@ -1,0 +1,42 @@
+# 2.2: a relative submitted PATH value is joined with the current working
+# directory and lexically normalized. Cwd is submitted as ".", so it resolves
+# to the working directory and the script can check the other values against
+# it exactly.
+
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Cwd
+    type: PATH
+  - name: DotRelative
+    type: PATH
+  - name: Interior
+    type: PATH
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import os
+            c = r'{{Param.Cwd}}'
+            print('CWD_ABS:[' + str(os.path.isabs(c)) + ']')
+            print('CWD_NORM:[' + str(c == os.path.normpath(c)) + ']')
+            print('DOT:[%s]' % (r'{{Param.DotRelative}}' == os.path.join(c, 'b.exr')))
+            print('INTERIOR:[%s]' % (r'{{Param.Interior}}' == os.path.join(c, 'other')))
+
+parameters:
+  Cwd: .
+  DotRelative: ./b.exr
+  Interior: sub/../other
+
+expected:
+  output:
+  - CWD_ABS:[True]
+  - CWD_NORM:[True]
+  - DOT:[True]
+  - INTERIOR:[True]

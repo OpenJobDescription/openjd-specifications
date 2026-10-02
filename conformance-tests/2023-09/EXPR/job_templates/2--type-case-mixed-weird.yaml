@@ -32,7 +32,7 @@ parameterDefinitions:
   default: [1.5]
 - name: MyListPath
   type: "liST[paTH]"
-  default: ["/tmp/a"]
+  default: ["tmp/a"]
 - name: MyListBool
   type: "lIsT[bOoL]"
   default: [true, false]

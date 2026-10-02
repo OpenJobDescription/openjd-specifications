@@ -1,0 +1,22 @@
+# 2.2: allowedValues is checked after the default is joined with the job
+# template's directory. The joined absolute path is not in the list, so job
+# creation fails even though the template passes validation. The script prints
+# a constant so the parameter is the only thing that can fail.
+
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Config
+    type: PATH
+    default: config/a
+    allowedValues: [config/a, config/b]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'OUTPUT:success')

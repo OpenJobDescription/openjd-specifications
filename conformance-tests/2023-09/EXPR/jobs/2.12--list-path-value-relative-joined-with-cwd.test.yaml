@@ -1,0 +1,49 @@
+# 2.12: a relative element of a submitted LIST[PATH] value is joined with the
+# current working directory and normalized, as a relative submitted PATH value
+# is (2.2), and RawParam holds the joined elements. Cwd is submitted as ".",
+# so it resolves to the working directory and the script can check each
+# joined element against it exactly.
+
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Cwd
+    type: PATH
+  - name: Paths
+    type: LIST[PATH]
+  - name: One
+    type: PATH
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import os
+            c = r'{{Param.Cwd}}'
+            print('CWD_ABS:[' + str(os.path.isabs(c)) + ']')
+            print('CWD_NORM:[' + str(c == os.path.normpath(c)) + ']')
+            print('J0:[%s]' % (r'{{ Param.Paths[0] }}' == os.path.join(c, 'rel', 'a.exr')))
+            print('J1:[%s]' % (r'{{ Param.Paths[1] }}' == os.path.join(c, 'b.exr')))
+            print('RAW_J0:[%s]' % (r'{{ RawParam.Paths[0] }}' == os.path.join(c, 'rel', 'a.exr')))
+            print('SAME_AS_SCALAR:[%s]' % (r'{{ Param.Paths[0] }}' == r'{{ Param.One }}'))
+
+parameters:
+  Cwd: .
+  Paths: ["rel/a.exr", "./b.exr"]
+  One: rel/a.exr
+
+expected:
+  output:
+  - CWD_ABS:[True]
+  - CWD_NORM:[True]
+  - J0:[True]
+  - J1:[True]
+  - RAW_J0:[True]
+  - SAME_AS_SCALAR:[True]

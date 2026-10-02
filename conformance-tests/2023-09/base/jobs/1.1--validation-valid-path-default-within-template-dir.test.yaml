@@ -1,7 +1,15 @@
+# 2.2: a relative PATH default is joined with the job template's directory
+# and lexically normalized. TemplateDir has default ".", which resolves to the
+# directory itself (the directory counts as within itself), so the script can
+# check the joined path exactly without knowing the directory.
+
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob
   parameterDefinitions:
+  - name: TemplateDir
+    type: PATH
+    default: .
   - name: OutputDir
     type: PATH
     default: ./output
@@ -13,11 +21,15 @@ template:
           command: python
           args:
           - -c
-          - print(r'OUTPUT:{{Param.OutputDir}}')
+          - |
+            import os
+            t = r'{{Param.TemplateDir}}'
+            p = r'{{Param.OutputDir}}'
+            print('TDIR_ABS:[' + str(os.path.isabs(t)) + ']')
+            print('TDIR_NORM:[' + str(t == os.path.normpath(t)) + ']')
+            print('JOINED:[' + str(p == os.path.join(t, 'output')) + ']')
 expected:
   output:
-  - 'OUTPUT:'
-  output_posix:
-  - /output
-  output_windows:
-  - "\\output"
+  - TDIR_ABS:[True]
+  - TDIR_NORM:[True]
+  - JOINED:[True]

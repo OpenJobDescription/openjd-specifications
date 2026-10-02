@@ -193,6 +193,12 @@ Where:
 6. *fileFilters* — File filters for the file choice dialog (only for CHOOSE_INPUT_FILE_LIST/CHOOSE_OUTPUT_FILE_LIST).
 7. *fileFilterDefault* — Default file filter for the file choice dialog.
 
+Each element of a `LIST[PATH]` value, including each element of *default*, follows the rules for the value of
+a `PATH` parameter: each element of *default* must be a relative path or a URI and is joined with the job
+template's directory when a job is created; an absolute element, or one that resolves outside that directory,
+is an error. `RawParam.<name>` holds the joined elements. See Template Schemas §2.2 and §2.12 for the
+normative rules.
+
 The value is referenced in format strings as:
 - `Param.<name>` - Returns a list[path] type value with path mapping applied
 - `RawParam.<name>` - Returns a list[string] type value without path mapping

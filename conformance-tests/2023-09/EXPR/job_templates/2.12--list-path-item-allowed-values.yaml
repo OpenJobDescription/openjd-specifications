@@ -7,9 +7,9 @@ name: TestJob
 parameterDefinitions:
 - name: Scenes
   type: LIST[PATH]
-  default: ["/assets/a.blend", "/assets/b.blend"]
+  default: ["assets/a.blend", "assets/b.blend"]
   item:
-    allowedValues: ["/assets/a.blend", "/assets/b.blend", "/assets/c.blend"]
+    allowedValues: ["assets/a.blend", "assets/b.blend", "assets/c.blend"]
 steps:
 - name: Step1
   script:

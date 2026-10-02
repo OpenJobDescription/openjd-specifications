@@ -28,7 +28,7 @@ parameterDefinitions:
   default: [1.0, 2.0]
 - name: MyListPath
   type: "list[PATH]"
-  default: ["/tmp/a", "/tmp/b"]
+  default: ["tmp/a", "tmp/b"]
 - name: MyListBool
   type: "List[Bool]"
   default: [true, false]

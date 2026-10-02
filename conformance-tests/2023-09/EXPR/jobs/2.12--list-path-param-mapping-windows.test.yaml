@@ -1,4 +1,8 @@
 runOn: [windows]
+
+# 2.12: path mapping applies to each element of a LIST[PATH]. The values are
+# submitted rather than defaulted because a default must be relative.
+
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
@@ -7,7 +11,6 @@ template:
   parameterDefinitions:
   - name: Paths
     type: LIST[PATH]
-    default: ["D:\\shared\\a.exr", "D:\\shared\\b.exr"]
   steps:
   - name: Step1
     parameterSpace:
@@ -26,10 +29,15 @@ template:
             print(r'MAPPED:{{ Param.Paths }}')
             print(r'TASK_MAPPED:{{ Task.Param.Path }}')
             print(r'TASK_RAW:{{ Task.RawParam.Path }}')
+
+parameters:
+  Paths: ["D:\\shared\\a.exr", "D:\\shared\\b.exr"]
+
 pathMapping:
   - source_path_format: WINDOWS
     source_path: "D:\\shared"
     destination_path: "E:\\cache"
+
 expected:
   output:
   - "RAW:[\"D:\\\\shared\\\\a.exr\", \"D:\\\\shared\\\\b.exr\"]"

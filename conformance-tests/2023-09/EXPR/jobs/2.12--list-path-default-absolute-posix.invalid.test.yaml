@@ -1,0 +1,26 @@
+runOn: [posix]
+
+# 2.12: each element of a LIST[PATH] default follows the PATH default rules
+# (2.2), so an absolute element is an error at job creation. Companion to
+# base/jobs/1.1--validation-invalid-path-default-absolute-posix. The bad
+# element is second, so checking only the first element does not reject this.
+# The script prints a constant so the default is the only thing that can fail.
+
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Paths
+    type: LIST[PATH]
+    default: ["renders/a.exr", "/tmp/b.exr"]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'OUTPUT:success')

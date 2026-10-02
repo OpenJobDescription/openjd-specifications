@@ -3,10 +3,10 @@ name: TestJob
 parameterDefinitions:
 - name: MyPath
   type: PATH
-  default: /other/path
+  default: other/path
   allowedValues:
-  - /config/a
-  - /config/b
+  - config/a
+  - config/b
 steps:
 - name: Step1
   script:

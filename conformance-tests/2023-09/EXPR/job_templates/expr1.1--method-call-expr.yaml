@@ -8,7 +8,7 @@ parameterDefinitions:
   default: "hello world"
 - name: File
   type: PATH
-  default: /renders/shot_001.exr
+  default: renders/shot_001.exr
 - name: Csv
   type: STRING
   default: "a,b,c"
