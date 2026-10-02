@@ -1,0 +1,24 @@
+# 2.2: a submitted value is checked against allowedValues as submitted.
+# Control for 2.2--path-value-constraints-checked-before-join: the value is
+# relative and would join fine, but it is not in the list. The script prints a
+# constant so the parameter is the only thing that can fail.
+
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Config
+    type: PATH
+    allowedValues: [config/a, config/b]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'OUTPUT:success')
+
+parameters:
+  Config: config/c

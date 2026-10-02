@@ -221,8 +221,8 @@ defined and matching path mapping rules applied to it.
 The value of a Job Parameter of this type referenced in format strings as both:
 
 1. `Param.<name>` — the value of the parameter with applicable path mapping applied to it; and
-2. `RawParam.<name>` — the value of the parameter after the join described under *default* and *allowedValues*
-   below, with no path mapping applied to it.
+2. `RawParam.<name>` — the value of the parameter after the join described under *default* below, with no path
+   mapping applied to it.
 
 **`@extension EXPR` — URI values**: When the EXPR extension is enabled, PATH parameter values
 may be URIs (values with a `scheme://` prefix, e.g. `s3://bucket/key`). URI values are not
@@ -271,11 +271,16 @@ Where:
    normalized in the same way. URI values are never joined; see *URI values* above.
 4. *allowedValues* — An array of the values that the parameter is allowed to be. It is an error to provide a value that is
    not in this list, if the list is defined. See: [&lt;JobParameterStringValue&gt;](#25-jobparameterstringvalue).
-   The check is applied after the value has been joined as described under *default* (with the Job Template's
-   directory for a default, or with the current working directory for a submitted relative value), so a
-   relative value can only satisfy *allowedValues* if the list contains the joined path.
-5. *minLength* — The minimum allowable length of the parameter string value. Checked after the join, as for *allowedValues*.
-6. *maxLength* — The maximum allowable length of the parameter string value. Checked after the join, as for *allowedValues*.
+   Template validation checks a *default* against this list as written. Job creation checks the value after the
+   join described under *default* (with the Job Template's directory for a default, or with the current working
+   directory for a submitted relative value), because the join is performed by the submitting client and the
+   Job may be created elsewhere from the joined values. A relative *default* can therefore satisfy both checks
+   only if the list contains both the default as written and its joined path. In practice, use *allowedValues*
+   with absolute paths or URIs, not with a relative *default*.
+5. *minLength* — The minimum allowable length of the parameter string value. Checked twice, as for *allowedValues*:
+   at template validation against the *default* as written, and at job creation against the joined value.
+6. *maxLength* — The maximum allowable length of the parameter string value. Checked twice, as for *allowedValues*:
+   at template validation against the *default* as written, and at job creation against the joined value.
 7. *objectType* — The type of object the path represents; either a FILE or a DIRECTORY. Default is DIRECTORY.
 8. *dataFlow* — Whether the object the path represented serves as input, output or both for the Job. Default is NONE.
 9. *userInterface — User interface properties for this parameter*
@@ -642,9 +647,10 @@ Where:
    [`<JobPathParameterDefinition>`](#22-jobpathparameterdefinition), applied to that element. It is an error
    if any element violates them. An empty list is a valid default.
 6. *minLength*/*maxLength* — Constrain the number of paths in the list.
-7. *item* — Constraints for each item in the list. As for a `<JobPathParameterDefinition>`, these are checked
-   against each element after it has been joined with the Job Template's directory (for a default) or the
-   current working directory (for a submitted relative value).
+7. *item* — Constraints for each item in the list. As for a `<JobPathParameterDefinition>`, template validation
+   checks each element of *default* as written, and job creation checks each element after it has been joined
+   with the Job Template's directory (for a default) or the current working directory (for a submitted relative
+   value).
     1. *allowedValues* — An array of the values that each item is allowed to be.
     2. *minLength*/*maxLength* — Constrain the string length of each path.
 8. *userInterface* — User interface properties for this parameter.
@@ -665,7 +671,7 @@ The value of a Job Parameter of this type is referenced in format strings as:
 
 1. `Param.<name>` — Returns a `list[path]` type value with path mapping applied.
 2. `RawParam.<name>` — Returns a `list[string]` type value holding each element after it has been joined
-   as described under *default* and *item*, without path mapping.
+   as described under *default*, without path mapping.
 3. `Param.<name>[i]` — Returns the i-th element as `path`.
 4. `len(Param.<name>)` — Returns the count of elements.
 
