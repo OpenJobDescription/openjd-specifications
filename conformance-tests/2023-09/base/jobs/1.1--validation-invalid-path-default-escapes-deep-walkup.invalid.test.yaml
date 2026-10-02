@@ -1,0 +1,21 @@
+# 2.2: a/b/c/../../../../d descends three levels and climbs four, so it
+# escapes by one. Catches implementations that count ".." components without
+# pairing them against the preceding names. The script prints a constant so
+# the default is the only thing that can fail.
+
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: OutputDir
+    type: PATH
+    default: a/b/c/../../../../d
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'OUTPUT:success')

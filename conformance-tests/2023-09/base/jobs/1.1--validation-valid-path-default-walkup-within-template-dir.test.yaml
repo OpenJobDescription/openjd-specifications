@@ -1,0 +1,51 @@
+# 2.2: defaults that contain ".." but normalize to the job template's
+# directory or a path within it are accepted: a/.. is the directory itself,
+# a/../b and ./a/./../b/. are b, and "..name" or "name.." are plain names, not
+# walk-ups. Catches implementations that reject on the substring "..".
+# TemplateDir has default "." so the script can check each joined path exactly.
+
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: TemplateDir
+    type: PATH
+    default: .
+  - name: UpToDir
+    type: PATH
+    default: a/..
+  - name: UpToSibling
+    type: PATH
+    default: a/../b
+  - name: Noisy
+    type: PATH
+    default: ./a/./../b/.
+  - name: DotsInName
+    type: PATH
+    default: ..name/name../...
+  - name: Deep
+    type: PATH
+    default: a/b/c/../../../d
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import os
+            t = r'{{Param.TemplateDir}}'
+            print('UP_TO_DIR:[%s]' % (r'{{Param.UpToDir}}' == t))
+            print('UP_TO_SIBLING:[%s]' % (r'{{Param.UpToSibling}}' == os.path.join(t, 'b')))
+            print('NOISY:[%s]' % (r'{{Param.Noisy}}' == os.path.join(t, 'b')))
+            print('DOTS_IN_NAME:[%s]' % (r'{{Param.DotsInName}}' == os.path.join(t, '..name', 'name..', '...')))
+            print('DEEP:[%s]' % (r'{{Param.Deep}}' == os.path.join(t, 'd')))
+expected:
+  output:
+  - UP_TO_DIR:[True]
+  - UP_TO_SIBLING:[True]
+  - NOISY:[True]
+  - DOTS_IN_NAME:[True]
+  - DEEP:[True]
