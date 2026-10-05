@@ -1,0 +1,44 @@
+# RFC 0005 declares `Task.File.<name>` and `Env.File.<name>` as `path` typed, and
+# shows property access on one directly inside a format string:
+#
+#     echo "Script: {{Task.File.Run.name}}"
+#
+# (rfcs/0005-expression-language.md, "Since Session.WorkingDirectory,
+# Task.File.<name>, and Env.File.<name> are path typed ...").
+#
+# The existing 7.3--task-file-expr-properties fixture only reaches the property
+# through a `let` binding (`cfg = Task.File.config`, then `cfg.parent`), and a
+# property reached inside a function call (`len(Task.File.Run.name)`) parses
+# differently again -- so neither covers the direct member-access form the RFC
+# uses. An implementation whose template validator resolves a `Task.File.*`
+# reference by looking the whole dotted tail up as an embedded-file key rejects
+# this template with "references undefined embedded file 'Run.name'", even though
+# its own runtime resolves the expression correctly and its environment-template
+# validator accepts the equivalent `Env.File.<name>.name`.
+#
+# `filename` is set so the expected value of `.name` is deterministic.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        filename: run.txt
+        data: "contents\n"
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'NAME:{{Task.File.Run.name}}')
+            print(r'SUFFIX:{{Task.File.Run.suffix}}')
+expected:
+  output:
+  - "NAME:run.txt"
+  - "SUFFIX:.txt"
