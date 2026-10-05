@@ -1,0 +1,50 @@
+# RFC 0008 "Nothing-to-replace rule": an inner environment that "defines
+# no `script` at all (a `variables:`-only environment)" has nothing to
+# replace, so the runtime "MUST NOT run the corresponding wrap hook for
+# that environment" — neither onWrapEnvEnter nor onWrapEnvExit. A hook is
+# a replacement, not a lifecycle notification. Catches a runtime that
+# fires wrap hooks per environment-stack transition instead of per
+# replaced action (WrappedAction.Command/Args would carry no meaningful
+# values). The positive assertions pin that the variables: map is still
+# applied — it surfaces in WrappedAction.Environment for the task.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapVariablesOnlyInnerEnvSkipsHooks
+  jobEnvironments:
+  - name: VarsOnlyEnv
+    variables:
+      STATIC_FROM_VARS: vars-value
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["placeholder"]
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args: ["-c", "print('WENTER='+{{repr_py(WrappedEnv.Name)}})"]
+        onWrapTaskRun:
+          command: python
+          args:
+          - "-c"
+          - "for e in {{repr_py(WrappedAction.Environment)}}:\n print('WAENV='+e)\nprint('WTASK_RAN')"
+        onWrapEnvExit:
+          command: python
+          args: ["-c", "print('WEXIT='+{{repr_py(WrappedEnv.Name)}})"]
+expected:
+  output:
+  - WTASK_RAN
+  - WAENV=STATIC_FROM_VARS=vars-value
+  forbidden:
+  - WENTER=VarsOnlyEnv
+  - WEXIT=VarsOnlyEnv

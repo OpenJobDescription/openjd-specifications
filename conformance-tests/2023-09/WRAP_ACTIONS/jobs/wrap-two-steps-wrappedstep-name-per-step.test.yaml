@@ -1,0 +1,56 @@
+# RFC 0008 "Modifications to How Jobs Are Run": "Tasks from any Step in a
+# Job can run within the same Session" — and every task's onRun is
+# intercepted by onWrapTaskRun, with WrappedStep.Name carrying the step of
+# the task CURRENTLY being wrapped. Two steps run in one session; the hook
+# must fire for both and see a different WrappedStep.Name each time.
+# Catches a runtime that binds WrappedStep.Name once per session (stale
+# name for the second step) or that stops wrapping after the first step
+# completes. Membership assertions only; no ordering is asserted.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapTwoStepsWrappedStepNamePerStep
+  steps:
+  - name: StepOne
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_ONE_BODY')"]
+  - name: StepTwo
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_TWO_BODY')"]
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        # Tag each invocation with the wrapped step's name, then run the
+        # wrapped task.
+        onWrapTaskRun:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys\nprint('WSTEP='+{{repr_py(WrappedStep.Name)}})\nsys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        onWrapEnvExit:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+expected:
+  output:
+  - WSTEP=StepOne
+  - WSTEP=StepTwo
+  - TASK_ONE_BODY
+  - TASK_TWO_BODY

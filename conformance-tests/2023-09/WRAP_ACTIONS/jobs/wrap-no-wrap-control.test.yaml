@@ -1,0 +1,37 @@
+# RFC 0008 (interception control): the same inner-env-plus-task shape the
+# wrapped fixtures use, with NO wrapping environment anywhere. Everything
+# must run normally: the inner env's own onEnter/onExit bodies and the
+# task body all execute, and nothing wrap-shaped appears. This is the
+# baseline that gives the wrapped fixtures' forbidden: assertions their
+# meaning — a runtime whose "unwrapped" path already suppressed inner
+# lifecycle bodies would make the interception fixtures pass vacuously.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapNoWrapControl
+  jobEnvironments:
+  - name: InnerEnv
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('INNER_ENTER_BODY')"]
+        onExit:
+          command: python
+          args: ["-c", "print('INNER_EXIT_BODY')"]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_BODY_RAN')"]
+expected:
+  output:
+  - INNER_ENTER_BODY
+  - TASK_BODY_RAN
+  - INNER_EXIT_BODY
+  forbidden:
+  - WENTER=
+  - WEXIT=
+  - WTASK_RAN
+  - WrappedAction

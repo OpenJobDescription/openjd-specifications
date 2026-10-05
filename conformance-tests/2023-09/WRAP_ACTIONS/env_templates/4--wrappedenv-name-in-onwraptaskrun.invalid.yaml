@@ -1,0 +1,25 @@
+# RFC 0008 Template variables: WrappedEnv.Name is available only in
+# onWrapEnvEnter and onWrapEnvExit. "Templates MUST NOT reference
+# WrappedEnv.* outside onWrapEnvEnter and onWrapEnvExit. Schedulers MUST
+# reject templates that violate this scope rule." Referencing it in
+# onWrapTaskRun — a wrap hook, but the wrong one — must be rejected at
+# validation time. Catches a validator that treats all three hooks as one
+# scope. Single defect: the template is valid except for the WrappedEnv.Name
+# reference in onWrapTaskRun.
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- EXPR
+environment:
+  name: WrapEnvNameInTaskRun
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: python
+        args: ["-c", "print(r'{{WrappedEnv.Name}}')"]
+      onWrapTaskRun:
+        command: python
+        args: ["-c", "print(r'{{WrappedEnv.Name}}')"]
+      onWrapEnvExit:
+        command: python
+        args: ["-c", "print(r'{{WrappedEnv.Name}}')"]

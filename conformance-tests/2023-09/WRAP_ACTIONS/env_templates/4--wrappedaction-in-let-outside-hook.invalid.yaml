@@ -1,0 +1,34 @@
+# RFC 0008 Template variables: "Templates MUST NOT reference
+# WrappedAction.* outside the three wrap hooks. Schedulers MUST reject
+# templates that violate this scope rule." Here the out-of-scope reference
+# is buried inside a script-level `let` binding. Per Template Schemas
+# 3.6.2, <EnvironmentScript>.let's symbol scope does not include
+# WrappedAction.* at all — the binding itself is the violation (script-
+# level let is evaluated once at environment entry and shared by ALL of
+# the script's actions, including onEnter/onExit where WrappedAction.*
+# never exists). Catches a validator that scope-checks format strings in
+# action fields but never walks let-binding expressions (the
+# `let`-indirection blind spot). The template is valid except for the
+# WrappedAction-derived binding and its consumption.
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- EXPR
+environment:
+  name: WrapActionInLet
+  script:
+    let:
+    - wrapped_cmd = WrappedAction.Command
+    actions:
+      onEnter:
+        command: python
+        args: ["-c", "print({{repr_py(wrapped_cmd)}})"]
+      onWrapEnvEnter:
+        command: python
+        args: ["-c", "print({{repr_py(wrapped_cmd)}})"]
+      onWrapTaskRun:
+        command: python
+        args: ["-c", "print({{repr_py(wrapped_cmd)}})"]
+      onWrapEnvExit:
+        command: python
+        args: ["-c", "print({{repr_py(wrapped_cmd)}})"]

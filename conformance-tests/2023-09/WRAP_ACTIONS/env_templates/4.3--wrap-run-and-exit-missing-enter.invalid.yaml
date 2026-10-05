@@ -1,0 +1,19 @@
+# RFC 0008 all-or-nothing rule: defining onWrapTaskRun and onWrapEnvExit
+# without onWrapEnvEnter is invalid. Catches a validator that only demands
+# the hooks needed for the phases it has seen so far (tasks and teardown)
+# instead of the full atomic set. Single defect: the template is valid
+# except for the missing onWrapEnvEnter.
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- EXPR
+environment:
+  name: RunExitNoEnter
+  script:
+    actions:
+      onWrapTaskRun:
+        command: echo
+        args: ["{{WrappedAction.Command}}"]
+      onWrapEnvExit:
+        command: echo
+        args: ["{{WrappedEnv.Name}}"]
