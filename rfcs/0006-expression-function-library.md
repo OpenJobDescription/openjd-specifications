@@ -723,11 +723,20 @@ type.
 
 For filesystem paths, the behavior matches `PurePosixPath` or `PureWindowsPath` depending on
 the evaluator's `path_format` setting. For URI paths (those with a `scheme://` prefix matching
-`^[a-zA-Z][a-zA-Z0-9+.-]*://`), the scheme and authority are preserved as an opaque prefix
+`^[a-zA-Z][a-zA-Z0-9+.-]+://`), the scheme and authority are preserved as an opaque prefix
 and the path portion is parsed with forward slashes and no normalization — consecutive slashes,
 `.`, and `..` segments are preserved verbatim. This is necessary because URI path components
 (such as S3 object keys) are opaque identifiers where `a//b` and `a/b` may refer to different
 resources. The evaluator's `path_format` setting does not affect URI paths.
+
+The scheme must be at least two characters long. RFC 3986 permits a single-letter scheme,
+but a value such as `C://scenes/a.ma` is also a valid Windows absolute path — Windows
+accepts a drive letter followed by a doubled separator — and users produce this spelling
+when hand-editing paths or pasting from tools that emit forward slashes. Treating it as a URI
+with scheme `c` would silently bypass path mapping and relative-path resolution for what is
+really a local file. Since single-letter schemes are essentially unused in practice, such
+values are treated as filesystem paths. `s3://`, `https://`, `file://`, and all other common
+schemes are unaffected.
 
 #### Path Properties
 
