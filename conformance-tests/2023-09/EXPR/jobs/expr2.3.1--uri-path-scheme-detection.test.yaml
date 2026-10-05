@@ -1,5 +1,7 @@
 # URI path: scheme detection (Expression Language §1.2.1)
-# URI detection uses the pattern ^[a-zA-Z][a-zA-Z0-9+.-]*://
+# URI detection uses the pattern ^[a-zA-Z][a-zA-Z0-9+.-]+://
+# The scheme must be at least two characters: a single letter followed by "://"
+# is a Windows drive-rooted path written with a doubled separator, not a URI.
 # Filesystem paths must NOT be detected as URIs.
 template:
   specificationVersion: jobtemplate-2023-09
@@ -19,6 +21,8 @@ template:
     - 'posix_rel = path("relative/path")'
     # --- Edge case: colon in path but not a URI ---
     - 'colon_path = path("/mnt/c:/data")'
+    # --- Edge case: drive letter with doubled separator is a filesystem path, not a URI ---
+    - 'drive_double = path("C://data/file.txt")'
     script:
       actions:
         onRun:
@@ -38,6 +42,8 @@ template:
             print(r'POSIX_ABS_PARTS:{{ posix_abs.parts }}')
             print(r'POSIX_REL:{{ posix_rel }}')
             print(r'COLON:{{ colon_path }}')
+            print(r'DRIVE_DOUBLE:{{ drive_double }}')
+            print(r'DRIVE_DOUBLE_PARTS:{{ drive_double.parts }}')
 expected:
   output:
   # URIs: scheme://authority is first part, forward slashes preserved
@@ -55,9 +61,15 @@ expected:
   - 'POSIX_ABS_PARTS:["/", "mnt", "data", "file.txt"]'
   - "POSIX_REL:relative/path"
   - "COLON:/mnt/c:/data"
+  # Not a URI: the doubled slash collapses, "C:" is an ordinary relative component
+  - "DRIVE_DOUBLE:C:/data/file.txt"
+  - 'DRIVE_DOUBLE_PARTS:["C:", "data", "file.txt"]'
   output_windows:
   # Filesystem paths: PureWindowsPath behavior
   - "POSIX_ABS:\\mnt\\data\\file.txt"
   - "POSIX_ABS_PARTS:[\"\\\\\", \"mnt\", \"data\", \"file.txt\"]"
   - "POSIX_REL:relative\\path"
   - "COLON:\\mnt\\c:\\data"
+  # Not a URI: "C:" is the drive, the doubled slash collapses to the root
+  - "DRIVE_DOUBLE:C:\\data\\file.txt"
+  - "DRIVE_DOUBLE_PARTS:[\"C:\\\\\", \"data\", \"file.txt\"]"
