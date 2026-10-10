@@ -1,0 +1,23 @@
+# A <StepTemplate>.let binding may reference only Param.*, RawParam.*,
+# Job.Name, Step.Name, and earlier bindings (Template Schemas §3.6.2).
+# Task.File.* is only available in <StepScript>.let, so referencing an
+# embedded file from the step-level let must be rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  let:
+  - cfg = Task.File.config
+  script:
+    embeddedFiles:
+    - name: config
+      type: TEXT
+      data: "hello"
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ cfg }}')"

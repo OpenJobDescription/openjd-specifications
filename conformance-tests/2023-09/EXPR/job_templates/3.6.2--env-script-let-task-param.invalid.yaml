@@ -1,0 +1,34 @@
+# An <EnvironmentScript>.let binding may reference only Param.*, RawParam.*,
+# Session.*, Env.File.*, Job.Name, and earlier bindings (Template Schemas
+# §3.6.2). Task.Param.* is never in scope for an environment script — even
+# for a stepEnvironment whose enclosing step defines the task parameter —
+# so this template must be rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Frame
+      type: INT
+      range: "1-5"
+  stepEnvironments:
+  - name: Setup
+    script:
+      let:
+      - f = Task.Param.Frame
+      actions:
+        onEnter:
+          command: python
+          args:
+          - "-c"
+          - "print(r'{{ f }}')"
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

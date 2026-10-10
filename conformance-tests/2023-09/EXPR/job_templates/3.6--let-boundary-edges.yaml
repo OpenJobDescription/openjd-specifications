@@ -1,0 +1,78 @@
+# Boundary edges for let bindings (Template Schemas §3.6, §3.6.1):
+# exactly 50 bindings is the maximum and must be accepted (the 51-binding
+# reject twin is 3.6--let-too-many.invalid.yaml); a 512-character
+# <UserIdentifier> is the maximum length and must be accepted (the
+# 513-character reject twin is parked in a proposed/ directory added by
+# the separate expected-failures PR — see its README there; it is not on
+# this branch);
+# names may start with an underscore; and later bindings may reference
+# earlier bindings in the same let block (a 10-deep forward-reference
+# chain).
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  let:
+  - _lead = 1
+  - aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa = 42
+  - chain0 = _lead + 1
+  - chain1 = chain0 + 1
+  - chain2 = chain1 + 1
+  - chain3 = chain2 + 1
+  - chain4 = chain3 + 1
+  - chain5 = chain4 + 1
+  - chain6 = chain5 + 1
+  - chain7 = chain6 + 1
+  - chain8 = chain7 + 1
+  - chain9 = chain8 + 1
+  - pad0 = 0
+  - pad1 = 1
+  - pad2 = 2
+  - pad3 = 3
+  - pad4 = 4
+  - pad5 = 5
+  - pad6 = 6
+  - pad7 = 7
+  - pad8 = 8
+  - pad9 = 9
+  - pad10 = 10
+  - pad11 = 11
+  - pad12 = 12
+  - pad13 = 13
+  - pad14 = 14
+  - pad15 = 15
+  - pad16 = 16
+  - pad17 = 17
+  - pad18 = 18
+  - pad19 = 19
+  - pad20 = 20
+  - pad21 = 21
+  - pad22 = 22
+  - pad23 = 23
+  - pad24 = 24
+  - pad25 = 25
+  - pad26 = 26
+  - pad27 = 27
+  - pad28 = 28
+  - pad29 = 29
+  - pad30 = 30
+  - pad31 = 31
+  - pad32 = 32
+  - pad33 = 33
+  - pad34 = 34
+  - pad35 = 35
+  - pad36 = 36
+  - pad37 = 37
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - |
+          print(r'LEAD:{{ _lead }}')
+          print(r'LONG:{{ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa }}')
+          print(r'CHAIN:{{ chain9 }}')
+          print(r'PAD_LAST:{{ pad37 }}')

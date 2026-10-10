@@ -1,0 +1,33 @@
+# Direct property access on a path-typed symbol as a whole-field format string:
+# the arg is exactly "{{Task.File.config.name}}" with no surrounding text
+# (Template Schemas §7.3.1; Expression Language §2.3.1 path properties).
+# This is the exact shape of a known validator bug: the property reached via a
+# let binding worked while the direct route was rejected at validation.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      embeddedFiles:
+      - name: config
+        type: TEXT
+        filename: config.txt
+        data: "hello"
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import sys
+            print('NAME:' + sys.argv[1] + ':END')
+            print('STEM:' + sys.argv[2] + ':END')
+          - "{{ Task.File.config.name }}"
+          - "{{ Task.File.config.stem }}"
+expected:
+  output:
+  - "NAME:config.txt:END"
+  - "STEM:config:END"

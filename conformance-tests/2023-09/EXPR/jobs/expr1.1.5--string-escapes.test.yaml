@@ -1,0 +1,28 @@
+# Escape-sequence rows of the string literal table (Expression Language
+# §1.1.5): \xhh, \uhhhh, \Uhhhhhhhh, and one \N{name} representative. The
+# escapes are processed by the expression language before the command runs,
+# so the printed text contains the decoded characters.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'HEX:{{ "\x41\x42" }}')
+            print(r'U16:{{ "\u0043\u0044" }}')
+            print(r'U32:{{ "\U00000045\U00000046" }}')
+            print(r'NAMED:{{ "\N{LATIN SMALL LETTER Z}" }}')
+expected:
+  output:
+  - "HEX:AB"
+  - "U16:CD"
+  - "U32:EF"
+  - "NAMED:z"

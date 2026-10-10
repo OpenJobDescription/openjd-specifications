@@ -1,0 +1,40 @@
+# The int type is a 64-bit signed integer (Expression Language §1.2.1), so
+# 2^63-1 = 9223372036854775807 must be accepted on the parameter-value axis:
+# as a job parameter default and as a supplied job parameter value. These are
+# the accept twins of the 2^63 reject cases (parked in a proposed/ directory
+# added by the separate expected-failures PR, not on this branch) — YAML
+# parsers yield arbitrary-precision integers silently, making parameter
+# values the most likely place for an implementation to mishandle the
+# boundary. The task-range-element twin is likewise parked there because of
+# a live implementation divergence (ranges reject at >= 2^62).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: DefMax
+    type: INT
+    default: 9223372036854775807
+  - name: SuppliedMax
+    type: INT
+    default: 0
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'DEF:{{ Param.DefMax }}')
+            print(r'SUPPLIED:{{ Param.SuppliedMax }}')
+            print(r'DEF_IS_MAX:{{ Param.DefMax == 9223372036854775807 }}')
+parameters:
+  SuppliedMax: 9223372036854775807
+expected:
+  output:
+  - "DEF:9223372036854775807"
+  - "SUPPLIED:9223372036854775807"
+  - "DEF_IS_MAX:true"
