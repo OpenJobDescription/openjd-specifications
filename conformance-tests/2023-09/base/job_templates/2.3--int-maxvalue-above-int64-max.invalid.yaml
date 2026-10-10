@@ -1,0 +1,24 @@
+# Section 2.3 types INT properties as <integer> and states no bound. Both
+# reference implementations store INT as int64, the range the Expression
+# Language type table defines.
+#
+# Sets maxValue: 9223372036854775808, one past int64 max. The 2^63-1 accept twin
+# is added by PR #161.
+#
+# Validation must refuse it. Both implementations accept it, so a template using
+# 2^63 as an unbounded sentinel silently gets a different ceiling.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: MyParam
+  type: INT
+  maxValue: 9223372036854775808
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print('{{Param.MyParam}}')"

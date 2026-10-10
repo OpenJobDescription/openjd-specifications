@@ -1,0 +1,36 @@
+# A merged job parameter definition must be internally consistent, so its
+# default has to satisfy the merged constraints (section 1.2.1).
+#
+# The environment template sets minLength 5 and the job template, processed
+# last, sets minLength 2 with a 3-character default. The default satisfies its
+# own minLength, so only the merged minimum makes it invalid.
+#
+# Job creation must refuse it. An implementation that checks a default only
+# against the template declaring it runs the job and prints VALUE[abc].
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Value
+    type: STRING
+    minLength: 2
+    default: abc
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'VALUE[{{Param.Value}}]')
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: Value
+    type: STRING
+    minLength: 5
+  environment:
+    name: TestEnv
+    variables:
+      VAL: '{{Param.Value}}'
