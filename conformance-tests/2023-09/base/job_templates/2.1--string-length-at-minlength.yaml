@@ -1,0 +1,17 @@
+# A STRING parameter default whose length exactly equals minLength is accepted (bound is inclusive).
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: MyParam
+  type: STRING
+  minLength: 3
+  default: abc
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print('{{Param.MyParam}}')"

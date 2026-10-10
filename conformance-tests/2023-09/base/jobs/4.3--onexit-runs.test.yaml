@@ -1,0 +1,35 @@
+# An environment's onExit action RUNS: its marker must appear in the output.
+# (Presence only — the runner's unordered matching cannot pin WHEN it ran;
+# enter-before-task-before-exit ordering needs the harness branch's
+# outputSequence and is not asserted here.)
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  jobEnvironments:
+  - name: MarkerEnv
+    script:
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - print(r'ONENTER_MARKER')
+        onExit:
+          command: python
+          args:
+          - -c
+          - print(r'ONEXIT_MARKER')
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'ONRUN_MARKER')
+expected:
+  output:
+  - ONENTER_MARKER
+  - ONRUN_MARKER
+  - ONEXIT_MARKER

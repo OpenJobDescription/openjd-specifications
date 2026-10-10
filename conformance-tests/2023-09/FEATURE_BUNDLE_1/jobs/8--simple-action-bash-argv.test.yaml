@@ -1,0 +1,26 @@
+# Pins the bash SimpleAction desugaring contract: $0 is the implicitly generated
+# embedded file with a .sh extension, and user args follow it.
+runOn:
+- posix
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - FEATURE_BUNDLE_1
+  name: TestJob
+  steps:
+  - name: Step1
+    bash:
+      args:
+      - --marker-arg
+      script: |
+        case "$0" in
+          *.sh) echo "EXT_IS_SH:True";;
+          *) echo "EXT_IS_SH:False";;
+        esac
+        echo "FIRST_ARG:$1"
+expected:
+  output:
+  - EXT_IS_SH:True
+  - FIRST_ARG:--marker-arg
+  forbidden:
+  - EXT_IS_SH:False
