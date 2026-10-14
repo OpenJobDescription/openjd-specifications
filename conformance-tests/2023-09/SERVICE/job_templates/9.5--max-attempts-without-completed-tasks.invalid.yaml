@@ -1,0 +1,29 @@
+# Section 9.5 item 2 / Section 9.9 item 12 (RFC 0009): when `maxAttempts` is
+# greater than 0, `completedTasks` must be provided. A template that allows a
+# relaunch must say what a relaunch means for the Tasks that completed against
+# the previous instance; there is no default.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  restartPolicy:
+    maxAttempts: 2
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

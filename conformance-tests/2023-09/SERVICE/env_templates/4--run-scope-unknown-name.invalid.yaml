@@ -1,0 +1,11 @@
+# Section 4 item 4 constraint 3: an unrecognized <RunScopeName> must be
+# rejected in an Environment Template too.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- EXPR
+environment:
+  name: Env1
+  runScope: [WORKER]
+  variables:
+    FOO: bar

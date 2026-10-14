@@ -1,0 +1,15 @@
+# Section 1.2 (RFC 0009): `jobServices` is not a property of an Environment
+# Template; its Services are declared in `services`.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- EXPR
+jobServices:
+- name: Cache
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

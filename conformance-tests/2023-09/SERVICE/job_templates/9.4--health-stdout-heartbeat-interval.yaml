@@ -1,0 +1,31 @@
+# Section 9.4 items 5-6: a STDOUT check with `healthIntervalSeconds` expects an
+# `openjd_service_ready` heartbeat at least once per interval after READY, and
+# `failureThreshold` missed intervals make the instance UNHEALTHY.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  healthCheck:
+    type: STDOUT
+    readinessTimeoutSeconds: 120
+    healthIntervalSeconds: 15
+    failureThreshold: 2
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

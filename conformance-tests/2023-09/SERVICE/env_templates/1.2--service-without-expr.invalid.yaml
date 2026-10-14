@@ -1,0 +1,14 @@
+# Section 9 / Section 9.9 item 7: an Environment Template that lists SERVICE
+# must also list EXPR.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+services:
+- name: Cache
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]

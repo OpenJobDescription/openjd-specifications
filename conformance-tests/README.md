@@ -36,9 +36,17 @@ conformance-tests/
     ├── TASK_CHUNKING/
     │   ├── job_templates/
     │   └── jobs/
-    └── REDACTED_ENV_VARS/
+    ├── REDACTED_ENV_VARS/
+    │   └── jobs/
+    └── SERVICE/
+        ├── job_templates/
+        ├── env_templates/
         └── jobs/
 ```
+
+Each extension directory has its own `README.md` describing the rules its
+fixtures verify (see for example [`2023-09/WRAP_ACTIONS/README.md`](2023-09/WRAP_ACTIONS/README.md)
+and [`2023-09/SERVICE/README.md`](2023-09/SERVICE/README.md)).
 
 ### Naming Convention
 
@@ -73,6 +81,8 @@ Examples:
 - `3.6--let-step-level.yaml` - EXPR: Template Schema §3.6 (LetBindings)
 - `expr1.1--arithmetic-expr.yaml` - EXPR: Expression Language §1.1 (Extended Format String Grammar)
 - `expr2.2.4--upper.test.yaml` - EXPR: Expression Language §2.2.4 (String Functions)
+- `9.4--health-command.yaml` - SERVICE: Template Schema §9.4 (ServiceHealthCheck)
+- `service-rerun-relaunch.test.yaml` - SERVICE extension execution test (in `SERVICE/jobs/`)
 
 ### Extension Tests
 
@@ -170,6 +180,8 @@ To validate your OpenJD library against these tests:
 2. For `*.yaml` files (without `.invalid`): verify your library accepts them
 3. For `*.invalid.yaml` files: verify your library rejects them
 4. For job execution tests (`.test.yaml`): extract template/parameters/environments, run the job, verify outputs match `expected` assertions
+
+The reference runner (`openjd run`) executes a Step's Tasks one at a time, in parameter-space order, and Steps in dependency order; several execution fixtures (notably in `SERVICE/jobs/`) rely on that ordering, so a runner that executes Tasks concurrently or in another order may need to serialize them to reproduce the expected output.
 
 ### Example Test Runner for openjd CLI
 

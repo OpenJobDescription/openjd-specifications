@@ -1,0 +1,14 @@
+# Expression Language 2.2.4: is_ipv4 is added by the SERVICE extension. A
+# template that declares EXPR without SERVICE does not have it, so the
+# call is an unknown function and the template is invalid.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ is_ipv4('10.0.0.1') }}"]

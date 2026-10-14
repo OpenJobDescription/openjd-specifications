@@ -1,0 +1,15 @@
+# Section 1.2 item 6 / Section 9.7: a Service in an Environment Template is a
+# <Service> with every constraint of Section 9; `onRun` is required.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- EXPR
+services:
+- name: Cache
+  ports:
+  - name: main
+  script:
+    actions:
+      onEnter:
+        command: python
+        args: ["-c", "print()"]

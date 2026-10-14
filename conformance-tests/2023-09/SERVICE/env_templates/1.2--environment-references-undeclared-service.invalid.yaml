@@ -1,0 +1,23 @@
+# Section 1.2.2 / Section 9.9 items 1 and 14: an Environment's `dependencies`
+# and `Service.*` references must resolve to a Service in the same document's
+# `services` list. Services defined in other documents are not visible.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- EXPR
+services:
+- name: Cache
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]
+environment:
+  name: Client
+  dependencies:
+  - service: Store
+  runScope: [TASK]
+  variables:
+    STORE_PORT: "{{ Service.Store.main.port }}"

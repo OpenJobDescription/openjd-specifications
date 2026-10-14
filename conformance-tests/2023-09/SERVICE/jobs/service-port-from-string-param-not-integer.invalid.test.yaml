@@ -1,0 +1,38 @@
+# Template Schemas §9.3 (RFC 0009) / Expression Language §1.3.2: a
+# whole-field expression on `port` has target type int?. A STRING parameter
+# is coerced at job creation; a value that is not an integer must be
+# rejected there.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: PortFromStringParamNotInteger
+  parameterDefinitions:
+  - name: Port
+    type: STRING
+    default: "16379"
+  services:
+  - name: Store
+    ports:
+    - name: main
+      port: "{{ Param.Port }}"
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import time; print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  steps:
+  - name: Use
+    dependencies:
+    - service: Store
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_MUST_NOT_RUN')"]
+
+parameters:
+  Port: redis
