@@ -33,6 +33,7 @@ Please see the [CONTRIBUTING guide](../CONTRIBUTING.md) for additional informati
 | [ffmpeg](./v2023-09/job_templates/ffmpeg.yaml) | command arguments, debugging environment, step dependencies, job parameters, ui metadata |
 | [host-requirements](./v2023-09/job_templates/host-requirements.yaml) | host requirements |
 | [path-mapping](./v2023-09/job_templates/path-mapping.yaml) | path mapping |
+| [service-http-assets](./v2023-09/job_templates/service-http-assets.yaml) | SERVICE extension (RFC 0009): Service, a Step's `service:` entry in `dependencies`, service ports, TCP_CONNECT health check, restart policy, openjd_env within a service, join_host_port, embedded files |
 | [stdout-messages](./v2023-09/job_templates/stdout-messages.yaml) | stdout messages, embedded files |
 | [task-parameter-definition-showcase](./v2023-09/job_templates/task-parameter-definition-showcase.yaml) | task parameters, task parameter combination operators |
 | [ui-controls-showcase](./v2023-09/job_templates/ui-controls-showcase.yaml) | job parameters, ui metadata, embedded file |
