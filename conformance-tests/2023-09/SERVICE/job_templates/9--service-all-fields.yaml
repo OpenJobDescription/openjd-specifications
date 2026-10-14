@@ -1,0 +1,75 @@
+# Section 9 (RFC 0009): a Service using every property -- description, let,
+# hostRequirements (including the attr.worker.preemptible attribute this RFC
+# introduces), ports with an explicit port, healthCheck, restartPolicy,
+# variables, and a script with let, all four actions, and embedded files.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Verbose
+  type: INT
+  default: 1
+services:
+- name: Store
+  description: "A per-Job key/value store."
+  let:
+  - loglevel = "debug" if Param.Verbose > 0 else "info"
+  hostRequirements:
+    amounts:
+    - name: amount.worker.memory
+      min: 4096
+    attributes:
+    - name: attr.worker.preemptible
+      anyOf: ["false"]
+  ports:
+  - name: main
+  - name: admin
+    port: 16379
+  healthCheck:
+    type: TCP_CONNECT
+    ports: [main]
+    readinessTimeoutSeconds: 120
+  restartPolicy:
+    maxAttempts: 2
+    completedTasks: KEEP
+  variables:
+    STORE_LOGLEVEL: "{{ loglevel }}"
+    STORE_BIND: "{{ Service.Store.main.bindAddress }}"
+  script:
+    let:
+    - config = Service.File.Conf
+    actions:
+      onEnter:
+        command: python
+        args: ["-c", "print()", "{{ Session.WorkingDirectory }}"]
+      onRun:
+        command: python
+        args: ["{{ Service.File.Serve }}", "{{ config }}", "{{ Service.Store.main.port }}", "{{ Service.Store.admin.port }}"]
+        cancelation:
+          mode: NOTIFY_THEN_TERMINATE
+          notifyPeriodInSeconds: 10
+      onExit:
+        command: python
+        args: ["-c", "print()"]
+        timeout: 60
+    embeddedFiles:
+    - name: Serve
+      type: TEXT
+      data: "print()"
+    - name: Conf
+      type: TEXT
+      filename: store.conf
+      data: |
+        bind {{ Service.Store.main.bindAddress }}
+        port {{ Service.Store.main.port }}
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

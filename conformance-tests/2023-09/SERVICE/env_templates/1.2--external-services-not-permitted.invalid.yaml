@@ -1,0 +1,17 @@
+# Section 1.1 item 9 / Section 9.9 item 13: `externalServices` is permitted
+# only in a Job Template. A requirement from one attachment on another's
+# Service is not supported.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- EXPR
+externalServices:
+- name: Ext
+  ports:
+  - name: main
+environment:
+  name: Client
+  dependencies:
+  - service: Ext
+  variables:
+    EXT_PORT: "{{ Service.Ext.main.port }}"

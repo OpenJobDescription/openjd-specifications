@@ -1,0 +1,86 @@
+# RFC 0009 "Service lifecycle" constraints 1-3 / Template Schemas §3.2, §9.4:
+# a Service with the default TCP_CONNECT health check (a python TCP echo
+# listener standing in for valkey-server) is READY before any Task of a Step
+# that lists `service: Store` runs, and the Tasks of two such Steps
+# reach it through Service.Store.main.connectAddress and .port. The Service
+# binds Service.Store.main.bindAddress, which only it may reference.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: ServiceTcpConnect
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: TCP_CONNECT
+      readinessTimeoutSeconds: 60
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Store.main.bindAddress }}", "{{ Service.Store.main.port }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port = sys.argv[1], int(sys.argv[2])
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("STORE_LISTENING", flush=True)
+          while True:
+              c, _ = s.accept()
+              # A TCP_CONNECT health-check probe connects and closes without
+              # sending; recv may return b"" or raise on an abortive close.
+              try:
+                  data = c.recv(1024)
+              except OSError:
+                  data = b""
+              if data:
+                  c.sendall(b"ECHO:" + data)
+              c.close()
+  steps:
+  - name: First
+    dependencies:
+    - service: Store
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: N
+        type: INT
+        range: "1-2"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Service.Store.main.connectAddress }}", "{{ Service.Store.main.port }}", "First-{{ Task.Param.N }}"]
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port, tag = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          c = socket.create_connection((host, port), timeout=10)
+          c.sendall(tag.encode())
+          print("TASK_REPLY", c.recv(1024).decode(), flush=True)
+          c.close()
+  - name: Second
+    dependencies:
+    - dependsOn: First
+    - service: Store
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import socket,sys; c=socket.create_connection((sys.argv[1], int(sys.argv[2])), timeout=10); c.sendall(b'Second'); print('TASK_REPLY', c.recv(1024).decode(), flush=True)", "{{ Service.Store.main.connectAddress }}", "{{ Service.Store.main.port }}"]
+
+expected:
+  output:
+  - STORE_LISTENING
+  - TASK_REPLY ECHO:First-1
+  - TASK_REPLY ECHO:First-2
+  - TASK_REPLY ECHO:Second

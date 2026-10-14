@@ -1,0 +1,101 @@
+# RFC 0009 <ServiceHealthCheck> TCP_CONNECT after READY (Template Schemas
+# §9.4), "Failure and restart", and lifecycle constraints 6-7 and 11: a hung
+# process is detected without exiting. After answering Task 1 the service
+# closes its listening socket and sleeps, still holding the process. With
+# healthIntervalSeconds: 1 and failureThreshold: 2, two refused connections
+# make the instance UNHEALTHY, an instance failure; with the default
+# maxAttempts of 0 the Service becomes FAILED and the Job fails. onRun is
+# canceled, Task 2 never starts, and onExit still runs because an action of
+# the Service ran.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: HealthTcpPortClosedWhileProcessHangs
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: TCP_CONNECT
+      readinessTimeoutSeconds: 60
+      healthIntervalSeconds: 1
+      failureThreshold: 2
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Store.main.bindAddress }}", "{{ Service.Store.main.port }}"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "print('STORE_EXIT_RAN')"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys, time
+          host, port = sys.argv[1], int(sys.argv[2])
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("STORE_LISTENING", flush=True)
+          while True:
+              c, _ = s.accept()
+              # The TCP_CONNECT probe connects and closes without sending;
+              # recv may return b"" or raise on an abortive close.
+              try:
+                  data = c.recv(64)
+              except OSError:
+                  data = b""
+              if data:
+                  c.sendall(b"hello")
+                  c.close()
+                  break
+              c.close()
+          # Stop listening but keep the process alive: from the scheduler's
+          # point of view the service has hung.
+          s.close()
+          print("STORE_LISTENER_CLOSED", flush=True)
+          time.sleep(600)
+  steps:
+  - name: Work
+    dependencies:
+    - service: Store
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: N
+        type: INT
+        range: "1-2"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Service.Store.main.connectAddress }}", "{{ Service.Store.main.port }}", "{{ Task.Param.N }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import socket, sys, time
+          host, port, n = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          c = socket.create_connection((host, port), timeout=10)
+          c.sendall(("task " + n).encode())
+          print("TASK", n, "GOT", c.recv(64).decode(), flush=True)
+          c.close()
+          # Stay running long enough for two failed probes, so the instance is
+          # UNHEALTHY before Task 2 could be scheduled.
+          time.sleep(5)
+          print("TASK", n, "DONE", flush=True)
+
+expected:
+  taskFailure: {}
+  output:
+  - STORE_LISTENING
+  - TASK 1 GOT hello
+  - STORE_LISTENER_CLOSED
+  - STORE_EXIT_RAN
+  forbidden:
+  - TASK 2 GOT

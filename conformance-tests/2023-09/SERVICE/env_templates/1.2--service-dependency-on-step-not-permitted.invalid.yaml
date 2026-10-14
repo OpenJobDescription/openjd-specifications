@@ -1,0 +1,19 @@
+# Section 1.2 item 6 constraint 5 / Section 3.2 constraint 1: a Service in an
+# Environment Template may depend only on Services of the same document
+# (`service: <name>`); the document has no Steps, so `dependsOn: Prepare` is
+# rejected.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- EXPR
+services:
+- name: Cache
+  dependencies:
+  - dependsOn: Prepare
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

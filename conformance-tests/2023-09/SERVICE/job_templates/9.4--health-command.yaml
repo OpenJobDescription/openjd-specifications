@@ -1,0 +1,34 @@
+# Section 9.4: a COMMAND check runs the Service's onHealthCheck action every
+# readinessIntervalSeconds until it exits 0 or readinessTimeoutSeconds elapses,
+# then every healthIntervalSeconds for as long as onRun runs.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  - name: admin
+  healthCheck:
+    type: COMMAND
+    readinessIntervalSeconds: 2
+    readinessTimeoutSeconds: 90
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+      onHealthCheck:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

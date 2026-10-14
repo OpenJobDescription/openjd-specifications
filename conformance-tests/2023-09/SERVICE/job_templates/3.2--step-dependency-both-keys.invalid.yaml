@@ -1,0 +1,33 @@
+# Section 3.2 (RFC 0009): a <StepDependency> is exactly one of `dependsOn` (a
+# Step) or `service` (a Service). An entry that gives both keys is rejected,
+# even though each key alone would name a valid target.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port }}"]
+steps:
+- name: Prepare
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+- name: Use
+  dependencies:
+  - dependsOn: Prepare
+    service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port }}"]

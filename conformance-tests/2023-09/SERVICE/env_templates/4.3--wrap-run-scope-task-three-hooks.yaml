@@ -1,0 +1,21 @@
+# Section 4.3 WRAP_ACTIONS constraint 6: with `runScope: [TASK]` the rule is
+# exactly RFC 0008's three hooks.
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- SERVICE
+- EXPR
+environment:
+  name: Wrapper
+  runScope: [TASK]
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapEnvExit:
+        command: python
+        args: ["-c", "print()"]
+      onWrapTaskRun:
+        command: python
+        args: ["-c", "print()"]

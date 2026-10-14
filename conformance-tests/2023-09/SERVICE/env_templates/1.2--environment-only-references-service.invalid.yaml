@@ -1,0 +1,14 @@
+# Section 1.2.2 / Section 4 item 3 constraint 2: a document with no
+# `services` of its own cannot depend on or reference any Service, even one a
+# scheduler may attach from another document.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- EXPR
+environment:
+  name: Client
+  dependencies:
+  - service: Store
+  runScope: [TASK]
+  variables:
+    STORE_PORT: "{{ Service.Store.main.port }}"

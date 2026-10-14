@@ -1,0 +1,132 @@
+# RFC 0009 <ServiceHealthCheck> item 6 (Template Schemas §9.4): failures
+# below failureThreshold do not change the Service's state, and "a single
+# successful probe resets the count". The COMMAND probe fails exactly twice
+# after READY and then recovers; with failureThreshold: 3 the instance stays
+# READY, nothing is relaunched, and every Task is served by instance 1.
+# maxAttempts: 1 is given so that a wrongly triggered relaunch shows up as
+# INSTANCE 2 rather than as a failed Job.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: HealthThresholdToleratesBlips
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: COMMAND
+      readinessIntervalSeconds: 1
+      readinessTimeoutSeconds: 60
+      healthIntervalSeconds: 1
+      failureThreshold: 3
+    restartPolicy:
+      maxAttempts: 1
+      completedTasks: KEEP
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Store.main.bindAddress }}", "{{ Service.Store.main.port }}", "{{ Job.Name }}"]
+          cancelation:
+            mode: TERMINATE
+        onHealthCheck:
+          command: python
+          args: ["{{ Service.File.Check }}", "{{ Service.Store.main.connectAddress }}", "{{ Service.Store.main.port }}", "{{ Job.Name }}"]
+          timeout: 10
+        onExit:
+          command: python
+          args: ["-c", "import os, sys, tempfile\nfor suffix in ('.marker', '.probes'):\n    m = os.path.join(tempfile.gettempdir(), 'openjd-' + sys.argv[1] + suffix)\n    os.path.exists(m) and os.remove(m)", "{{ Job.Name }}"]
+      embeddedFiles:
+      - name: Check
+        type: TEXT
+        data: |
+          import os, socket, sys, tempfile
+          host, port, job = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          try:
+              socket.create_connection((host, port), timeout=1).close()
+          except OSError:
+              # Not yet listening: "not yet ready" before READY. This does not
+              # count toward the blips below.
+              sys.exit(1)
+          # Count the probes that found the listener up. The first makes the
+          # instance READY; the next two are the blips; every later one passes.
+          counter = os.path.join(tempfile.gettempdir(), "openjd-" + job + ".probes")
+          n = int(open(counter).read()) if os.path.exists(counter) else 0
+          open(counter, "w").write(str(n + 1))
+          if n in (1, 2):
+              print("CHECK_BLIP", n, flush=True)
+              sys.exit(1)
+          print("CHECK_OK", n, flush=True)
+      - name: Serve
+        type: TEXT
+        data: |
+          import os, socket, sys, tempfile
+          host, port, job = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          # The instance marker tells a relaunched instance apart from the first;
+          # a stale marker makes instance 1 report itself as 2, which the
+          # assertions catch. The probe counter is cleared before the listener
+          # is up, which is before any probe can write to it.
+          marker = os.path.join(tempfile.gettempdir(), "openjd-" + job + ".marker")
+          counter = os.path.join(tempfile.gettempdir(), "openjd-" + job + ".probes")
+          instance = 2 if os.path.exists(marker) else 1
+          open(marker, "a").close()
+          os.path.exists(counter) and os.remove(counter)
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("INSTANCE", instance, "LISTENING", flush=True)
+          while True:
+              c, _ = s.accept()
+              # The onHealthCheck probe connects and closes without sending;
+              # recv may return b"" or raise on an abortive close.
+              try:
+                  data = c.recv(64)
+              except OSError:
+                  data = b""
+              if data:
+                  c.sendall(str(instance).encode())
+              c.close()
+  steps:
+  - name: Work
+    dependencies:
+    - service: Store
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: N
+        type: INT
+        range: "1-3"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Service.Store.main.connectAddress }}", "{{ Service.Store.main.port }}", "{{ Task.Param.N }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import socket, sys, time
+          host, port, n = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          c = socket.create_connection((host, port), timeout=10)
+          c.sendall(("task " + n).encode())
+          instance = c.recv(64).decode()
+          c.close()
+          print("TASK", n, "GOT INSTANCE", instance, flush=True)
+          # Keep the Job running long enough for the two blips and the recovery
+          # probe to happen while Tasks are still being scheduled.
+          time.sleep(2)
+          print("TASK", n, "INSTANCE", instance, "DONE", flush=True)
+
+expected:
+  output:
+  - INSTANCE 1 LISTENING
+  - CHECK_BLIP 1
+  - CHECK_BLIP 2
+  - CHECK_OK 3
+  - TASK 1 INSTANCE 1 DONE
+  - TASK 2 INSTANCE 1 DONE
+  - TASK 3 INSTANCE 1 DONE
+  forbidden:
+  - INSTANCE 2

@@ -1,0 +1,82 @@
+# RFC 0009 example 3 / Template Schemas §1.2.2: an Environment Template a
+# queue would attach defines an external Service and a TASK-scoped client
+# Environment that lists the Service in `dependencies` and publishes its
+# endpoint through environment variables. The Job Template does not use the
+# SERVICE extension at all and consumes the Service through CACHE_HOST /
+# CACHE_PORT. The attachment's parameter default is applied to the external
+# Service.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: ExternalCacheConsumer
+  steps:
+  - name: Process
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range: "1-2"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Task.Param.Frame }}"]
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import os, socket, sys
+          host, port = os.environ["CACHE_HOST"], int(os.environ["CACHE_PORT"])
+          c = socket.create_connection((host, port), timeout=10)
+          print("FRAME", sys.argv[1], "CACHE_SAYS", c.recv(64).decode(), flush=True)
+          c.close()
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [SERVICE, EXPR]
+  parameterDefinitions:
+  - name: CachePayload
+    type: STRING
+    default: cached-value
+  services:
+  - name: Cache
+    ports:
+    - name: main
+    restartPolicy:
+      maxAttempts: 3
+      completedTasks: KEEP
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Cache.main.bindAddress }}", "{{ Service.Cache.main.port }}", "{{ Param.CachePayload }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port, payload = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("CACHE_LISTENING", flush=True)
+          while True:
+              c, _ = s.accept()
+              c.sendall(payload.encode())
+              c.close()
+  environment:
+    name: CacheClient
+    dependencies:
+    - service: Cache
+    runScope: [TASK]
+    variables:
+      CACHE_HOST: "{{ Service.Cache.main.connectAddress }}"
+      CACHE_PORT: "{{ Service.Cache.main.port }}"
+
+expected:
+  output:
+  - CACHE_LISTENING
+  - FRAME 1 CACHE_SAYS cached-value
+  - FRAME 2 CACHE_SAYS cached-value

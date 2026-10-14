@@ -1,0 +1,37 @@
+# Template Schemas §9.7 item 4: a non-zero exit status of a Service's onExit
+# is reported but does not change the outcome of the scope. The Job
+# succeeds even though the Service's onExit exits 5.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: OnExitFailureDoesNotFailScope
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import time; print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "print('STORE_EXIT_FAILING'); raise SystemExit(5)"]
+  steps:
+  - name: Use
+    dependencies:
+    - service: Store
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_RAN', {{ Service.Store.main.port }} > 0)"]
+
+expected:
+  output:
+  - TASK_RAN True
+  - STORE_EXIT_FAILING

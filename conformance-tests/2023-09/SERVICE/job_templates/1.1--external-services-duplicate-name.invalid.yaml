@@ -1,0 +1,23 @@
+# Section 1.1 item 9 constraint 3: no two requirements may have the same
+# `name`.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+externalServices:
+- name: Ext
+  ports:
+  - name: main
+- name: Ext
+  ports:
+  - name: api
+steps:
+- name: Use
+  dependencies:
+  - service: Ext
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Ext.main.port }}"]

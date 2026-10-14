@@ -1,0 +1,21 @@
+# Section 4.3 WRAP_ACTIONS constraint 6: once a document declares SERVICE, a
+# wrapping Environment with the default runScope must define the four
+# onWrapService* hooks; RFC 0008's three alone must be rejected.
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- SERVICE
+- EXPR
+environment:
+  name: Wrapper
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapEnvExit:
+        command: python
+        args: ["-c", "print()"]
+      onWrapTaskRun:
+        command: python
+        args: ["-c", "print()"]

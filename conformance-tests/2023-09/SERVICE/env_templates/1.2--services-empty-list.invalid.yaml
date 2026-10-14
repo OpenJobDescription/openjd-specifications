@@ -1,0 +1,8 @@
+# Section 1.2 item 6 constraint 1: if `services` is provided it must contain
+# at least one element. (An empty list does not satisfy "at least one of
+# environment or services" either.)
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- EXPR
+services: []
