@@ -1,0 +1,70 @@
+# Template Schemas §9.1 rule 3 / How Jobs Are Run constraint 6: a Service
+# listed only by a Job Environment's `dependencies` (whose runScope defaults
+# to [TASK]) has every Step in its scope, with no Step listing it. The Service
+# is up for every Step through the Environment's dependency alone: neither
+# Step's script mentions the Service; both Tasks read the variables the
+# Environment set from Service.Store.*, and the second, which depends on the
+# first, still finds it up. onExit runs once, after both.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: ScopeViaJobEnvironmentDependency
+  jobEnvironments:
+  - name: Client
+    dependencies:
+    - service: Store
+    variables:
+      STORE_HOST: "{{ Service.Store.main.connectAddress }}"
+      STORE_PORT: "{{ Service.Store.main.port }}"
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Store.main.bindAddress }}", "{{ Service.Store.main.port }}", "STORE"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "print('STORE_EXIT')"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port, tag = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready:", tag, flush=True)
+          while True:
+              c, _ = s.accept()
+              c.sendall(tag.encode())
+              c.close()
+  steps:
+  - name: First
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os,socket; c=socket.create_connection((os.environ['STORE_HOST'], int(os.environ['STORE_PORT'])), timeout=10); print('FIRST_GOT', c.recv(64).decode(), flush=True)"]
+  - name: Second
+    dependencies:
+    - dependsOn: First
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os,socket; c=socket.create_connection((os.environ['STORE_HOST'], int(os.environ['STORE_PORT'])), timeout=10); print('SECOND_GOT', c.recv(64).decode(), flush=True)"]
+
+expected:
+  output:
+  - FIRST_GOT STORE
+  - SECOND_GOT STORE
+  - STORE_EXIT

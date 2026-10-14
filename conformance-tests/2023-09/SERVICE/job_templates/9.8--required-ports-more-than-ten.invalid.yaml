@@ -1,0 +1,28 @@
+# Section 9.8 item 2 constraint 2 (RFC 0009): a requirement lists at most 10
+# ports.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+externalServices:
+- name: Ext
+  ports:
+  - name: p1
+  - name: p2
+  - name: p3
+  - name: p4
+  - name: p5
+  - name: p6
+  - name: p7
+  - name: p8
+  - name: p9
+  - name: p10
+  - name: p11
+steps:
+- name: Use
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

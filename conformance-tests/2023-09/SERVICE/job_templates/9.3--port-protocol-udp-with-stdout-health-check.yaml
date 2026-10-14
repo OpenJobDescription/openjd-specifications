@@ -1,0 +1,30 @@
+# Section 9.3 item 3: a port may declare `protocol: UDP`. Section 9 item 7: a
+# Service none of whose ports is TCP must give a STDOUT or COMMAND health
+# check, since the default TCP_CONNECT could never pass.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Telemetry
+  ports:
+  - name: ingest
+    protocol: UDP
+  healthCheck:
+    type: STDOUT
+    readinessTimeoutSeconds: 60
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Telemetry
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

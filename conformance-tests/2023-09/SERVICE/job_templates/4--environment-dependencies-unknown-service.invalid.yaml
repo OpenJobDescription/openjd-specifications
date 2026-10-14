@@ -1,0 +1,32 @@
+# Section 4 item 3 constraint 2 / Section 9.9 item 14: a `service` entry in a
+# Job Environment's `dependencies` must name a Service of the Job Template's
+# `services` or `externalServices`. `service: Cache` names neither.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Client
+  dependencies:
+  - service: Cache
+  variables:
+    GREETING: hello
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port }}"]
+steps:
+- name: Use
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

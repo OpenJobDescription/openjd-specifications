@@ -1,0 +1,54 @@
+# Template Schemas §9.1 rule 1 / How Jobs Are Run constraints 3 and 6: a Step
+# that lists `service: Sidecar` in its `dependencies` without referencing
+# Service.Sidecar.* is in the Sidecar's scope. The Sidecar is READY before the
+# Step's Task runs, and is stopped, with onExit run, once the Task completes;
+# the dependency alone, not a format-string reference, is what puts the Step
+# in scope. The Service's onRun records its presence in a file in the host's
+# temp directory keyed by Job.Name (assuming the Service Session and the Task
+# Session share a host, as the reference runner's do), and its onExit removes
+# it; the Task checks the file exists and leaves it for onExit.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: DependencyWithoutReference
+  services:
+  - name: Sidecar
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Job.Name }}"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "import os,tempfile; os.remove(os.path.join(tempfile.gettempdir(), 'openjd-' + '{{ Job.Name }}' + '.up')); print('SIDECAR_EXIT')"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import os, sys, tempfile, time
+          with open(os.path.join(tempfile.gettempdir(), "openjd-" + sys.argv[1] + ".up"), "w") as f:
+              f.write("up")
+          print("openjd_service_ready: sidecar up", flush=True)
+          time.sleep(600)
+  steps:
+  - name: Use
+    dependencies:
+    - service: Sidecar
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os,tempfile; print('TASK_SEES_SIDECAR', os.path.exists(os.path.join(tempfile.gettempdir(), 'openjd-' + '{{ Job.Name }}' + '.up')))"]
+
+expected:
+  output:
+  - TASK_SEES_SIDECAR True
+  - SIDECAR_EXIT
+  forbidden:
+  - TASK_SEES_SIDECAR False

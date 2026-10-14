@@ -1,0 +1,25 @@
+# Section 1.2 item 5 / Section 4 item 3 (RFC 0009): an Environment Template's
+# Environment may list the document's Services in `dependencies`, in the
+# `service: <name>` form, and may then reference the listed Service's `port` and
+# `connectAddress`. Because it depends on a Service its runScope defaults to
+# [TASK].
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- EXPR
+services:
+- name: Cache
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Cache.main.port }}"]
+environment:
+  name: CacheClient
+  dependencies:
+  - service: Cache
+  variables:
+    CACHE_HOST: "{{ Service.Cache.main.connectAddress }}"
+    CACHE_PORT: "{{ Service.Cache.main.port }}"

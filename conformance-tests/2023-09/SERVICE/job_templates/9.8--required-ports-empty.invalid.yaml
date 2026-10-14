@@ -1,0 +1,17 @@
+# Section 9.8 item 2 constraint 1 (RFC 0009): a requirement must list at
+# least one port.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+externalServices:
+- name: Ext
+  ports: []
+steps:
+- name: Use
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

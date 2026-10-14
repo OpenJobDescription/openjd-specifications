@@ -1,0 +1,8 @@
+# Section 1.2 item 2 (RFC 0009): `$schema` is now allowed on an Environment
+# Template, and ignored, as on a Job Template.
+specificationVersion: environment-2023-09
+$schema: "https://example.com/openjd/environment-2023-09.schema.json"
+environment:
+  name: Env1
+  variables:
+    FOO: bar

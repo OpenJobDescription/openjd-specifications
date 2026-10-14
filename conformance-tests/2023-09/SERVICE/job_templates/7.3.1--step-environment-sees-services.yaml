@@ -1,0 +1,42 @@
+# Section 9 scope rule 3 (RFC 0009): a Step Environment may reference the
+# `port` and `connectAddress` of every Service its Step lists in
+# `dependencies`; a Step Environment follows its Step's dependencies (Section
+# 9.1 rule 1) and is entered only by the Task Sessions of its Step, so it
+# gives no runScope (Section 4 item 4).
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]
+- name: Coordinator
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  - service: Coordinator
+  stepEnvironments:
+  - name: Client
+    variables:
+      COORD_PORT: "{{ Service.Coordinator.main.port }}"
+      STORE_HOST: "{{ Service.Store.main.connectAddress }}"
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

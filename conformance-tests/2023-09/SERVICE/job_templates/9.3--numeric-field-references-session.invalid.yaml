@@ -1,0 +1,26 @@
+# Section 9.3 (RFC 0009): the numeric @fmtstring fields are resolved at job
+# creation and must not reference `Session.*`.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+    port: "{{ 6379 if Session.HasPathMappingRules else 6380 }}"
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

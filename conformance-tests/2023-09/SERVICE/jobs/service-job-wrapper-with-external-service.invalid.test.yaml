@@ -1,0 +1,58 @@
+# Template Schemas §1.2.2 item 4 (submission-time check), the other
+# direction: a Job Template with an RFC 0008 wrapper (no SERVICE declared) is
+# submitted to a queue that attaches an external Service, listed by the
+# attachment's own Environment. The Service would run in a Session the Job's
+# wrapper enters but cannot wrap.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [WRAP_ACTIONS, EXPR]
+  name: JobWrapperWithExternalService
+  jobEnvironments:
+  - name: JobWrapper
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args: ["{{ Env.File.Launch }}", "{{ WrappedAction.Command }}", "{{ repr_py(WrappedAction.Args) }}"]
+        onWrapTaskRun:
+          command: python
+          args: ["{{ Env.File.Launch }}", "{{ WrappedAction.Command }}", "{{ repr_py(WrappedAction.Args) }}"]
+        onWrapEnvExit:
+          command: python
+          args: ["{{ Env.File.Launch }}", "{{ WrappedAction.Command }}", "{{ repr_py(WrappedAction.Args) }}"]
+      embeddedFiles:
+      - name: Launch
+        type: TEXT
+        data: |
+          import ast, subprocess, sys
+          sys.exit(subprocess.call([sys.argv[1], *ast.literal_eval(sys.argv[2])]))
+  steps:
+  - name: Use
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_RAN')"]
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [SERVICE, EXPR]
+  services:
+  - name: Cache
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import time; print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  environment:
+    name: CacheClient
+    dependencies:
+    - service: Cache
+    variables:
+      CACHE_PORT: "{{ Service.Cache.main.port }}"

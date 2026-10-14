@@ -1,0 +1,28 @@
+# Section 9 item 7 / Section 9.4 item 2: a Service with a TCP port and a UDP
+# port may omit healthCheck; the default TCP_CONNECT probes the TCP port
+# only, so the UDP port does not make the default unsatisfiable.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Metrics
+  ports:
+  - name: ingest
+    protocol: UDP
+  - name: api
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Metrics
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

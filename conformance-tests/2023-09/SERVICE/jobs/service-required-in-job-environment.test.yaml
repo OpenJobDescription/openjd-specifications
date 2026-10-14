@@ -1,0 +1,76 @@
+# Template Schemas §9.8 item 2, §4 items 3 and 4: a required Service's
+# endpoint is in scope in the Job Template's own Job Environment, which lists
+# `service: Ext` in its `dependencies`; its runScope defaults to [TASK] because
+# it depends on a Service, so the Environment is entered in the Task Session
+# and not in the attached Service's Session. The Task reads the endpoint from
+# the Environment's variables and reaches the Service.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: RequiredInJobEnvironment
+  externalServices:
+  - name: Ext
+    ports:
+    - name: main
+  jobEnvironments:
+  - name: Client
+    dependencies:
+    - service: Ext
+    variables:
+      EXT_HOST: "{{ Service.Ext.main.connectAddress }}"
+      EXT_PORT: "{{ Service.Ext.main.port }}"
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('CLIENT_ENTERED')"]
+  steps:
+  - name: Use
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os,socket; c=socket.create_connection((os.environ['EXT_HOST'], int(os.environ['EXT_PORT'])), timeout=10); print('TASK_GOT', c.recv(64).decode(), flush=True)"]
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [SERVICE, EXPR]
+  services:
+  - name: Ext
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "import os; print('EXT_SEES_CLIENT_VARS', 'EXT_HOST' in os.environ)"]
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Ext.main.bindAddress }}", "{{ Service.Ext.main.port }}", "EXT_PAYLOAD"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port, tag = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready:", tag, flush=True)
+          while True:
+              c, _ = s.accept()
+              c.sendall(tag.encode())
+              c.close()
+
+expected:
+  output:
+  - CLIENT_ENTERED
+  - EXT_SEES_CLIENT_VARS False
+  - TASK_GOT EXT_PAYLOAD
+  forbidden:
+  - EXT_SEES_CLIENT_VARS True

@@ -1,0 +1,9 @@
+# Section 1.2: at least one of `environment` or `services` must be provided.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- EXPR
+parameterDefinitions:
+- name: CacheSize
+  type: INT
+  default: 64

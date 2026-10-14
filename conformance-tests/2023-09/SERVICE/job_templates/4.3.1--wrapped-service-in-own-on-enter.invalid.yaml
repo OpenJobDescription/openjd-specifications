@@ -1,0 +1,52 @@
+# Section 4 scope rule: WrappedService.* is available in the wrap hooks only;
+# a wrapping Environment's own onEnter is never a wrap hook.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- WRAP_ACTIONS
+- SERVICE
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Wrapper
+  runScope: [SERVICE]
+  script:
+    actions:
+      onEnter:
+        command: python
+        args: ["-c", "print()", "{{ WrappedService.Name }} {{ WrappedService.PortNames[0] }} {{ WrappedService.Ports[0] }} {{ WrappedService.BindAddresses[0] }}"]
+      onWrapEnvEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapEnvExit:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceRun:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceHealthCheck:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceExit:
+        command: python
+        args: ["-c", "print()"]
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

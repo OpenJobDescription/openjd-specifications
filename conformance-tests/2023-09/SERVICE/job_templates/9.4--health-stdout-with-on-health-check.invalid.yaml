@@ -1,0 +1,31 @@
+# Section 9.7 item 3 / Section 9.9 item 4: onHealthCheck must not be
+# defined unless the health check type is COMMAND.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  - name: admin
+  healthCheck:
+    type: STDOUT
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+      onHealthCheck:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

@@ -1,0 +1,56 @@
+# Template Schemas §9 item 3, §9.6 item 1 (RFC 0009): a <Service>'s `let`
+# (job creation: Param.*, RawParam.*, Job.Name) and a <ServiceScript>'s `let`
+# (service execution: Session.*, Service.File.*, the Service's own endpoint)
+# both resolve within the Service's actions and `variables`. A Step's `let`
+# is not available to a Service (see 7.3.1--step-let-not-available-in-service).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: LetBindingsResolve
+  parameterDefinitions:
+  - name: Workers
+    type: INT
+    default: 3
+  services:
+  - name: Coordinator
+    let:
+    - threads = Param.Workers * 2
+    - label = Job.Name + "/" + string(threads)
+    ports:
+    - name: api
+    healthCheck:
+      type: STDOUT
+    variables:
+      COORD_LABEL: "{{ label }}"
+    script:
+      let:
+      - endpoint = join_host_port(Service.Coordinator.api.connectAddress, Service.Coordinator.api.port)
+      - conf = Service.File.Conf
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os,time; print('LABEL', os.environ['COORD_LABEL']); print('ENDPOINT_HAS_PORT', '{{ endpoint }}'.endswith(':' + str({{ Service.Coordinator.api.port }}))); print('CONF_CONTENT', open(r'{{ conf }}').read().strip()); print('openjd_service_ready: let ok', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Conf
+        type: TEXT
+        data: "threads={{ threads }}"
+  steps:
+  - name: Render
+    dependencies:
+    - service: Coordinator
+    let:
+    - threads = Param.Workers * 2
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_THREADS', {{ threads }}, {{ Service.Coordinator.api.port }} > 0)"]
+
+expected:
+  output:
+  - LABEL LetBindingsResolve/6
+  - ENDPOINT_HAS_PORT True
+  - CONF_CONTENT threads=6
+  - TASK_THREADS 6 True

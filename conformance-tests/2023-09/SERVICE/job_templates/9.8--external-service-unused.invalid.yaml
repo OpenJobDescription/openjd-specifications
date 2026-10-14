@@ -1,0 +1,21 @@
+# Section 9.8 / Section 9.1 rule 4 (RFC 0009): an `externalServices` entry
+# that no Step, Service, or Job Environment lists in `dependencies` is
+# rejected at template validation, naming the entry, exactly as an inline
+# Service that nothing depends on is. The entry would scope nothing and
+# nothing could reference it.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+externalServices:
+- name: Ext
+  ports:
+  - name: main
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
