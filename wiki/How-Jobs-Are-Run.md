@@ -43,7 +43,9 @@ of an action the inner Environment defines: if an inner Environment defines no `
 script at all), there is nothing to replace and the corresponding wrap hook does not run for it. If more
 than one Environment
 in the session stack defines any wrap hook, the session is invalid and the scheduler must reject it
-before entering any Environment. If an Environment defines any wrap hook, it must define all three.
+before entering any Environment. If an Environment defines any wrap hook, it must define all three; with the SERVICE
+extension, the hooks it must define follow from its `runScope` instead (see
+[Section 4.3](2023-09-Template-Schemas#43-environmentactions)).
 
 A wrap hook is treated as the action it replaces. A failed `onWrapEnvEnter` is an inner `onEnter`
 failure, a failed `onWrapTaskRun` is a task `onRun` failure, and a failed `onWrapEnvExit` is an inner
@@ -78,6 +80,170 @@ within. A failed Task will result in a failed **Session**, which will subsequent
 The following diagram provides an overview of the steps taken to run a Session.
 
 ![Actions Run in a Session](./images/2023-09_how_jobs_are_run.png)
+
+## Services
+
+When the SERVICE extension is in use (introduced in
+[RFC 0009](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0009-service.md)), a Job can
+additionally declare **Services**. A **Service** is a long-lived process that the scheduler starts *before* scheduling
+any Task in its scope, keeps running for the lifetime of its scope, and stops once the scope no longer needs it. The
+**scope** of a **Service** is the set of Steps whose Tasks depend on it, declared in the template's `dependencies`
+lists (see [Section 9.1](2023-09-Template-Schemas#91-service-scope)). A **Service** publishes one or more named ports; the scheduler allocates a concrete
+address and port on the **Service**'s host and makes them available to every entity that depends on it through the
+`Service.*` format-string scope, so that a Task on any Worker Host knows where to connect.
+
+Unlike an **Environment**, a **Service** is not tied to the host that runs Tasks. It runs in a **Session** of its own,
+the **Service Session**, on a **Service host** chosen by the scheduler subject to the **Service**'s host requirements,
+and it outlives every **Session** that runs Tasks against it. A **Service Session** enters the Job's **Environments**,
+in the same order a **Session** for a Task would, around the **Service**'s own actions, so a **Service** is provisioned
+by the same Conda, Rez, or container **Environments** as the Tasks; a **Service** belongs to no Step and enters no
+Step's **Environments**. Later **Environments** take precedence over earlier ones for environment variables, and the
+**Service**'s own `variables` over all of them. Which kinds of **Session** an **Environment** is entered in is declared
+by its `runScope`: by default every kind, and only an **Environment** whose `runScope` includes `SERVICE` is entered
+in a **Service Session**. An **Environment** that
+configures Tasks to use a **Service** lists `service: <name>` in its `dependencies`, which is what lets it reference
+`Service.*`, and is entered in Task **Sessions** only; that is its default `runScope`, and an explicit `runScope` on it
+must exclude `SERVICE`. Under the WRAP_ACTIONS extension, a
+wrapping **Environment** whose `runScope` includes `SERVICE` wraps the **Service**'s `onEnter`, `onRun`,
+`onHealthCheck`, and `onExit` with its `onWrapServiceEnter`, `onWrapServiceRun`, `onWrapServiceHealthCheck`, and
+`onWrapServiceExit` hooks, exactly as `onWrapTaskRun` wraps a Task's `onRun`, and wraps the inner **Environments** of
+the **Service Session** with `onWrapEnvEnter` and `onWrapEnvExit` as in any **Session**. Placement is up to the
+scheduler: a distributed render manager might dedicate a host to a **Service**, while a single-host runner starts it
+alongside the Tasks on loopback. Whatever the placement, `connectAddress` and `port`, over the port's `protocol`, must
+reach the service process from every host in the scope. A **Service Session** is a **Session** in every other respect
+too: it has its own working directory, and it receives [Path Mapping Rules](#path-mapping) for the **Service host** the
+same way a **Session** running Tasks does, so `PATH` Job Parameters in a **Service**'s actions are mapped for the host
+the **Service** runs on.
+
+### Service lifecycle
+
+One launch of a **Service**'s `onRun` action is an **instance**; a **Service** has one instance at a time, and a
+relaunch creates a new one. A **Service** is always in one of four states: **UNREADY** (no instance is **READY**: none has been launched, the
+current one has not yet passed a health-check probe, or the previous one failed and a relaunch is pending), **READY**
+(the current instance has passed a health-check probe, has not since failed `failureThreshold` consecutive probes, and
+has not exited), **UNHEALTHY** (the current instance has failed `failureThreshold` consecutive health-check probes and
+is being stopped; a transient state in which, for every other purpose including Task scheduling, the **Service** is not
+**READY**), or **FAILED** (the **Service** will not be relaunched and its scope has failed). A **Service** is
+**UNREADY** from Job creation. Starting a **Service** means opening a **Service Session** on a host that satisfies the
+**Service**'s host requirements and, within it, entering the Job's **Environments** whose `runScope` includes
+`SERVICE`, running
+`onEnter` if defined, launching `onRun`, and probing it with its health check. When a probe succeeds, the **Service** is
+**READY**, and the health check keeps probing it for as long as `onRun` runs: `failureThreshold` consecutive failed
+probes after **READY** make the instance **UNHEALTHY**, which is an instance failure (see
+[Service failure and restart](#service-failure-and-restart)).
+
+A scheduler must satisfy the following constraints; how it satisfies them is its own concern.
+
+1. All of a **Service**'s ports are allocated, and its `bindAddress` and `connectAddress` values determined, before any
+   **Action** of its **Service Session** runs.
+2. No **Action** of a **Service Session** (including the `onEnter` of an **Environment** it enters) begins until every
+   entry in the **Service**'s `dependencies` is satisfied: every listed Step has completed and every listed **Service**
+   is **READY**. **Services** neither of which depends on the other, directly or transitively, may start concurrently.
+3. No Task of a Step is scheduled until every **Service** whose scope includes that Step is **READY**. Once they are,
+   Tasks are scheduled exactly as described above, with no change to how **Sessions** are formed.
+4. A **Service** is stopped before any **Service** it depends on; **Services** neither of which depends on the other
+   may be stopped concurrently.
+5. A **Service** has at most one live **Service Session** at a time, and at most one running `onRun` within it. Before
+   `onRun` is launched again in the same **Session**, the previous `onRun` process must have exited, on its own or
+   because the scheduler canceled it.
+6. A **Service Session** ends when the **Service**'s scope completes (no Step in the scope has a Task that could still
+   run, whether because every Task completed or because the scope failed or was canceled), when the **Service** is
+   relocated, or when the **Session** fails to start. A **Service** whose scope completes must have its **Session**
+   ended whatever its state, including **UNREADY**, **UNHEALTHY**, and **FAILED**, so that partial state is cleaned up.
+7. Before a **Service Session** ends: any running **Action** is canceled with its own cancelation method; `onExit` runs
+   if it is defined and any **Action** of the **Service** has run; and every **Environment** entered is exited in
+   reverse order, as at the end of any **Session**. Then the working directory is deleted and the host's allocated
+   amounts and ports are released. Nothing orders a **Step** outside the scope after this; whether a **Step** that
+   depends on a **Step** in the scope, but not on the **Service**, can see files the **Service** wrote is
+   implementation-defined.
+8. A **Service** that is started again after its **Session** has ended begins a new **Service Session**: new host
+   selection, new ports, new working directory, **Environments** re-entered, `onEnter` re-run.
+9. A scheduler may start a **Service** at any time consistent with these constraints, including lazily, when it is
+   first prepared to schedule a Task in the **Service**'s scope, and may decline to start a **Service** whose scope
+   will schedule no Task. Once started, a **Service** is kept **READY** until its scope completes or it fails, with one
+   exception. A scheduler may **suspend** a **Service** while no Task in its scope is running or can be scheduled. A
+   suspension is not a failure: the **Service Session** ends as constraint 7 requires, the **Service** becomes
+   **UNREADY**, no restart attempt is consumed, completed Tasks keep their results, and the **Service** is started
+   again in a new **Service Session** (constraint 8) when the scheduler is next prepared to schedule a Task in its
+   scope. A **Service** must not be suspended unless its `completedTasks` is `KEEP`, nor while any **Service** that
+   lists it has a **Service Session**; a **Service** that other **Services** depend on is therefore suspended only
+   after they are, which requires them to be `KEEP` **Services** too.
+10. A health-check probe in flight when `onRun` exits is canceled, with its cancelation method when it is an
+    **Action**, and its result is discarded, whether the instance was **READY** or not. No probe result observed after
+    `onRun` has exited makes an instance **READY** or keeps it **READY**; the instance has failed.
+
+### Service failure and restart
+
+Two kinds of failure lead to the restart decision. An **instance failure** occurs when `onRun` exits, with any exit
+status, while the **Service**'s scope still has work (a Task that has not completed, or that could still run), other
+than because the scheduler canceled it; when `readinessTimeoutSeconds` elapses before the instance is **READY**; when
+the instance becomes **UNHEALTHY**, having failed `failureThreshold` consecutive health-check probes after **READY**; or
+when the scheduler loses the **Service host** (step 6 below).
+An exit observed after the scope has completed is not a failure, whether or not the scheduler's cancelation had yet
+reached the process. A **start failure** occurs when a **Service Session** fails before `onRun` is launched: a requested
+port cannot be allocated on the chosen host, an **Environment**'s `onEnter` fails, or the **Service**'s `onEnter` exits
+non-zero or times out.
+
+On either failure the **Service** becomes **UNREADY** (an **UNHEALTHY** instance, once its `onRun` has exited) and the
+scheduler takes steps 1–4; steps 5–8 govern the outcomes those steps can produce.
+
+1. If the **Service**'s `completedTasks` is `RERUN`, the scheduler cancels every running Task in the scope; each is
+   returned to the queue to run again once the **Service** is **READY**, and this is not counted as a Task failure. If
+   it is `KEEP`, running Tasks continue. A Task that needs the **Service** while it is not **READY**, or that holds the
+   endpoint of a relocated instance, fails on its own and is retried under the ordinary Task retry rules, re-resolving
+   `Service.*` when it runs again; a Task that no longer needs the **Service** completes normally.
+2. If `onRun` is still running (the readiness-timeout and **UNHEALTHY** cases) the scheduler cancels it and waits for it
+   to exit; constraint 5 above forbids a second `onRun` in the **Session** before then.
+3. If the **Service**'s restart policy has attempts remaining, the scheduler relaunches the **Service**. If the policy's
+   `completedTasks` is `RERUN`, every Task in the scope that had completed successfully is first returned to the queue;
+   with `KEEP`, completed Tasks keep their results. After a start failure or host loss the relaunch must begin a new **Service Session**. After an
+   instance failure on a host that is still available, it may relaunch `onRun` within the existing **Service Session**
+   (same working directory, same ports, `onEnter` not re-run), preserving the state `onEnter` established; it should
+   begin a new **Service Session**, which allocates new ports, when the failure may be a port conflict (`onRun` exited
+   without ever becoming **READY**); or it may relocate (step 5).
+4. If no attempts remain, the **Service** becomes **FAILED** and its scope fails: every Step in the scope fails, and
+   with it the Job when the scope is every Step. The **Service Session** is then ended per constraint 6.
+5. **Relocation.** Relaunching in a new **Service Session** on a different host is relocation. It counts as one
+   relaunch, is governed by the same restart policy, and changes every `Service.<name>.*` value. When relocating away from a host that is still available, constraint 7 above applies to the
+   old **Session** in full.
+6. **Host loss.** A scheduler loses a **Service host** when it determines, by its own means, that the host is gone or
+   unreachable. This is an instance failure. The scheduler does not wait for `onExit`, **Environment** exits, or
+   working-directory cleanup there; it releases the host's allocations and proceeds to steps 1–4. If the host later
+   reappears the scheduler should terminate any surviving service process and remove the working directory, but the
+   **Service**'s state is unaffected.
+7. **`RERUN` and Step dependencies.** `RERUN` returns the completed Tasks of every Step in the **Service**'s scope to
+   the queue (step 3), so each of those Steps returns to a pending state; a Step that depends on a returned Step,
+   directly or transitively, returns to pending as well, and Step dependencies are resolved again from scratch. A
+   **Service** that had been stopped because its scope completed, and whose scope includes a returned Step, is started
+   again, in a new **Service Session**, when that Step next becomes schedulable.
+8. **Dependents of a relaunched Service.** When a **Service** begins a new **Service Session** (after a start failure,
+   host loss, suspected port conflict, suspension, or relocation), every **Service** that lists it, directly or
+   transitively, holds endpoint values that are no longer valid. The scheduler must stop each such dependent in the
+   order of constraint 4 (dependents before the **Services** they list) and start each again in a new **Service
+   Session** once every **Service** it lists is **READY**. This stop does not consume the dependent's restart attempts,
+   and the dependent's `completedTasks` applies to its own scope exactly as for any instance that is stopped and started
+   again (its Tasks that completed against the old instance are returned under `RERUN`, kept under `KEEP`). A relaunch
+   within the same **Service Session** keeps the same ports and requires nothing of dependents. A dependent whose
+   restart policy gives no `completedTasks` (permitted when its `maxAttempts` is 0) is stopped and started again as a
+   `RERUN` **Service** here; one that wants its completed Tasks kept gives `completedTasks: KEEP` whatever its
+   `maxAttempts`.
+
+A Task failure never fails a **Service**.
+
+### Services from Environment Templates
+
+A scheduler may supply **Services** to every Job submitted through it by attaching Environment Templates that define a
+`services:` list, in the same way it supplies **Environments** today. Such an **external Service** has its scope
+computed over the combined Job by the same rules as one the Job Template declares, and is otherwise indistinguishable
+from it: each Job that uses it gets its own instance, the Tasks in its scope are gated on its being **READY**, and its
+restart policy governs them. An Environment Template may define both `services:` and an `environment:`; the
+**Environment** lists the **Services** whose endpoints it reads, which puts every Step of the Job in their scope, and
+may for example set environment variables that point Tasks at them. A Job Template that reads the endpoint itself
+declares the **Service** and the ports it uses in `externalServices` (see
+[Section 9.8](2023-09-Template-Schemas#98-servicerequirement)) and lists it in `dependencies` as it would an inline
+**Service**; at submission the scheduler matches each requirement to exactly one attached **Service** of that name
+declaring those ports with the same protocols, and rejects the submission otherwise. An attached **Service** that
+nothing in the combined Job lists is never started.
 
 ## Session Environment Variables
 
@@ -137,21 +303,43 @@ messages to convey information about the **Action** to the render management sys
   an **Action** has failed.
 * `openjd_env: <var>=<value>` where `<var>` is the string name of an environment variable, and `<value>` is a string. This
   can only be emitted by the **Action** for entering an **Environment**. It defines the value of an environment variable for
-  all subsequent **Action**s in the **Session** until the defining **Environment** is exited.
+  all subsequent **Action**s in the **Session** until the defining **Environment** is exited. With the SERVICE extension,
+  it may also be emitted by a **Service**'s `onEnter` **Action**, in which case it defines the variable for that
+  **Service**'s own subsequent **Action**s only.
 * `openjd_redacted_env: <var>=<value>` has identical behavior to openjd_env except `<value>` shall be redacted by the
   application running the action in the emitted stdout line and in any future lines. Requires the REDACTED_ENV_VARS
   extension, however supporting applications must honor the redaction even when the extension is not specified.
 * `openjd_unset_env: <var>` where `<var>` is the string name of an environment variable. This can only be emitted by the
-  **Action** for entering an **Environment**. This unsets the given environment variable for all subsequent **Action**s
-  in the **Session** until the **Environment** that emitted it is exited.
+  **Action** for entering an **Environment** (or, with the SERVICE extension, a **Service**'s `onEnter`). This unsets the
+  given environment variable for all subsequent **Action**s in the **Session** until the **Environment** that emitted it
+  is exited, or for the **Service**'s own subsequent **Action**s.
+* `openjd_service_ready: <message>` where `<message>` is any string. Requires the SERVICE extension. This is interpreted
+  only when emitted by the `onRun` **Action** of a **Service** whose health check type is `STDOUT`. Before the instance
+  is **READY** it indicates that the service is accepting traffic on all of its declared ports, and makes the instance
+  **READY**. After **READY** it is a heartbeat when the health check gives `healthIntervalSeconds`: the runtime arms a
+  deadline `healthIntervalSeconds` after the later of **READY** and the most recent line, a line before the deadline
+  re-arms it, a deadline that passes without a line is a failed probe that arms the next, and `failureThreshold`
+  consecutive failed probes make the instance **UNHEALTHY**. When no `healthIntervalSeconds` is given, further lines
+  have no additional effect. Emitting it from any
+  other **Action** is ignored. When `onRun` is wrapped by `onWrapServiceRun`, the line is recognized on the wrap
+  script's stdout, as for every `openjd_*` message under WRAP_ACTIONS.
+
+In a **Service Session**, `openjd_status`, `openjd_progress`, and `openjd_fail` are honored from the **Service**'s
+`onEnter`, `onRun`, and `onExit`, and not from `onHealthCheck`. `openjd_fail` supplies the reason reported when the
+**Action** fails; the exit status decides whether it failed, and the message accompanies the start failure, instance
+failure, or `onExit` failure (see [Service failure and restart](#service-failure-and-restart)) that the exit produces.
+The environment variables defined for every **Session** in [Session Environment
+Variables](#session-environment-variables), currently `OPENJD_SESSION_WORKING_DIR`, are set in every **Action** of a
+**Service Session** with their usual meanings.
 
 When the WRAP_ACTIONS extension is in use, schedulers must scan the stdout of the wrap script (`onWrapEnvEnter`,
-`onWrapTaskRun`, or `onWrapEnvExit`) for these macros, not the stdout of the wrapped process. Wrap scripts must
-forward the wrapped process's stdout and stderr verbatim — without buffering, filtering, or transformation —
-which causes macros emitted by the wrapped process to be recognized identically to macros emitted by the wrap
-script itself. A wrap script may also emit these macros directly. The `WrappedAction.Environment` template
-variable includes every `openjd_env`-defined variable emitted by any earlier **Action** in the same
-**Session**, regardless of whether that **Action** ran normally or via a wrap hook.
+`onWrapTaskRun`, `onWrapEnvExit`, and, with the `SERVICE` extension, the `onWrapService*` hooks) for these macros,
+not the stdout of the wrapped process. Wrap scripts must forward the wrapped process's stdout and stderr verbatim —
+without buffering, filtering, or transformation — which causes macros emitted by the wrapped process to be
+recognized identically to macros emitted by the wrap script itself. A wrap script may also emit these macros
+directly. The `WrappedAction.Environment` template variable includes every `openjd_env`-defined variable emitted by
+any earlier **Action** in the same **Session**, regardless of whether that **Action** ran normally or via a wrap
+hook.
 
 ## Path Mapping
 

@@ -8,6 +8,8 @@ of it. Jobs are created from Job Templates by providing a value for each of the 
 and instantiating the template with those values.
 2. The Environment Template describes an Environment that is defined outside a Job. This can be used in render management
 systems to allow users to define Environments that are automatically applied to Job Templates that are submitted for rendering.
+With the `SERVICE` extension, an Environment Template may also, or instead, describe Services that are applied in the
+same way.
 
 Reading the broad overviews in [How Jobs Are Constructed](How-Jobs-Are-Constructed) and [How Jobs Are Run](How-Jobs-Are-Run)
 might provide an easier introduction and broader context prior to reading the schema in entirety.
@@ -42,6 +44,8 @@ name: <JobName> # @fmtstring
 description: <Description> # @optional
 parameterDefinitions:  [ <JobParameterDefinition>, ... ] # @optional
 jobEnvironments: [ <Environment>, ... ] # @optional
+services: [ <Service>, ... ] # @optional @extension SERVICE
+externalServices: [ <ServiceRequirement>, ... ] # @optional @extension SERVICE
 steps: [<StepTemplate>, ...]
 ```
 
@@ -54,7 +58,8 @@ Where:
          [REDACTED_ENV_VARS](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0003-redacted-env-vars.md),
          [FEATURE_BUNDLE_1](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0004-enhanced-limits-and-capabilities.md),
          [EXPR](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0005-expression-language.md),
-         [WRAP_ACTIONS](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0008-environment-wrap-actions.md)
+         [WRAP_ACTIONS](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0008-environment-wrap-actions.md),
+         [SERVICE](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0009-service.md)
 4. *name* — The name to give to a Job that is created from the template. See: [&lt;JobName&gt;](#111-jobname).
 5. *description* — A description to apply to all Jobs that are created from the template. It has no functional purpose,
    but may appear in UI elements. See: [&lt;Description&gt;](#72-description).
@@ -71,7 +76,30 @@ Where:
       1. No two Environments in this list may have the same value for the `name` property.
       2. The Environments defined in this list must not have the same `name` as an Environment
          defined in any Step within the same Job Template.
-8. *steps* — A list of the Steps in the Job. See: [&lt;StepTemplate&gt;](#3-steptemplate).
+8. *services* — The Services that the Jobs created from this Job Template run, each started before any Task in its scope
+   is scheduled and stopped once its scope has no Task left to run (see
+   [How Jobs Are Run](How-Jobs-Are-Run#service-lifecycle)). A Service's scope follows from the template's `dependencies`
+   lists (see [Service scope](#91-service-scope)); the order of this list carries no meaning. Available only when using
+   the `SERVICE` extension. See: [&lt;Service&gt;](#9-service-extension-service). Constraints:
+      1. Minimum number of elements: If provided, then this list must contain at least one element.
+      2. Maximum number of elements: The list must not contain more than 10 elements.
+      3. No two Services in this list may have the same value for the `name` property.
+      4. The `dependencies` of the Job Template's Steps and Services form one graph, which must be acyclic (see
+         [&lt;StepDependency&gt;](#32-stepdependency)).
+      5. See *externalServices* constraint 4.
+      6. Every Service in this list has a non-empty scope (see [Service scope](#91-service-scope)).
+9. *externalServices* — The external Services (see
+   [Services from Environment Templates](#122-services-from-environment-templates)) whose endpoints this Job Template
+   reads directly, each with the ports it uses; the scheduler matches each at submission to exactly one Service of that
+   name among the attached Environment Templates' `services`. Available only when using the `SERVICE` extension. See:
+   [&lt;ServiceRequirement&gt;](#98-servicerequirement). Constraints:
+      1. Minimum number of elements: If provided, then this list must contain at least one element.
+      2. Maximum number of elements: The list must not contain more than 10 elements.
+      3. No two requirements in this list may have the same value for the `name` property.
+      4. No requirement in this list may have the same `name` as a Service in *services*: a Service is either declared
+         or required.
+      5. Permitted only in a Job Template.
+10. *steps* — A list of the Steps in the Job. See: [&lt;StepTemplate&gt;](#3-steptemplate).
 
 #### 1.1.1. `<JobName>`
 
@@ -91,12 +119,20 @@ A literal string matching the following character regex: `[A-Z_0-9]{3,128}`.
 
 ```yaml
 specificationVersion: environment-2023-09
+$schema: <string> # @optional
+extensions: [ <ExtensionName>, ... ] # @optional
 parameterDefinitions: [ <JobParameterDefinition>, ... ] # @optional
-environment: <Environment>
+environment: <Environment> # @optional
+services: [ <Service>, ... ] # @optional @extension SERVICE
 ```
 
 1. *specificationVersion* — A literal that identifies the document as adhering to this schema.
-2. *parameterDefinitions* — A list of the Job Parameters that are available within the Environment Template. Values
+2. *$schema* — Ignored. This property is allowed for compatibility with JSON-editing IDEs.
+3. *extensions* — If provided, is a non-empty list of extensions to the schema that this document uses. The available
+   extension names are the same as for the [Job Template](#11-job-template). An extension listed here applies to the
+   content of this document only; a Job Template does not need to list the extensions used by the Environment
+   Templates that a scheduler applies to it, and vice versa.
+4. *parameterDefinitions* — A list of the Job Parameters that are available within the Environment Template. Values
    for Job Parameters are defined when submitting a Job Template to create a Job to a render management system.
    Both the Job Template and Environment Template(s) for a submission are allowed to contain definitions for the same
    job parameter name, but the submission must be rejected if any of the definitions of the same job parameter name
@@ -106,8 +142,20 @@ environment: <Environment>
    See: [&lt;JobParameterDefinition&gt;](#2-jobparameterdefinition).
       * Minimum number of elements: If provided, then this list must contain at least one element.
       * Maximum number of elements: The list must not contain more than 50 elements.
-3. *environment* — The definition of the Environment that the Environment Template defines.
-   See [&lt;Environment&gt;](#4-environment).
+5. *environment* — The definition of the Environment that the Environment Template defines.
+   See [&lt;Environment&gt;](#4-environment). When *services* is also provided, the Environment may list those Services
+   in its `dependencies`, which makes their endpoints visible to it.
+6. *services* — The Services that the Environment Template defines. Available only when using the `SERVICE`
+   extension. See [&lt;Service&gt;](#9-service-extension-service) and
+   [Services from Environment Templates](#122-services-from-environment-templates). Constraints:
+      1. Minimum number of elements: If provided, then this list must contain at least one element.
+      2. Maximum number of elements: The list must not contain more than 10 elements.
+      3. No two Services in this list may have the same value for the `name` property.
+      4. The `dependencies` of the Services in this list form one graph, which must be acyclic.
+      5. Every entry of a Service's `dependencies` in this list uses the `service` key and names a Service in this
+         list, since the document has no Steps.
+
+Subject to the constraint that at least one of *environment* or *services* must be provided.
 
 #### 1.2.1. Merging Environment Template Parameter Definitions
 
@@ -129,6 +177,51 @@ or submission, and the Job Template is always processed last. The exception to t
 Job Parameter Definition; the default value for a job parameter is always the last `default` value defined in the template
 processing order. The merged job parameter definition that results from this process must be internally consistent to be considered
 valid -- for example, the value of the `default` property must adhere to the constraints in the definition.
+
+#### 1.2.2. Services from Environment Templates
+
+Available when using the `SERVICE` extension.
+
+An Environment Template that defines *services* defines Services that the scheduler applies to every Job Template
+submitted through it, just as its *environment* defines an Environment applied to every submission. From the Job
+Template's point of view these are **external Services**. Each Job that uses an external Service gets its own instance
+of it. An external Service's scope is computed over the combined Job by the same rules as an inline Service's (see
+[Service scope](#91-service-scope)): typically the Environment defined alongside it lists it, which puts every Step in
+its scope, or a Step of the Job Template lists it through `externalServices`. An attached Service that nothing in the
+combined Job lists has an empty scope and is never started; this is not an error.
+
+A `Service.*` reference resolves within its own document: in an Environment Template to the document's *services*, in a
+Job Template to its *services* or *externalServices* (see [Value References](#731-value-references)). No reference
+crosses a document boundary except through a requirement, so every `Service.*` reference in every template can be
+validated without knowledge of the scheduler's configuration. A Job Template that reads an external Service's endpoint
+declares a requirement for it in `externalServices` (see [&lt;ServiceRequirement&gt;](#98-servicerequirement)).
+
+When a submission combines a Job Template with one or more Environment Templates:
+
+1. Every attached Service is part of the combined Job, and the attached Environments are placed in `jobEnvironments`
+   as today (see [How Jobs Are Run](How-Jobs-Are-Run#services)). The limit of 10 applies to each document's list; the
+   scheduler bounds the total through how many Environment Templates it attaches.
+2. Each entry of `externalServices` must match exactly one Service with the same `name` among the attached Environment
+   Templates' *services*, and that Service must declare every port the requirement lists, with the same `protocol`. If
+   no attached Service has the name, if two or more do, if the matched Service lacks a listed port, or if a port's
+   protocol differs, the submission must be rejected, naming the requirement and the cause. Matching uses the
+   requirement alone; the scheduler reads nothing else from the Job Template.
+3. Service names are per document. A Job Template's `Service.*` references resolve to its own `services` and
+   `externalServices`, and an attached Service that happens to share a name with an inline Service is neither visible
+   to the Job Template nor a conflict; it runs if the Environment defined alongside it lists it, and reaches the Job's
+   Tasks through that Environment. Two attached Services with the same `name` are an error only when a requirement
+   names it. A scheduler must keep same-named Services from different documents distinct (for example, by qualifying
+   each with its document).
+4. A wrapping Environment (one defining the `WRAP_ACTIONS` hooks) in a document that does not declare `SERVICE`, whether
+   an attached Environment Template or the Job Template itself, has the default `runScope` of every kind of Session and
+   cannot define the `onWrapService*` hooks. Service Sessions enter the Job's `jobEnvironments` only, so if such an
+   Environment is in the combined Job's `jobEnvironments` and the combined Job has any Service, the submission must be
+   rejected, identifying the document that defines the Environment as the cause. The remedy is for that document to
+   declare `SERVICE` and either define the four hooks or declare a `runScope` that excludes `SERVICE`. A wrapping
+   Environment in a Step's `stepEnvironments` is never entered by a Service Session and is not subject to this check.
+
+Items 2 and 4 are the only checks that require the combined Job; everything else is checked when each document is
+validated on its own.
 
 ## 2. `<JobParameterDefinition>`
 
@@ -894,7 +987,8 @@ Where:
 3. *let* — An ordered list of expression bindings evaluated once per step. Bound names are available in
    *stepEnvironments*, *hostRequirements*, *parameterSpace*, and *script* fields. See: [&lt;LetBindings&gt;](#36-letbindings).
 4. *dependencies* — A list of the dependencies of this Step. These dependencies must be resolved before the Tasks of the
-   Step may be scheduled. See: [&lt;StepDependency&gt;](#32-stepdependency)
+   Step may be scheduled. Each names a Step of the same Job Template or, with the `SERVICE` extension, a Service that
+   must be READY. See: [&lt;StepDependency&gt;](#32-stepdependency)
     * Minimum number of elements: If provided, then this list must contain at least one element.
     * Maximum number of elements: There is no maximum defined, though implementations may choose to constrain the number of
     dependencies.
@@ -906,6 +1000,8 @@ Where:
         1. No two Environments in this list may have the same value for the `name` property.
         2. The Environments defined in this list must not have the same `name` as a Job Environment defined in the same
            Job Template.
+        3. With the `SERVICE` extension, see [&lt;Environment&gt;](#4-environment) item 3 constraint 4 and item 4
+           constraint 4.
     * Note: The scope of a Step Environment's `name` is the Step that defines it. Different Steps may each define a
       Step Environment with the same `name`; a Session only ever contains the Step Environments of a single Step, so
       these names never collide.
@@ -915,6 +1011,10 @@ Where:
    take on, and how those parameters' values are combined to produce the Tasks of the Step. Absent this property the Step
    is run a single time.
 8. *script* — The action that is taken by this Step's Tasks when they are run on a Worker host.
+
+With the `SERVICE` extension, a Step's *dependencies* may also name Services (see
+[&lt;StepDependency&gt;](#32-stepdependency)). A Step need not repeat a Step dependency that a Service it lists already
+carries.
 
 ### 3.1. `<StepName>`
 
@@ -927,29 +1027,52 @@ A string subject to the following constraints:
 
 ### 3.2. `<StepDependency>`
 
-This entity is used by the template author to specify a Step in the same Job that a Step depends upon.
+This entity is used by the template author to specify a Step in the same Job that a Step depends upon or, with the
+`SERVICE` extension, a Service that a Step, a Service, or a Job Environment depends upon. It appears in the
+*dependencies* of a [&lt;StepTemplate&gt;](#3-steptemplate), of a [&lt;Service&gt;](#9-service-extension-service), and
+of a Job [&lt;Environment&gt;](#4-environment).
 
-A `<StepDependency>` is the object:
+A `<StepDependency>` is one of the objects:
 
 ```yaml
+# <StepDependency> is one of:
 dependsOn: "<StepName>"
+# or, with the SERVICE extension:
+service: "<ServiceName>" # @extension SERVICE
 ```
 
 Where:
 
-1. *dependsOn* — Provides the name of another step in the same job upon which this step depends. The Task(s) of this Step
-   may be scheduled only when the depended-upon Step has fully completed successfully.
+1. *dependsOn* — Provides the name of another step in the same job upon which this step depends. The Task(s) of this
+   Step may be scheduled only when the depended-upon Step has fully completed successfully.
+2. *service* — The name of a Service of the same document's `services` or, in a Job Template, of its `externalServices`.
+   The dependency is satisfied when the Service is READY (see [How Jobs Are Run](How-Jobs-Are-Run#service-lifecycle)).
+   Listing a Service puts the listing entity in the Service's scope (see [Service scope](#91-service-scope)) and makes
+   the Service's values visible to it (see [Value References](#731-value-references)).
+
+Constraints (with the `SERVICE` extension):
+
+1. *dependsOn* must name a Step of the same Job Template, and *service* a Service of the same document's `services` or,
+   in a Job Template, of its `externalServices`; neither may name the entity listing it.
+2. No two entries of one *dependencies* list may name the same Step or the same Service.
+3. The *dependencies* lists of a Job Template's Steps, Services, and Job Environments form one graph whose nodes are
+   the Steps and Services and whose edges run from each entity to each entry in its list (Step to Step, Step to
+   Service, Service to Step, and Service to Service), plus an edge from every Step to each Service a Job Environment
+   lists (see [Service scope](#91-service-scope) rule 3). That graph must be acyclic; a template with a cycle is
+   rejected at template validation, naming the cycle.
+4. Exactly one of the two keys must be present; an entry that gives both, or neither, is a validation error.
 
 ### 3.3. `<HostRequirements>`
 
 This entity is used by the template author to describe the requirements on Worker host and/or render manager's available
-capabilities that must be satisfied for the Task(s) of the Step to be scheduled to the host.
+capabilities that must be satisfied for the Task(s) of the Step, or the Service (with the `SERVICE` extension), to be
+scheduled to the host.
 
-Each requirement corresponds to an attribute of a host or render manager that must be satisfied to allow the Step to
-be scheduled to the host. Some examples of concrete attributes include processor architecture (x86_64, arm64, etc), the
-number of CPU cores, the amount of system memory, or available floating licenses for an application. We also allow for
-user-defined whose meaning is defined by the customer; a "SoftwareConfig" requirement whose values could be "Option1" or "Option2",
-for example.
+Each requirement corresponds to an attribute of a host or render manager that must be satisfied to allow the Step or
+Service to be scheduled to the host. Some examples of concrete attributes include processor architecture (x86_64, arm64,
+etc), the number of CPU cores, the amount of system memory, or available floating licenses for an application. We also
+allow for user-defined whose meaning is defined by the customer; a "SoftwareConfig" requirement whose values could be
+"Option1" or "Option2", for example.
 
 There are two types of requirements: attribute and amount.
 
@@ -963,14 +1086,15 @@ attributes: [ <AttributeRequirement>, ... ] # @optional
 Where:
 
 1. *amounts* — Defines a set of quantifiable requirements on the host that must be met and reserved for a Session running
-   Tasks from this Step to be scheduled to the host. See: [&lt;AmountRequirement&gt;](#331-amountrequirement).
-2. *attributes* — Defines a set of attributes that a host must have for a Session running Tasks from this Step to be
-   scheduled to the host. See: [&lt;AttributeRequirement&gt;](#332-attributerequirement).
+   Tasks from this Step, or the Service Session of this Service, to be scheduled to the host.
+   See: [&lt;AmountRequirement&gt;](#331-amountrequirement).
+2. *attributes* — Defines a set of attributes that a host must have for a Session running Tasks from this Step, or the
+   Service Session of this Service, to be scheduled to the host.
+   See: [&lt;AttributeRequirement&gt;](#332-attributerequirement).
 
 With the constraints:
 
-1. If this object is provided in a Job Template, then at least one of the *amounts* or *attributes* properties must be
-   defined.
+1. If this object is provided, then at least one of the *amounts* or *attributes* properties must be defined.
 2. The sum of the lengths of the *amounts* and *attributes* arrays must not exceed 50 elements.
 3. No two elements in the *amounts* array may have the same value for the *name* property, after the *name* format
    strings have been resolved.
@@ -1089,6 +1213,7 @@ allow users to define their own custom capabilities.
 |---|---|---|
 |attr.worker.os.family|linux, windows, macos|The family of operating system on the host.|
 |attr.worker.cpu.arch |x86_64, arm64|The architecture of the CPUs on the host.|
+|attr.worker.preemptible|true, false|Whether the host's capacity may be reclaimed by the infrastructure provider while work is running on it (for example, EC2 Spot Instances). A host that does not advertise this attribute has an unknown value; a requirement of `anyOf: ["false"]` does not match such a host. Introduced in [RFC 0009](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0009-service.md).|
 
 ##### 3.3.2.2. `<AttributeCapabilityValue>`
 
@@ -1499,9 +1624,11 @@ and where the bound names are available:
 | Location | Can Reference | Bound Names Available In |
 |----------|---------------|--------------------------|
 | `<StepTemplate>.let` | `Param.*`, `RawParam.*`, `Job.Name`, `Step.Name`, earlier bindings in same `let` | *stepEnvironments*, *hostRequirements*, *parameterSpace*, *script* (including nested `<StepScript>.let` or `<SimpleAction>.let`) |
-| `<StepScript>.let` | `Param.*`, `RawParam.*`, `Task.Param.*`, `Task.RawParam.*`, `Session.*`, `Task.File.*`, `Job.Name`, `Step.Name`, step-level bindings, earlier bindings in same `let` | *actions*, *embeddedFiles* |
-| `<SimpleAction>.let` | `Param.*`, `RawParam.*`, `Task.Param.*`, `Task.RawParam.*`, `Session.*`, `Job.Name`, `Step.Name`, step-level bindings, earlier bindings in same `let` | *script*, *args* |
-| `<EnvironmentScript>.let` | `Param.*`, `RawParam.*`, `Session.*`, `Env.File.*`, `Job.Name`, earlier bindings in same `let` | *actions*, *embeddedFiles* |
+| `<StepScript>.let` | `Param.*`, `RawParam.*`, `Task.Param.*`, `Task.RawParam.*`, `Session.*`, `Task.File.*`, `Job.Name`, `Step.Name`, step-level bindings, earlier bindings in same `let`, in-scope `Service.<name>.<port>.*` (`SERVICE` extension) | *actions*, *embeddedFiles* |
+| `<SimpleAction>.let` | `Param.*`, `RawParam.*`, `Task.Param.*`, `Task.RawParam.*`, `Session.*`, `Job.Name`, `Step.Name`, step-level bindings, earlier bindings in same `let`, in-scope `Service.<name>.<port>.*` (`SERVICE` extension) | *script*, *args* |
+| `<EnvironmentScript>.let` | `Param.*`, `RawParam.*`, `Session.*`, `Env.File.*`, `Job.Name`, earlier bindings in same `let`, in-scope `Service.<name>.<port>.*` when the Environment's `runScope` excludes `SERVICE` (`SERVICE` extension) | *actions*, *embeddedFiles* |
+| `<Service>.let` (`SERVICE` extension) | `Param.*`, `RawParam.*`, `Job.Name`, earlier bindings in same `let` | *hostRequirements*, *variables*, *script* (including nested `<ServiceScript>.let`) |
+| `<ServiceScript>.let` (`SERVICE` extension) | `Param.*`, `RawParam.*`, `Session.*`, `Service.File.*`, in-scope `Service.<name>.<port>.*`, `Job.Name`, service-level bindings, earlier bindings in same `let` | *actions*, *embeddedFiles* |
 
 Note: `Task.Param.*` and `Task.RawParam.*` are only available in `<StepScript>` and `<SimpleAction>` contexts because task parameter
 values are not known until task execution time.
@@ -1527,6 +1654,8 @@ An `<Environment>` is the object:
 ```yaml
 name: <EnvironmentName>
 description: <Description> # @optional
+dependencies: [ <StepDependency>, ... ] # @optional @extension SERVICE
+runScope: [ <RunScopeName>, ... ] # @optional @extension SERVICE
 script: <EnvironmentScript> # @optional
 variables: <EnvironmentVariables> # @optional
 ```
@@ -1537,12 +1666,34 @@ Where:
    Template for a Job Environment, and the Step Template for a Step Environment.
 2. *description* — A description to apply to the environment. It has no functional purpose, but may appear in UI elements.
    See: [&lt;Description&gt;](#72-description).
-3. *script* — The action that is taken by this Environment when it is run on a Worker host.
-4. *variables* — A set of environment variable name/value pairs, with the values being
+3. *dependencies* — The Services this Environment depends on, each a [&lt;StepDependency&gt;](#32-stepdependency) with
+   the `service` key. Available only when using the `SERVICE` extension. Listing a Service puts every Step in its
+   scope ([Service scope](#91-service-scope) rule 3). An Environment that lists a Service defaults to
+   `runScope: [TASK]`. Constraints:
+      1. Minimum number of elements: If provided, then this list must contain at least one element.
+      2. Every entry must use the `service` key and name a Service of the same document's `services` or, in a Job
+         Template, of its `externalServices`.
+      3. No two entries may name the same Service.
+      4. Not permitted on a `stepEnvironments` entry, which follows its Step's *dependencies*.
+      5. See *runScope* constraint 2.
+4. *runScope* — The kinds of Session this Environment is entered in. Available only when using the `SERVICE` extension.
+   Every Session has exactly one kind, and an Environment is entered in a Session if and only if that Session's kind is
+   in the Environment's *runScope*. `<RunScopeName>` is one of `TASK` (Sessions that run Tasks, the only kind that
+   exists without `SERVICE`) or `SERVICE` (Service Sessions, in which a Service's actions run; see
+   [&lt;Service&gt;](#9-service-extension-service)). If not provided, an Environment that lists any Service in its
+   *dependencies* is entered in Task Sessions only, as if `runScope: [TASK]` were given, and any other Environment is
+   entered in every kind of Session. An explicit list is exhaustive. Constraints:
+      1. Minimum number of elements: 1. No name may appear more than once.
+      2. An Environment whose *runScope* includes `SERVICE` must not list or reference any Service, since a Service
+         Session may begin before any Service other than its own has an endpoint.
+      3. Implementations must reject a `<RunScopeName>` they do not recognize.
+      4. Not permitted on a `stepEnvironments` entry, which is entered only by its Step's Task Sessions.
+5. *script* — The action that is taken by this Environment when it is run on a Worker host.
+6. *variables* — A set of environment variable name/value pairs, with the values being
    [Format Strings](#73-format-strings) that are resolved when entering the environment. The specified variables must be
    set prior to running either `onEnter` or `onExit` for the environment, and for all actions that are run with the
    environment active.
-5. At least one of "script" or "variables" must be provided.
+7. At least one of "script" or "variables" must be provided.
 
 The format string scopes available to format strings within an Environment are:
 
@@ -1551,17 +1702,25 @@ The format string scopes available to format strings within an Environment are:
 3. `Env.*` — Scope of the environment entity itself. Values such as the embedded files defined within the Environment
    entity.
 4. Names bound by `let` in the enclosing `<EnvironmentScript>`. Available with the `EXPR` extension.
-5. `WrappedAction.*` — Available within `onWrapEnvEnter`, `onWrapTaskRun`, and `onWrapEnvExit` only. Carries
-   the wrapped `<Action>`'s fields. Available with the `WRAP_ACTIONS` extension.
+5. `Service.<name>.<port>.port` and `Service.<name>.<port>.connectAddress` — Available for a Service that the
+   Environment lists in its *dependencies* (a Job Environment or an Environment Template's Environment) or, for a Step
+   Environment, that its Step lists in *dependencies*; see [Section 9](#9-service-extension-service) and
+   [Service scope](#91-service-scope). Available with the `SERVICE` extension.
+6. `WrappedAction.*` — Available within the wrap hooks only (`onWrapEnvEnter`, `onWrapTaskRun`, `onWrapEnvExit`, and,
+   with the `SERVICE` extension, `onWrapServiceEnter`, `onWrapServiceRun`, `onWrapServiceHealthCheck`, and
+   `onWrapServiceExit`). Carries the wrapped `<Action>`'s fields. Available with the `WRAP_ACTIONS` extension.
    See [Wrap hook template variables](#431-wrap-hook-template-variables) for the available fields.
-6. `WrappedEnv.Name` — Available within `onWrapEnvEnter` and `onWrapEnvExit` only. The name of the inner
+7. `WrappedEnv.Name` — Available within `onWrapEnvEnter` and `onWrapEnvExit` only. The name of the inner
    environment whose action is being wrapped. Available with the `WRAP_ACTIONS` extension.
-7. `WrappedStep.Name` — Available within `onWrapTaskRun` only. The name of the step whose task is being
+8. `WrappedStep.Name` — Available within `onWrapTaskRun` only. The name of the step whose task is being
    wrapped. Available with the `WRAP_ACTIONS` extension.
+9. `WrappedService.*` — Available within the four `onWrapService*` hooks only. The name of the Service whose action is
+   being wrapped and its port names, port numbers, bind addresses, and protocols. Available with the `WRAP_ACTIONS` and
+   `SERVICE` extensions. See [Wrap hook template variables](#431-wrap-hook-template-variables).
 
-Templates must not reference `WrappedAction.*` outside the three wrap hooks, `WrappedEnv.*` outside
-`onWrapEnvEnter` and `onWrapEnvExit`, or `WrappedStep.*` outside `onWrapTaskRun`. Schedulers must reject
-templates that violate this scope rule.
+Templates must not reference `WrappedAction.*` outside the wrap hooks, `WrappedEnv.*` outside `onWrapEnvEnter` and
+`onWrapEnvExit`, `WrappedStep.*` outside `onWrapTaskRun`, or `WrappedService.*` outside the `onWrapService*` hooks.
+Schedulers must reject templates that violate this scope rule.
 
 Implementations of this specfication must watch STDOUT when running the `onEnter` action for any line matching:
 
@@ -1613,6 +1772,10 @@ onEnter: <Action> # @optional
 onWrapEnvEnter: <Action>    # @optional @extension WRAP_ACTIONS
 onWrapTaskRun: <Action>     # @optional @extension WRAP_ACTIONS
 onWrapEnvExit: <Action>     # @optional @extension WRAP_ACTIONS
+onWrapServiceEnter: <Action>       # @optional @extension WRAP_ACTIONS SERVICE
+onWrapServiceRun: <Action>         # @optional @extension WRAP_ACTIONS SERVICE
+onWrapServiceHealthCheck: <Action> # @optional @extension WRAP_ACTIONS SERVICE
+onWrapServiceExit: <Action>        # @optional @extension WRAP_ACTIONS SERVICE
 onExit: <Action> # @optional
 ```
 
@@ -1624,7 +1787,13 @@ onExit: <Action> # @optional
    while this environment is active. Available only when using the `WRAP_ACTIONS` extension.
 4. *onWrapEnvExit* — When provided, runs instead of the `onExit` action of every *inner* environment that
    exits while this environment is active. Available only when using the `WRAP_ACTIONS` extension.
-5. *onExit* — The action run when the environment is being exited on a host.
+5. *onWrapServiceEnter*, *onWrapServiceRun*, *onWrapServiceHealthCheck*, *onWrapServiceExit* — When this
+   environment is the wrapping environment of a Service Session, these run instead of the Service's `onEnter`,
+   `onRun`, `onHealthCheck`, and `onExit` respectively, exactly as `onWrapTaskRun` runs instead of a task's `onRun`.
+   Available only when using both the `WRAP_ACTIONS` and `SERVICE` extensions. See
+   [Wrap hook template variables](#431-wrap-hook-template-variables) and
+   [&lt;ServiceActions&gt;](#97-serviceactions).
+6. *onExit* — The action run when the environment is being exited on a host.
 
    > **NOTE:** When *onExit* action does not define a *timeout* the action will default to 300
    seconds, or five minutes. Job schedulers may provide the ability to cancel jobs/steps/tasks. A
@@ -1651,11 +1820,24 @@ Subject to the constraint that at least one of *onEnter* or *onExit* must be pro
 >    `variables:`-only environment) — there is nothing to replace, and the corresponding wrap
 >    hook must not run for that environment. Every `<StepScript>` defines `onRun`, so
 >    `onWrapTaskRun` runs for every task.
+> 6. *Service hooks* (`SERVICE` extension). When `SERVICE` is declared, the hooks a wrapping environment
+>    (one that defines any wrap hook) must define follow from its `runScope`, and rule 1 above is replaced
+>    by this rule. Inner environments are entered in every kind of session, so every wrapping environment
+>    must define `onWrapEnvEnter` and `onWrapEnvExit`. It must define `onWrapTaskRun` if and only if its
+>    `runScope` includes `TASK`, and must define all four `onWrapService*` hooks if and only if its
+>    `runScope` includes `SERVICE`. A wrapping environment in a Step's `stepEnvironments`, which has no `runScope`,
+>    therefore defines exactly the three hooks of rule 1. Schedulers must reject templates that define a hook the
+>    `runScope` does not call for, or omit one it does. A wrapped Service `onEnter`'s `openjd_env` messages
+>    and a wrapped `onRun`'s `openjd_service_ready` line are recognized on the wrap script's stdout, as for every
+>    `openjd_*` message under `WRAP_ACTIONS`. A failed `onWrapService*` hook has the effect the wrapped action's
+>    failure would have, an `onWrapServiceHealthCheck` invocation's exit status being one probe result (see
+>    [&lt;ServiceHealthCheck&gt;](#94-servicehealthcheck)). For a wrapping environment in a document that does not
+>    declare `SERVICE`, see [Services from Environment Templates](#122-services-from-environment-templates) item 4.
 
 #### 4.3.1. Wrap hook template variables
 
 Each wrap hook receives the wrapped `<Action>`'s fields as read-only template variables supplied by the
-runtime. The variables have identical names and semantics across all three hooks, so helper scripts can
+runtime. The variables have identical names and semantics across all hooks, so helper scripts can
 be reused unchanged.
 
 **Available in `onWrapEnvEnter`, `onWrapTaskRun`, and `onWrapEnvExit`:**
@@ -1680,6 +1862,26 @@ be reused unchanged.
 | Variable           | Type     | Description |
 |--------------------|----------|-------------|
 | `WrappedStep.Name` | `string` | The `name` of the step whose task is being wrapped. |
+
+**Additionally available in the four `onWrapService*` hooks** (`SERVICE` extension):
+
+| Variable                       | Type           | Description |
+|--------------------------------|----------------|-------------|
+| `WrappedService.Name`          | `string`       | The `name` of the Service whose action is being wrapped. |
+| `WrappedService.PortNames`     | `list[string]` | The `name` of each of the Service's ports, in declaration order. |
+| `WrappedService.Ports`         | `list[int]`    | The allocated port number of each port, in the same order. |
+| `WrappedService.BindAddresses` | `list[string]` | The `bindAddress` of each port, in the same order. |
+| `WrappedService.Protocols`     | `list[string]` | The `protocol` of each port (`TCP` or `UDP`), in the same order. |
+
+The four lists are parallel: index *i* of each describes the Service's *i*-th declared port. `bindAddress` and
+`connectAddress` are determined for the service host's network namespace. A wrap script that runs the service process in
+that namespace (a launcher, `ssh`, or a container with host networking) needs no port handling. One that gives the
+process its own network namespace must forward each port in `WrappedService.Ports` with the protocol in
+`WrappedService.Protocols`, so that a connection to `connectAddress`:`port` from any host in the scope reaches the
+process, and must ensure the process can bind `bindAddress` inside that namespace. A wildcard `bindAddress` (`0.0.0.0`,
+`::`) works in either case; a loopback `bindAddress` reaches a forwarded port only with host networking. For example, a
+Docker wrapper without host networking passes
+`{{ flatten([['-p', string(WrappedService.Ports[i]) + ':' + string(WrappedService.Ports[i]) + '/' + lower(WrappedService.Protocols[i])] for i in range(len(WrappedService.Ports))]) }}`.
 
 `WrappedAction.Environment` carries only session-defined variables: variables exported with `openjd_env` —
 including by earlier actions that themselves ran via a wrap hook — and entries of entered environments'
@@ -1763,6 +1965,10 @@ positive integer value in base-10, and:
    | `<EnvironmentActions>` | `onWrapTaskRun` <sup>2</sup> | *no timeout* |
    | `<EnvironmentActions>` | `onWrapEnvExit` <sup>2</sup> | 300 seconds (five minutes) <sup>1</sup> |
    | `<EnvironmentActions>` | `onExit` | 300 seconds (five minutes) <sup>1</sup> |
+   | `<ServiceActions>` | `onEnter` <sup>3</sup> | *no timeout* |
+   | `<ServiceActions>` | `onRun` <sup>3</sup> | *no timeout* |
+   | `<ServiceActions>` | `onHealthCheck` <sup>3</sup> | 30 seconds |
+   | `<ServiceActions>` | `onExit` <sup>3</sup> | 300 seconds (five minutes) <sup>1</sup> |
 
    <sup>1</sup> Environment exit actions are treated specially. Job schedulers may provide the
    ability to cancel jobs, steps, and tasks. A reasonable default expectation should be that
@@ -1775,6 +1981,10 @@ positive integer value in base-10, and:
    timeout to the underlying execution runtime where the runtime exposes a timeout mechanism, and
    should enforce it in-script when the runtime exposes none. Wrap scripts must treat `null` as
    "no timeout" and omit the underlying runtime's timeout flag in that case.
+
+   <sup>3</sup> Available with the `SERVICE` extension. A `timeout` on a Service's `onRun` action is
+   measured from launch; its expiry is an instance failure of the Service (see
+   [&lt;ServiceActions&gt;](#97-serviceactions)).
 
 4. *cancelation* — If defined, provides details regarding how this action should be canceled. If not provided, then it is
    treated as though provided with `<CancelationMethodTerminate>`.
@@ -1955,8 +2165,9 @@ host operating system. Default is `AUTO`. Requires the `FEATURE_BUNDLE_1` extens
 
 The fully-qualified path of the file written by the host can be referenced in format strings using the following names:
 
-1. `Task.File.<name>` - If the embedded file is part of a `<StepScript>` object; or
-2. `Env.File.<name>`- If the embedded file is part of an `<Environment>` object.
+1. `Task.File.<name>` - If the embedded file is part of a `<StepScript>` object;
+2. `Env.File.<name>`- If the embedded file is part of an `<Environment>` object; or
+3. `Service.File.<name>` - If the embedded file is part of a `<Service>` object (`SERVICE` extension).
 
 #### 6.1.1. `<Filename>`
 
@@ -2033,17 +2244,21 @@ specification for the extended grammar, type system, and evaluation semantics.
 
 |**Value**|**Description**|**Scope**|
 |---|---|---|
-|`Param.<ParamName>`|Values of the Job parameters are available within the `Param` object. This is the same as `RawParam.<ParamName>` for all parameter types except PATH. For PATH type the value is the input value with applicable path mapping rules applied to it. |All types except PATH are available in every Format String in the Job Template. For PATH type parameters, this is only available within format strings that are within an Environment or StepScript context.|
+|`Param.<ParamName>`|Values of the Job parameters are available within the `Param` object. This is the same as `RawParam.<ParamName>` for all parameter types except PATH. For PATH type the value is the input value with applicable path mapping rules applied to it. |All types except PATH are available in every Format String in the Job Template. For PATH type parameters, this is only available within format strings that are within an Environment, StepScript, or (with the `SERVICE` extension) Service *variables* or ServiceScript context.|
 |`RawParam.<ParamName>`|Values of the Job parameters are available within the `RawParam` object. This is always the exact input value of the job parameter.|Available in every Format String in the Job Template.|
 |`Task.Param.<ParamName>`|Values of task parameters are available within the `Task.Param` object. This is the same as `Task.RawParam.<ParamName>` for all parameter types except PATH. For PATH type the value is the input value with applicable path mapping rules applied to it.|Available within the Step Script Actions and Embedded Files.|
 |`Task.RawParam.<ParamName>`|Values of task parameters are available within the `Task.Param` object.|Available within the Step Script Actions and Embedded Files.|
 |`Task.File.<name>`|The filesystem location to which the Task Embedded File with key `<name>` has been written.| Available within the Step Script Actions and Embedded Files.|
 |`Env.File.<name>`|The filesystem location to which the Environment Attachment with key `<name>` has been written.|Available within the Environment Script Actions and Embedded Files.|
-|`Session.WorkingDirectory`|The agent is expected to create a local temporary scratch directory for the duration of a Session. This builtin provides the location of that temporary directory. This is the working directory that the Worker Agent uses when running the task.|This is available within all Environment Script Actions & Embedded Files, and all Step Script Actions and Embedded Files.|
+|`Service.File.<name>`|The filesystem location to which the Service Embedded File with key `<name>` has been written. Requires the `SERVICE` extension.|Available within the Service Script Actions and Embedded Files of the declaring Service.|
+|`Service.<name>.<port>.port`|The port number allocated (or requested) for port `<port>` of Service `<name>`, in the space of that port's `protocol`. This is an `int` type. Requires the `SERVICE` extension.|Available within the declaring Service, and within every Service, Step (its Script and its Step Environments), and Job Environment whose `dependencies` list `service: <name>`; a Job Environment that lists an inline Service puts every Step in its scope. A Service a Job Template requires follows the same rule, minus the declaring Service. See [&lt;Service&gt;](#9-service-extension-service) for the scoping rules.|
+|`Service.<name>.<port>.bindAddress`|The interface address that the service process must bind to so that entities in the Service's scope can reach it: a hostname, an IPv4 literal, or an unbracketed IPv6 literal. This is a `string` type. Requires the `SERVICE` extension.|Available within the declaring Service only; never for a required external Service.|
+|`Service.<name>.<port>.connectAddress`|The hostname or IP address that entities in the Service's scope use to reach port `<port>` of Service `<name>`: a hostname, an IPv4 literal, or an unbracketed IPv6 literal. Join it with a port using `join_host_port` (see [Expression Language](2026-02-Expression-Language#224-string-functions)), which adds the brackets an IPv6 literal needs in a URL. This is a `string` type. Requires the `SERVICE` extension.|As `Service.<name>.<port>.port`.|
+|`Session.WorkingDirectory`|The agent is expected to create a local temporary scratch directory for the duration of a Session. This builtin provides the location of that temporary directory. This is the working directory that the Worker Agent uses when running the task.|This is available within all Environment Script Actions & Embedded Files, all Step Script Actions and Embedded Files, and, with the `SERVICE` extension, all Service Script Actions and Embedded Files.|
 |`Job.Name`|The resolved name of the Job. This is a `string` type. Requires the `EXPR` extension.|Available in every Format String in the Job Template, except the `name` field of the Job Template itself.|
 |`Step.Name`|The name of the current Step. This is a `string` type. Requires the `EXPR` extension.|Available within the Step Template scope: `stepEnvironments`, `hostRequirements`, `parameterSpace`, and `script`.|
-|`Session.HasPathMappingRules`|This value can be used to determine whether path mapping rules are available to the Session. Without the `EXPR` extension, it is string valued, with values "true" or "false". With the `EXPR` extension enabled, it is a `bool` type. "true"/`True` means that the path mapping JSON contains path mapping rules. "false"/`False` means that the contents of the path mapping JSON are the empty object.|This is available within all Environment Script Actions & Embedded Files, and all Step Script Actions and Embedded Files.|
-|`Session.PathMappingRulesFile`|This is a string whose value is the location of a JSON file on the worker node's local disk that contains the path mapping rule substitutions for the Session.|This is available within all Environment Script Actions & Embedded Files, and all Step Script Actions and Embedded Files.|
+|`Session.HasPathMappingRules`|This value can be used to determine whether path mapping rules are available to the Session. Without the `EXPR` extension, it is string valued, with values "true" or "false". With the `EXPR` extension enabled, it is a `bool` type. "true"/`True` means that the path mapping JSON contains path mapping rules. "false"/`False` means that the contents of the path mapping JSON are the empty object.|This is available within all Environment Script Actions & Embedded Files, all Step Script Actions and Embedded Files, and, with the `SERVICE` extension, all Service Script Actions and Embedded Files.|
+|`Session.PathMappingRulesFile`|This is a string whose value is the location of a JSON file on the worker node's local disk that contains the path mapping rule substitutions for the Session.|This is available within all Environment Script Actions & Embedded Files, all Step Script Actions and Embedded Files, and, with the `SERVICE` extension, all Service Script Actions and Embedded Files.|
 |`<name>` (let binding)|Names bound by `let` in `<StepTemplate>`, `<StepScript>`, `<SimpleAction>`, or `<EnvironmentScript>`. Names must start with a lowercase letter or underscore (see `<UserIdentifier>`). The type is determined by the expression. Available with the `EXPR` extension.|See [Let Binding Scope Summary](#362-let-binding-scope-summary) for detailed scoping rules.|
 
 ### 7.4. Template Processing Stages
@@ -2053,9 +2268,14 @@ different sets of values are known, which determines which format strings can be
 
 | Stage | When | Known Values | Unknown Values | What Happens |
 |-------|------|-------------|----------------|--------------|
-| **Template validation** | `openjd check` or equivalent | Literal values, parameter type declarations | `Param.*`, `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*` | Syntax validation, structural checks. With the `EXPR` extension: type checking of expressions using declared parameter types. `Job.Name` and `Step.Name` are available as `unresolved[string]`. |
-| **Job creation** | Job submission with parameter values | `Param.*`, `RawParam.*` | `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*` | Parameter values are bound. Format strings not annotated `@fmtstring[host]` are resolved (e.g., `name`, `parameterSpace` ranges). PATH and `LIST[PATH]` parameter defaults must be relative and are joined with the job template directory (see [§2.2](#22-jobpathparameterdefinition)); relative PATH and `LIST[PATH]` parameter values are joined with the current working directory. With the `EXPR` extension: `let` bindings in `<StepTemplate>` are evaluated; expressions in TEMPLATE scope are fully evaluated; `Job.Name` and `Step.Name` are concrete. |
-| **Task execution** | On the worker host | All values: `Param.*`, `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*`, path mapping rules | *(none)* | Format strings annotated `@fmtstring[host]` are resolved. Path mapping rules are applied to PATH-type parameters. Embedded files are written. With the `EXPR` extension: `let` bindings in `<StepScript>` and `<EnvironmentScript>` are evaluated; all remaining expressions are fully evaluated. |
+| **Template validation** | `openjd check` or equivalent | Literal values, parameter type declarations | `Param.*`, `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*`, `Service.*` | Syntax validation, structural checks. With the `EXPR` extension: type checking of expressions using declared parameter types. `Job.Name` and `Step.Name` are available as `unresolved[string]`. |
+| **Job creation** | Job submission with parameter values | `Param.*`, `RawParam.*` | `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*`, `Service.*` | Parameter values are bound. Format strings not annotated `@fmtstring[host]` are resolved (e.g., `name`, `parameterSpace` ranges). PATH and `LIST[PATH]` parameter defaults must be relative and are joined with the job template directory (see [§2.2](#22-jobpathparameterdefinition)); relative PATH and `LIST[PATH]` parameter values are joined with the current working directory. With the `EXPR` extension: `let` bindings in `<StepTemplate>` and `<Service>` are evaluated; expressions in TEMPLATE scope are fully evaluated; `Job.Name` and `Step.Name` are concrete. |
+| **Task execution** | On the worker host | All values: `Param.*`, `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*`, `Service.*`, path mapping rules | *(none)* | Format strings annotated `@fmtstring[host]` are resolved. Path mapping rules are applied to PATH-type parameters. Embedded files are written. With the `EXPR` extension: `let` bindings in `<StepScript>`, `<EnvironmentScript>`, and `<ServiceScript>` are evaluated; all remaining expressions are fully evaluated. |
+
+With the `SERVICE` extension, a Service's own actions are resolved at an analogous **Service execution** stage on the
+service host: all `Param.*`, `Session.*`, `Service.File.*`, and in-scope `Service.<name>.<port>.*` values are known.
+`Service.<name>.<port>.*` values are annotated `@fmtstring[host]`: they are resolved when the scheduler places the
+Service, and may change if the Service is relocated. See [&lt;Service&gt;](#9-service-extension-service).
 
 The `@fmtstring` and `@fmtstring[host]` annotations in this specification indicate which stage
 a format string is resolved in. A format string annotated `@fmtstring` (without `[host]`) is
@@ -2283,25 +2503,494 @@ The host uses the return code of the interpreter run to determine success or
 failure of the SimpleAction. A zero exit code indicates success, and any
 non-zero exit code indicates failure. A timeout also indicates failure.
 
-## 9. Additional Information
+## 9. `<Service>` `@extension SERVICE`
+
+This object is only available in the extension `SERVICE`, introduced in
+[RFC 0009](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0009-service.md). A template
+that lists `SERVICE` in `extensions:` must also list `EXPR`; schedulers must reject templates that list `SERVICE`
+without `EXPR`.
+
+A Service is a long-lived process that a scheduler starts before scheduling the Tasks in its scope, keeps running for
+the lifetime of its scope (see [Service scope](#91-service-scope)), and stops once the scope no longer needs it. A
+Service publishes one or more named ports that the runtime allocates on the Service's host, and every entity that
+depends on the Service can discover the resulting endpoint via the `Service.*` format-string scope. Unlike an
+Environment, a Service may be placed on a different Worker Host than the Tasks that use it, in a Session of its own (see
+[How Jobs Are Run](How-Jobs-Are-Run#services) for the lifecycle, readiness and health, and failure semantics).
+
+A `<Service>` is the object:
+
+```yaml
+name: <ServiceName>
+description: <Description> # @optional
+let: <LetBindings> # @optional @extension EXPR
+dependencies: [ <StepDependency>, ... ] # @optional
+hostRequirements: <HostRequirements> # @optional
+ports: [ <ServicePort>, ... ]
+healthCheck: <ServiceHealthCheck> # @optional
+restartPolicy: <ServiceRestartPolicy> # @optional
+variables: <EnvironmentVariables> # @optional
+script: <ServiceScript>
+```
+
+Where:
+
+1. *name* — The Service's identifier, the first component of `Service.*` references to it. See:
+   [&lt;ServiceName&gt;](#92-servicename).
+2. *description* — A description to apply to the Service. It has no functional purpose, but may appear in UI elements.
+   See: [&lt;Description&gt;](#72-description).
+3. *let* — An ordered list of expression bindings evaluated once, at job creation, like a `<StepTemplate>`'s *let*.
+   Bindings may reference `Param.*`, `RawParam.*`, and `Job.Name`, but not `Session.*` or `Service.*`, which are not
+   known until the Service is placed. Bound names are available in *hostRequirements*, *variables*, and *script*, as a
+   Step's bindings are in its *stepEnvironments*. See: [&lt;LetBindings&gt;](#36-letbindings).
+4. *dependencies* — The Steps and Services this Service depends on, each a [&lt;StepDependency&gt;](#32-stepdependency).
+   The Service is started only once every entry is satisfied and is stopped before any Service it lists (see
+   [How Jobs Are Run](How-Jobs-Are-Run#service-lifecycle)). A Step dependency orders the Service after the Step and
+   nothing more; the Step's output reaches the service host as it reaches any later Step. Constraints:
+    1. Minimum number of elements: If provided, then this list must contain at least one element.
+    2. Each entry satisfies [&lt;StepDependency&gt;](#32-stepdependency) constraints 1 and 2.
+    3. In the graph of [&lt;StepDependency&gt;](#32-stepdependency) constraint 3, a Service that lists a Step in its own
+       scope, directly or through other Services, is a cycle; a Service that a Job Environment lists, directly or
+       through other Services, has every Step in its scope and so can list no Step.
+5. *hostRequirements* — Describes the requirements on the Worker Host's capabilities that must be satisfied for the
+   Service to be placed on the host. Amount capabilities are allocated to the Service for its lifetime. This is
+   independent of the *hostRequirements* of any Step whose Tasks use the Service.
+   See: [&lt;HostRequirements&gt;](#33-hostrequirements).
+6. *ports* — The named ports that the Service exposes. See: [&lt;ServicePort&gt;](#93-serviceport).
+    1. Minimum number of elements: 1.
+    2. Maximum number of elements: 10.
+    3. No two elements may have the same value for the *name* property.
+    4. No two elements with the same value for the *protocol* property may have the same value for the *port*
+       property; a service that speaks TCP and UDP on one number gives it explicitly on both ports, and ports whose
+       *port* is not provided are allocated independently in each protocol's space.
+7. *healthCheck* — The probe by which the scheduler determines that an instance of the Service is ready to accept
+   traffic and, once it is, that it remains healthy. If not provided, defaults to `{ type: TCP_CONNECT }` applied to
+   every declared TCP port. A Service none of whose ports is TCP must provide a *healthCheck* of type `STDOUT` or
+   `COMMAND`; a `TCP_CONNECT` check, given or defaulted, would have no port to probe.
+   See: [&lt;ServiceHealthCheck&gt;](#94-servicehealthcheck).
+8. *restartPolicy* — What the scheduler does when the Service's `onRun` action exits before the scope ends. If not
+   provided, defaults to `{ maxAttempts: 0 }`: the Service is never relaunched, and its exit fails the scope. See:
+   [&lt;ServiceRestartPolicy&gt;](#95-servicerestartpolicy).
+9. *variables* — A set of environment variable name/value pairs, with the values being [Format
+   Strings](#73-format-strings) that are resolved when the Service is started, that are set in the process environment
+   of every action of the Service's *script*. See: [&lt;EnvironmentVariables&gt;](#44-environmentvariables). Neither these variables nor those the Service's *onEnter*
+   sets with `openjd_env` (see [&lt;ServiceActions&gt;](#97-serviceactions)) are propagated to the entities in the
+   Service's scope.
+10. *script* — The actions that the Service runs on its host. See: [&lt;ServiceScript&gt;](#96-servicescript).
+
+The format string scopes available to format strings within a `<Service>` are:
+
+1. `Param.*` and `RawParam.*` — Values of Job Parameters. `PATH`-typed `Param.*` values are available in the Service's
+   *variables* and *script*, with the service host's path mapping applied, and not in `<Service>.let` or
+   *hostRequirements*, which are resolved at job creation.
+2. `Session.*` — Values such as the Service's working directory. `Session.WorkingDirectory` refers to the Service's own
+   Session's working directory on the service host, not to the working directory of any Session running Tasks. A Service
+   Session receives path mapping rules like any Session; `Session.HasPathMappingRules` and
+   `Session.PathMappingRulesFile` describe the rules for the service host.
+3. `Service.File.*` — The filesystem location of embedded files defined within this Service's *script*.
+4. `Service.<name>.<port>.*` — The endpoint of this Service's own ports and, under the visibility rule below, of the
+   Services this Service lists in its *dependencies*.
+5. `Job.Name`.
+6. Names bound by `let` in the `<Service>` and in the `<ServiceScript>`.
+
+A Step, Service, or Job Environment may reference `Service.<name>.<port>.port` and
+`Service.<name>.<port>.connectAddress` if and only if it lists `service: <name>` in its `dependencies`; a Step's Step
+Environments share the Step's list, and the Service `<name>` itself sees all three values. For a required Service,
+`<port>` must be one the requirement lists. In detail, the `Service.<name>.<port>.*` values of a Service `<name>` declared in the document's `services` or, in a Job Template,
+declared by an entry of `externalServices`, are in scope in:
+
+1. The Service `<name>` itself (all three values), when it is declared in `services`.
+2. Any Service in the same `services` list that lists `service: <name>` in its `dependencies` (`port` and
+   `connectAddress` only): its actions, *variables*, embedded files, and `<ServiceScript>.let`.
+3. In a Job Template, any Step that lists `service: <name>` in its `dependencies`: its `script` (actions, embedded
+   files, `let`) and each of its `stepEnvironments` entries (*variables*, actions, embedded files, `let`).
+4. In a Job Template, any `jobEnvironments` entry that lists `service: <name>` in its `dependencies` (*variables*,
+   actions, embedded files, `let`), whether `<name>` is inline or required.
+5. In an Environment Template: the document's `environment` when it lists `service: <name>` in its `dependencies`.
+
+A reference from a Step, Service, or Job Environment that does not list the dependency is a validation error, whether
+the Service is inline or required, and the message should name the fix: for example, *Step 'Render' references
+`Service.Cache.main.port` but does not list `service: Cache` in `dependencies`*. `bindAddress` is in scope only within
+the declaring Service, never for a required Service (see [&lt;ServiceRequirement&gt;](#98-servicerequirement)).
+
+`Service.*` is never in scope in a field resolved at job creation, before any Service is placed: a `hostRequirements`
+object, neither a Step's nor a Service's; a `<Service>`'s or a `<StepTemplate>`'s `let`; an `<Action>`'s `timeout`; a
+cancelation method's `notifyPeriodInSeconds`; and the [numeric `@fmtstring` fields](#951-numeric-fmtstring-fields) of
+`<ServicePort>`, `<ServiceHealthCheck>`, and `<ServiceRestartPolicy>`. Nor is it in scope in an Environment whose `runScope` includes
+`SERVICE` (see [&lt;Environment&gt;](#4-environment) item 4 constraint 2).
+
+A template that references a `Service.*` value outside these scopes, or that references a Service or port name that it
+neither declares nor requires, is invalid and must be rejected before the Job is created.
+
+### 9.1. Service scope
+
+The scope of a Service is the set of Steps whose Tasks depend on it. For a Service declared in a Job Template it is
+determined at template validation from the template's `dependencies` lists; the order of the `services` list carries no
+meaning:
+
+1. A Step that lists Service `X` in its `dependencies` is in the scope of `X`.
+2. When Service `Y` lists Service `X`, every Step in `Y`'s scope is in `X`'s scope. This applies transitively: a Step is
+   in `X`'s scope when it depends on `X` through any chain of Services.
+3. When any `jobEnvironments` entry lists Service `X` in its `dependencies`, every Step is in `X`'s scope, because
+   every Step's Session enters a Job Environment. A Step Environment has no `dependencies` of its own; it follows its
+   Step's.
+4. A Service in whose scope no Step falls is unused, and the template must be rejected at template validation, naming
+   the Service. A Service listed only by Services that are themselves unused is unused.
+
+These rules apply to every Service of the combined Job, inline or external, with one difference: rule 4 rejects an
+inline Service with an empty scope at template validation, while an external Service with an empty scope is simply never
+started (see [Services from Environment Templates](#122-services-from-environment-templates)). An `externalServices`
+entry is subject to rule 4 like an inline Service: one that no Step, Service, or Job Environment of the Job Template
+lists is rejected at template validation, naming the entry. A Service is started before any Task of a Step in its scope and stopped once no such Task remains to be run (see
+[How Jobs Are Run](How-Jobs-Are-Run#service-lifecycle)): one whose scope is one Step lives as long as that Step, and one
+whose scope is every Step as long as the Job.
+
+### 9.2. `<ServiceName>`
+
+An [&lt;Identifier&gt;](#71-identifier) subject to the additional constraint that it must not be `File`, which is
+reserved for `Service.File.*` embedded file references.
+
+### 9.3. `<ServicePort>`
+
+A `<ServicePort>` is the object:
+
+```yaml
+name: <Identifier>
+port: <posinteger> | <posintstring> # @optional @fmtstring
+protocol: enum("TCP", "UDP") # @optional
+```
+
+Where:
+
+1. *name* — The name of the port. It is the second component of `Service.<service>.<port>.*` references. Must not be
+   `File`.
+2. *port* — If provided, the Service requires this specific port number on its host, in the space of the port's
+   *protocol*; if the scheduler cannot provide it on the chosen host, that is a start failure (see
+   [How Jobs Are Run](How-Jobs-Are-Run#service-failure-and-restart)), and relocation to another host may succeed. If
+   not provided, the runtime allocates an available port of the port's *protocol*. Range: 1–65535. Authors should omit
+   this and let the runtime allocate, so that multiple Services and Sessions can share a host.
+3. *protocol* — The transport protocol the service process binds the port with, and which the scheduler uses for any
+   publishing or forwarding it performs to make the port reachable (a container port mapping, a firewall rule, a NAT
+   entry). One of `TCP` or `UDP`. Default: `TCP`.
+
+Every port, TCP or UDP, is bound and published on the same service host.
+
+`bindAddress` and `connectAddress` are each a hostname, an IPv4 literal, or an IPv6 literal, in bare form: an IPv6
+literal is never bracketed. Schedulers should provide a hostname for `connectAddress` when one resolves from every host
+in the Service's scope. Wherever an address and a port are joined into one string (a URL authority, a `--listen
+host:port` flag) an IPv6 literal must be bracketed, so templates must compose such strings with `join_host_port` (see
+[Expression Language](2026-02-Expression-Language#224-string-functions)) rather than `{{ addr }}:{{ port }}`.
+
+### 9.4. `<ServiceHealthCheck>`
+
+A `<ServiceHealthCheck>` is one of the following objects, discriminated by the *type* property:
+
+```yaml
+type: "TCP_CONNECT"
+ports: [ <Identifier>, ... ] # @optional
+readinessIntervalSeconds: <posinteger> | <posintstring> # @optional @fmtstring
+readinessTimeoutSeconds: <posinteger> | <posintstring> # @optional @fmtstring
+healthIntervalSeconds: <posinteger> | <posintstring> # @optional @fmtstring
+failureThreshold: <posinteger> | <posintstring> # @optional @fmtstring
+```
+
+```yaml
+type: "COMMAND"
+readinessIntervalSeconds: <posinteger> | <posintstring> # @optional @fmtstring
+readinessTimeoutSeconds: <posinteger> | <posintstring> # @optional @fmtstring
+healthIntervalSeconds: <posinteger> | <posintstring> # @optional @fmtstring
+failureThreshold: <posinteger> | <posintstring> # @optional @fmtstring
+```
+
+```yaml
+type: "STDOUT"
+readinessTimeoutSeconds: <posinteger> | <posintstring> # @optional @fmtstring
+healthIntervalSeconds: <posinteger> | <posintstring> # @optional @fmtstring
+failureThreshold: <posinteger> | <posintstring> # @optional @fmtstring
+```
+
+A health check is one probe mechanism applied in two phases. Before the instance is READY the probe decides readiness:
+the first probe runs as soon as `onRun` is launched, a probe runs every *readinessIntervalSeconds* after it, and the
+first success makes the instance READY. After the instance is READY the probe decides health: a probe runs every
+*healthIntervalSeconds*, and *failureThreshold* consecutive failures make the instance UNHEALTHY, which is an instance
+failure (see [How Jobs Are Run](How-Jobs-Are-Run#service-failure-and-restart)). A single successful probe resets the
+count. While the count is below the threshold the instance stays READY and nothing changes. For `TCP_CONNECT` and
+`COMMAND`, an interval is measured from the end of the previous probe. For a `STDOUT` heartbeat, the runtime arms a
+deadline *healthIntervalSeconds* after the later of READY and the most recent `openjd_service_ready` line; a line
+before the deadline is a successful probe and re-arms it, and a deadline that passes without a line is a failed probe
+and arms the next.
+
+Where:
+
+1. *type* — The probe mechanism:
+    * `TCP_CONNECT` — A probe succeeds when a TCP connection to each of the listed ports (by default, every TCP port
+      the Service declares) succeeds. The connection is made from the service host to the allocated `port` on the
+      loopback interface, or on `bindAddress` when it is not a wildcard address (`0.0.0.0` or `::`), and is closed
+      immediately.
+    * `COMMAND` — A probe is one invocation of the Service's *onHealthCheck* action (see
+      [&lt;ServiceActions&gt;](#97-serviceactions)), run in the Service Session concurrently with `onRun` (see
+      [Concurrency of onHealthCheck with onRun](#971-concurrency-of-onhealthcheck-with-onrun)), and succeeds when the
+      invocation exits with status 0 while `onRun` is still running. The action's own `timeout` (default: 30 seconds)
+      bounds one invocation; an invocation that exceeds it is canceled and is one failed probe, as is any exit status
+      other than 0. Neither is by itself a failure of the Service.
+    * `STDOUT` — A probe is a line of the form `openjd_service_ready: <message>` written to stdout by the `onRun`
+      action, with the same syntax as the other `openjd_*` messages (see [How Jobs Are
+      Run](How-Jobs-Are-Run#stdoutstderr-messages)). The first such line makes the instance READY; `<message>` has no
+      functional purpose but may be surfaced in UI elements. Later lines are heartbeat probes when
+      *healthIntervalSeconds* is given (see the opening paragraph) and have no effect otherwise, the health of the
+      instance then being that its `onRun` process is still running.
+2. *ports* (`TCP_CONNECT` only) — The names of the ports to probe. Each must be declared in the Service's *ports* and
+   have `protocol: TCP`; naming a UDP port is a validation error, since a UDP port cannot accept a connection. Defaults
+   to every TCP port the Service declares.
+3. *readinessIntervalSeconds* (`TCP_CONNECT` and `COMMAND` only) — Seconds between probes before the instance is READY.
+   Default: 1 for `TCP_CONNECT`, 5 for `COMMAND`. A `STDOUT` check that gives this field must be rejected at template
+   validation.
+4. *readinessTimeoutSeconds* — The maximum time, measured from the launch of the `onRun` action, that the scheduler
+   waits for the instance to become READY. It runs continuously, including while a probe is in progress. If exceeded,
+   the instance has failed. Default: 300.
+5. *healthIntervalSeconds* — Seconds between probes after the instance is READY. Default: 30 for `TCP_CONNECT` and
+   `COMMAND`. For `STDOUT` there is no default: when given, it is the heartbeat interval described under *type*; when
+   omitted, no heartbeat is expected.
+6. *failureThreshold* — The number of consecutive failed probes after READY (for a `STDOUT` heartbeat, consecutive
+   intervals without a line) that make the instance UNHEALTHY. Default: 3. A `STDOUT` check that gives this field
+   without *healthIntervalSeconds* must be rejected at template validation, since there is no probe for it to count.
+
+The health check applies to every instance of the Service: after a restart, the new `onRun` must pass a probe before
+Tasks in the scope are scheduled again, and is monitored in the same way once it has.
+
+### 9.5. `<ServiceRestartPolicy>`
+
+A `<ServiceRestartPolicy>` is the object:
+
+```yaml
+maxAttempts: <integer> | <intstring> # @optional @fmtstring
+completedTasks: enum("KEEP", "RERUN") # @optional
+```
+
+Where:
+
+1. *maxAttempts* — The maximum number of times the scheduler will relaunch the Service after an instance failure or a
+   start failure (see [How Jobs Are Run](How-Jobs-Are-Run#service-failure-and-restart)). The initial launch is not
+   counted, so the default of 0 means the Service is launched exactly once and never relaunched. Must be 0 or greater.
+2. *completedTasks* — What happens, when a new instance is launched, to Tasks in the Service's scope that completed
+   successfully against a previous instance, and to Tasks that were running at the time. Tasks not yet started are
+   scheduled once the new instance is READY.
+    * `KEEP` — Completed Tasks remain complete, and running Tasks continue, failing and retrying on their own if the
+      outage affects them. Use this when the Service holds no state that Tasks depend on, or holds state that Tasks can
+      regenerate.
+    * `RERUN` — Completed Tasks are returned to the scheduling queue and run again, and running Tasks are canceled and
+      requeued without counting as a Task failure. Use this when the Service holds state that makes prior results
+      unreliable once lost.
+
+   If *maxAttempts* is greater than 0, *completedTasks* must be provided (for a *maxAttempts* given as a format string,
+   checked when it is resolved at job creation). When *maxAttempts* is 0 it may be omitted, and then matters only when a
+   Service this one lists begins a new Service Session, where an omitted value is read as `RERUN` (see [How Jobs Are
+   Run](How-Jobs-Are-Run#service-failure-and-restart)). A Service may be suspended only if its *completedTasks* is
+   `KEEP` (see [How Jobs Are Run](How-Jobs-Are-Run#service-lifecycle)).
+
+#### 9.5.1. Numeric `@fmtstring` fields
+
+The numeric fields marked `@fmtstring` in [&lt;ServicePort&gt;](#93-serviceport),
+[&lt;ServiceHealthCheck&gt;](#94-servicehealthcheck), and [&lt;ServiceRestartPolicy&gt;](#95-servicerestartpolicy) —
+`port`; `readinessIntervalSeconds`, `readinessTimeoutSeconds`, `healthIntervalSeconds`, and `failureThreshold`; and
+`maxAttempts` — may be given as a format string whose result is the integer. They are resolved at job creation, with the
+scope of the `<Service>`'s *let* ([Section 9](#9-service-extension-service) item 3). When the value is a single
+whole-field expression, its target type is `int?`: a `null` result is treated as if the field were not provided, and a
+non-null result must satisfy the field's range.
+
+### 9.6. `<ServiceScript>`
+
+A `<ServiceScript>` is the object:
+
+```yaml
+let: <LetBindings> # @optional @extension EXPR
+actions: <ServiceActions>
+embeddedFiles: [ <EmbeddedFile>, ... ] # @optional
+```
+
+1. *let* — An ordered list of expression bindings evaluated once, on the service host, when the Service is started. This
+   is the host-context counterpart of the `<Service>`'s *let* and may reference `Session.*`, `Service.File.*`, and
+   in-scope `Service.<name>.<port>.*`. Bound names are available in *actions* and *embeddedFiles*.
+   See: [&lt;LetBindings&gt;](#36-letbindings).
+2. *actions* — The actions to run at the different stages of the Service's lifecycle.
+   See: [&lt;ServiceActions&gt;](#97-serviceactions).
+3. *embeddedFiles* — Files embedded into the Service that are materialized to the Service's working directory before
+   each of the Service's actions is run. See: [&lt;EmbeddedFile&gt;](#6-embeddedfile).
+   1. Minimum number of items: If defined, then there must be at least one element in this list.
+   2. Maximum number of items: There is no limit on the number of elements in this list.
+
+### 9.7. `<ServiceActions>`
+
+A `<ServiceActions>` is the object:
+
+```yaml
+onEnter: <Action> # @optional
+onRun: <Action>
+onHealthCheck: <Action> # @optional
+onExit: <Action> # @optional
+```
+
+Where:
+
+1. *onEnter* — A one-time setup action run before the first `onRun` of the Service in a Service Session; it runs once
+   per Service Session, not once per launch of *onRun*. It is an ordinary action, like an Environment's `onEnter`: it
+   runs to completion and its `timeout` and `cancelation` apply as for any `<Action>`. A non-zero exit status or a
+   timeout is a start failure of the Service (see [How Jobs Are Run](How-Jobs-Are-Run#service-failure-and-restart)).
+2. *onRun* — The long-lived action whose process is the service. The scheduler starts it, probes it for readiness and
+   then for health, and expects it to run until canceled; an exit before then is an instance failure (see
+   [How Jobs Are Run](How-Jobs-Are-Run#service-failure-and-restart)). The scheduler stops the Service by canceling
+   *onRun* according to its `cancelation` method.
+3. *onHealthCheck* — A short action the scheduler runs repeatedly, while *onRun* is running, as the probe of a
+   `healthCheck` of type `COMMAND`; its exit status is the probe result (see
+   [&lt;ServiceHealthCheck&gt;](#94-servicehealthcheck) and
+   [Concurrency of onHealthCheck with onRun](#971-concurrency-of-onhealthcheck-with-onrun)). Must be defined if and only
+   if the health check type is `COMMAND`. It should be read-only with respect to the Service Session's working
+   directory, which it shares with *onRun*.
+4. *onExit* — A cleanup action run after the Service's other actions have stopped for the last time in a Service
+   Session, whether the Service stopped normally, failed, or was canceled, and whether or not *onRun* was ever launched.
+   It runs to completion. A non-zero exit status is reported but does not change the outcome of the scope.
+
+All four actions run in the Service Session with the format string scopes listed for [&lt;Service&gt;](#9-service-extension-service),
+and embedded files are materialized before each of them runs, subject to the rules in
+[Concurrency of onHealthCheck with onRun](#971-concurrency-of-onhealthcheck-with-onrun).
+
+   > **NOTE:** When *onExit* does not define a *timeout* the action defaults to 300 seconds, or five minutes, for the
+   same reasons as an Environment's *onExit*.
+
+Implementations of this specification must watch the stdout of *onEnter*, *onRun*, and *onExit* for the standard
+`openjd_status`, `openjd_progress`, and `openjd_fail` messages, and the stdout of *onRun* for the line
+`openjd_service_ready` when the Service's health check *type* is `STDOUT` (for *onHealthCheck*, see
+[Concurrency of onHealthCheck with onRun](#971-concurrency-of-onhealthcheck-with-onrun) rule 2).
+
+Implementations must additionally watch the stdout of *onEnter* for `openjd_env`, `openjd_redacted_env`, and
+`openjd_unset_env`, with the same syntax and redaction rules as for an Environment's `onEnter` (see
+[&lt;Environment&gt;](#4-environment)), including that `openjd_redacted_env` sets the variable only when the document
+declares the `REDACTED_ENV_VARS` extension, while its value is redacted from the log regardless. A variable set this way
+is set in the process environment of every subsequent action of the same Service Session — every instance of *onRun*,
+*onHealthCheck*, and *onExit* — and is retained across relaunches of *onRun* within the Session. The process
+environment of a Service's actions is built in this order, later entries taking precedence: the variables of the
+Environments the Service Session entered (their *variables* and their `openjd_env` messages, in entry order, as in any
+Session), then the Service's own *variables*, then variables set by the Service's *onEnter*. These messages are ignored
+when emitted by *onRun*, *onHealthCheck*, or *onExit*.
+
+#### 9.7.1. Concurrency of onHealthCheck with onRun
+
+*onHealthCheck* is the only action in this specification that runs while another action of the same Session, *onRun*,
+is running. Every other action in a Session runs one at a time. The following rules apply:
+
+1. Materializing embedded files for one action must not modify any file that a still-running action of the same
+   Session was given. Implementations may materialize each invocation's files to a distinct location, so that
+   `Service.File.<name>` resolves to a different path in each action, or may materialize every invocation's files to
+   one path and leave them in place, since their content is constant: a Service Session's format string values do not
+   change for its lifetime.
+2. The stdout of *onHealthCheck* is captured to the log, but no `openjd_*` message on it is honored: its result is its
+   exit status.
+3. Every line of stdout or stderr captured in a Service Session must be attributable to the action that produced it,
+   including the output of wrap scripts under the `WRAP_ACTIONS` extension. How the attribution is recorded is
+   implementation-defined. An implementation that produces a single plain-text log should tag each line from
+   *onHealthCheck* with the action name (for example, `[onHealthCheck] connection refused`) and may leave the lines
+   from *onRun* untagged. An implementation may suppress or collapse the output of invocations that succeed, provided the full output of every
+   invocation that fails or exceeds its timeout is retained.
+4. Invocations of *onHealthCheck* never overlap one another and never run while *onEnter* or *onExit* is running.
+5. An invocation in progress when *onRun* exits is canceled and its result discarded (see
+   [How Jobs Are Run](How-Jobs-Are-Run#service-lifecycle), constraint 10); one in progress when the Service Session ends
+   is canceled before *onExit* runs.
+6. Under the `WRAP_ACTIONS` extension, `onWrapServiceHealthCheck` runs while `onWrapServiceRun` is running. Wrap
+   scripts used in a Service Session must tolerate concurrent invocation.
+
+### 9.8. `<ServiceRequirement>`
+
+Available in a Job Template's `externalServices` only.
+
+A `<ServiceRequirement>` declares that the Job Template reads the endpoint of an external Service (see
+[Services from Environment Templates](#122-services-from-environment-templates)): a Service that an attached
+Environment Template defines, named `name`, with at least the ports listed. It is the Job Template's half of a contract
+the scheduler checks at submission, and it makes the Service's endpoint available to the template's format strings
+without the template declaring the Service itself.
+
+A `<ServiceRequirement>` is the object:
+
+```yaml
+name: <ServiceName>
+ports: [ <ServiceRequirementPort>, ... ]
+```
+
+Where:
+
+1. *name* — The `name` of the external Service required. See: [&lt;ServiceName&gt;](#92-servicename) and
+   [Job Template](#11-job-template) *externalServices* constraint 4.
+2. *ports* — The ports of the Service that the Job Template uses. See:
+   [&lt;ServiceRequirementPort&gt;](#981-servicerequirementport). Constraints:
+    1. Minimum number of elements: 1.
+    2. Maximum number of elements: 10.
+    3. No two elements may have the same value for the *name* property.
+
+The scheduler matches each requirement at submission
+([Services from Environment Templates](#122-services-from-environment-templates) item 2). An entry puts nothing in the
+Service's scope by itself; a Step, Service, or Job Environment that uses the Service lists it in `dependencies` as it
+would an inline Service, and an entry that nothing lists is rejected at template validation
+([Service scope](#91-service-scope) rule 4).
+
+#### 9.8.1. `<ServiceRequirementPort>`
+
+A `<ServiceRequirementPort>` is the object:
+
+```yaml
+name: <Identifier>
+protocol: enum("TCP", "UDP") # @optional
+```
+
+Where:
+
+1. *name* — The `name` of a port the external Service declares. It is the second component of
+   `Service.<service>.<port>.*` references. Must not be `File`.
+2. *protocol* — The transport protocol the Job Template expects the port to carry, matched against the attached
+   Service's port at submission ([Services from Environment Templates](#122-services-from-environment-templates) item
+   2). One of `TCP` or `UDP`. Default: `TCP`.
+
+### 9.9. Validation
+
+This section indexes the rules the `SERVICE` extension adds; each is stated in full where the pointer leads. Every rule
+is checked at template validation, except that the [numeric `@fmtstring` fields](#951-numeric-fmtstring-fields) are
+checked when resolved at job creation and the last two rules need the combined Job and are checked at submission.
+
+| Rule | Stated in |
+|---|---|
+| Every `Service.*` reference names a declared or required Service and port, appears only where permitted, and the referencing entity lists the Service in its `dependencies` | [Section 9](#9-service-extension-service); [Value References](#731-value-references) |
+| No `Service.*` value in a field resolved at job creation, nor in an Environment whose explicit `runScope` includes `SERVICE` | [Section 9](#9-service-extension-service); [&lt;Environment&gt;](#4-environment) item 4 constraint 2 |
+| `runScope` holds recognized names without duplicates and is absent from `stepEnvironments` | [&lt;Environment&gt;](#4-environment) item 4 constraints 1, 3, and 4 |
+| An Environment's `dependencies` is well formed and absent from `stepEnvironments` | [&lt;Environment&gt;](#4-environment) item 3 constraints 2–4 |
+| The wrap hooks an Environment defines are exactly those its `runScope` calls for | [&lt;EnvironmentActions&gt;](#43-environmentactions) `WRAP_ACTIONS` constraint 6 |
+| Every `dependencies` entry is well formed | [&lt;StepDependency&gt;](#32-stepdependency) constraints 1, 2, and 4; [Environment Template](#12-environment-template) item 6 constraint 5 |
+| The `dependencies` graph is acyclic | [&lt;StepDependency&gt;](#32-stepdependency) constraint 3 |
+| Every inline Service, and every `externalServices` entry, is listed by some Step, Service, or Job Environment | [Service scope](#91-service-scope) rule 4 |
+| Service, requirement, and port names are identifiers other than `File`, unique within their lists, and no requirement shares a `name` with an inline Service | [&lt;ServiceName&gt;](#92-servicename); [Job Template](#11-job-template) *externalServices* constraint 4 |
+| `externalServices` appears only in a Job Template | [Job Template](#11-job-template) *externalServices* constraint 5 |
+| `healthCheck` is consistent with `<ServiceActions>`, with `ports`, and with its own `type` | [&lt;Service&gt;](#9-service-extension-service) item 7; [&lt;ServiceHealthCheck&gt;](#94-servicehealthcheck) items 2, 3, and 6; [&lt;ServiceActions&gt;](#97-serviceactions) item 3 |
+| No two ports of a Service with the same `protocol` have the same `port` number | [&lt;Service&gt;](#9-service-extension-service) item 6 constraint 4 |
+| `completedTasks` is provided when `maxAttempts` is greater than 0 | [&lt;ServiceRestartPolicy&gt;](#95-servicerestartpolicy) item 2 |
+| A template that lists `SERVICE` also lists `EXPR` | [Section 9](#9-service-extension-service) |
+| A wrapping Environment from a document without `SERVICE` is not combined with a Job that has any Service *(submission)* | [Services from Environment Templates](#122-services-from-environment-templates) item 4 |
+| Each `externalServices` entry matches exactly one attached Service *(submission)* | [Services from Environment Templates](#122-services-from-environment-templates) item 2 |
+
+## 10. Additional Information
 
 * The Cc unicode character category is all [C0](https://www.unicode.org/charts/PDF/U0000.pdf)
   and [C1](https://www.unicode.org/charts/PDF/U0080.pdf) characters.
   * This is a category of 65 non-printable characters such as NUL, BEL, Backspace, DEL,
      tab, newline, carriage return, and form feed.
 
-## 10. License
+## 11. License
 
 Copyright ©2023 Amazon.com Inc. or Affiliates ("Amazon").
 
 This Agreement sets forth the terms under which Amazon is making the Open Job Description
 Specification ("the Specification") available to you.
 
-### 10.1. Copyrights
+### 11.1. Copyrights
 
 This Specification is licensed under [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/deed.en).
 
-### 10.2. Patents
+### 11.2. Patents
 
 Subject to the terms and conditions of this Agreement, Amazon hereby grants to
 you a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable
@@ -2319,7 +3008,7 @@ Specification constitute direct or contributory patent infringement, then any
 patent licenses granted to You under this Agreement shall terminate as of the
 date such litigation is filed.
 
-### 10.3. Additional Information
+### 11.3. Additional Information
 
 For more info see the [LICENSE file].
 
