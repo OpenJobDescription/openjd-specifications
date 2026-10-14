@@ -1,0 +1,17 @@
+# Section 1.1 item 9: `externalServices` is available only when using the
+# SERVICE extension.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+externalServices:
+- name: Ext
+  ports:
+  - name: main
+steps:
+- name: Use
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

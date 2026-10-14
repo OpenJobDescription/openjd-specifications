@@ -1,0 +1,7 @@
+# Section 1.2: `environment` alone remains valid, exactly as before RFC 0009,
+# with no `extensions` list.
+specificationVersion: environment-2023-09
+environment:
+  name: Env1
+  variables:
+    FOO: bar

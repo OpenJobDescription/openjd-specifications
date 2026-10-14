@@ -1,0 +1,27 @@
+# Section 4.3 WRAP_ACTIONS constraint 6: the four onWrapService* hooks are
+# all-or-nothing; omitting onWrapServiceExit must be rejected.
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- SERVICE
+- EXPR
+environment:
+  name: Wrapper
+  runScope: [SERVICE]
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapEnvExit:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceRun:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceHealthCheck:
+        command: python
+        args: ["-c", "print()"]

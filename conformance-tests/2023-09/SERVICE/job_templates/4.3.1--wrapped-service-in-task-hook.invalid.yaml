@@ -1,0 +1,51 @@
+# Section 4 scope rule / Section 4.3.1: WrappedService.* is available within
+# the four onWrapService* hooks only, not in onWrapTaskRun.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- WRAP_ACTIONS
+- SERVICE
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Wrapper
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapEnvExit:
+        command: python
+        args: ["-c", "print()"]
+      onWrapTaskRun:
+        command: python
+        args: ["-c", "print()", "{{ WrappedService.Name }} {{ WrappedService.PortNames[0] }} {{ WrappedService.Ports[0] }} {{ WrappedService.BindAddresses[0] }}"]
+      onWrapServiceEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceRun:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceHealthCheck:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceExit:
+        command: python
+        args: ["-c", "print()"]
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

@@ -1,0 +1,15 @@
+# Section 1.1 item 8 constraint 1: if `services` is provided it must
+# contain at least one element.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services: []
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

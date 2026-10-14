@@ -1,0 +1,22 @@
+# Section 9 scope rule 5 / Section 9.9 item 1 (RFC 0009): an Environment
+# Template's Environment may reference Service.X.* only if it lists
+# `service: X` in its `dependencies`, the same rule as for a Step, a Service, or
+# a Job Environment. CacheClient references Service.Cache.main.port without
+# listing the Service, so the document is rejected.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- EXPR
+services:
+- name: Cache
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Cache.main.port }}"]
+environment:
+  name: CacheClient
+  variables:
+    CACHE_PORT: "{{ Service.Cache.main.port }}"

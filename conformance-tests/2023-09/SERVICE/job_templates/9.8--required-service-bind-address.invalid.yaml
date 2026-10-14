@@ -1,0 +1,20 @@
+# Section 9.8 item 2 / Section 7.3.1 (RFC 0009): `bindAddress` of a required
+# Service is never in scope; only the declaring Service sees it.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+externalServices:
+- name: Ext
+  ports:
+  - name: main
+steps:
+- name: Use
+  dependencies:
+  - service: Ext
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Ext.main.bindAddress }}"]

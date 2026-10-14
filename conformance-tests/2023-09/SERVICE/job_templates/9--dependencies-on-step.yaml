@@ -1,0 +1,36 @@
+# Section 9 item 4 (RFC 0009): a Service may depend on Steps, with the same
+# shape as a Step's `dependencies`. Indexer starts only after Prepare has
+# completed; Use depends on Service Indexer, so Use is its scope, and Prepare
+# is not.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Indexer
+  dependencies:
+  - dependsOn: Prepare
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Prepare
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+- name: Use
+  dependencies:
+  - dependsOn: Prepare
+  - service: Indexer
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Indexer.main.port }}"]

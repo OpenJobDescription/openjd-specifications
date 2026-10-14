@@ -1,0 +1,26 @@
+# Section 7.3.1 / Section 7.4: `Service.<name>.<port>.port` type-checks as
+# int and `connectAddress` as string (unresolved at validation), so integer
+# arithmetic on the port and string methods on the address are valid.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port + 1 }}", "{{ Service.Store.main.connectAddress.upper() }}", "{{ string(Service.Store.main.port) + Service.Store.main.connectAddress }}"]

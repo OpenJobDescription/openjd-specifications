@@ -1,0 +1,10 @@
+# Section 4 item 4: `runScope` is available only when using the SERVICE
+# extension, in an Environment Template as in a Job Template.
+specificationVersion: environment-2023-09
+extensions:
+- EXPR
+environment:
+  name: Env1
+  runScope: [TASK]
+  variables:
+    FOO: bar

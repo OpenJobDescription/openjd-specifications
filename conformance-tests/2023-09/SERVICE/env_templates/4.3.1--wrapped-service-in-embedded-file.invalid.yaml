@@ -1,0 +1,35 @@
+# Section 4 scope rule: embedded files are shared by every action of the
+# script, including the Environment's own onEnter where WrappedService.*
+# never exists, so a reference in embedded-file data must be rejected.
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- SERVICE
+- EXPR
+environment:
+  name: Wrapper
+  runScope: [SERVICE]
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapEnvExit:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceRun:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceHealthCheck:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceExit:
+        command: python
+        args: ["-c", "print()"]
+    embeddedFiles:
+    - name: Launch
+      type: TEXT
+      data: "echo {{ WrappedService.Name }}"

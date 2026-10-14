@@ -1,0 +1,31 @@
+# Section 3.2 / Section 9.8 (RFC 0009): a Step lists a required external
+# Service in its `dependencies` to gain access to its `port` and
+# `connectAddress`, exactly as it would for an inline Service. The dependency
+# is satisfied when the Service is READY, which the scheduler guarantees
+# before any Task runs, and does not change the Service's scope, which is
+# every Step. Other is in the Service's scope too but does not list it, so it
+# may not reference Service.Cache.*; it reaches the Service by other means.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+externalServices:
+- name: Cache
+  ports:
+  - name: main
+steps:
+- name: Use
+  dependencies:
+  - service: Cache
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Cache.main.connectAddress }}", "{{ Service.Cache.main.port }}"]
+- name: Other
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
