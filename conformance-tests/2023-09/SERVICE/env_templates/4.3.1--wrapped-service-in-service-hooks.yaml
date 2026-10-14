@@ -1,0 +1,30 @@
+# Section 4.3.1: WrappedService.* is available in each onWrapService* hook of
+# an Environment Template's wrapping Environment.
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- SERVICE
+- EXPR
+environment:
+  name: Wrapper
+  runScope: [SERVICE]
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapEnvExit:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceEnter:
+        command: python
+        args: ["-c", "print()", "{{ WrappedService.Name }} {{ WrappedService.Ports[0] }}"]
+      onWrapServiceRun:
+        command: python
+        args: ["-c", "print()", "{{ WrappedService.Name }} {{ WrappedService.Ports[0] }}"]
+      onWrapServiceHealthCheck:
+        command: python
+        args: ["-c", "print()", "{{ WrappedService.Name }} {{ WrappedService.Ports[0] }}"]
+      onWrapServiceExit:
+        command: python
+        args: ["-c", "print()", "{{ WrappedService.Name }} {{ WrappedService.Ports[0] }}"]

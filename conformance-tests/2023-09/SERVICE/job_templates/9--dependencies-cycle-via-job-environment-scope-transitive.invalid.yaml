@@ -1,0 +1,52 @@
+# Section 3.2 constraint 3 / Section 9 item 4 constraint 3 / Section 9.9 item
+# 10 (RFC 0009), the transitive variant: a Job Environment lists Front, Front
+# depends on Service Indexer, and Indexer depends on Step Prepare. Every Step
+# is in Front's scope through the Job Environment, and so in Indexer's scope
+# through Front (Section 9.1 rule 2), so Indexer cannot depend on any Step:
+# Prepare -> Front -> Indexer -> Prepare is a cycle, and the template is
+# rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Client
+  dependencies:
+  - service: Front
+  variables:
+    FRONT_PORT: "{{ Service.Front.main.port }}"
+services:
+- name: Front
+  dependencies:
+  - service: Indexer
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Indexer.main.port }}"]
+- name: Indexer
+  dependencies:
+  - dependsOn: Prepare
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Prepare
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+- name: Use
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

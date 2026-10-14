@@ -1,0 +1,22 @@
+# Section 9.8 item 2 constraint 3 (RFC 0009): no two required ports may have
+# the same `name`.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+externalServices:
+- name: Ext
+  ports:
+  - name: main
+  - name: main
+    protocol: UDP
+steps:
+- name: Use
+  dependencies:
+  - service: Ext
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Ext.main.port }}"]

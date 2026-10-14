@@ -1,0 +1,81 @@
+# RFC 0009 <ServiceHealthCheck> STDOUT without healthIntervalSeconds (Template
+# Schemas §9.4 item 5): no heartbeat is expected, and the health of the
+# instance is that its onRun process is still running. The service prints
+# `openjd_service_ready` exactly once and never again; the Tasks take long
+# enough between them that any wrongly assumed heartbeat interval would have
+# elapsed several times over. With the default maxAttempts of 0 a wrongly
+# detected UNHEALTHY instance would fail the Job; instead every Task runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: HealthStdoutNoHeartbeatConfigured
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+      readinessTimeoutSeconds: 60
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Store.main.bindAddress }}", "{{ Service.Store.main.port }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port = sys.argv[1], int(sys.argv[2])
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready: once", flush=True)
+          print("STORE_READY_ONCE", flush=True)
+          served = 0
+          while True:
+              c, _ = s.accept()
+              c.recv(64)
+              served += 1
+              c.sendall(str(served).encode())
+              c.close()
+  steps:
+  - name: Work
+    dependencies:
+    - service: Store
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: N
+        type: INT
+        range: "1-3"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Service.Store.main.connectAddress }}", "{{ Service.Store.main.port }}", "{{ Task.Param.N }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import socket, sys, time
+          host, port, n = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          c = socket.create_connection((host, port), timeout=10)
+          c.sendall(("task " + n).encode())
+          # The reply counts requests served by this one instance; it matches
+          # the Task number only if no relaunch has happened.
+          print("TASK", n, "SERVED AS", c.recv(64).decode(), flush=True)
+          c.close()
+          time.sleep(1.5)
+          print("TASK", n, "DONE", flush=True)
+
+expected:
+  output:
+  - STORE_READY_ONCE
+  - TASK 1 SERVED AS 1
+  - TASK 2 SERVED AS 2
+  - TASK 3 SERVED AS 3

@@ -1,0 +1,16 @@
+# Section 1.2 / Section 1.2.2 (RFC 0009): an Environment Template may define
+# `services` without an `environment`. Such a document supplies external
+# Services to every Job submitted through it.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- EXPR
+services:
+- name: Cache
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Cache.main.bindAddress }}", "{{ Service.Cache.main.port }}"]

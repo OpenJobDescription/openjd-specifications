@@ -1,0 +1,29 @@
+# Section 7.3.1: `Service.File.*` is available only within the declaring
+# Service's script, never in a Step's script.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["{{ Service.File.Serve }}"]
+    embeddedFiles:
+    - name: Serve
+      type: TEXT
+      data: "print()"
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.File.Serve }}"]

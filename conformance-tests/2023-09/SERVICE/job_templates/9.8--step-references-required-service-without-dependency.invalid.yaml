@@ -1,0 +1,21 @@
+# Section 9 scope rule 3 / Section 9.8 item 2 / Section 9.9 item 1 (RFC 0009):
+# a required Service follows the same dependency rule as an inline one. Use
+# references Service.Ext.main.port without listing `service: Ext` in its
+# `dependencies` and is rejected, the message naming the missing entry; the
+# requirement alone does not put the Service in scope for the Step.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+externalServices:
+- name: Ext
+  ports:
+  - name: main
+steps:
+- name: Use
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Ext.main.connectAddress }}", "{{ Service.Ext.main.port }}"]

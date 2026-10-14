@@ -1,0 +1,34 @@
+# Section 9.8 item 2 / Section 9 scope rule 2 (RFC 0009): an inline Service may
+# reference a required Service's `port` and `connectAddress` when it lists
+# `service: <name>` in its `dependencies`, as it would for another inline
+# Service; a required Service is READY before any Service or Task that lists
+# it starts. Use depends on Service Proxy, which puts Use in Proxy's scope.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+externalServices:
+- name: Ext
+  ports:
+  - name: main
+services:
+- name: Proxy
+  dependencies:
+  - service: Ext
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Ext.main.connectAddress }}", "{{ Service.Ext.main.port }}"]
+steps:
+- name: Use
+  dependencies:
+  - service: Proxy
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Proxy.main.port }}"]

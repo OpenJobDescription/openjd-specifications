@@ -1,0 +1,34 @@
+# Section 9 scope rule 3 / Section 9.9 item 1 (RFC 0009): a Step's script may
+# reference Service.<name>.* only when the Step lists `service: <name>` in its
+# `dependencies`. Render references Service.Store.main.port without the
+# dependency and is rejected; the reference is not taken as an implicit
+# dependency. Use depends on Store, so Store is not unused.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port }}"]
+steps:
+- name: Use
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port }}"]

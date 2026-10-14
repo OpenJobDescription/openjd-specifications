@@ -1,0 +1,30 @@
+# Section 1.2.2 (RFC 0009 example 3): one document defines a Service and a
+# TASK-scoped Environment that publishes its endpoint to Tasks through
+# environment variables; the Environment lists the Service in `dependencies`,
+# which is what lets it reference the Service's `port` and `connectAddress`.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- EXPR
+parameterDefinitions:
+- name: CacheSize
+  type: INT
+  default: 64
+services:
+- name: Cache
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Param.CacheSize }}", "{{ Service.Cache.main.bindAddress }}", "{{ Service.Cache.main.port }}"]
+environment:
+  name: CacheClient
+  dependencies:
+  - service: Cache
+  runScope: [TASK]
+  variables:
+    CACHE_HOST: "{{ Service.Cache.main.connectAddress }}"
+    CACHE_PORT: "{{ Service.Cache.main.port }}"
+    CACHE_URL: "tcp://{{ join_host_port(Service.Cache.main.connectAddress, Service.Cache.main.port) }}"

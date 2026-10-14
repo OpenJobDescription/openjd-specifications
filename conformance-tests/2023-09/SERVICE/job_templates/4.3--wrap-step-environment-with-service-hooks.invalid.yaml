@@ -1,0 +1,53 @@
+# Section 4.3 WRAP_ACTIONS constraint 6 (RFC 0009 rule 1): a wrapping
+# Environment in a Step's `stepEnvironments` is entered only by Task Sessions
+# and defines exactly RFC 0008's three hooks. The onWrapService* hooks could
+# never run there, so defining them is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- WRAP_ACTIONS
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  stepEnvironments:
+  - name: Wrapper
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args: ["-c", "print()"]
+        onWrapEnvExit:
+          command: python
+          args: ["-c", "print()"]
+        onWrapTaskRun:
+          command: python
+          args: ["-c", "print()"]
+        onWrapServiceEnter:
+          command: python
+          args: ["-c", "print()"]
+        onWrapServiceRun:
+          command: python
+          args: ["-c", "print()"]
+        onWrapServiceHealthCheck:
+          command: python
+          args: ["-c", "print()"]
+        onWrapServiceExit:
+          command: python
+          args: ["-c", "print()"]
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port }}"]

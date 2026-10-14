@@ -1,0 +1,195 @@
+# RFC 0009 "Failure and restart", "Dependents of a relaunched Service": when a
+# Service begins a new Service Session, every Service that lists it holds
+# endpoint values that are no longer valid, so the scheduler must stop each
+# such dependent (dependents first, constraint 4) and start it again in a new
+# Service Session once the Service it lists is READY, without consuming the
+# dependent's restart attempts; a relaunch within the same Service Session
+# keeps the same ports and requires nothing of dependents.
+#
+# Front lists Back and reaches Back, per request, at the endpoint its own
+# instance was given. Back's first instance exits after answering Task 1 (an
+# instance failure; maxAttempts: 1, KEEP). Whether Back is then relaunched in
+# the same Service Session or in a new one is the scheduler's choice (the RFC
+# says MAY), so the fixture asserts the invariant that holds under either:
+# Front's onEnter has run exactly as many times as Back's has (once each if
+# the Session was reused, twice each if Back got a new Session and Front was
+# therefore restarted), and Task 2, served through Front, reaches Back's
+# second instance -- which a Front still holding a stale endpoint could not.
+# Front gives completedTasks: KEEP so that a forced restart keeps Task 1's
+# result. Counts are kept in marker files in the host's temp directory keyed
+# by Job.Name (assuming the Service Sessions and the Task Sessions share a
+# host, as the reference runner's do) and are deleted by the last Task; a
+# stale marker from an aborted run makes Back's first instance report itself
+# as 2, which the TASK 1 assertion catches.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: DependentRestartsWhenUpstreamGetsNewSession
+  services:
+  - name: Back
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+      readinessTimeoutSeconds: 60
+    restartPolicy:
+      maxAttempts: 1
+      completedTasks: KEEP
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["{{ Service.File.Count }}", "{{ Job.Name }}", "back.enters", "BACK_ENTER"]
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Back.main.bindAddress }}", "{{ Service.Back.main.port }}", "{{ Job.Name }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Count
+        type: TEXT
+        data: |
+          import os, sys, tempfile
+          job, kind, label = sys.argv[1], sys.argv[2], sys.argv[3]
+          with open(os.path.join(tempfile.gettempdir(), "openjd-" + job + "." + kind), "a") as f:
+              f.write("x\n")
+          print(label, flush=True)
+      - name: Serve
+        type: TEXT
+        data: |
+          import os, socket, sys, tempfile, time
+          host, port, job = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          # The instance number is the count of onRun launches so far, kept
+          # outside the working directory because the relaunch may or may not
+          # reuse the Service Session.
+          runs = os.path.join(tempfile.gettempdir(), "openjd-" + job + ".back.runs")
+          with open(runs, "a") as f:
+              f.write("x\n")
+          with open(runs) as f:
+              instance = len(f.read().split())
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready: back instance", instance, flush=True)
+          while True:
+              c, _ = s.accept()
+              msg = c.recv(64).decode()
+              c.sendall(("back" + str(instance)).encode())
+              c.close()
+              if instance == 1 and msg == "task 1":
+                  # Exit shortly after Task 1 has its answer: an instance
+                  # failure, which the scheduler relaunches, in this Service
+                  # Session or a new one.
+                  time.sleep(0.3)
+                  print("BACK_INSTANCE_1_EXITING", flush=True)
+                  sys.exit(1)
+  - name: Front
+    dependencies:
+    - service: Back
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+      readinessTimeoutSeconds: 60
+    restartPolicy:
+      completedTasks: KEEP
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["{{ Service.File.Count }}", "{{ Job.Name }}", "front.enters", "FRONT_ENTER"]
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Front.main.bindAddress }}", "{{ Service.Front.main.port }}", "{{ Service.Back.main.connectAddress }}", "{{ Service.Back.main.port }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Count
+        type: TEXT
+        data: |
+          import os, sys, tempfile
+          job, kind, label = sys.argv[1], sys.argv[2], sys.argv[3]
+          with open(os.path.join(tempfile.gettempdir(), "openjd-" + job + "." + kind), "a") as f:
+              f.write("x\n")
+          print(label, flush=True)
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port, back_host, back_port = sys.argv[1], int(sys.argv[2]), sys.argv[3], int(sys.argv[4])
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready: front up", flush=True)
+          while True:
+              c, _ = s.accept()
+              msg = c.recv(64).decode()
+              # Reach Back at the endpoint THIS instance of Front was given.
+              # After Back begins a new Service Session only a restarted Front
+              # holds a valid one.
+              try:
+                  b = socket.create_connection((back_host, back_port), timeout=5)
+                  b.sendall(msg.encode())
+                  reply = b.recv(64).decode()
+                  b.close()
+              except OSError:
+                  reply = "unreachable"
+              c.sendall(("front:" + reply).encode())
+              c.close()
+  steps:
+  - name: Work
+    dependencies:
+    - service: Front
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: N
+        type: INT
+        range: "1-2"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Service.Front.main.connectAddress }}", "{{ Service.Front.main.port }}", "{{ Task.Param.N }}", "{{ Job.Name }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import os, socket, sys, tempfile, time
+          host, port, n, job = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4]
+          c = socket.create_connection((host, port), timeout=10)
+          c.sendall(("task " + n).encode())
+          reply = c.recv(64).decode()
+          c.close()
+          print("TASK", n, "GOT", reply, flush=True)
+          if n == "1":
+              # Stay running while Back's first instance exits, so that the
+              # scheduler sees Back UNREADY before Task 2 could be scheduled.
+              time.sleep(1.5)
+          else:
+              base = os.path.join(tempfile.gettempdir(), "openjd-" + job + ".")
+              counts = {}
+              for kind in ("back.enters", "front.enters", "back.runs"):
+                  with open(base + kind) as f:
+                      counts[kind] = len(f.read().split())
+                  os.remove(base + kind)
+              print("BACK_RUNS", counts["back.runs"], flush=True)
+              print("FRONT_ENTERS_EQUAL_BACK_SESSIONS", counts["front.enters"] == counts["back.enters"], flush=True)
+          print("TASK", n, "DONE", flush=True)
+
+expected:
+  output:
+  - TASK 1 GOT front:back1
+  - BACK_INSTANCE_1_EXITING
+  - TASK 1 DONE
+  - TASK 2 GOT front:back2
+  - BACK_RUNS 2
+  - FRONT_ENTERS_EQUAL_BACK_SESSIONS True
+  - TASK 2 DONE
+  forbidden:
+  - TASK 2 GOT front:back1
+  - TASK 2 GOT front:unreachable
+  - FRONT_ENTERS_EQUAL_BACK_SESSIONS False

@@ -1,0 +1,38 @@
+# Template Schemas §9.3 (RFC 0009): a numeric @fmtstring field's non-null
+# result must satisfy the field's range. The template is valid on its own;
+# the supplied parameter value makes `port` resolve to 70000 at job creation,
+# which must be rejected.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: PortFromParamOutOfRange
+  parameterDefinitions:
+  - name: Port
+    type: INT
+    default: 16379
+  services:
+  - name: Store
+    ports:
+    - name: main
+      port: "{{ Param.Port }}"
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import time; print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  steps:
+  - name: Use
+    dependencies:
+    - service: Store
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_MUST_NOT_RUN')"]
+
+parameters:
+  Port: 70000

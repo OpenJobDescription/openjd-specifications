@@ -1,0 +1,41 @@
+# Section 9 item 3: a <Service>'s `let` may reference Param.*, RawParam.*,
+# and Job.Name; bound names are available in hostRequirements, variables,
+# and script. (A format-string amount `min` needs FEATURE_BUNDLE_1, Section
+# 3.3.1.)
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+- FEATURE_BUNDLE_1
+name: TestJob
+parameterDefinitions:
+- name: threads
+  type: INT
+  default: 4
+services:
+- name: Store
+  let:
+  - label = Job.Name + "-" + string(Param.threads)
+  - cpus = Param.threads * 2
+  ports:
+  - name: main
+  hostRequirements:
+    amounts:
+    - name: amount.worker.vcpu
+      min: "{{ cpus }}"
+  variables:
+    STORE_LABEL: "{{ label }}"
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ label }}", "{{ cpus }}"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]

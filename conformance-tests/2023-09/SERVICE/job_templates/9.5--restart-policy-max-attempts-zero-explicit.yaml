@@ -1,0 +1,29 @@
+# Section 9.5: the default maxAttempts of 0 (never relaunched) written out
+# explicitly, with a completedTasks of RERUN that has no effect but is
+# permitted.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  restartPolicy:
+    maxAttempts: 0
+    completedTasks: RERUN
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
