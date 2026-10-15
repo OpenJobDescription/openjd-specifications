@@ -1,0 +1,16 @@
+# The comprehension's filter keeps no element, but it is still an empty
+# list[string] (§1.3.7), not the empty literal's list[nulltype]. sum() has no
+# list[string] signature, so this is an error even though the list is empty.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ sum([s for s in [\"a\", \"b\"] if s == \"z\"]) }}')"

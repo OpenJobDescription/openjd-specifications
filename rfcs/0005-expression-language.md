@@ -749,8 +749,20 @@ This allows any expression result to be embedded in a format string. For example
 
 The `T` type for a `list[T]` must satisfy:
 
-1. `T1` cannot be `T2?`. A `None`/`null` value inside a list literal is an error.
+1. A list value never contains `None`/`null`; a `None`/`null` value inside a list literal is an
+   error. A `nulltype` member of `T` means the list may be empty: `list[nulltype]` is the empty
+   list, and `list[T2 | nulltype]` is a list with elements of type `T2`, or the empty list.
 2. `T1` can be `list[T2]`, but cannot be nested a third time, so `T2` cannot be `list[T3]`.
+
+A list value holds elements of a single type, so a list type whose element type is a union
+describes one list type per member: `list[int | float | nulltype]` is a `list[int]`, a
+`list[float]`, or the empty `list[nulltype]`. Only expression types, such as the type of a
+list comprehension whose element expression has a union type (see
+[List Comprehensions](#list-comprehensions)), have union element types. Indexing or iterating
+such a list gives the element type without `nulltype` (indexing the empty form is an
+out-of-bounds error). A function argument of such a type matches a signature when one of its
+forms does, the empty form matching a `list[nulltype]` parameter; the call has the union of the
+return types of the forms that match, and is an error when none does.
 
 ### Implicit Type Coercion
 
@@ -1848,8 +1860,30 @@ def evaluate_expression(
                 # Evaluate element expression
                 results.append(evaluate_expression(elt, elem_ts, local_symtabs))
 
+            # The result's type comes from the types of the parts, not from how many
+            # elements the filter kept (see "List Comprehensions").
+            body_type = comprehension_element_type(node, iter_val, elem_ts, symtabs)
+            if body_type is None:
+                return ExprValue(LIST[NULLTYPE], [])
+            if not contains_union(body_type):
+                return ExprValue(LIST[body_type], coerce_all(results, body_type))
+            if not results:
+                return ExprValue(LIST[NULLTYPE], [])
             elem_type = resolve_list_element_type(results)
             return ExprValue(LIST[elem_type], coerce_all(results, elem_type))
+
+def comprehension_element_type(
+    node: ListComp, iter_val: ExprValue, elem_ts: TypeSet, symtabs: list[SymbolTable]
+) -> Optional[ExprType]:
+    # The type of the element expression with the loop variable typed by the iterable's
+    # element type, without a nulltype member. None when nothing is left: the iterable can
+    # only be the empty list, or the element expression can only be null.
+    var_type = list_element_type(iter_val.type)  # nulltype element types removed
+    if var_type is None:
+        return None
+    local_symtab = {node.generator.target: ExprValue.unresolved(var_type)}
+    elt_val = evaluate_expression(node.elt, elem_ts, [local_symtab] + symtabs)
+    return remove_nulltype(unresolved_constraint(elt_val.type))
 
 def lookup_variable(node: Attribute | Name, symtabs: list[SymbolTable]) -> ExprValue:
     path = collect_attribute_path(node)  # e.g., ["Param", "InputFile", "stem"]
@@ -1957,6 +1991,21 @@ a list comprehension is not supported.
 The loop variable (`var`) must start with a lowercase letter or underscore, matching the
 `<UserIdentifier>` rule. This ensures it cannot shadow spec-defined symbols like `Param` or `Task`.
 A list comprehension binding that shadows an existing binding is an error.
+
+The comprehension's type follows from the types of its parts, not from how many elements the
+filter keeps. The loop variable has the iterable's element type (`E` for `list[E]`, `int` for
+`range_expr`, the union of the element types for a union of list types, with a `nulltype`
+element type contributing nothing). Let `T` be the type of `expr` with the loop variable of that
+type, without a `nulltype` member, since a list cannot hold `null`:
+
+- If `T` contains no union, the comprehension is `list[T]`, and an empty result is an empty
+  `list[T]`, not `list[nulltype]`. `[x for x in [1, 2] if x > 5] + ['a']` is an error, as
+  `[1] + ['a']` is.
+- If `T` contains a union, the comprehension is `list[T | nulltype]`. A non-empty result has the
+  type [List Literal Type Inference](#list-literal-type-inference) gives its elements, and an
+  empty result is `list[nulltype]`, since no single member of the union is the element type.
+- If nothing is left of `T` (the expression can only be `null`, or the iterable can only be the
+  empty list, in which case `expr` is not type-checked), the comprehension is `list[nulltype]`.
 
 Examples:
 - `[['-e', e] for e in Task.Environment]` transforms `["A=1", "B=2"]` into
