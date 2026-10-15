@@ -757,10 +757,9 @@ The `T` type for a `list[T]` must satisfy:
 A list value holds elements of a single type, so a list type whose element type is a union
 describes one list type per member: `list[int | float | nulltype]` is a `list[int]`, a
 `list[float]`, or the empty `list[nulltype]`. Only expression types, such as the type of a
-list comprehension whose element expression has a union type (see
-[List Comprehensions](#list-comprehensions)), have union element types. Indexing or iterating
-such a list gives the element type without `nulltype` (indexing the empty form is an
-out-of-bounds error). A function argument of such a type matches a signature when one of its
+list comprehension whose elements are not known (see [List Comprehensions](#list-comprehensions)),
+have union element types. Indexing or iterating such a list gives the element type without
+`nulltype` (indexing the empty form is an out-of-bounds error). A function argument of such a type matches a signature when one of its
 forms does, the empty form matching a `list[nulltype]` parameter; the call has the union of the
 return types of the forms that match, and is an error when none does.
 
@@ -1860,43 +1859,8 @@ def evaluate_expression(
                 # Evaluate element expression
                 results.append(evaluate_expression(elt, elem_ts, local_symtabs))
 
-            # The result's type comes from the types of the parts, not from how many
-            # elements the filter kept (see "List Comprehensions").
-            body_type = comprehension_element_type(node, elem_ts, symtabs)
-            if body_type is None:
-                if results:  # the element expression produced only null
-                    raise TypeError("Cannot create list from null elements")
-                return ExprValue(LIST[NULLTYPE], [])
-            if is_concrete(body_type):  # no union, any, or type variable, at any depth
-                return ExprValue(LIST[body_type], coerce_all(results, body_type))
-            if not results:
-                return ExprValue(LIST[NULLTYPE], [])
             elem_type = resolve_list_element_type(results)
             return ExprValue(LIST[elem_type], coerce_all(results, elem_type))
-
-def comprehension_element_type(
-    node: ListComp, elem_ts: TypeSet, symtabs: list[SymbolTable]
-) -> Optional[ExprType]:
-    # The type of the element expression, deduced as in static type checking: the loop
-    # variable typed by the element type of the iterable's static type (static_type:
-    # the iterable expression evaluated with every symbol read as unresolved[its static
-    # type]), and every other symbol read as
-    # unresolved[its static type] (static_symtabs: the type template validation gives
-    # the symbol, e.g. a parameter's declared type), so no value is consulted. None when
-    # nothing is left: the iterable can only be the empty list, or the element expression
-    # can only be null or never returns. An element type every form of which is a list
-    # of lists is an error (a three-level list).
-    var_type = list_element_type(static_type(node.generator.iter, symtabs))  # nulltype removed
-    if var_type is None:
-        return None
-    local_symtab = {node.generator.target: ExprValue.unresolved(var_type)}
-    elt_val = evaluate_expression(node.elt, elem_ts, [local_symtab] + static_symtabs(symtabs))
-    body_type = remove_nulltype(unresolved_constraint(elt_val.type))
-    if body_type is None or body_type.type_code == NORETURN:
-        return None
-    if is_list_of_lists(body_type):  # every form; see "list[T] constraints"
-        raise TypeError("Lists may be nested at most 2 levels deep")
-    return body_type
 
 def lookup_variable(node: Attribute | Name, symtabs: list[SymbolTable]) -> ExprValue:
     path = collect_attribute_path(node)  # e.g., ["Param", "InputFile", "stem"]
@@ -2005,27 +1969,26 @@ The loop variable (`var`) must start with a lowercase letter or underscore, matc
 `<UserIdentifier>` rule. This ensures it cannot shadow spec-defined symbols like `Param` or `Task`.
 A list comprehension binding that shadows an existing binding is an error.
 
-The comprehension's type follows from the types of its parts, not from how many elements the
-filter keeps. The loop variable has the element type of the iterable's static type (`E` for
-`list[E]`, `int` for `range_expr`, the union of the element types for a union of list types,
-with a `nulltype` element type contributing nothing). Let `T` be the type of `expr` deduced as
-in static type checking, from the types of the loop variable and of every symbol it references,
-never their values, and under the element target type a `list[U]` target gives it. `T` is
-deduced, and `expr` type-checked, even when the result is empty (an `expr` that fails on
-constant operands alone is an error, as static checking evaluates those). A `nulltype`
-member is removed from `T`, since a list cannot hold `null`; a `T` every form of which is a list
-of lists (each union member, and each form of a list with a union element type) is an error,
-since the comprehension would nest three levels deep:
+The comprehension's type depends on whether the elements it keeps are known. Evaluated over a
+list value whose elements the filter decides, it builds its result from the values `expr`
+produces, with the type [List Literal Type Inference](#list-literal-type-inference) gives them;
+when the filter keeps no element, `expr` is never evaluated and the result is `list[nulltype]`
+(`[x for x in [1, 2] if x > 5] + ['a']` is `['a']`).
 
-- If `T` is a single concrete type (no union, no `any`, and no type variable at any depth), the
-  comprehension is `list[T]`, and an empty result is an empty `list[T]`, not `list[nulltype]`.
-  `[x for x in [1, 2] if x > 5] + ['a']` is an error, as `[1] + ['a']` is.
-- Otherwise the comprehension is `list[T | nulltype]`. A non-empty result has the type
-  [List Literal Type Inference](#list-literal-type-inference) gives its elements, and an empty
-  result is `list[nulltype]`, since no single concrete type is the element type.
-- If nothing is left of `T` (the expression can only be `null`, its type is `noreturn`, or the
-  iterable can only be the empty list, in which case `expr` is not type-checked), the
-  comprehension is `list[nulltype]`.
+When static type checking cannot evaluate it, because the value of the iterable, or of the
+filter for one of its elements, is not known, its type covers every result a run can build, the
+empty one included. The loop variable has the iterable's element type (`E` for `list[E]`, `int`
+for `range_expr`, the union of the element types for a union of list types, with a `nulltype`
+element type contributing nothing). Let `T` be the type of `expr` with the loop variable of that
+type, with a `nulltype` member removed, since a list cannot hold `null`. The comprehension is
+`list[T | nulltype]`. It is `list[nulltype]`, the only result a run can succeed with, when
+nothing is left of `T`, `T` is `noreturn`, every form of `T` is a list of lists (each union
+member, and each form of a list with a union element type; the comprehension would nest three
+levels deep), or the filter or `expr` fails to type-check, including on operands whose values
+are known (`[1 // 0 for x in values]`). Such a failure is not reported by static type checking:
+a run whose iterable is empty, or whose filter keeps nothing, succeeds, and a run that evaluates
+the failing part reports it there. If the iterable can only be the empty list, `expr` is not
+type-checked and the comprehension is `list[nulltype]`.
 
 Examples:
 - `[['-e', e] for e in Task.Environment]` transforms `["A=1", "B=2"]` into
