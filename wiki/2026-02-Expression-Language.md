@@ -1128,16 +1128,17 @@ parts' types, and does not depend on how many elements the filter keeps:
   of every symbol it references, never from their values (for an `unresolved[S]` type, `T` is
   `S`). `T` is deduced, and `expr` type-checked, even when the result is empty: a comprehension
   whose `expr` cannot be typed is an error. A `nulltype` member is removed from `T`: a list
-  cannot hold `null`, so a run whose `expr` produces `null` fails. If `T` is a list of lists
-  (for a union, if every member is), the comprehension is an error: it would nest lists three
-  levels deep.
-- If `T` has no union and no `any` at any depth, the comprehension has type `list[T]`, and an
-  empty result is an empty `list[T]`, not `list[nulltype]`. For example,
+  cannot hold `null`, so a run whose `expr` produces `null` fails. If every form of `T` (see
+  [section 1.2.1](#121-expression-types); each member of a union, and each form of a list
+  whose element type is a union) is a list of lists, the comprehension is an error: it would
+  nest lists three levels deep.
+- If `T` is a single concrete type — no union, no `any`, and no type variable (such as the
+  `T3` of `__add__(list[T1], list[T2]) -> list[T3]`) at any depth — the comprehension has type
+  `list[T]`, and an empty result is an empty `list[T]`, not `list[nulltype]`. For example,
   `[x for x in [1, 2] if x > 5]` is an empty `list[int]`, so
   `[x for x in [1, 2] if x > 5] + ['a']` is an error, as `[1] + ['a']` is.
-- Otherwise (`T` has a union or `any` at some depth) the comprehension has type
-  `list[T | nulltype]`. A non-empty result's type is the one
-  [section 1.2.6](#126-list-literal-type-inference) gives its elements:
+- Otherwise the comprehension has type `list[T | nulltype]`. A non-empty result's type is the
+  one [section 1.2.6](#126-list-literal-type-inference) gives its elements:
   `[x if x > 1 else 2.5 for x in values]` is a `list[int]` or a `list[float]`, and
   `[x if x > 1 else 'a' for x in values]` is a `list[int]` or a `list[string]`, failing as
   `[1, 'a']` does when it produces both. An empty result is `list[nulltype]`, since no single

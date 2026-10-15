@@ -1864,8 +1864,10 @@ def evaluate_expression(
             # elements the filter kept (see "List Comprehensions").
             body_type = comprehension_element_type(node, iter_val, elem_ts, symtabs)
             if body_type is None:
+                if results:  # the element expression produced only null
+                    raise TypeError("Cannot create list from null elements")
                 return ExprValue(LIST[NULLTYPE], [])
-            if is_concrete(body_type):  # no union and no any, at any depth
+            if is_concrete(body_type):  # no union, any, or type variable, at any depth
                 return ExprValue(LIST[body_type], coerce_all(results, body_type))
             if not results:
                 return ExprValue(LIST[NULLTYPE], [])
@@ -1877,10 +1879,11 @@ def comprehension_element_type(
 ) -> Optional[ExprType]:
     # The type of the element expression, deduced as in static type checking: the loop
     # variable typed by the iterable's element type, and every other symbol read as
-    # unresolved[its type], so no value is consulted (static_symtabs replaces each value
-    # with ExprValue.unresolved(value.type)). None when nothing is left: the iterable can
-    # only be the empty list, or the element expression can only be null or never
-    # returns. An element type that is a list of lists is an error (three-level list).
+    # unresolved[its static type] (static_symtabs: the type template validation gives
+    # the symbol, e.g. a parameter's declared type), so no value is consulted. None when
+    # nothing is left: the iterable can only be the empty list, or the element expression
+    # can only be null or never returns. An element type every form of which is a list
+    # of lists is an error (a three-level list).
     var_type = list_element_type(iter_val.type)  # nulltype element types removed
     if var_type is None:
         return None
@@ -1889,7 +1892,7 @@ def comprehension_element_type(
     body_type = remove_nulltype(unresolved_constraint(elt_val.type))
     if body_type is None or body_type.type_code == NORETURN:
         return None
-    if is_list_of_lists(body_type):  # for a union, every member
+    if is_list_of_lists(body_type):  # every form; see "list[T] constraints"
         raise TypeError("Lists may be nested at most 2 levels deep")
     return body_type
 
@@ -2006,12 +2009,13 @@ filter keeps. The loop variable has the iterable's element type (`E` for `list[E
 element type contributing nothing). Let `T` be the type of `expr` deduced as in static type
 checking, from the types of the loop variable and of every symbol it references, never their
 values. `T` is deduced, and `expr` type-checked, even when the result is empty. A `nulltype`
-member is removed from `T`, since a list cannot hold `null`; a `T` that is a list of lists (for
-a union, every member) is an error, since the comprehension would nest three levels deep:
+member is removed from `T`, since a list cannot hold `null`; a `T` every form of which is a list
+of lists (each union member, and each form of a list with a union element type) is an error,
+since the comprehension would nest three levels deep:
 
-- If `T` has no union and no `any` at any depth, the comprehension is `list[T]`, and an empty
-  result is an empty `list[T]`, not `list[nulltype]`. `[x for x in [1, 2] if x > 5] + ['a']` is
-  an error, as `[1] + ['a']` is.
+- If `T` is a single concrete type (no union, no `any`, and no type variable at any depth), the
+  comprehension is `list[T]`, and an empty result is an empty `list[T]`, not `list[nulltype]`.
+  `[x for x in [1, 2] if x > 5] + ['a']` is an error, as `[1] + ['a']` is.
 - Otherwise the comprehension is `list[T | nulltype]`. A non-empty result has the type
   [List Literal Type Inference](#list-literal-type-inference) gives its elements, and an empty
   result is `list[nulltype]`, since no single concrete type is the element type.
