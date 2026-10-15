@@ -1862,7 +1862,7 @@ def evaluate_expression(
 
             # The result's type comes from the types of the parts, not from how many
             # elements the filter kept (see "List Comprehensions").
-            body_type = comprehension_element_type(node, iter_val, elem_ts, symtabs)
+            body_type = comprehension_element_type(node, elem_ts, symtabs)
             if body_type is None:
                 if results:  # the element expression produced only null
                     raise TypeError("Cannot create list from null elements")
@@ -1875,7 +1875,7 @@ def evaluate_expression(
             return ExprValue(LIST[elem_type], coerce_all(results, elem_type))
 
 def comprehension_element_type(
-    node: ListComp, iter_val: ExprValue, elem_ts: TypeSet, symtabs: list[SymbolTable]
+    node: ListComp, elem_ts: TypeSet, symtabs: list[SymbolTable]
 ) -> Optional[ExprType]:
     # The type of the element expression, deduced as in static type checking: the loop
     # variable typed by the element type of the iterable's static type (static_type:
