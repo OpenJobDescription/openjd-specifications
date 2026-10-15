@@ -1878,13 +1878,15 @@ def comprehension_element_type(
     node: ListComp, iter_val: ExprValue, elem_ts: TypeSet, symtabs: list[SymbolTable]
 ) -> Optional[ExprType]:
     # The type of the element expression, deduced as in static type checking: the loop
-    # variable typed by the iterable's element type, and every other symbol read as
+    # variable typed by the element type of the iterable's static type (static_type:
+    # the iterable expression evaluated with every symbol read as unresolved[its static
+    # type]), and every other symbol read as
     # unresolved[its static type] (static_symtabs: the type template validation gives
     # the symbol, e.g. a parameter's declared type), so no value is consulted. None when
     # nothing is left: the iterable can only be the empty list, or the element expression
     # can only be null or never returns. An element type every form of which is a list
     # of lists is an error (a three-level list).
-    var_type = list_element_type(iter_val.type)  # nulltype element types removed
+    var_type = list_element_type(static_type(node.generator.iter, symtabs))  # nulltype removed
     if var_type is None:
         return None
     local_symtab = {node.generator.target: ExprValue.unresolved(var_type)}
@@ -2004,11 +2006,13 @@ The loop variable (`var`) must start with a lowercase letter or underscore, matc
 A list comprehension binding that shadows an existing binding is an error.
 
 The comprehension's type follows from the types of its parts, not from how many elements the
-filter keeps. The loop variable has the iterable's element type (`E` for `list[E]`, `int` for
-`range_expr`, the union of the element types for a union of list types, with a `nulltype`
-element type contributing nothing). Let `T` be the type of `expr` deduced as in static type
-checking, from the types of the loop variable and of every symbol it references, never their
-values. `T` is deduced, and `expr` type-checked, even when the result is empty. A `nulltype`
+filter keeps. The loop variable has the element type of the iterable's static type (`E` for
+`list[E]`, `int` for `range_expr`, the union of the element types for a union of list types,
+with a `nulltype` element type contributing nothing). Let `T` be the type of `expr` deduced as
+in static type checking, from the types of the loop variable and of every symbol it references,
+never their values, and under the element target type a `list[U]` target gives it. `T` is
+deduced, and `expr` type-checked, even when the result is empty (an `expr` that fails on
+constant operands alone is an error, as static checking evaluates those). A `nulltype`
 member is removed from `T`, since a list cannot hold `null`; a `T` every form of which is a list
 of lists (each union member, and each form of a list with a union element type) is an error,
 since the comprehension would nest three levels deep:
