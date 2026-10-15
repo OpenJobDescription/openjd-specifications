@@ -806,7 +806,10 @@ New properties, available only when both `WRAP_ACTIONS` (RFC 0008) and `SERVICE`
   Service's *onEnter*, *onRun*, *onHealthCheck*, and *onExit* respectively, exactly as
   `onWrapTaskRun` runs instead of a Task's `onRun`. Each receives the wrapped action's fields
   through the same `WrappedAction.*` variables RFC 0008 defines, plus a `WrappedService.*` group
-  (the analogue of `WrappedEnv.Name` and `WrappedStep.Name`):
+  (the analogue of `WrappedEnv.Name` and `WrappedStep.Name`). As RFC 0008 established for
+  `WrappedAction.*`, every one of these groups is in scope throughout the hook's `<Action>` — its
+  `command` and `args`, and its `timeout` and `cancelation` fields, which resolve at run time (so a
+  hook may forward `timeout: "{{WrappedAction.Timeout}}"`):
 
   | Variable | Type | Description |
   |---|---|---|
@@ -822,6 +825,9 @@ New properties, available only when both `WRAP_ACTIONS` (RFC 0008) and `SERVICE`
   host-side binding to the allocated interface passes
   `{{ flatten([['-p', join_host_port(WrappedService.BindAddresses[i], WrappedService.Ports[i]) + ':' + string(WrappedService.Ports[i]) + '/' + lower(WrappedService.Protocols[i])] for i in range(len(WrappedService.Ports))]) }}`
   in its `args`; the simpler form that binds every interface is shown in the wiki's §4.3.1.
+  `WrappedService.Ports` is `list[int]`, and this RFC extends `repr_sh` to `int` and `list[int]`
+  (see [Modifications to the Expression Language](#modifications-to-the-expression-language)), so a
+  wrapper may pass the list as `repr_sh(WrappedService.Ports)` without converting each entry.
 
 RFC 0008's rules extend to the new hooks as follows:
 
@@ -1199,7 +1205,11 @@ following rules say where that assumption holds and where it does not:
    invocation's files to a distinct location, so that `Service.File.<name>` resolves to a different
    path in each invocation, or materialize them once to one path and leave them in place, which is
    safe because their content is constant: a Service Session's format-string values do not change
-   for its lifetime.
+   for its lifetime. Either way, a file materialized for one action MUST remain in place, unchanged,
+   until the Service Session ends: materializing a later action's files never removes or replaces
+   an earlier action's. A path that *onEnter* captured (for example by exporting
+   `Service.File.<name>` with `openjd_env`) therefore stays valid for *onRun* and *onExit*, even
+   when their own `Service.File.<name>` resolves elsewhere.
 2. **Stdout.** The stdout of *onHealthCheck* is captured to the log but no `openjd_*` message on
    it is honored: its result is its exit status.
 3. **Log attribution.** Every line of stdout or stderr captured in a Service Session MUST be
@@ -1233,9 +1243,15 @@ Default timeouts for these actions (extending the table in `<Action>`):
 Implementations MUST watch the stdout of *onEnter*, *onRun*, and *onExit* for the standard
 `openjd_status`, `openjd_progress`, and `openjd_fail` messages, and the stdout of *onRun* for
 `openjd_service_ready` when the health check's *type* is `STDOUT` (for *onHealthCheck*, see
-[Concurrency with `onRun`](#concurrency-with-onrun) rule 2). An `openjd_fail` message accompanies the
-start failure, instance failure, or *onExit* failure (see [Failure and restart](#failure-and-restart))
-that the action's exit produces.
+[Concurrency with `onRun`](#concurrency-with-onrun) rule 2). An `openjd_fail` message on *onRun*'s
+stdout is itself an instance failure: the runtime MUST cancel *onRun* at once with its `cancelation`
+method, as it does an UNHEALTHY instance, and the message is the failure's reason (see
+[Failure and restart](#failure-and-restart) step 2). An `openjd_fail` message on *onEnter*'s or
+*onExit*'s stdout marks that action failed when it exits, whatever its exit status — a start failure
+or an *onExit* failure respectively — and the message is that failure's reason. (The base
+specification says only that `openjd_fail` "indicates why an Action has failed"; existing runtimes
+already fail an action that emits it regardless of exit status, and this RFC states the rule for
+Service actions so that the three actions behave alike.)
 
 The environment variables that *How Jobs Are Run* defines for every Session, currently
 `OPENJD_SESSION_WORKING_DIR`, are set in the process environment of every action of a Service
@@ -1420,6 +1436,17 @@ through verbatim: `join_host_port("fe80::1%eth0", 80)` is `"[fe80::1%eth0]:80"`.
 than an error and an already-bracketed host is not bracketed again. Under method syntax,
 `addr.join_host_port(port)`.
 
+**`repr_sh` of integers.** §2.2.6 gains two signatures, available wherever `repr_sh` is (they are
+not gated on `SERVICE`):
+
+| Signature | Description |
+|---|---|
+| `repr_sh(n: int) -> string` | The integer's decimal string form (`repr_sh(6379)` is `6379`; an integer never needs quoting). |
+| `repr_sh(args: list[int]) -> string` | The decimal forms joined with single spaces (`repr_sh([80, 443])` is `80 443`). |
+
+These exist so that a port number, or `WrappedService.Ports`, can be passed to a shell command
+without a `string()` conversion first.
+
 ### Modifications to How Jobs Are Run
 
 > Additions to [How Jobs Are Run](https://github.com/OpenJobDescription/openjd-specifications/wiki/How-Jobs-Are-Run)
@@ -1466,7 +1493,11 @@ A scheduler MUST satisfy the following constraints; how it satisfies them is its
    canceled), when the Service is relocated, or when the Session fails to start (see
    [Failure and restart](#failure-and-restart)). A Service whose scope completes MUST have its
    Session ended whatever its state, including UNREADY, UNHEALTHY, and FAILED, so that partial state
-   is cleaned up.
+   is cleaned up. A Service is stopped once nothing in its scope can still use it: when a scope
+   completes with a Step, the scheduler exits that Step's Environments in the Task Sessions that
+   ran it before stopping the Service, so an Environment's `onExit` that reaches the Service (a
+   client flushing to a store) still finds it READY — the order the [execution order
+   example](#execution-order) shows.
 7. Before a Service Session ends: any running action is canceled with its own `cancelation`
    method; *onExit* runs if it is defined and any action of the Service has run; and every
    Environment entered is exited in reverse order, as at the end of any Session. Then the working
@@ -1524,15 +1555,17 @@ Two kinds of failure lead to the restart decision:
 
 * An **instance failure** occurs when *onRun* exits (with any status) while the Service's scope
   still has work — a Task that has not completed, or that could still run — other than because the
-  scheduler canceled it; when `readinessTimeoutSeconds` elapses before the instance is READY; when
-  the instance becomes UNHEALTHY (see [`<ServiceHealthCheck>`](#servicehealthcheck)); or when the
-  scheduler loses the service host (step 6). An exit observed after the scope has completed is not a
+  scheduler canceled it; when *onRun* emits an `openjd_fail` message (the runtime cancels it, step
+  2, and the message is the failure's reason); when `readinessTimeoutSeconds` elapses before the
+  instance is READY; when the instance becomes UNHEALTHY (see
+  [`<ServiceHealthCheck>`](#servicehealthcheck)); or when the scheduler loses the service host
+  (step 6). An exit observed after the scope has completed is not a
   failure, whether or not the scheduler's cancelation had yet reached the process; the Service
   Session simply ends.
 * A **start failure** occurs when a Service Session fails before *onRun* is launched: a requested
   *port* cannot be allocated on the chosen host, an Environment's `onEnter` fails, or the Service's
-  *onEnter* exits non-zero or times out. The Session ends (constraint 7 applies: *onExit* runs if
-  *onEnter* ran, Environments are exited).
+  *onEnter* exits non-zero, times out, or emits `openjd_fail`. The Session ends (constraint 7
+  applies: *onExit* runs if *onEnter* ran, Environments are exited).
 
 On either failure the Service becomes UNREADY (an UNHEALTHY instance, once its *onRun* has exited)
 and the scheduler takes steps 1–4; steps 5–8 govern the outcomes those steps can produce.
@@ -1543,8 +1576,9 @@ and the scheduler takes steps 1–4; steps 5–8 govern the outcomes those steps
    is not READY, or that holds the endpoint of a relocated instance, fails on its own and is retried
    under the scheduler's ordinary Task retry rules, re-resolving `Service.*` when it runs again; a
    Task that no longer needs the Service completes normally.
-2. Cancels *onRun* if it is still running (the readiness-timeout and UNHEALTHY cases) and waits for
-   it to exit; constraint 5 forbids a second *onRun* in the Session before then.
+2. Cancels *onRun* if it is still running (the readiness-timeout, UNHEALTHY, and `openjd_fail`
+   cases) and waits for it to exit; constraint 5 forbids a second *onRun* in the Session before
+   then.
 3. If the number of relaunches so far is less than `restartPolicy.maxAttempts`:
     1. If `restartPolicy.completedTasks` is `RERUN`, returns every successfully completed Task in
        the scope to the queue.
@@ -1631,7 +1665,10 @@ overlay, port forwarding, a proxy) is not visible in the template.
 
 #### Stdout/Stderr messages
 
-> Addition to the list in *Stdout/Stderr Messages*
+> Addition to the list in *Stdout/Stderr Messages*, and a note on `openjd_fail` in a Service Session
+> (see [`<ServiceActions>`](#serviceactions)): from a Service's *onRun* the message is an instance
+> failure in itself, on which the runtime cancels *onRun* and reports the message as the reason; from
+> *onEnter* or *onExit* it marks the action failed when it exits, whatever the exit status.
 
 * `openjd_service_ready: <message>` where `<message>` is any string — Interpreted only when emitted
   by the `onRun` action of a Service whose health check *type* is `STDOUT`, as that type's probe. It
@@ -1662,6 +1699,11 @@ A service has no "finished" state while its scope still has work, so any exit is
 failure. The rule is tied to the scope having work rather than to the scheduler's cancelation so
 that a service which exits on its own once its clients are gone does not fail a Job whose work has
 all succeeded.
+
+`openjd_fail` from *onRun* is treated the same way, and proactively: a service that has detected it
+cannot serve (a corrupt store, a lost license) need not hang around until something notices. It
+prints the reason and the runtime cancels it, so the restart decision runs with that reason attached
+rather than with a bare exit code later.
 
 ### Health is declared, not inferred
 

@@ -1709,7 +1709,10 @@ The format string scopes available to format strings within an Environment are:
 6. `WrappedAction.*` — Available within the wrap hooks only (`onWrapEnvEnter`, `onWrapTaskRun`, `onWrapEnvExit`, and,
    with the `SERVICE` extension, `onWrapServiceEnter`, `onWrapServiceRun`, `onWrapServiceHealthCheck`, and
    `onWrapServiceExit`). Carries the wrapped `<Action>`'s fields. Available with the `WRAP_ACTIONS` extension.
-   See [Wrap hook template variables](#431-wrap-hook-template-variables) for the available fields.
+   See [Wrap hook template variables](#431-wrap-hook-template-variables) for the available fields. "Within a hook"
+   means throughout the hook's `<Action>`: its *command* and *args*, and its *timeout* and *cancelation* fields, which
+   resolve at run time with these variables in scope. The same holds for `WrappedEnv.*`, `WrappedStep.*`, and
+   `WrappedService.*` below.
 7. `WrappedEnv.Name` — Available within `onWrapEnvEnter` and `onWrapEnvExit` only. The name of the inner
    environment whose action is being wrapped. Available with the `WRAP_ACTIONS` extension.
 8. `WrappedStep.Name` — Available within `onWrapTaskRun` only. The name of the step whose task is being
@@ -1882,6 +1885,13 @@ process, and must ensure the process can bind `bindAddress` inside that namespac
 `::`) works in either case; a loopback `bindAddress` reaches a forwarded port only with host networking. For example, a
 Docker wrapper without host networking passes
 `{{ flatten([['-p', string(WrappedService.Ports[i]) + ':' + string(WrappedService.Ports[i]) + '/' + lower(WrappedService.Protocols[i])] for i in range(len(WrappedService.Ports))]) }}`.
+`WrappedService.Ports` is `list[int]`; `repr_sh` accepts `int` and `list[int]` (see the
+[Expression Language](2026-02-Expression-Language#226-script-embedding-and-serialization)), so a wrapper may also pass
+the whole list as `repr_sh(WrappedService.Ports)`.
+
+Every `Wrapped*` group is in scope throughout the hook's `<Action>` — its *command* and *args*, and its *timeout* and
+*cancelation* fields, which resolve at run time — so an `onWrapService*` hook forwards the wrapped action's timeout
+with `timeout: "{{WrappedAction.Timeout}}"` exactly as RFC 0008's hooks do.
 
 `WrappedAction.Environment` carries only session-defined variables: variables exported with `openjd_env` —
 including by earlier actions that themselves ran via a wrap hook — and entries of entered environments'
@@ -2859,7 +2869,12 @@ and embedded files are materialized before each of them runs, subject to the rul
 Implementations of this specification must watch the stdout of *onEnter*, *onRun*, and *onExit* for the standard
 `openjd_status`, `openjd_progress`, and `openjd_fail` messages, and the stdout of *onRun* for the line
 `openjd_service_ready` when the Service's health check *type* is `STDOUT` (for *onHealthCheck*, see
-[Concurrency of onHealthCheck with onRun](#971-concurrency-of-onhealthcheck-with-onrun) rule 2).
+[Concurrency of onHealthCheck with onRun](#971-concurrency-of-onhealthcheck-with-onrun) rule 2). An `openjd_fail`
+message on *onRun*'s stdout is itself an instance failure: the runtime must cancel *onRun* at once with its
+cancelation method, and the message is the failure's reason. An `openjd_fail` message on *onEnter*'s or *onExit*'s
+stdout marks that action failed when it exits, whatever its exit status — a start failure or an *onExit* failure
+respectively — and the message is that failure's reason. See
+[Service failure and restart](How-Jobs-Are-Run#service-failure-and-restart).
 
 Implementations must additionally watch the stdout of *onEnter* for `openjd_env`, `openjd_redacted_env`, and
 `openjd_unset_env`, with the same syntax and redaction rules as for an Environment's `onEnter` (see
@@ -2881,7 +2896,10 @@ is running. Every other action in a Session runs one at a time. The following ru
    Session was given. Implementations may materialize each invocation's files to a distinct location, so that
    `Service.File.<name>` resolves to a different path in each action, or may materialize every invocation's files to
    one path and leave them in place, since their content is constant: a Service Session's format string values do not
-   change for its lifetime.
+   change for its lifetime. Either way, a file materialized for one action must remain in place, unchanged, until the
+   Service Session ends: materializing a later action's files never removes or replaces an earlier action's. A path
+   that *onEnter* captured (for example by exporting `Service.File.<name>` with `openjd_env`) therefore stays valid
+   for *onRun* and *onExit*, even when their own `Service.File.<name>` resolves elsewhere.
 2. The stdout of *onHealthCheck* is captured to the log, but no `openjd_*` message on it is honored: its result is its
    exit status.
 3. Every line of stdout or stderr captured in a Service Session must be attributable to the action that produced it,
