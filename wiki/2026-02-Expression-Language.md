@@ -792,7 +792,8 @@ union describes a set of list types, one per member: `list[int | string]` is a `
 a `list[string]`, and `list[int | float | nulltype]` is a `list[int]`, a `list[float]`, or the
 empty `list[nulltype]`. Only expression types have union element types; a list value's own
 type never does. These types come from list expressions whose elements' types are unions,
-such as list comprehensions (see [section 1.3.7](#137-list-comprehensions)). Operations take
+and from list comprehensions whose elements are not known, which may be empty (see
+[section 1.3.7](#137-list-comprehensions)). Operations take
 the list's forms into account:
 
 - Indexing such a list, or iterating over it, gives its element type without the `nulltype`
@@ -982,8 +983,8 @@ Without a target type context:
 4. If elements are `list[int]` and `list[float]`, the result is `list[list[float]]`.
 5. If elements are `list[path]` and `list[string]`, the result is `list[list[string]]`.
 6. The empty list `[]` evaluates to `list[nulltype]`, which is implicitly convertible to `list[T]` for any `T`.
-   An empty list comprehension result has the type [section 1.3.7](#137-list-comprehensions)
-   gives it, which may be a typed empty list such as `list[int]`.
+   A list comprehension that keeps no element also evaluates to `list[nulltype]` (see
+   [section 1.3.7](#137-list-comprehensions)).
 7. If elements have incompatible types (e.g., `int` and `string`), evaluation fails with an error.
 
 A `null`/`None` value cannot be an element of a list literal. Including `null` in a list is always an error.
@@ -1117,39 +1118,39 @@ existing binding is an error.
 
 Python's nested comprehension syntax is not supported.
 
-The type of a list comprehension `[expr for var in iterable if condition]` follows from its
-parts' types, and does not depend on how many elements the filter keeps:
+The type of a list comprehension `[expr for var in iterable if condition]` depends on whether
+the elements it keeps are known:
 
-- `var` has the element type of `iterable`'s static type (the type static type checking deduces
-  for it, not that of the value a run iterates): `E` for a `list[E]`, and `int` for a
-  `range_expr`. For a union of list types it is the union of their element types
-  (`list[int] | list[string]` gives `int | string`). A `nulltype` element type contributes
-  nothing (see [section 1.2.1](#121-expression-types)).
-- `T` is the type of `expr` deduced as in static type checking: from the types of `var` and
-  of every symbol it references, never from their values (for an `unresolved[S]` type, `T` is
-  `S`), and under the element target type that a `list[U]` target gives `expr` (as for a list
-  literal, section 1.3.1). `T` is deduced, and `expr` type-checked, even when the result is
-  empty: a comprehension whose `expr` cannot be typed is an error, and so is one whose `expr`
-  fails on constant operands alone (`[1 // 0 for x in values if x > 5]`), as static type
-  checking evaluates those. A `nulltype` member is removed from `T`: a list
-  cannot hold `null`, so a run whose `expr` produces `null` fails. If every form of `T` (see
-  [section 1.2.1](#121-expression-types); each member of a union, and each form of a list
-  whose element type is a union) is a list of lists, the comprehension is an error: it would
-  nest lists three levels deep.
-- If `T` is a single concrete type — no union, no `any`, and no type variable (such as the
-  `T3` of `__add__(list[T1], list[T2]) -> list[T3]`) at any depth — the comprehension has type
-  `list[T]`, and an empty result is an empty `list[T]`, not `list[nulltype]`. For example,
-  `[x for x in [1, 2] if x > 5]` is an empty `list[int]`, so
-  `[x for x in [1, 2] if x > 5] + ['a']` is an error, as `[1] + ['a']` is.
-- Otherwise the comprehension has type `list[T | nulltype]`. A non-empty result's type is the
-  one [section 1.2.6](#126-list-literal-type-inference) gives its elements:
+- Evaluated over a list value whose elements `condition` decides, the comprehension builds its
+  result from the values `expr` produces, and the result's type is the one
+  [section 1.2.6](#126-list-literal-type-inference) gives those values:
   `[x if x > 1 else 2.5 for x in values]` is a `list[int]` or a `list[float]`, and
-  `[x if x > 1 else 'a' for x in values]` is a `list[int]` or a `list[string]`, failing as
-  `[1, 'a']` does when it produces both. An empty result is `list[nulltype]`, since no single
-  concrete type is the element type.
-- If nothing is left of `T` — `expr` can only be `null`, its type is `noreturn` (it never
-  produces a value), or `iterable` can only be the empty list, in which case `expr` is not
-  type-checked — the comprehension has type `list[nulltype]`.
+  `[x if x > 1 else 'a' for x in values]` fails, as `[1, 'a']` does, when it produces both. A
+  result that would nest lists three levels deep is an error. When `condition` keeps no
+  element, `expr` is never evaluated and the result is `list[nulltype]`: for example,
+  `[x for x in [1, 2] if x > 5] + ['a']` is `['a']`.
+- When static type checking cannot evaluate the comprehension, because the value of `iterable`,
+  or of `condition` for one of its elements, is not known, its type covers every result a run
+  can build, the empty one included. `var` has the element type of `iterable`: `E` for a
+  `list[E]`, and `int` for a `range_expr`. For a union of list types it is the union of their
+  element types (`list[int] | list[string]` gives `int | string`). A `nulltype` element type
+  contributes nothing (see [section 1.2.1](#121-expression-types)). `T` is the type of `expr`
+  with `var` of that type, with a `nulltype` member removed: a list cannot hold `null`, so a run
+  whose `expr` produces `null` fails. The comprehension has type `list[T | nulltype]`. For
+  example, `[x * 2 for x in values]` with `values: list[int]` has type `list[int | nulltype]`,
+  and indexing it gives `int`.
+- In that case the comprehension has type `list[nulltype]` when only a run that keeps no element
+  can succeed: nothing is left of `T` (`expr` can only be `null`), `T` is `noreturn` (`expr`
+  never produces a value), every form of `T` (see [section 1.2.1](#121-expression-types)) is a
+  list of lists, or `condition` or `expr` fails to type-check. That includes a `condition` that
+  can never be a boolean, and an `expr` that fails on operands whose values are known
+  (`[1 // 0 for x in values]`). Static type checking does not report such a failure: a run
+  whose `iterable` is empty, or whose `condition` keeps no element, succeeds, and a run that
+  evaluates the failing part reports it there. For example, `[x.upper() for x in values]` with
+  `values: list[int]` passes static type checking, and fails when it runs with `values` not
+  empty. An `iterable` that cannot be iterated is reported, since every run fails on it.
+- If `iterable` can only be the empty list, `expr` is not type-checked, and the comprehension
+  has type `list[nulltype]`.
 
 Examples:
 - `[['-e', e] for e in Task.Environment]` transforms `["A=1", "B=2"]` into
