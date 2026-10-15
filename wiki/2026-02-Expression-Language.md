@@ -796,13 +796,16 @@ such as list comprehensions (see [section 1.3.7](#137-list-comprehensions)). Ope
 the list's forms into account:
 
 - Indexing such a list, or iterating over it, gives its element type without the `nulltype`
-  member. The empty form has no element to give: indexing it is an out-of-bounds error, and
-  iterating over it does nothing.
+  member. The empty form has no element to give: indexing it is an out-of-bounds error (the
+  `__getitem__(list[nulltype], int) -> noreturn` signature, [section 2.1.7](#217-subscript-operator)),
+  and iterating over it does nothing.
 - A function argument whose type is a list with a union element type matches a signature when
   one of its forms does, the empty form matching a `list[nulltype]` parameter. The call has
   the union of the return types of the forms that match, and is an error when none matches.
   For example, `sum(values)` with `values: list[int | float | nulltype]` has type
   `int | float`, from the `list[int]`, `list[float]`, and `list[nulltype]` signatures of `sum`.
+  A `list[nulltype]` parameter is matched only by an argument known to be the empty list; an
+  argument of unknown element type takes the function's general signature.
 
 #### 1.2.2. Built-in Symbol Types
 
@@ -1121,20 +1124,27 @@ parts' types, and does not depend on how many elements the filter keeps:
   For a union of list types it is the union of their element types (`list[int] | list[string]`
   gives `int | string`). A `nulltype` element type contributes nothing (see
   [section 1.2.1](#121-expression-types)).
-- `T` is the type of `expr` when `var` has that type, without a `nulltype` member: a list
-  cannot hold `null`, so a run whose `expr` produces `null` fails.
-- If `T` contains no union, the comprehension has type `list[T]`, and an empty result is an
-  empty `list[T]`, not `list[nulltype]`. For example, `[x for x in [1, 2] if x > 5]` is an empty
-  `list[int]`, so `[x for x in [1, 2] if x > 5] + ['a']` is an error, as `[1] + ['a']` is.
-- If `T` contains a union, the comprehension has type `list[T | nulltype]`. A non-empty
-  result's type is the one [section 1.2.6](#126-list-literal-type-inference) gives its
-  elements: `[x if x > 1 else 2.5 for x in values]` is a `list[int]` or a `list[float]`, and
+- `T` is the type of `expr` deduced as in static type checking: from the types of `var` and
+  of every symbol it references, never from their values (for an `unresolved[S]` type, `T` is
+  `S`). `T` is deduced, and `expr` type-checked, even when the result is empty: a comprehension
+  whose `expr` cannot be typed is an error. A `nulltype` member is removed from `T`: a list
+  cannot hold `null`, so a run whose `expr` produces `null` fails. If `T` is a list of lists
+  (for a union, if every member is), the comprehension is an error: it would nest lists three
+  levels deep.
+- If `T` has no union and no `any` at any depth, the comprehension has type `list[T]`, and an
+  empty result is an empty `list[T]`, not `list[nulltype]`. For example,
+  `[x for x in [1, 2] if x > 5]` is an empty `list[int]`, so
+  `[x for x in [1, 2] if x > 5] + ['a']` is an error, as `[1] + ['a']` is.
+- Otherwise (`T` has a union or `any` at some depth) the comprehension has type
+  `list[T | nulltype]`. A non-empty result's type is the one
+  [section 1.2.6](#126-list-literal-type-inference) gives its elements:
+  `[x if x > 1 else 2.5 for x in values]` is a `list[int]` or a `list[float]`, and
   `[x if x > 1 else 'a' for x in values]` is a `list[int]` or a `list[string]`, failing as
   `[1, 'a']` does when it produces both. An empty result is `list[nulltype]`, since no single
-  member of the union is the element type.
-- If nothing is left of `T` — `expr` can only be `null`, or `iterable` can only be the empty
-  list, in which case `expr` is not type-checked — the comprehension has type
-  `list[nulltype]`.
+  concrete type is the element type.
+- If nothing is left of `T` — `expr` can only be `null`, its type is `noreturn` (it never
+  produces a value), or `iterable` can only be the empty list, in which case `expr` is not
+  type-checked — the comprehension has type `list[nulltype]`.
 
 Examples:
 - `[['-e', e] for e in Task.Environment]` transforms `["A=1", "B=2"]` into
@@ -1397,12 +1407,16 @@ Note: `not` remains strictly boolean — it requires a `bool` operand and return
 | Signature | Description |
 |-----------|-------------|
 | `__getitem__(list: list[T], index: int) -> T` | `list[index]` access by zero-based index |
+| `__getitem__(list: list[nulltype], index: int) -> noreturn` | Indexing the empty list: always an out-of-bounds error |
 | `__getitem__(r: range_expr, index: int) -> int` | `r[index]` access by zero-based index |
 | `__getitem__(s: string, index: int) -> string` | `s[index]` access single character by index |
 
 Negative indices count from the end: `list[-1]` is the last element. Index out of bounds is an error.
-Indexing a list whose element type has a `nulltype` member gives the element type without it
-(see [section 1.2.1](#121-expression-types)): `list[int | nulltype]` gives `int`.
+With the `list[nulltype]` signature, indexing a list whose element type has a `nulltype`
+member gives the element type without it (the empty form contributes `noreturn`; see
+[section 1.2.1](#121-expression-types)): `list[int | nulltype]` gives `int`. A
+`list[nulltype]` signature applies only to an argument known to be the empty list: an
+argument whose element type is unknown, such as a `list[any]`, takes the general signature.
 
 Note: Indexing a `range_expr` treats it as an integer list, not as a string. `r[0]` returns
 the first integer in the range, not the first character of the range string.

@@ -275,6 +275,7 @@ Note: `not` remains strictly boolean — it requires a `bool` operand and return
 | Signature | Description |
 |-----------|-------------|
 | `__getitem__(list: list[T], index: int) -> T` | `list[index]` access by zero-based index |
+| `__getitem__(list: list[nulltype], index: int) -> noreturn` | Indexing the empty list: always an out-of-bounds error |
 | `__getitem__(r: range_expr, index: int) -> int` | `r[index]` access by zero-based index |
 | `__getitem__(s: string, index: int) -> string` | `s[index]` access single character by index |
 
