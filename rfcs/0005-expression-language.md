@@ -759,9 +759,12 @@ describes one list type per member: `list[int | float | nulltype]` is a `list[in
 `list[float]`, or the empty `list[nulltype]`. Only expression types, such as the type of a
 list comprehension whose elements are not known (see [List Comprehensions](#list-comprehensions)),
 have union element types. Indexing or iterating such a list gives the element type without
-`nulltype` (indexing the empty form is an out-of-bounds error). A function argument of such a type matches a signature when one of its
-forms does, the empty form matching a `list[nulltype]` parameter; the call has the union of the
-return types of the forms that match, and is an error when none does.
+`nulltype` (indexing the empty form is an out-of-bounds error). A function argument of such a
+type matches a signature when one of its forms does, the empty form matching a `list[nulltype]`
+parameter; the call has the union of the return types of the forms that match, and is an error
+when none does. A `list[nulltype]` parameter is matched only by an argument known to be the empty
+list; an argument of unknown element type, such as a `list[any]`, takes the function's general
+signature.
 
 ### Implicit Type Coercion
 
@@ -1145,6 +1148,16 @@ does not know which branch will be taken at runtime. Both branches are evaluated
   is suppressed — that branch would always fail at runtime, so it can never produce a value.
 - If both branches fail, evaluation fails with an error describing both failures.
 
+**List Comprehensions with Unknown Elements:**
+
+When the iterable of a list comprehension is unresolved, or its condition is unresolved for one of
+its elements, the evaluator does not know which elements the comprehension keeps, and a run may
+keep none and never evaluate the element expression. The condition and element expression are
+type-checked once with the loop variable unresolved, and the comprehension's type includes the
+empty list. If they fail, the error is suppressed and the comprehension has type
+`list[nulltype]`: only a run that keeps no element can succeed, and a run that keeps one reports
+the error. See [List Comprehensions](#list-comprehensions).
+
 **Example:**
 
 ```yaml
@@ -1194,7 +1207,9 @@ At each stage, known values are evaluated concretely while unresolved values pro
    based on their declared types, because the template is not yet bound to particular parameter
    values. Task parameters (`Task.Param.*`) and session symbols (`Session.*`) are also unresolved.
    Let bindings that depend only on literals may evaluate concretely. Catches syntax errors,
-   type errors in constant subexpressions, and structural issues like undefined symbols.
+   type errors in constant subexpressions, and structural issues like undefined symbols, except
+   in parts a run may not evaluate: the untaken branch of a conditional with an unknown
+   condition, and the element expression of a list comprehension over unknown elements.
 
 2. **Job parameter binding** ("submit time"). Job parameter values are now known, so `Param.*`
    symbols are concrete. Expressions in TEMPLATE scope can be fully evaluated. Expressions in
@@ -1975,20 +1990,23 @@ produces, with the type [List Literal Type Inference](#list-literal-type-inferen
 when the filter keeps no element, `expr` is never evaluated and the result is `list[nulltype]`
 (`[x for x in [1, 2] if x > 5] + ['a']` is `['a']`).
 
-When static type checking cannot evaluate it, because the value of the iterable, or of the
-filter for one of its elements, is not known, its type covers every result a run can build, the
-empty one included. The loop variable has the iterable's element type (`E` for `list[E]`, `int`
-for `range_expr`, the union of the element types for a union of list types, with a `nulltype`
-element type contributing nothing). Let `T` be the type of `expr` with the loop variable of that
-type, with a `nulltype` member removed, since a list cannot hold `null`. The comprehension is
-`list[T | nulltype]`. It is `list[nulltype]`, the only result a run can succeed with, when
-nothing is left of `T`, `T` is `noreturn`, every form of `T` is a list of lists (each union
-member, and each form of a list with a union element type; the comprehension would nest three
-levels deep), or the filter or `expr` fails to type-check, including on operands whose values
-are known (`[1 // 0 for x in values]`). Such a failure is not reported by static type checking:
-a run whose iterable is empty, or whose filter keeps nothing, succeeds, and a run that evaluates
-the failing part reports it there. If the iterable can only be the empty list, `expr` is not
-type-checked and the comprehension is `list[nulltype]`.
+When static type checking cannot evaluate it, because the value of the iterable, or of the filter
+for one of its elements, is not known, its type covers every result a run can build, the empty one
+included. The loop variable has the iterable's element type (`E` for `list[E]`, `int` for
+`range_expr`, `any` for `any`, the union of the members' element types for a union, with a member
+that cannot be iterated and a `nulltype` element type contributing nothing). Let `T` be the type of
+`expr` with the loop variable of that type, with a `nulltype` member removed, since a list cannot
+hold `null`. The comprehension is `list[T | nulltype]`. It is `list[nulltype]`, the only result a
+run can succeed with, when nothing is left of `T`, `T` is `noreturn`, every form of `T` is a list of
+lists (each union member, and each form of a list with a union element type; the comprehension would
+nest three levels deep; a form holding a type variable does not count), or the filter or `expr`
+fails to type-check, including a reference to an undefined symbol or unknown function, and a failure
+on operands whose values are known (`[1 // 0 for x in values]`). Such a failure is not reported by
+static type checking: a run whose iterable is empty, or whose filter keeps nothing, succeeds, and a
+run that evaluates the failing part reports it there. When the iterable's elements are known, `expr`
+is still evaluated for each element whose filter is known to be true, wherever it is in the
+iterable: every run keeps that element, so a failure there is an error. If the iterable can only be
+the empty list, `expr` is not type-checked and the comprehension is `list[nulltype]`.
 
 Examples:
 - `[['-e', e] for e in Task.Environment]` transforms `["A=1", "B=2"]` into
