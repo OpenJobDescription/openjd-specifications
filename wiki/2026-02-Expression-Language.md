@@ -2005,6 +2005,8 @@ re_escape("file[1].txt")                        # returns "file\\[1\\]\\.txt"
 | `repr_sh(p: path) -> string` | Shell-escape a path for POSIX shells |
 | `repr_sh(args: list[string]) -> string` | Join list into space-separated shell-escaped strings |
 | `repr_sh(args: list[path]) -> string` | Join path list into space-separated shell-escaped strings |
+| `repr_sh(n: int) -> string` | The integer's decimal string form (never needs quoting) |
+| `repr_sh(args: list[int]) -> string` | Join the integers' decimal forms with single spaces |
 | `repr_cmd(s: string) -> string` | Escape a string for Windows CMD |
 | `repr_cmd(args: list[string]) -> string` | Join list into space-separated CMD-escaped strings |
 | `repr_pwsh(s: string) -> string` | Escape a string for PowerShell |
@@ -2101,6 +2103,7 @@ preserves the nesting.
 Examples:
 - `repr_sh(["echo", "hello world"])` returns, for example, `"echo 'hello world'"` (one valid output)
 - `repr_sh("it's")` returns, for example, `"'it'\"'\"'s'"` or `"\"it's\""` (two valid outputs)
+- `repr_sh(6379)` returns `"6379"`; `repr_sh([80, 443])` returns `"80 443"`
 - `repr_cmd("a & b")` returns `"\"a & b\""` (quoted, `&` is literal inside quotes)
 - `repr_cmd("a ^ b")` returns `"\"a ^^ b\""` (`^` escaped inside quotes)
 - `repr_cmd("hello!")` returns `"\"hello^^!\""` (`!` escaped as `^^!` for the delayed expansion context)
