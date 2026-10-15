@@ -379,6 +379,16 @@ does not know which branch will be taken at runtime. Both branches are evaluated
   is suppressed — that branch would always fail at runtime, so it can never produce a value.
 - If both branches fail, evaluation fails with an error describing both failures.
 
+**List Comprehensions with Unknown Elements:**
+
+When the iterable of a list comprehension is unresolved, or its condition is unresolved for one of
+its elements, the evaluator does not know which elements the comprehension keeps, and a run may
+keep none and never evaluate the element expression. The condition and element expression are
+type-checked once with the loop variable unresolved, and the comprehension's type includes the
+empty list. If they fail, the error is suppressed and the comprehension has type
+`list[nulltype]`: only a run that keeps no element can succeed, and a run that keeps one reports
+the error. See [List Comprehensions](#137-list-comprehensions).
+
 ### Progressive Expression Evaluation
 
 Expressions are checked and evaluated progressively as more information becomes available.
@@ -389,7 +399,9 @@ At each stage, known values are evaluated concretely while unresolved values pro
    based on their declared types, because the template is not yet bound to particular parameter
    values. Task parameters (`Task.Param.*`) and session symbols (`Session.*`) are also unresolved.
    Let bindings that depend only on literals may evaluate concretely. Catches syntax errors,
-   type errors in constant subexpressions, and structural issues like undefined symbols.
+   type errors in constant subexpressions, and structural issues like undefined symbols, except
+   in parts a run may not evaluate: the untaken branch of a conditional with an unknown
+   condition, and the element expression of a list comprehension over unknown elements.
 
 2. **Job parameter binding** ("submit time"). Job parameter values are now known, so `Param.*`
    symbols are concrete. Expressions in TEMPLATE scope can be fully evaluated. Expressions in
@@ -1132,18 +1144,24 @@ the elements it keeps are known:
 - When static type checking cannot evaluate the comprehension, because the value of `iterable`,
   or of `condition` for one of its elements, is not known, its type covers every result a run
   can build, the empty one included. `var` has the element type of `iterable`: `E` for a
-  `list[E]`, and `int` for a `range_expr`. For a union of list types it is the union of their
-  element types (`list[int] | list[string]` gives `int | string`). A `nulltype` element type
-  contributes nothing (see [section 1.2.1](#121-expression-types)). `T` is the type of `expr`
+  `list[E]`, `int` for a `range_expr`, and `any` for `any`. For a union it is the union of its
+  members' element types (`list[int] | list[string]` gives `int | string`); a member that cannot
+  be iterated contributes nothing, since a run with it fails. A `nulltype` element type
+  contributes nothing either (see [section 1.2.1](#121-expression-types)). `T` is the type of `expr`
   with `var` of that type, with a `nulltype` member removed: a list cannot hold `null`, so a run
   whose `expr` produces `null` fails. The comprehension has type `list[T | nulltype]`. For
   example, `[x * 2 for x in values]` with `values: list[int]` has type `list[int | nulltype]`,
-  and indexing it gives `int`.
+  and indexing it gives `int`. When the elements of `iterable` are known, `expr` is still
+  evaluated for each element whose `condition` is known to be true, wherever it is in
+  `iterable`: every run keeps that element, so a failure there is an error.
 - In that case the comprehension has type `list[nulltype]` when only a run that keeps no element
   can succeed: nothing is left of `T` (`expr` can only be `null`), `T` is `noreturn` (`expr`
   never produces a value), every form of `T` (see [section 1.2.1](#121-expression-types)) is a
-  list of lists, or `condition` or `expr` fails to type-check. That includes a `condition` that
-  can never be a boolean, and an `expr` that fails on operands whose values are known
+  list of lists, or `condition` or `expr` fails to type-check. A form that holds a type
+  variable, such as the `T1` of a signature the type was derived from, does not say what its
+  values are, and is not counted as a list of lists. Failing to type-check includes a
+  `condition` that can never be a boolean, a reference to an undefined symbol or unknown
+  function, and an `expr` that fails on operands whose values are known
   (`[1 // 0 for x in values]`). Static type checking does not report such a failure: a run
   whose `iterable` is empty, or whose `condition` keeps no element, succeeds, and a run that
   evaluates the failing part reports it there. For example, `[x.upper() for x in values]` with

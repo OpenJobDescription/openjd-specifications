@@ -2,8 +2,9 @@
 # element never evaluates its element expression and is list[nulltype], which
 # concatenates with and is accepted wherever the empty list is. One that keeps
 # elements takes its type from their values (§1.2.6). Over a parameter whose
-# value template validation does not know, a filter or element expression that
-# fails to type-check is not an error: it fails only a run that reaches it.
+# value template validation does not know, the comprehension's type includes the
+# empty list (list[T | nulltype]), and a filter or element expression that fails
+# to type-check is not an error: it fails only a run that reaches it.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
@@ -16,6 +17,9 @@ template:
   - name: Frames
     type: RANGE_EXPR
     default: "1-3"
+  - name: Names
+    type: STRING
+    default: "a,b"
   steps:
   - name: Step1
     script:
@@ -35,6 +39,11 @@ template:
             print(r'EMPTY_TOO_DEEP:{{ [[[x]] for x in [1, 2] if x > 5] }}')
             print(r'EMPTY_VALUE_ERROR:{{ [1 // Param.Zero for x in Param.Frames if Param.Zero != 0] }}')
             print(r'EMPTY_TYPE_ERROR:{{ [x.upper() for x in Param.Frames if x > 5] }}')
+            print(r'PARAM_INDEX:{{ [x * 2 for x in Param.Frames][0] + 1 }}')
+            print(r'PARAM_CONCAT_ANY:{{ [x for x in Param.Frames if x > 5] + ['a'] }}')
+            print(r'PARAM_SUM_STRINGS:{{ sum([s for s in Param.Names.split(',') if s == 'z']) }}')
+            print(r'PARAM_TOO_DEEP:{{ [[[x]] for x in Param.Frames if x > 5] }}')
+            print(r'PARAM_CONSTANT_ERROR:{{ [1 // 0 for x in Param.Frames if x > 5] }}')
             print(r'UNION_ONE_TYPE:{{ [x if x > 1 else 'a' for x in [2, 3]] }}')
             print(r'UNION_PROMOTE:{{ [x if x > 1 else 2.5 for x in [1, 2]] }}')
             print(r'UNION_EMPTY:{{ [x if x > 1 else 'a' for x in [1, 2] if x > 5] + [2.5] }}')
@@ -50,6 +59,11 @@ expected:
   - "EMPTY_TOO_DEEP:[]"
   - "EMPTY_VALUE_ERROR:[]"
   - "EMPTY_TYPE_ERROR:[]"
+  - "PARAM_INDEX:3"
+  - 'PARAM_CONCAT_ANY:["a"]'
+  - "PARAM_SUM_STRINGS:0"
+  - "PARAM_TOO_DEEP:[]"
+  - "PARAM_CONSTANT_ERROR:[]"
   - "UNION_ONE_TYPE:[2, 3]"
   - "UNION_PROMOTE:[2.5, 2.0]"
   - "UNION_EMPTY:[2.5]"
