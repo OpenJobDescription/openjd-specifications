@@ -2,12 +2,19 @@
 # elements the filter keeps (§1.3.7). An empty result of a comprehension whose
 # element expression has a single type is an empty list of that type; when the
 # element type is a union, a non-empty result takes its type from its elements
-# (§1.2.6) and an empty result is list[nulltype].
+# (§1.2.6) and an empty result is list[nulltype]. The element type is deduced
+# from the types of the symbols the element expression reads, not their
+# values, so a filter that keeps nothing never evaluates the expression on
+# them.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
   - EXPR
   name: TestJob
+  parameterDefinitions:
+  - name: Zero
+    type: INT
+    default: 0
   steps:
   - name: Step1
     script:
@@ -21,6 +28,8 @@ template:
             print(r'EMPTY_SUM:{{ sum([x for x in [1, 2] if x > 5]) }}')
             print(r'EMPTY_PROMOTE:{{ [x for x in [1, 2] if x > 5] + [2.5] }}')
             print(r'EMPTY_NESTED:{{ [[x for x in [1, 2] if x > 5], [3]] }}')
+            print(r'EMPTY_INNER_CONCAT:{{ [[] for x in [1, 2] if x > 5] + [[1]] }}')
+            print(r'EMPTY_SYMBOL_TYPES:{{ [1 // Param.Zero for x in [1, 2] if Param.Zero != 0] }}')
             print(r'UNION_ONE_TYPE:{{ [x if x > 1 else 'a' for x in [2, 3]] }}')
             print(r'UNION_PROMOTE:{{ [x if x > 1 else 2.5 for x in [1, 2]] }}')
             print(r'UNION_EMPTY:{{ [x if x > 1 else 'a' for x in [1, 2] if x > 5] + [2.5] }}')
@@ -30,6 +39,8 @@ expected:
   - "EMPTY_SUM:0"
   - "EMPTY_PROMOTE:[2.5]"
   - "EMPTY_NESTED:[[], [3]]"
+  - "EMPTY_INNER_CONCAT:[[1]]"
+  - "EMPTY_SYMBOL_TYPES:[]"
   - "UNION_ONE_TYPE:[2, 3]"
   - "UNION_PROMOTE:[2.5, 2.0]"
   - "UNION_EMPTY:[2.5]"
