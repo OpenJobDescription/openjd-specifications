@@ -1120,14 +1120,18 @@ Python's nested comprehension syntax is not supported.
 The type of a list comprehension `[expr for var in iterable if condition]` follows from its
 parts' types, and does not depend on how many elements the filter keeps:
 
-- `var` has the element type of `iterable`: `E` for a `list[E]`, and `int` for a `range_expr`.
-  For a union of list types it is the union of their element types (`list[int] | list[string]`
-  gives `int | string`). A `nulltype` element type contributes nothing (see
-  [section 1.2.1](#121-expression-types)).
+- `var` has the element type of `iterable`'s static type (the type static type checking deduces
+  for it, not that of the value a run iterates): `E` for a `list[E]`, and `int` for a
+  `range_expr`. For a union of list types it is the union of their element types
+  (`list[int] | list[string]` gives `int | string`). A `nulltype` element type contributes
+  nothing (see [section 1.2.1](#121-expression-types)).
 - `T` is the type of `expr` deduced as in static type checking: from the types of `var` and
   of every symbol it references, never from their values (for an `unresolved[S]` type, `T` is
-  `S`). `T` is deduced, and `expr` type-checked, even when the result is empty: a comprehension
-  whose `expr` cannot be typed is an error. A `nulltype` member is removed from `T`: a list
+  `S`), and under the element target type that a `list[U]` target gives `expr` (as for a list
+  literal, section 1.3.1). `T` is deduced, and `expr` type-checked, even when the result is
+  empty: a comprehension whose `expr` cannot be typed is an error, and so is one whose `expr`
+  fails on constant operands alone (`[1 // 0 for x in values if x > 5]`), as static type
+  checking evaluates those. A `nulltype` member is removed from `T`: a list
   cannot hold `null`, so a run whose `expr` produces `null` fails. If every form of `T` (see
   [section 1.2.1](#121-expression-types); each member of a union, and each form of a list
   whose element type is a union) is a list of lists, the comprehension is an error: it would

@@ -32,6 +32,8 @@ template:
             print(r'EMPTY_INNER_CONCAT:{{ [[] for x in [1, 2] if x > 5] + [[1]] }}')
             print(r'EMPTY_SYMBOL_TYPES:{{ [1 // Param.Zero for x in [1, 2] if Param.Zero != 0] }}')
             print(r'EMPTY_TYPE_VARIABLE:{{ [[s] + [s] for s in ['a'] if s == 'z'] + [['b']] }}')
+            print(r'EMPTY_RANGE_PROMOTE:{{ [x for x in [1.5] if x > 5] + range_expr('1-2') }}')
+            print(r'EMPTY_FLOAT_SUM:{{ sum([x for x in [1.5] if x > 5]) }}')
             print(r'UNION_ONE_TYPE:{{ [x if x > 1 else 'a' for x in [2, 3]] }}')
             print(r'UNION_PROMOTE:{{ [x if x > 1 else 2.5 for x in [1, 2]] }}')
             print(r'UNION_EMPTY:{{ [x if x > 1 else 'a' for x in [1, 2] if x > 5] + [2.5] }}')
@@ -45,6 +47,8 @@ expected:
   - "EMPTY_INNER_CONCAT:[[1]]"
   - "EMPTY_SYMBOL_TYPES:[]"
   - 'EMPTY_TYPE_VARIABLE:[["b"]]'
+  - "EMPTY_RANGE_PROMOTE:[1.0, 2.0]"
+  - "EMPTY_FLOAT_SUM:0.0"
   - "UNION_ONE_TYPE:[2, 3]"
   - "UNION_PROMOTE:[2.5, 2.0]"
   - "UNION_EMPTY:[2.5]"
