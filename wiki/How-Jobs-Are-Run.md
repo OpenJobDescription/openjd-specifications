@@ -150,6 +150,9 @@ A scheduler must satisfy the following constraints; how it satisfies them is its
    run, whether because every Task completed or because the scope failed or was canceled), when the **Service** is
    relocated, or when the **Session** fails to start. A **Service** whose scope completes must have its **Session**
    ended whatever its state, including **UNREADY**, **UNHEALTHY**, and **FAILED**, so that partial state is cleaned up.
+   A **Service** is stopped once nothing in its scope can still use it: when a scope completes with a Step, the
+   scheduler exits that Step's **Environments** in the **Sessions** that ran it before stopping the **Service**, so an
+   **Environment**'s `onExit` that reaches the **Service** still finds it **READY**.
 7. Before a **Service Session** ends: any running **Action** is canceled with its own cancelation method; `onExit` runs
    if it is defined and any **Action** of the **Service** has run; and every **Environment** entered is exited in
    reverse order, as at the end of any **Session**. Then the working directory is deleted and the host's allocated
@@ -176,13 +179,14 @@ A scheduler must satisfy the following constraints; how it satisfies them is its
 
 Two kinds of failure lead to the restart decision. An **instance failure** occurs when `onRun` exits, with any exit
 status, while the **Service**'s scope still has work (a Task that has not completed, or that could still run), other
-than because the scheduler canceled it; when `readinessTimeoutSeconds` elapses before the instance is **READY**; when
-the instance becomes **UNHEALTHY**, having failed `failureThreshold` consecutive health-check probes after **READY**; or
-when the scheduler loses the **Service host** (step 6 below).
+than because the scheduler canceled it; when `onRun` emits an `openjd_fail` message (the runtime cancels it, step 2,
+and the message is the failure's reason); when `readinessTimeoutSeconds` elapses before the instance is **READY**;
+when the instance becomes **UNHEALTHY**, having failed `failureThreshold` consecutive health-check probes after
+**READY**; or when the scheduler loses the **Service host** (step 6 below).
 An exit observed after the scope has completed is not a failure, whether or not the scheduler's cancelation had yet
 reached the process. A **start failure** occurs when a **Service Session** fails before `onRun` is launched: a requested
 port cannot be allocated on the chosen host, an **Environment**'s `onEnter` fails, or the **Service**'s `onEnter` exits
-non-zero or times out.
+non-zero, times out, or emits `openjd_fail`.
 
 On either failure the **Service** becomes **UNREADY** (an **UNHEALTHY** instance, once its `onRun` has exited) and the
 scheduler takes steps 1–4; steps 5–8 govern the outcomes those steps can produce.
@@ -192,8 +196,8 @@ scheduler takes steps 1–4; steps 5–8 govern the outcomes those steps can pro
    it is `KEEP`, running Tasks continue. A Task that needs the **Service** while it is not **READY**, or that holds the
    endpoint of a relocated instance, fails on its own and is retried under the ordinary Task retry rules, re-resolving
    `Service.*` when it runs again; a Task that no longer needs the **Service** completes normally.
-2. If `onRun` is still running (the readiness-timeout and **UNHEALTHY** cases) the scheduler cancels it and waits for it
-   to exit; constraint 5 above forbids a second `onRun` in the **Session** before then.
+2. If `onRun` is still running (the readiness-timeout, **UNHEALTHY**, and `openjd_fail` cases) the scheduler cancels
+   it and waits for it to exit; constraint 5 above forbids a second `onRun` in the **Session** before then.
 3. If the **Service**'s restart policy has attempts remaining, the scheduler relaunches the **Service**. If the policy's
    `completedTasks` is `RERUN`, every Task in the scope that had completed successfully is first returned to the queue;
    with `KEEP`, completed Tasks keep their results. After a start failure or host loss the relaunch must begin a new **Service Session**. After an
@@ -300,7 +304,9 @@ messages to convey information about the **Action** to the render management sys
   what the **Action** is doing. For example, a status message of `“loading assets”` or `"rendering"` or
   `"dohickying the whatsits."`
 * `openjd_fail: <message>` where `<message>` is any string. This provides a human-readable message that indicates why
-  an **Action** has failed.
+  an **Action** has failed. With the SERVICE extension, from a **Service**'s `onRun` it is also the signal: the
+  runtime cancels `onRun` and treats the exit as an instance failure with this message as its reason (see
+  [Services](#services)).
 * `openjd_env: <var>=<value>` where `<var>` is the string name of an environment variable, and `<value>` is a string. This
   can only be emitted by the **Action** for entering an **Environment**. It defines the value of an environment variable for
   all subsequent **Action**s in the **Session** until the defining **Environment** is exited. With the SERVICE extension,
@@ -325,9 +331,11 @@ messages to convey information about the **Action** to the render management sys
   script's stdout, as for every `openjd_*` message under WRAP_ACTIONS.
 
 In a **Service Session**, `openjd_status`, `openjd_progress`, and `openjd_fail` are honored from the **Service**'s
-`onEnter`, `onRun`, and `onExit`, and not from `onHealthCheck`. `openjd_fail` supplies the reason reported when the
-**Action** fails; the exit status decides whether it failed, and the message accompanies the start failure, instance
-failure, or `onExit` failure (see [Service failure and restart](#service-failure-and-restart)) that the exit produces.
+`onEnter`, `onRun`, and `onExit`, and not from `onHealthCheck`. An `openjd_fail` message from `onRun` is itself an
+instance failure: the runtime cancels `onRun` at once with its cancelation method and the message is the failure's
+reason. From `onEnter` or `onExit` it marks that **Action** failed when it exits, whatever its exit status — a start
+failure or an `onExit` failure — with the message as the reason (see
+[Service failure and restart](#service-failure-and-restart)).
 The environment variables defined for every **Session** in [Session Environment
 Variables](#session-environment-variables), currently `OPENJD_SESSION_WORKING_DIR`, are set in every **Action** of a
 **Service Session** with their usual meanings.

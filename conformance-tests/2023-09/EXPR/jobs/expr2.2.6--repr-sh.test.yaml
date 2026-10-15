@@ -12,6 +12,8 @@ template:
     - "squote_len = len(repr_sh(\"it's\"))"
     - 'empty = repr_sh("")'
     - 'path_val = repr_sh(path("/tmp/out"))'
+    - 'int_val = repr_sh(6379)'
+    - 'int_list = repr_sh([80, 443])'
     script:
       actions:
         onRun:
@@ -25,6 +27,8 @@ template:
             print(r'SQUOTE_LEN:{{ squote_len }}')
             print("EMPTY:{{ empty }}")
             print("PATH:{{ path_val }}")
+            print("INT:{{ int_val }}")
+            print("INT_LIST:{{ int_list }}")
 expected:
   output:
   - SIMPLE:hello
@@ -36,3 +40,5 @@ expected:
   - anyOf: ["SQUOTE_LEN:10", "SQUOTE_LEN:6"]
   - "EMPTY:''"
   - "PATH:/tmp/out"
+  - "INT:6379"
+  - "INT_LIST:80 443"

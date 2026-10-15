@@ -1,0 +1,105 @@
+# RFC 0009 <ServiceActions> and "Failure and restart" (Template Schemas §9.7,
+# How Jobs Are Run "Service failure and restart"): an openjd_fail message on
+# onRun's stdout is itself an instance failure. The runtime cancels onRun at
+# once with its cancelation method (TERMINATE here) and takes the restart
+# decision with the message as the reason: with maxAttempts: 1 and KEEP a
+# second instance is launched. Instance 1 prints openjd_fail after Task 1 has
+# been served and then tries to keep running; the cancel must reach it before
+# INSTANCE 1 SURVIVED prints. Task 1 (running under KEEP) keeps its result.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: OnRunOpenjdFailCancelsAndRelaunches
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+      readinessTimeoutSeconds: 60
+    restartPolicy:
+      maxAttempts: 1
+      completedTasks: KEEP
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Store.main.bindAddress }}", "{{ Service.Store.main.port }}", "{{ Job.Name }}"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "import os, sys, tempfile\nfor suffix in ('.marker', '.sick'):\n    m = os.path.join(tempfile.gettempdir(), 'openjd-' + sys.argv[1] + suffix)\n    os.path.exists(m) and os.remove(m)", "{{ Job.Name }}"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import os, socket, sys, tempfile, threading, time
+          host, port, job = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          marker = os.path.join(tempfile.gettempdir(), "openjd-" + job + ".marker")
+          sick = os.path.join(tempfile.gettempdir(), "openjd-" + job + ".sick")
+          instance = 2 if os.path.exists(marker) else 1
+          open(marker, "a").close()
+          os.path.exists(sick) and os.remove(sick)
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("INSTANCE", instance, "LISTENING", flush=True)
+          print("openjd_service_ready: instance", instance, flush=True)
+          def serve():
+              while True:
+                  c, _ = s.accept()
+                  c.sendall(str(instance).encode())
+                  c.close()
+          threading.Thread(target=serve, daemon=True).start()
+          # Instance 1 detects it cannot serve once Task 1 marks it sick, and
+          # says so. It does not exit: the runtime must cancel it.
+          while True:
+              if instance == 1 and os.path.exists(sick):
+                  print("openjd_fail: store corrupt", flush=True)
+                  time.sleep(4)
+                  print("INSTANCE 1 SURVIVED", flush=True)
+              time.sleep(0.1)
+  steps:
+  - name: Work
+    dependencies:
+    - service: Store
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: N
+        type: INT
+        range: "1-3"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Service.Store.main.connectAddress }}", "{{ Service.Store.main.port }}", "{{ Task.Param.N }}", "{{ Job.Name }}"]
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import os, socket, sys, tempfile, time
+          host, port, n, job = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4]
+          c = socket.create_connection((host, port), timeout=10)
+          instance = c.recv(64).decode()
+          c.close()
+          print("TASK", n, "GOT INSTANCE", instance, flush=True)
+          if n == "1":
+              open(os.path.join(tempfile.gettempdir(), "openjd-" + job + ".sick"), "a").close()
+              time.sleep(2)
+          print("TASK", n, "INSTANCE", instance, "DONE", flush=True)
+
+expected:
+  output:
+  - INSTANCE 1 LISTENING
+  - TASK 1 GOT INSTANCE 1
+  - "openjd_fail: store corrupt"
+  - TASK 1 INSTANCE 1 DONE
+  - INSTANCE 2 LISTENING
+  - TASK 2 INSTANCE 2 DONE
+  - TASK 3 INSTANCE 2 DONE
+  forbidden:
+  - INSTANCE 1 SURVIVED
+  - TASK 2 GOT INSTANCE 1
+  - TASK 3 GOT INSTANCE 1

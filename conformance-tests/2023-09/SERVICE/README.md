@@ -601,10 +601,12 @@ SERVICE/
     ├── service-environments-follow-run-scope.test.yaml
     ├── service-on-enter-openjd-env-reaches-health-check.test.yaml
     ├── service-on-enter-openjd-env-reaches-on-run.test.yaml
+    ├── service-on-enter-openjd-fail-exit-zero-is-start-failure.test.yaml
     ├── service-on-enter-openjd-redacted-env-with-extension.test.yaml
     ├── service-on-enter-openjd-redacted-env-without-extension.test.yaml
     ├── service-on-exit-failure-does-not-fail-scope.test.yaml
     ├── service-on-exit-runs-after-task-failure.test.yaml
+    ├── service-on-run-openjd-fail-cancels-and-relaunches.test.yaml
     ├── service-session-is-its-own-session.test.yaml
     ├── service-stop-order-dependent-service-stopped-first.test.yaml
     │  # External Services (§1.2.2) and externalServices (§9.8)
@@ -780,7 +782,13 @@ SERVICE/
   completed, in which case the remaining Tasks never start and `onExit` runs
   (`service-keep-max-attempts-exhausted-mid-scope`). A ready timeout is an
   instance failure: the in-flight `onHealthCheck` is canceled, no Task runs,
-  and `onExit` runs (`service-readiness-timeout-fails-scope`). A start failure
+  and `onExit` runs (`service-readiness-timeout-fails-scope`). An `openjd_fail`
+  message from `onRun` is an instance failure in itself: the runtime cancels
+  `onRun` — the instance never gets to print past it — and relaunches with the
+  message as the reason (`service-on-run-openjd-fail-cancels-and-relaunches`);
+  from `onEnter` the message fails the action whatever its exit status, a start
+  failure that with `maxAttempts` 0 fails the scope while `onExit` still runs
+  (`service-on-enter-openjd-fail-exit-zero-is-start-failure`). A start failure
   — a SERVICE-scoped Environment's `onEnter` exiting non-zero — consumes an
   attempt and the relaunch begins a new Service Session with a new working
   directory, re-entering the Environments and re-running `onEnter`
