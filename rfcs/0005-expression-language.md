@@ -2004,18 +2004,19 @@ contributing nothing). Let `T` be the type of `expr` with the loop variable of t
 is left of `T`, `T` is `noreturn`, every form of `T` is a list of lists (each union member, and each
 form of a list with a union element type; the comprehension would nest three levels deep; a form
 holding a type variable does not count), or the filter or `expr` fails to type-check, including a
-reference to an undefined symbol or unknown function, and a failure on operands whose values are
-known (`[1 // 0 for x in values]`). Such a failure is not reported by static type checking: a run
-whose iterable is empty, or whose filter keeps nothing, succeeds, and a run that evaluates the
-failing part reports it there. When the iterable's elements are known, they are evaluated in order
-until the filter is not known for one of them, and the comprehension is typed as a whole from there;
-a failure of `expr` on an earlier element the filter keeps is an error, since every run keeps it,
-and so is a filter that is not a boolean for an earlier element, or whose type can never be a
-boolean for the first element it is not known for. A filter typed `noreturn` from
-operands whose values are not known can be a boolean in this sense: it fails the run itself, and
-the comprehension is typed from `expr`; one that fails on known operands fails to type-check. If the iterable can only be the
-empty list, `expr` is not type-checked and the comprehension is `list[nulltype]`. An iterable that
-cannot be iterated is reported, since every run fails on it.
+filter that can never be a boolean, a reference to an undefined symbol or unknown function, and a
+failure on operands whose values are known (`[1 // 0 for x in values]`). Such a failure is not
+reported by static type checking: a run whose iterable is empty, or whose filter keeps nothing,
+succeeds, and a run that evaluates the failing part reports it there. When the iterable's elements
+are known, they are evaluated in order until the filter is not known for one of them, and the
+comprehension is typed as a whole from there; a failure of `expr` on an earlier element the filter
+keeps is an error, since every run keeps it, and so is a filter that is not a boolean for an earlier
+element, or whose type can never be a boolean for the first element it is not known for. A filter
+typed `noreturn` from operands whose values are not known can be a boolean in this sense: it fails
+the run itself, and the comprehension is typed from `expr`; one that fails on known operands fails
+to type-check. If the iterable can only be the empty list, `expr` is not type-checked and the
+comprehension is `list[nulltype]`. An iterable that cannot be iterated is reported, since every run
+fails on it.
 
 Examples:
 - `[['-e', e] for e in Task.Environment]` transforms `["A=1", "B=2"]` into
