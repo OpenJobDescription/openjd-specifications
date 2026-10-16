@@ -1,0 +1,27 @@
+# Expression Language section 2.3.2: with_number replaces a run of `#`
+# characters with the frame number, zero-padded to the run's length. Here the
+# character before the run is U+00E9 LATIN SMALL LETTER E WITH ACUTE, which
+# takes two bytes in UTF-8. The result keeps the character and pads `1` to two
+# digits.
+#
+# The character is written as a \uXXXX escape so this file stays ASCII, and
+# the result is printed through ascii() so the output is ASCII on every
+# platform's console encoding.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print('RESULT:' + ascii(r'{{ with_number("a\u00e9##", 1) }}'))
+expected:
+  output:
+  - "RESULT:'a\\xe901'"

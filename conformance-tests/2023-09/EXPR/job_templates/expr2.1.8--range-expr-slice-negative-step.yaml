@@ -1,0 +1,21 @@
+# Expression Language section 2.1.8: "With a negative step (e.g., `r[::-1]`),
+# the result is a `list[int]` because `range_expr` cannot represent descending
+# sequences." `Param.Frames[::-1]` is therefore a list[int], and `* 2` is list
+# repetition (section 2.1.3), so the template is valid.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Frames
+  type: RANGE_EXPR
+  default: 1-3
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - -c
+        - print(r'{{ Param.Frames[::-1] * 2 }}')
