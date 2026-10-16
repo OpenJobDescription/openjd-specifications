@@ -1177,7 +1177,9 @@ the elements it keeps are known:
   whose `iterable` is empty, or whose `condition` keeps no element, succeeds, and a run that
   evaluates the failing part reports it there. For example, `[x.upper() for x in values]` with
   `values: list[int]` passes static type checking, and fails when it runs with `values` not
-  empty. An `iterable` that cannot be iterated is reported, since every run fails on it.
+  empty. An `iterable` whose value is known and cannot be iterated is an error. One whose
+  value is not known and whose type cannot be iterated binds `any`: its type may come from
+  typing an operation on values of unknown type, so a run reports it.
 - If `iterable` can only be the empty list, `expr` is not type-checked, and the comprehension
   has type `list[nulltype]`.
 
@@ -1366,9 +1368,15 @@ finding a common type:
 - `list[path] + list[string]` → `list[string]` (path elements coerced to string)
 - `list[nulltype] + list[T]` → `list[T]` (empty list takes the other's type)
 - `list[int] + range_expr` → `list[int]` (range_expr treated as `list[int]`)
-- `range_expr + list[T]` → `list[T]` (range_expr treated as `list[int]`, then coerced if needed)
+- `range_expr + list[T]` → the common type of `list[int]` and `list[T]` (range_expr treated as
+  `list[int]`, then coerced if needed: `list[float]` gives `list[float]`, `list[nulltype]` gives
+  `list[int]`)
 - `range_expr + range_expr` → `list[int]`
 - Concatenation of incompatible list types (e.g., `list[string] + list[int]`) is an error.
+
+Static type checking types a concatenation whose operands' values are not known the same way,
+from their types. An operand whose element type is not known (`any`) gives `list[any]`: the
+values decide the element type.
 
 #### 2.1.4. Comparison Operators
 
