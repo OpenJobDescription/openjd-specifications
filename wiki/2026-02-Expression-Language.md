@@ -1158,7 +1158,9 @@ the elements it keeps are known:
   indexing it gives `int`. When the elements of `iterable` are known, they are evaluated in order
   until `condition` is not known for one of them, and the comprehension is typed as a whole from
   there. An element before it whose `condition` is true is kept by every run, so a failure of
-  `expr` on it is an error, as is a `condition` that is not a boolean for an element before it:
+  `expr` on it is an error, as is a `condition` that is not a boolean for an element before it,
+  or whose value is not known but whose type can never be a boolean for the first element it is
+  not known for (every run evaluates it there):
   `[x.upper() for x in [1, 2] if x == 1 or flag]` fails static type checking with `flag: bool`,
   while `[x.upper() for x in [2, 1] if x == 1 or flag]` fails only when it runs.
 - In that case the comprehension has type `list[nulltype]` when only a run that keeps no element
