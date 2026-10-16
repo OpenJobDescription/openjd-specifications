@@ -2015,8 +2015,10 @@ element, or whose type can never be a boolean for the first element it is not kn
 typed `noreturn` from operands whose values are not known can be a boolean in this sense: it fails
 the run itself, and the comprehension is typed from `expr`; one that fails on known operands fails
 to type-check. If the iterable can only be the empty list, `expr` is not type-checked and the
-comprehension is `list[nulltype]`. An iterable that cannot be iterated is reported, since every run
-fails on it.
+comprehension is `list[nulltype]`. An iterable whose value is known and cannot be iterated is an
+error; one whose value is not known and whose type cannot be iterated binds the loop variable to
+`any`, since its type may come from typing an operation on values of unknown type, and a run reports
+it.
 
 Examples:
 - `[['-e', e] for e in Task.Environment]` transforms `["A=1", "B=2"]` into
