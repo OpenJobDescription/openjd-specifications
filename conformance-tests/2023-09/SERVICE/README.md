@@ -390,6 +390,8 @@ SERVICE/
 │   ├── expr2.2.4--is-ipv6-requires-service-extension.invalid.yaml
 │   ├── expr2.2.4--join-host-port-requires-service-extension.invalid.yaml
 │   ├── expr2.2.4--join-host-port-string-port.invalid.yaml
+│   │  # Expression Language §2.2.6 repr_sh of integers
+│   ├── expr2.2.6--repr-sh-int-requires-service-extension.invalid.yaml
 │   ├── expr2.2.4--join-host-port-swapped-arguments.invalid.yaml
 │   ├── expr2.2.4--split-host-port-requires-service-extension.invalid.yaml
 │   │  # §9 <Service> structure and dependencies
@@ -583,6 +585,7 @@ SERVICE/
     ├── service-file-embedded.test.yaml
     ├── service-join-host-port-url.test.yaml
     ├── service-let-bindings-resolve.test.yaml
+    ├── service-repr-sh-int.test.yaml
     ├── service-numeric-fields-from-param.test.yaml
     ├── service-ready-message-only-from-on-run.test.yaml
     ├── service-stdout-health-check.test.yaml
@@ -707,7 +710,11 @@ SERVICE/
   `Param.*` and `Job.Name` (`service-file-embedded`,
   `service-let-bindings-resolve`).
 - **`join_host_port`** composes a URL authority from `connectAddress` and
-  `port` (`service-join-host-port-url`).
+  `port` (`service-join-host-port-url`); **`repr_sh`** of an `int` or
+  `list[int]` is the decimal form, space-joined for a list, so a port or
+  `WrappedService.Ports` needs no `string()` (`service-repr-sh-int`; without
+  `SERVICE` the call is a type error,
+  `expr2.2.6--repr-sh-int-requires-service-extension.invalid`).
 - **Numeric `@fmtstring` fields** resolve at job creation; a whole-field `null`
   leaves the port to the runtime; out-of-range or non-integer resolutions are
   rejected at job creation (`service-numeric-fields-from-param`,
