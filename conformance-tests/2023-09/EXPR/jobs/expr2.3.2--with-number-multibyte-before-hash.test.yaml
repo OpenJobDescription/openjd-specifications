@@ -1,14 +1,11 @@
 # Expression Language section 2.3.2: with_number replaces a run of `#`
-# characters with the frame number, zero-padded to the run's length. The
-# character before the run is U+00E9 LATIN SMALL LETTER E WITH ACUTE, two
-# bytes in UTF-8, written as a \uXXXX escape so this file stays ASCII.
+# characters with the frame number, zero-padded to the run's length. Here the
+# character before the run is U+00E9 LATIN SMALL LETTER E WITH ACUTE, which
+# takes two bytes in UTF-8. The result keeps the character and pads `1` to two
+# digits.
 #
-# The run starts after that character, so the result keeps it and pads `1`
-# to two digits. openjd-rs computed the run's start as "index of the
-# preceding char + 1", a byte offset inside the multibyte character, and
-# panicked (found by fuzzing, openjd-rs#442).
-#
-# The result is printed through ascii() so the output is ASCII on every
+# The character is written as a \uXXXX escape so this file stays ASCII, and
+# the result is printed through ascii() so the output is ASCII on every
 # platform's console encoding.
 template:
   specificationVersion: jobtemplate-2023-09

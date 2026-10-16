@@ -1,15 +1,8 @@
-# Expression Language 1.2.5: a range_expr compares equal to a list element by
-# element, so `range_expr("24-24:20") == [24]` is true; it is the single
-# value 24. This test expects two range_exprs with the same values to be
-# equal as well, which keeps equality transitive: `range_expr("24-24:20") ==
+# Expression Language section 1.2.5: a range_expr compares equal to a list
+# element by element, so `range_expr("24-24:20") == [24]` is true; it is the
+# single value 24. Two range_exprs with the same values are equal as well,
+# which keeps equality transitive: `range_expr("24-24:20") ==
 # range_expr("24")` is true.
-#
-# The spec does not say this explicitly: 1.2.5 covers list vs range_expr but not
-# range_expr vs range_expr.
-#
-# openjd-rs compares two range_exprs by their stored sub-ranges rather than
-# their values, so the second comparison is false (found by fuzzing,
-# openjd-rs#442).
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:

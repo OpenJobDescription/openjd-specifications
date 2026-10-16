@@ -1,13 +1,12 @@
-# Expression Language section 2.3.2: with_number pads the frame number to the
-# width of the pattern, and a negative number keeps its sign in front of the
-# padded digits (`with_number(-1)` on `file_###` gives `file_-01`).
+# Expression Language section 2.3.2: "For negative numbers, the sign is
+# included in the output. With digit and hash formats, the sign precedes the
+# zero-padded digits and counts toward the width", and "If the number exceeds
+# the padding width, the full number is used without truncation".
 #
-# The smallest int, -9223372036854775808, has more digits than the two-`#`
-# pattern, so it is written in full. openjd-rs negated the number to pad its
-# digits, which overflows for this value: a debug build panicked and a
-# release build printed `f_--9223372036854775808` (found by fuzzing,
-# openjd-rs#442). The literal is written as `-9223372036854775807 - 1`
-# because 9223372036854775808 itself is out of the int range.
+# The smallest int, -9223372036854775808, is wider than the two-`#` pattern,
+# so it is written in full with a single sign. The literal is written as
+# `-9223372036854775807 - 1` because 9223372036854775808 is out of the int
+# range.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:

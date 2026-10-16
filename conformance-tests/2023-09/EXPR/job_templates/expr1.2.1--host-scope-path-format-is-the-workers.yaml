@@ -1,20 +1,11 @@
-# Expression Language "Path Format": in host contexts (SESSION and TASK
-# scopes, such as onRun args) the path type uses "the system's native path
-# semantics", so that "paths should match the worker's OS". `C:/x` is
-# absolute on a Windows worker and relative on a POSIX one, so which branch
-# runs, and whether `1 + 'a'` is ever evaluated, depends on the worker. The
-# template runs correctly on a Windows worker (it prints 2), so this test
-# expects template validation to accept it on any machine.
-#
-# The spec does not say this explicitly: "Progressive Expression Evaluation" says
-# parts with only concrete values are fully evaluated during validation, and
-# nothing says a validator must treat a path-format-dependent operation on
-# literals as unresolved.
-#
-# openjd-rs folds the path operation in the validating machine's format, so
-# on a POSIX machine it rejects the template with "Cannot use '+' operator
-# with int and string" (found by fuzzing, openjd-rs#442). On Windows it
-# accepts the template, so this test detects the bug only on POSIX.
+# Expression Language section 1.2.1: "In host contexts (SESSION and TASK
+# scopes), the semantics match the host's operating system." `C:/x` is
+# absolute on a Windows host and relative on a POSIX one, so in an onRun
+# argument which branch runs, and whether `1 + "a"` is ever evaluated, depends
+# on the host that runs the task. The template runs correctly on a Windows
+# host (it prints 2). Type checking "must never reject a pair the concrete
+# value would accept", so template validation accepts the template on any
+# machine.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - EXPR

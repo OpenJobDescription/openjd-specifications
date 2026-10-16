@@ -1,18 +1,10 @@
-# Expression Language 2.1.8: slicing a range_expr gives a range_expr with a
-# positive step and a list[int] with a negative step (`r[start:stop:step]
-# -> range_expr | list[int]`). With the step from a parameter, the slice can
-# be a list[int], and `* 2` (list repetition, 2.1.3) runs correctly whenever
-# Step is negative, as it is by default. Template validation must accept the
-# template.
-#
-# Relies on an operation on a union-typed operand succeeding when one member
-# can succeed, which the spec states for target-type coercion but not for
-# operator overloads. The literal-step case, which needs no such rule, is
-# expr2.1.8--range-expr-slice-negative-step.yaml.
-#
-# openjd-rs types every range_expr slice as range_expr during validation and
-# rejects the template with "Cannot use '*' operator with range_expr and int"
-# (found by fuzzing, openjd-rs#442).
+# Expression Language section 2.1.8: slicing a range_expr gives a range_expr
+# with a positive step and a list[int] with a negative step
+# (`r[start:stop:step] -> range_expr | list[int]`). With the step from a
+# parameter the slice can be a list[int], and `* 2` (list repetition, section
+# 2.1.3) runs correctly whenever Step is negative, as it is by default. Type
+# checking "must never reject a pair the concrete value would accept" ("Static
+# Type Checking via Unresolved Values"), so the template is valid.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - EXPR

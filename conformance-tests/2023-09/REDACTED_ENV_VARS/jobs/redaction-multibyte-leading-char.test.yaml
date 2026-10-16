@@ -1,15 +1,12 @@
-# A redacted value that starts with a multibyte character (U+00E9, two bytes
-# in UTF-8) is redacted like any other: its later occurrences in stdout are
-# replaced and the run succeeds.
+# Template Schemas section 4, `openjd_redacted_env`: "<value> shall be
+# redacted with a fixed length string for this and any future occurrences from
+# the emitted STDOUT message." The redacted value here starts with a multibyte
+# character (U+00E9, two bytes in UTF-8); it is redacted like any other value,
+# and the run succeeds.
 #
-# openjd-rs advanced its search one byte past each match, which lands inside
-# the multibyte character. It redacted the directive line, then the session's
-# output filter panicked on the next line containing the secret, and no
-# later output appeared (found by fuzzing, openjd-rs#442).
-#
-# PYTHONIOENCODING makes Python write UTF-8 on every platform, so the bytes
-# the output filter sees do not depend on the console code page. The secret
-# is written with \u escapes so this file stays ASCII.
+# The environment's variables are set before onEnter runs, so PYTHONIOENCODING
+# makes Python write UTF-8 on every platform, whatever the console code page.
+# The secret is written with \u escapes so this file stays ASCII.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:

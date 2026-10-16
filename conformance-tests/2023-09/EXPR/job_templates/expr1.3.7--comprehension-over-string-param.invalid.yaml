@@ -1,12 +1,8 @@
-# Expression Language section 1.3.7: a list comprehension iterates a list. RFC
-# 0005's reference evaluator also accepts a range_expr, and raises "List
-# comprehension requires list or range_expr" for anything else. A STRING
-# parameter is never iterable, whatever its value, so the comprehension fails
-# on every run and template validation must reject it.
-#
-# openjd-rs bound the loop variable to int for any non-list unresolved
-# iterable, so this template validated and every task then failed with
-# "Cannot iterate over string" (found by fuzzing, openjd-rs#442).
+# Expression Language section 1.3.7: a list comprehension iterates a list or a
+# range_expr. A STRING parameter is not iterable, whatever its value, so the
+# comprehension fails on every run, and template validation reports the type
+# error ("Static Type Checking via Unresolved Values": "If it fails, a type
+# error is reported").
 specificationVersion: jobtemplate-2023-09
 extensions:
 - EXPR

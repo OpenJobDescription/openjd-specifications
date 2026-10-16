@@ -1,16 +1,8 @@
-# Expression Language 2.1.8: slice indices out of bounds "are clamped to
-# valid range (no error)", so slicing past the end of a range_expr gives no
-# values. A step `let` binding holds the slice and the onRun args use it, so
-# the value crosses from job creation to the session; it must arrive with
-# length 0.
-#
-# The spec says range expressions "must contain at least one value" (2.2.1,
-# after `range_expr("")`) and does not say whether an empty slice is an empty
-# range_expr or a list[int]; only the length is asserted.
-#
-# openjd-rs makes the slice an empty range_expr, serializes it as "", and
-# cannot parse that back, so the run fails with "Cannot convert '' to
-# range_expr: Empty expression" (found by fuzzing, openjd-rs#442).
+# Expression Language section 2.1.8: slice indices out of bounds "are clamped
+# to valid range (no error)", so slicing past the end of a range_expr selects
+# no values. A step `let` binding holds the slice and the onRun args use it,
+# so the value crosses from job creation to the session, where its length is
+# 0.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
