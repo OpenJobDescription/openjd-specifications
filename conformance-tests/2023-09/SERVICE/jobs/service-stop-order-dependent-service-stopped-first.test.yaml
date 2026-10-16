@@ -1,0 +1,108 @@
+# RFC 0009 lifecycle constraint 4 ("A Service is stopped before any Service
+# it depends on is stopped"), How Jobs Are Run § Services: Front depends on
+# Service Back and reads Back's endpoint through its `variables`, so Front is
+# started after Back is READY (constraint 2) and stopped before Back. Front's
+# onExit connects to Back again and reports whether it was still reachable:
+# Back is still listening while Front's Session ends, so cleanup that must
+# talk to an upstream Service can.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: StopOrderReferencingServiceStoppedFirst
+  services:
+  - name: Back
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+      readinessTimeoutSeconds: 60
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Back.main.bindAddress }}", "{{ Service.Back.main.port }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port = sys.argv[1], int(sys.argv[2])
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready: back up", flush=True)
+          while True:
+              c, _ = s.accept()
+              c.sendall(b"back")
+              c.close()
+  - name: Front
+    dependencies:
+    - service: Back
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+      readinessTimeoutSeconds: 60
+    variables:
+      UPSTREAM: "{{ join_host_port(Service.Back.main.connectAddress, Service.Back.main.port) }}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Front.main.bindAddress }}", "{{ Service.Front.main.port }}"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["{{ Service.File.Exit }}"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import os, socket, sys
+          host, port = sys.argv[1], int(sys.argv[2])
+          up_host, up_port = os.environ["UPSTREAM"].rsplit(":", 1)
+          c = socket.create_connection((up_host.strip("[]"), int(up_port)), timeout=10)
+          print("FRONT_SAW_BACK", c.recv(64).decode(), flush=True)
+          c.close()
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready: front up", flush=True)
+          while True:
+              c, _ = s.accept()
+              c.sendall(b"front")
+              c.close()
+      - name: Exit
+        type: TEXT
+        data: |
+          import os, socket
+          up_host, up_port = os.environ["UPSTREAM"].rsplit(":", 1)
+          try:
+              c = socket.create_connection((up_host.strip("[]"), int(up_port)), timeout=5)
+              reachable = c.recv(64) == b"back"
+              c.close()
+          except OSError:
+              reachable = False
+          print("BACK_REACHABLE_AT_FRONT_EXIT", reachable, flush=True)
+  steps:
+  - name: Use
+    dependencies:
+    - service: Front
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import socket,sys; c=socket.create_connection((sys.argv[1], int(sys.argv[2])), timeout=10); print('TASK_GOT', c.recv(64).decode(), flush=True)", "{{ Service.Front.main.connectAddress }}", "{{ Service.Front.main.port }}"]
+
+expected:
+  output:
+  - FRONT_SAW_BACK back
+  - TASK_GOT front
+  - BACK_REACHABLE_AT_FRONT_EXIT True
+  forbidden:
+  - BACK_REACHABLE_AT_FRONT_EXIT False

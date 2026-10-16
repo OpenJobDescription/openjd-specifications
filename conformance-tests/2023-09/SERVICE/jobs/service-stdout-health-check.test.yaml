@@ -1,0 +1,69 @@
+# RFC 0009 example 2 / Template Schemas §9.4 STDOUT, §9.7: a Service with
+# onEnter, onRun, and onExit, whose scope is the one Step that depends on it.
+# It becomes READY when onRun prints `openjd_service_ready: <message>`; its
+# onEnter runs once before onRun and its onExit runs once the Step's Tasks are
+# done. Each Task receives a distinct assignment from the Service, which owns
+# the Step's state.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: ServiceStdout
+  services:
+  - name: Coordinator
+    ports:
+    - name: api
+    healthCheck:
+      type: STDOUT
+      readinessTimeoutSeconds: 60
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('COORDINATOR_ENTER')"]
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Coordinator.api.bindAddress }}", "{{ Service.Coordinator.api.port }}"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "print('COORDINATOR_EXIT')"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port = sys.argv[1], int(sys.argv[2])
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready: coordinator listening", flush=True)
+          count = 0
+          while True:
+              c, _ = s.accept()
+              count += 1
+              c.sendall(str(count).encode())
+              c.close()
+  steps:
+  - name: Coordinated
+    dependencies:
+    - service: Coordinator
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Tile
+        type: INT
+        range: "1-3"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import socket,sys; c=socket.create_connection((sys.argv[1], int(sys.argv[2])), timeout=10); print('TILE', sys.argv[3], 'ASSIGNMENT', c.recv(64).decode(), flush=True)", "{{ Service.Coordinator.api.connectAddress }}", "{{ Service.Coordinator.api.port }}", "{{ Task.Param.Tile }}"]
+
+expected:
+  output:
+  - COORDINATOR_ENTER
+  - TILE 1 ASSIGNMENT 1
+  - TILE 2 ASSIGNMENT 2
+  - TILE 3 ASSIGNMENT 3
+  - COORDINATOR_EXIT

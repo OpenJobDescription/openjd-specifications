@@ -1,0 +1,42 @@
+# Section 9.4 (RFC 0009): all four numeric <ServiceHealthCheck> fields --
+# readinessIntervalSeconds, readinessTimeoutSeconds, healthIntervalSeconds, and
+# failureThreshold -- are @fmtstring and may be format strings over Param.*
+# and <Service>.let bindings, resolved at job creation.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Patience
+  type: INT
+  default: 60
+services:
+- name: Store
+  let:
+  - strikes = 3 if Param.Patience > 30 else 1
+  ports:
+  - name: main
+  healthCheck:
+    type: COMMAND
+    readinessIntervalSeconds: "{{ Param.Patience // 10 }}"
+    readinessTimeoutSeconds: "{{ Param.Patience }}"
+    healthIntervalSeconds: "{{ Param.Patience // 2 }}"
+    failureThreshold: "{{ strikes }}"
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+      onHealthCheck:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

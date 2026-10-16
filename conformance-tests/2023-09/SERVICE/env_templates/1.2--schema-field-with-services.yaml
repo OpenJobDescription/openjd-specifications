@@ -1,0 +1,16 @@
+# Section 1.2 item 2 (RFC 0009): `$schema` alongside `extensions` and
+# `services`.
+specificationVersion: environment-2023-09
+$schema: "https://example.com/openjd/environment-2023-09.schema.json"
+extensions:
+- SERVICE
+- EXPR
+services:
+- name: Cache
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]

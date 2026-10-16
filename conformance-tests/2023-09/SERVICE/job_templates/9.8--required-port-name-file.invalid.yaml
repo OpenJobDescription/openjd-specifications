@@ -1,0 +1,18 @@
+# Section 9.8.1 item 1 (RFC 0009): a required port's `name` must not be
+# `File`.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+externalServices:
+- name: Ext
+  ports:
+  - name: File
+steps:
+- name: Use
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

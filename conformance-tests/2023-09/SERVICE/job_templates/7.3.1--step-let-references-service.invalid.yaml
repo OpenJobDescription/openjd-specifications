@@ -1,0 +1,28 @@
+# Section 3.6.2 / Section 7.4: a <StepTemplate>'s `let` is evaluated at job
+# creation, when Service.* values are unknown; only <StepScript>.let (task
+# execution) may reference them.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  let:
+  - Port = Service.Store.main.port
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Port }}"]

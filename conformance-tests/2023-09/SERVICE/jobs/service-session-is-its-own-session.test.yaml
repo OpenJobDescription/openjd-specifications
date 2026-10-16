@@ -1,0 +1,50 @@
+# RFC 0009 "Service lifecycle": a Service Session is always a Session of its
+# own. Session.WorkingDirectory within the Service is the Service Session's
+# working directory (the current directory of its actions), not the Task
+# Session's: a marker the Service writes there is not visible to the Task.
+# OPENJD_SESSION_WORKING_DIR is set for the Service's actions as for any
+# Session.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: ServiceSessionIsItsOwn
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Run }}", "{{ Session.WorkingDirectory }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import os, sys, time
+          wd = sys.argv[1]
+          print("SERVICE_WD_IS_CWD", os.path.samefile(wd, os.getcwd()), flush=True)
+          print("SERVICE_WD_IS_ENV", os.path.samefile(wd, os.environ["OPENJD_SESSION_WORKING_DIR"]), flush=True)
+          open(os.path.join(wd, "service.marker"), "w").write("here")
+          print("openjd_service_ready: marker written", flush=True)
+          time.sleep(600)
+  steps:
+  - name: Use
+    dependencies:
+    - service: Store
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os; print('TASK_SEES_SERVICE_MARKER', os.path.exists(os.path.join(r'{{ Session.WorkingDirectory }}', 'service.marker'))); print('TASK_PORT', {{ Service.Store.main.port }} > 0)"]
+
+expected:
+  output:
+  - SERVICE_WD_IS_CWD True
+  - SERVICE_WD_IS_ENV True
+  - TASK_SEES_SERVICE_MARKER False
+  - TASK_PORT True

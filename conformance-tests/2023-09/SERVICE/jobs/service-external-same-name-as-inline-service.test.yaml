@@ -1,0 +1,61 @@
+# Template Schemas §1.2.2 item 3: Service names are per document. An attached
+# Service named like a Service in the Job Template's `services` is accepted —
+# the submission is not rejected for a shared name — and the two run as
+# distinct Services: the Task's Service.Store.* is the inline Store, and the
+# attached Store, not visible to the Job Template, runs because the
+# Environment defined alongside it lists it. Both must start before the Task.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: ExternalSameNameAsInlineService
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import time; print('JOB_STORE_UP', {{ Service.Store.main.port }}, flush=True); print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  steps:
+  - name: Use
+    dependencies:
+    - service: Store
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_RAN', {{ Service.Store.main.port }} > 0)"]
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [SERVICE, EXPR]
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import time; print('QUEUE_STORE_UP', {{ Service.Store.main.port }}, flush=True); print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  environment:
+    name: QueueStoreClient
+    dependencies:
+    - service: Store
+    variables:
+      QUEUE_STORE_PORT: "{{ Service.Store.main.port }}"
+
+expected:
+  output:
+  - JOB_STORE_UP
+  - QUEUE_STORE_UP
+  - TASK_RAN True

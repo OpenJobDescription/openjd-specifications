@@ -854,6 +854,18 @@ representation of frame ranges. Use `list(Task.Param.Frame)` to convert to a lis
 |--------|------|-------------|
 | `Task.File.<name>` | `path` | Location of the embedded file within a Step Script |
 | `Env.File.<name>` | `path` | Location of the embedded file within an Environment |
+| `Service.File.<name>` | `path` | Location of the embedded file within a Service (`SERVICE` extension) |
+
+##### Service Symbols
+
+Available with the `SERVICE` extension. All three are resolved at task execution (or service execution) time and
+type-check as `unresolved[...]` at earlier stages.
+
+| Symbol | Type | Description |
+|--------|------|-------------|
+| `Service.<name>.<port>.port` | `int` | The port number allocated (or requested) for port `<port>` of Service `<name>`, in the space of that port's `protocol`. `<name>` is a Service the document declares or, in a Job Template, requires; available to the Service itself and to the Steps, Services, and Job Environments that list `service: <name>` in their `dependencies` |
+| `Service.<name>.<port>.bindAddress` | `string` | The interface address the service process binds. Available within the declaring Service only, never for a required Service |
+| `Service.<name>.<port>.connectAddress` | `string` | The hostname or IP address entities that depend on the Service use to reach it; same availability as `port` |
 
 #### 1.2.3. Implicit Type Coercion
 
@@ -1546,6 +1558,10 @@ Examples:
 | `zfill(s: string, width: int) -> string` | Pad with leading zeros to width; a leading sign (`+`/`-`) is preserved before the padding |
 | `zfill(n: int, width: int) -> string` | Convert int to string, pad with leading zeros; negative integers preserve the sign before padding |
 | `zfill(x: float, width: int) -> string` | Convert float to string, pad with leading zeros; negative floats preserve the sign before padding |
+| `join_host_port(host: string, port: int) -> string` | Join a host and a port as `host:port`, enclosing `host` in square brackets when it is an IPv6 literal (contains a colon and is not already bracketed), as a URL authority or `host:port` flag value requires (`SERVICE` extension) |
+| `split_host_port(s: string) -> list[string]?` | Split `host:port` or `[host]:port` into `[host, port]`, removing the brackets from an IPv6 literal; `null` when `s` has no port, including an unbracketed IPv6 literal; an error for malformed brackets (`SERVICE` extension) |
+| `is_ipv4(s: string) -> bool` | True if `s` is an IPv4 literal (`SERVICE` extension) |
+| `is_ipv6(s: string) -> bool` | True if `s` is an IPv6 literal, bracketed or not, with or without a zone identifier (`SERVICE` extension) |
 
 Examples:
 - `split("a,b,c", ",")` and `"a,b,c".split(",")` return `["a", "b", "c"]`
@@ -1557,6 +1573,17 @@ Examples:
 
 Note: The `sep` argument to `split` and `rsplit` must be non-empty. An empty separator is an error.
 To split a string into individual characters, use `[s[i] for i in range(len(s))]`.
+
+`join_host_port("cache.example", 6379)` returns `"cache.example:6379"`, and
+`join_host_port("2001:db8::5", 6379)` returns `"[2001:db8::5]:6379"`, as does
+`join_host_port("[2001:db8::5]", 6379)`. `split_host_port("[2001:db8::5]:6379")` returns
+`["2001:db8::5", "6379"]`, while `split_host_port("cache.example")` and
+`split_host_port("2001:db8::5")` (a bare IPv6 literal, read as having no port) both return `null`;
+the port element is a string, so `int(split_host_port(Param.Endpoint)[1])` gives the port number.
+Malformed brackets such as `"[::1"` or `"[::1]x:80"` are an error. A zone identifier is carried
+through verbatim: `join_host_port("fe80::1%eth0", 80)` returns `"[fe80::1%eth0]:80"`, and
+`split_host_port` returns the host with the zone attached. `is_ipv6("::1")`, `is_ipv6("[::1]")`, and
+`is_ipv6("fe80::1%eth0")` are all `true`; `is_ipv4("10.0.0.1")` is `true`.
 
 Note: Splitting an empty string returns a list containing one empty string, not an empty list
 (e.g., `''.split(',')` returns `['']`). This matches Python's `str.split()` behavior.
@@ -1691,7 +1718,8 @@ re_escape("file[1].txt")                        # returns "file\\[1\\]\\.txt"
 | `repr_sh(p: path) -> string` | Shell-escape a path for POSIX shells |
 | `repr_sh(args: list[string]) -> string` | Join list into space-separated shell-escaped strings |
 | `repr_sh(args: list[path]) -> string` | Join path list into space-separated shell-escaped strings |
-| `repr_sh(args: list[path]) -> string` | Join path list into space-separated shell-escaped strings |
+| `repr_sh(n: int) -> string` | The integer's decimal string form (never needs quoting) (`SERVICE` extension) |
+| `repr_sh(args: list[int]) -> string` | Join the integers' decimal forms with single spaces (`SERVICE` extension) |
 | `repr_cmd(s: string) -> string` | Escape a string for Windows CMD |
 | `repr_cmd(args: list[string]) -> string` | Join list into space-separated CMD-escaped strings |
 | `repr_pwsh(s: string) -> string` | Escape a string for PowerShell |
@@ -1748,6 +1776,8 @@ preserves the nesting.
 
 Examples:
 - `repr_sh(["echo", "hello world"])` returns `"echo 'hello world'"`
+- `repr_sh(6379)` returns `"6379"` and `repr_sh([80, 443])` returns `"80 443"` (`SERVICE` extension; without it,
+  `repr_sh` of an `int` or `list[int]` is a type error)
 - `repr_cmd("a & b")` returns `"\"a & b\""` (quoted, `&` is literal inside quotes)
 - `repr_cmd("a ^ b")` returns `"\"a ^^ b\""` (`^` escaped inside quotes)
 - `repr_cmd("hello!")` returns `"\"hello^^!\""` (`!` escaped as `^^!` for the delayed expansion context)

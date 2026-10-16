@@ -1,0 +1,51 @@
+# Section 9 item 4 / Section 9.1 rule 2 (RFC 0009): Services may depend on one
+# another freely as long as the dependency graph is acyclic, and each may
+# reference the endpoint of every Service it lists. Back depends on Store,
+# Front on Back and Store, and the Step on all three; Store starts first,
+# then Back, then Front.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Front
+  dependencies:
+  - service: Back
+  - service: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Back.main.port }}", "{{ Service.Store.main.connectAddress }}"]
+- name: Back
+  dependencies:
+  - service: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port }}"]
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]
+steps:
+- name: Step1
+  dependencies:
+  - service: Front
+  - service: Back
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Front.main.port }}", "{{ Service.Back.main.port }}", "{{ Service.Store.main.port }}"]

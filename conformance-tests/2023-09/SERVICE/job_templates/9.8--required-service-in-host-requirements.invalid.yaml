@@ -1,0 +1,22 @@
+# Section 9.8 / Section 7.3.1 (RFC 0009): Service.* is never in scope in
+# `hostRequirements`, for a required Service as for a declared one.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+externalServices:
+- name: Ext
+  ports:
+  - name: main
+steps:
+- name: Use
+  hostRequirements:
+    attributes:
+    - name: attr.cache.host
+      anyOf: ["{{ Service.Ext.main.connectAddress }}"]
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

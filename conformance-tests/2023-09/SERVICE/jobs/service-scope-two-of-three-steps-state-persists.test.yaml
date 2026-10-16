@@ -1,0 +1,120 @@
+# RFC 0009 lifecycle constraint 6 (a Service Session ends when the Service's
+# scope completes) and Template Schemas §9.1 rule 1: a coordinator Service
+# that Scatter and Gather list in their `dependencies` has exactly those two
+# Steps as its scope. The same instance persists across them, holding state
+# written by Scatter's Tasks and read by Gather's Task, and is stopped, with
+# onExit run, once Gather completes -- before Unrelated, the third Step, which
+# does not depend on it, runs. Gather's Task records the endpoint in a file in
+# the host's temp directory keyed by Job.Name; Unrelated's Task deletes it and
+# finds the endpoint refused.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, EXPR]
+  name: ScopeTwoOfThreeSteps
+  services:
+  - name: Coord
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+      readinessTimeoutSeconds: 60
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Coord.main.bindAddress }}", "{{ Service.Coord.main.port }}"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "print('COORD_EXIT')"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port = sys.argv[1], int(sys.argv[2])
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          store = []
+          print("openjd_service_ready: coord up", flush=True)
+          while True:
+              c, _ = s.accept()
+              msg = c.recv(256).decode()
+              if msg.startswith("PUT "):
+                  store.append(msg[4:])
+                  c.sendall(b"OK")
+              elif msg == "ALL":
+                  c.sendall(",".join(sorted(store)).encode())
+              c.close()
+  steps:
+  - name: Scatter
+    dependencies:
+    - service: Coord
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: N
+        type: INT
+        range: "1-3"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import socket,sys; c=socket.create_connection((sys.argv[1], int(sys.argv[2])), timeout=10); c.sendall(b'PUT part' + sys.argv[3].encode()); print('SCATTER', sys.argv[3], c.recv(64).decode(), flush=True)", "{{ Service.Coord.main.connectAddress }}", "{{ Service.Coord.main.port }}", "{{ Task.Param.N }}"]
+  - name: Gather
+    dependencies:
+    - dependsOn: Scatter
+    - service: Coord
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Service.Coord.main.connectAddress }}", "{{ Service.Coord.main.port }}", "{{ Job.Name }}"]
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import os, socket, sys, tempfile
+          host, port, job = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          c = socket.create_connection((host, port), timeout=10)
+          c.sendall(b"ALL")
+          print("GATHERED", c.recv(256).decode(), flush=True)
+          c.close()
+          with open(os.path.join(tempfile.gettempdir(), "openjd-" + job + ".port"), "w") as f:
+              f.write(host + "\n" + str(port))
+  - name: Unrelated
+    dependencies:
+    - dependsOn: Gather
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Job.Name }}"]
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import os, socket, sys, tempfile
+          path = os.path.join(tempfile.gettempdir(), "openjd-" + sys.argv[1] + ".port")
+          with open(path) as f:
+              host, port = f.read().split("\n")
+          os.remove(path)
+          try:
+              socket.create_connection((host, int(port)), timeout=5).close()
+              gone = False
+          except OSError:
+              gone = True
+          print("UNRELATED_RAN COORD_GONE", gone, flush=True)
+
+expected:
+  output:
+  - SCATTER 1 OK
+  - SCATTER 2 OK
+  - SCATTER 3 OK
+  - GATHERED part1,part2,part3
+  - COORD_EXIT
+  - UNRELATED_RAN COORD_GONE True
+  forbidden:
+  - COORD_GONE False

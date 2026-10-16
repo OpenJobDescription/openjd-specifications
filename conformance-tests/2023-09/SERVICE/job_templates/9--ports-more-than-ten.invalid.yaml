@@ -1,0 +1,35 @@
+# Section 9 item 6 constraint 2: `ports` must not contain more than 10
+# elements.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: p1
+  - name: p2
+  - name: p3
+  - name: p4
+  - name: p5
+  - name: p6
+  - name: p7
+  - name: p8
+  - name: p9
+  - name: p10
+  - name: p11
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
