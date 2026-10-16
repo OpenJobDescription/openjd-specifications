@@ -1153,7 +1153,9 @@ does not know which branch will be taken at runtime. Both branches are evaluated
 An operand whose type is not known (`any`, or a type that static type checking leaves unbound,
 such as the element of a concatenation whose operands have no common element type) may have any
 type at run time. An operation on one is typed `any`, whichever signature it would otherwise
-select, and is not an error: `x[0]` with `x: any` is `any`, not the `string` of
+select (or, when every signature of the operation returns the same type, such as a comparison
+or membership test's `bool`, that type), and is not an error when a signature of its arity
+exists: `x[0]` with `x: any` is `any`, not the `string` of
 `__getitem__(string, int)`. A list literal with an element of unknown type has element type
 `any`. The exception is list concatenation, typed as described in
 RFC 0006, List Concatenation Type Coercion.
