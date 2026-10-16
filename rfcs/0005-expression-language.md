@@ -2010,7 +2010,8 @@ whose iterable is empty, or whose filter keeps nothing, succeeds, and a run that
 failing part reports it there. When the iterable's elements are known, they are evaluated in order
 until the filter is not known for one of them, and the comprehension is typed as a whole from there;
 a failure of `expr` on an earlier element the filter keeps is an error, since every run keeps it,
-and so is a filter that is not a boolean for an earlier element. A filter of type `noreturn` can be
+and so is a filter that is not a boolean for an earlier element, or whose type can never be a
+boolean for the first element it is not known for. A filter of type `noreturn` can be
 a boolean in this sense: it fails the run itself, and the comprehension is typed from `expr`. If the iterable can only be the
 empty list, `expr` is not type-checked and the comprehension is `list[nulltype]`. An iterable that
 cannot be iterated is reported, since every run fails on it.
