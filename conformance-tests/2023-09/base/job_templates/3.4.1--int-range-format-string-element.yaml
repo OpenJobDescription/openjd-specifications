@@ -1,9 +1,8 @@
 # Template Schemas section 3.4.1.1: `<IntRangeList> ::= [ <integer> |
 # <intstring> | <TaskParameterStringValue>, ... ]`, and a
-# `<TaskParameterStringValue>`
-# must resolve to the string representation of an integer. A list element
-# may therefore be a format string that references a job parameter, so the
-# template is valid.
+# `<TaskParameterStringValue>` must resolve to the string representation of an
+# integer. A list element may therefore be a format string that references a
+# job parameter, so the template is valid.
 specificationVersion: jobtemplate-2023-09
 name: TestJob
 parameterDefinitions:
