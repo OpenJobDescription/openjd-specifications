@@ -1885,7 +1885,7 @@ process, and must ensure the process can bind `bindAddress` inside that namespac
 `::`) works in either case; a loopback `bindAddress` reaches a forwarded port only with host networking. For example, a
 Docker wrapper without host networking passes
 `{{ flatten([['-p', string(WrappedService.Ports[i]) + ':' + string(WrappedService.Ports[i]) + '/' + lower(WrappedService.Protocols[i])] for i in range(len(WrappedService.Ports))]) }}`.
-`WrappedService.Ports` is `list[int]`; `repr_sh` accepts `int` and `list[int]` (see the
+`WrappedService.Ports` is `list[int]`; with the `SERVICE` extension `repr_sh` accepts `int` and `list[int]` (see the
 [Expression Language](2026-02-Expression-Language#226-script-embedding-and-serialization)), so a wrapper may also pass
 the whole list as `repr_sh(WrappedService.Ports)`.
 
