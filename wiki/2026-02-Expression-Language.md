@@ -1169,8 +1169,9 @@ the elements it keeps are known:
   list of lists, or `condition` or `expr` fails to type-check. A form that holds a type
   variable, such as the `T1` of a signature the type was derived from, does not say what its
   values are, and is not counted as a list of lists. Failing to type-check includes a
-  `condition` that can never be a boolean (a `condition` of type `noreturn` is not one: it fails
-  the run itself, and the comprehension is typed from `expr`), a reference to an undefined symbol or unknown
+  `condition` that can never be a boolean (a `condition` typed `noreturn` from operands whose
+  values are not known is not one: it fails the run itself, and the comprehension is typed from
+  `expr`; one that fails on known operands, such as `fail('m')`, fails to type-check), a reference to an undefined symbol or unknown
   function, and an `expr` that fails on operands whose values are known
   (`[1 // 0 for x in values]`). Static type checking does not report such a failure: a run
   whose `iterable` is empty, or whose `condition` keeps no element, succeeds, and a run that
