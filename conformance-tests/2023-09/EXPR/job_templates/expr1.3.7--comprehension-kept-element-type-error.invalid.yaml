@@ -1,7 +1,7 @@
 # Template validation cannot decide the filter for the element 2 (Param.Zero
-# is not known), but the filter keeps the element 1 on every run, so the
-# element expression is evaluated on it and fails: int has no upper()
-# (§1.3.7). This holds whatever the element's position in the iterable.
+# is not known), but the elements are evaluated in order, and the filter
+# keeps the element 1 before it on every run, so the element expression is
+# evaluated on it and fails: int has no upper() (§1.3.7).
 specificationVersion: jobtemplate-2023-09
 extensions:
 - EXPR
@@ -18,4 +18,4 @@ steps:
         command: python
         args:
         - "-c"
-        - "print(r'{{ [x.upper() for x in [2, 1] if x == 1 or Param.Zero == 5] }}')"
+        - "print(r'{{ [x.upper() for x in [1, 2] if x == 1 or Param.Zero == 5] }}')"

@@ -1156,7 +1156,9 @@ keep none and never evaluate the element expression. The condition and element e
 type-checked once with the loop variable unresolved, and the comprehension's type includes the
 empty list. If they fail, the error is suppressed and the comprehension has type
 `list[nulltype]`: only a run that keeps no element can succeed, and a run that keeps one reports
-the error. See [List Comprehensions](#list-comprehensions).
+the error. Elements of a known iterable before the first unknown condition are evaluated as
+usual, and a failure on one that is kept is reported. See
+[List Comprehensions](#list-comprehensions).
 
 **Example:**
 
@@ -1209,7 +1211,8 @@ At each stage, known values are evaluated concretely while unresolved values pro
    Let bindings that depend only on literals may evaluate concretely. Catches syntax errors,
    type errors in constant subexpressions, and structural issues like undefined symbols, except
    in parts a run may not evaluate: the untaken branch of a conditional with an unknown
-   condition, and the element expression of a list comprehension over unknown elements.
+   condition, and the condition and element expression of a list comprehension over unknown
+   elements.
 
 2. **Job parameter binding** ("submit time"). Job parameter values are now known, so `Param.*`
    symbols are concrete. Expressions in TEMPLATE scope can be fully evaluated. Expressions in
@@ -2003,10 +2006,12 @@ nest three levels deep; a form holding a type variable does not count), or the f
 fails to type-check, including a reference to an undefined symbol or unknown function, and a failure
 on operands whose values are known (`[1 // 0 for x in values]`). Such a failure is not reported by
 static type checking: a run whose iterable is empty, or whose filter keeps nothing, succeeds, and a
-run that evaluates the failing part reports it there. When the iterable's elements are known, `expr`
-is still evaluated for each element whose filter is known to be true, wherever it is in the
-iterable: every run keeps that element, so a failure there is an error. If the iterable can only be
-the empty list, `expr` is not type-checked and the comprehension is `list[nulltype]`.
+run that evaluates the failing part reports it there. When the iterable's elements are known, they
+are evaluated in order until the filter is not known for one of them, and the comprehension is
+typed as a whole from there; a failure of `expr` on an earlier element the filter keeps is an
+error, since every run keeps it. If the iterable can only be the empty list, `expr` is not
+type-checked and the comprehension is `list[nulltype]`. An iterable that cannot be iterated is
+reported, since every run fails on it.
 
 Examples:
 - `[['-e', e] for e in Task.Environment]` transforms `["A=1", "B=2"]` into

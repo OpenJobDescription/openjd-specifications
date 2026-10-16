@@ -387,7 +387,9 @@ keep none and never evaluate the element expression. The condition and element e
 type-checked once with the loop variable unresolved, and the comprehension's type includes the
 empty list. If they fail, the error is suppressed and the comprehension has type
 `list[nulltype]`: only a run that keeps no element can succeed, and a run that keeps one reports
-the error. See [List Comprehensions](#137-list-comprehensions).
+the error. Elements of a known iterable before the first unknown condition are evaluated as
+usual, and a failure on one that is kept is reported. See
+[List Comprehensions](#137-list-comprehensions).
 
 ### Progressive Expression Evaluation
 
@@ -401,7 +403,8 @@ At each stage, known values are evaluated concretely while unresolved values pro
    Let bindings that depend only on literals may evaluate concretely. Catches syntax errors,
    type errors in constant subexpressions, and structural issues like undefined symbols, except
    in parts a run may not evaluate: the untaken branch of a conditional with an unknown
-   condition, and the element expression of a list comprehension over unknown elements.
+   condition, and the condition and element expression of a list comprehension over unknown
+   elements.
 
 2. **Job parameter binding** ("submit time"). Job parameter values are now known, so `Param.*`
    symbols are concrete. Expressions in TEMPLATE scope can be fully evaluated. Expressions in
@@ -1151,9 +1154,12 @@ the elements it keeps are known:
   with `var` of that type, with a `nulltype` member removed: a list cannot hold `null`, so a run
   whose `expr` produces `null` fails. The comprehension has type `list[T | nulltype]`. For
   example, `[x * 2 for x in values]` with `values: list[int]` has type `list[int | nulltype]`,
-  and indexing it gives `int`. When the elements of `iterable` are known, `expr` is still
-  evaluated for each element whose `condition` is known to be true, wherever it is in
-  `iterable`: every run keeps that element, so a failure there is an error.
+  and indexing it gives `int`. When the elements of `iterable` are known, they are evaluated in
+  order until `condition` is not known for one of them, and the comprehension is typed as a
+  whole from there. An element before it whose `condition` is true is kept by every run, so a
+  failure of `expr` on it is an error: `[x.upper() for x in [1, 2] if x == 1 or flag]` fails
+  static type checking with `flag: bool`, while `[x.upper() for x in [2, 1] if x == 1 or flag]`
+  fails only when it runs.
 - In that case the comprehension has type `list[nulltype]` when only a run that keeps no element
   can succeed: nothing is left of `T` (`expr` can only be `null`), `T` is `noreturn` (`expr`
   never produces a value), every form of `T` (see [section 1.2.1](#121-expression-types)) is a
