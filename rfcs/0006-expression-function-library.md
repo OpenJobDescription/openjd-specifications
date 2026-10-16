@@ -189,6 +189,11 @@ List comprehensions produce lists, so they participate in concatenation naturall
 
 Concatenation of incompatible list types (e.g., `list[string] + list[int]`) is an error.
 
+Static type checking types a concatenation whose operands' values are not known the same way,
+from their types. An operand whose element type is not known (`any`) gives `list[any]`: the
+values decide the element type. Operands with no common element type are not an error there,
+since a run in which one of them is empty succeeds; the element type is then not known.
+
 #### Path Operators
 
 | Signature | Description |

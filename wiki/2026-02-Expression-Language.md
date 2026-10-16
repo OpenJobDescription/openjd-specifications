@@ -1149,9 +1149,9 @@ the elements it keeps are known:
   build, the empty one included. `var` has the element type of `iterable`: `E` for a `list[E]`,
   `int` for a `range_expr`, and `any` for `any` or for a type variable that static type checking
   leaves unbound (such as the `T3` of a `list[T3]` element). For a union it is the union of its
-  members' element types (`list[int] | list[string]` gives `int | string`); a member that cannot
-  be iterated contributes nothing, since a run with it fails. A `nulltype` element type
-  contributes nothing either (see [section 1.2.1](#121-expression-types)). `T` is the type of
+  members' element types (`list[int] | list[string]` gives `int | string`); a member whose type
+  cannot be iterated gives `any`, as for an `iterable` of that type (below). A `nulltype`
+  element type or member contributes nothing (see [section 1.2.1](#121-expression-types)). `T` is the type of
   `expr` with `var` of that type, with a `nulltype` member removed: a list cannot hold `null`, so
   a run whose `expr` produces `null` fails. The comprehension has type `list[T | nulltype]`. For
   example, `[x * 2 for x in values]` with `values: list[int]` has type `list[int | nulltype]`, and
@@ -1376,7 +1376,8 @@ finding a common type:
 
 Static type checking types a concatenation whose operands' values are not known the same way,
 from their types. An operand whose element type is not known (`any`) gives `list[any]`: the
-values decide the element type.
+values decide the element type. Operands with no common element type are not an error there,
+since a run in which one of them is empty succeeds; the element type is then not known.
 
 #### 2.1.4. Comparison Operators
 
