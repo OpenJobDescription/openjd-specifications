@@ -7,23 +7,17 @@
 #
 # All the review logic (Bedrock auth, the pinned action, the restricted tool
 # surface, the read-only PR-head checkout, and per-run limits) lives in the
-# reusable workflow in OpenJobDescription/.github. This caller only forwards the
+# reusable workflow in aws-deadline/.github. This caller only forwards the
 # workflow_run identifiers and the role-ARN secret.
-#
-# Repo-specific focus: the reviewer reads this repository's .claude-review.md
-# (from the base branch), which directs it to review RFC documents under rfcs/
-# using the methodology in skills/openjd-rfc-review/SKILL.md -- design tenets,
-# template completeness, and specification compatibility.
 name: Claude PR Review
 
-on: # zizmor: ignore[dangerous-triggers] -- workflow_run is intentional and safe here; see the header comment above (runs from default branch, fork PRs cannot alter behavior/secrets)
+on:
   workflow_run:
     workflows: ["Claude PR Review (collect)"]
     types:
       - completed
 
-# Cancel a superseded review when the PR is pushed again, keyed on the trusted
-# head repo + branch from the workflow_run payload (no pull_request.number here).
+# Cancel a superseded review when the PR is pushed again, keyed on the trusted head repo + branch from the workflow_run payload (no pull_request.number here).
 concurrency:
   group: claude-pr-review-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: true
@@ -45,7 +39,7 @@ jobs:
     # this prevents a review from firing -- with the base repo's secrets and a
     # fork-controlled head_sha -- from a non-PR context.
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request' }}
-    uses: OpenJobDescription/.github/.github/workflows/reusable_claude_pr_review.yml@mainline
+    uses: aws-deadline/.github/.github/workflows/reusable_claude_pr_review.yml@mainline
     permissions:
       contents: read
       pull-requests: write

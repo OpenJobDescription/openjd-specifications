@@ -11,8 +11,8 @@
 # fork's copy of this file cannot influence what gets reviewed or where comments
 # are posted.
 #
-# This is a thin caller -- the (no-op) collect job lives in the reusable
-# workflow in OpenJobDescription/.github.
+# This is a thin caller -- the (now no-op) collect job lives in the reusable
+# workflow in aws-deadline/.github.
 name: Claude PR Review (collect)
 
 on:
@@ -29,4 +29,4 @@ permissions: {}
 
 jobs:
   collect:
-    uses: OpenJobDescription/.github/.github/workflows/reusable_claude_pr_review_collect.yml@mainline
+    uses: aws-deadline/.github/.github/workflows/reusable_claude_pr_review_collect.yml@mainline
