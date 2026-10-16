@@ -1,0 +1,32 @@
+# Expression Language 2.1.4: ordering operators accept int, float, string,
+# path, and bool, and mixed types only for the compatible pairs int/float and
+# string/path; "comparing other cross-type pairs is an error". A PATH
+# parameter compared with an int is that error whatever the parameter's
+# value, so the expression fails on every run. This test expects template
+# validation to reject it, as it rejects `Param.X + "a"` for an INT X.
+#
+# Needs a spec decision before promotion: 2.1.4 lists the signatures as
+# `__lt__(a: T1, b: T2) -> bool`, and "Progressive Expression Evaluation"
+# promises only "type errors in constant subexpressions" at validation (see
+# README-fuzz-findings.md).
+#
+# openjd-rs refuses a mismatched pair only at run time, so this template
+# validates and every task then fails with "Cannot use '<' operator with path
+# and int" (found by fuzzing, openjd-rs#442).
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Dir
+  type: PATH
+  default: renders
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - -c
+        - print(r'{{ Param.Dir < 1 }}')

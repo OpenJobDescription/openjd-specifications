@@ -1,0 +1,27 @@
+# Template Schemas 3.4.1.2 and 7.3.1: a FLOAT range element may be a
+# format string, and a format string may reference only the values in scope
+# (7.3.1). `Param.Scale` is not defined, so the template is invalid, as it is
+# for the same reference in an INT, STRING, or PATH range.
+#
+# openjd-rs skips the symbol check for FLOAT ranges, so this template
+# validates and job creation then fails (found by fuzzing, openjd-rs#442).
+# openjd-cli 0.7.5 rejects it ("Variable Param.Scale does not exist at this
+# location").
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Factor
+      type: FLOAT
+      range:
+      - 1.5
+      - "{{ Param.Scale }}"
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - -c
+        - print(r'{{ Task.Param.Factor }}')

@@ -1,0 +1,38 @@
+# Expression Language "Conditional Expressions with Unknown Conditions" and
+# 2.2.3: with an unresolved condition, the result of `Param.LL if
+# Param.Enabled else []` is `unresolved[T | S]`, "since either could be the
+# runtime result". So flatten() of it can be the non-empty list[int] from the
+# list[list[int]] parameter, and indexing it and adding 1 runs correctly
+# whenever Enabled is true (it gives 2 for the default values). Template
+# validation must accept the template.
+#
+# Relies on an operation on a union-typed operand succeeding when one member
+# can succeed, which the spec states for target-type coercion but not for
+# function overloads (see README-fuzz-findings.md).
+#
+# openjd-rs dispatches the union argument to the `flatten(list[nulltype])`
+# overload, types the result as an always-empty list[nulltype], and rejects
+# the template with "Cannot use '+' operator with nulltype and int" (found by
+# fuzzing, openjd-rs#442).
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Enabled
+  type: BOOL
+  default: true
+- name: LL
+  type: LIST[LIST[INT]]
+  default:
+  - [1]
+  - [2]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - -c
+        - print(r'{{ flatten(Param.LL if Param.Enabled else [])[0] + 1 }}')

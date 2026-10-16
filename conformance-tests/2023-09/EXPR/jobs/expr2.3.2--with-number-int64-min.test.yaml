@@ -1,0 +1,28 @@
+# Expression Language section 2.3.2: with_number pads the frame number to the
+# width of the pattern, and a negative number keeps its sign in front of the
+# padded digits (`with_number(-1)` on `file_###` gives `file_-01`).
+#
+# The smallest int, -9223372036854775808, has more digits than the two-`#`
+# pattern, so it is written in full. openjd-rs negated the number to pad its
+# digits, which overflows for this value: a debug build panicked and a
+# release build printed `f_--9223372036854775808` (found by fuzzing,
+# openjd-rs#442). The literal is written as `-9223372036854775807 - 1`
+# because 9223372036854775808 itself is out of the int range.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'RESULT:{{ with_number("f_##", -9223372036854775807 - 1) }}')
+expected:
+  output:
+  - RESULT:f_-9223372036854775808

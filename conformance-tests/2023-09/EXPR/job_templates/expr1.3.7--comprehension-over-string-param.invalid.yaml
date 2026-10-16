@@ -1,0 +1,26 @@
+# Expression Language section 1.3.7: a list comprehension iterates a list. RFC
+# 0005's reference evaluator also accepts a range_expr, and raises "List
+# comprehension requires list or range_expr" for anything else. A STRING
+# parameter is never iterable, whatever its value, so the comprehension fails
+# on every run and template validation must reject it.
+#
+# openjd-rs bound the loop variable to int for any non-list unresolved
+# iterable, so this template validated and every task then failed with
+# "Cannot iterate over string" (found by fuzzing, openjd-rs#442).
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Items
+  type: STRING
+  default: abc
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - -c
+        - print(r'{{ [x for x in Param.Items] }}')

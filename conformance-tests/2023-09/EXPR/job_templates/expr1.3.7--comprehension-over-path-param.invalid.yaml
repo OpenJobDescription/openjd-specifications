@@ -1,0 +1,27 @@
+# Expression Language section 1.3.7: a list comprehension iterates a list. RFC
+# 0005's reference evaluator also accepts a range_expr, and raises "List
+# comprehension requires list or range_expr" for anything else. A PATH
+# parameter is never iterable, whatever its value (section 1.3.8: use
+# `p.parts` to get the components as a list), so the comprehension fails on
+# every run and template validation must reject it.
+#
+# openjd-rs bound the loop variable to int for any non-list unresolved
+# iterable, so this template validated and every task then failed with
+# "Cannot iterate over path" (found by fuzzing, openjd-rs#442).
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Dir
+  type: PATH
+  default: renders
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - -c
+        - print(r'{{ [x for x in Param.Dir] }}')

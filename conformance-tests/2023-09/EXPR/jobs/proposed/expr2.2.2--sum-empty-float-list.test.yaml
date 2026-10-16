@@ -1,0 +1,32 @@
+# Expression Language 2.2.2: `sum(values: list[float]) -> float`. A
+# LIST[FLOAT] parameter is a list[float] (1.2.2) even when its value is
+# empty, so its sum is the float 0.0, the type validation assigned it. Only
+# `sum(values: list[nulltype]) -> int`, for an untyped empty list such as the
+# literal `[]`, returns the int 0.
+#
+# openjd-rs returns the int 0 for an empty list[float], so the value
+# disagrees with its declared type (found by fuzzing, openjd-rs#442).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Weights
+    type: LIST[FLOAT]
+    default: []
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'SUM:{{ repr_py(sum(Param.Weights)) }}')
+            print(r'LITERAL:{{ repr_py(sum([])) }}')
+expected:
+  output:
+  - SUM:0.0
+  - LITERAL:0
