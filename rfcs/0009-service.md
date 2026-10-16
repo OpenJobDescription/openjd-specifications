@@ -826,7 +826,8 @@ New properties, available only when both `WRAP_ACTIONS` (RFC 0008) and `SERVICE`
   `{{ flatten([['-p', join_host_port(WrappedService.BindAddresses[i], WrappedService.Ports[i]) + ':' + string(WrappedService.Ports[i]) + '/' + lower(WrappedService.Protocols[i])] for i in range(len(WrappedService.Ports))]) }}`
   in its `args`; the simpler form that binds every interface is shown in the wiki's §4.3.1.
   `WrappedService.Ports` is `list[int]`, and this RFC extends `repr_sh` to `int` and `list[int]`
-  (see [Modifications to the Expression Language](#modifications-to-the-expression-language)), so a
+  under `SERVICE` (see
+  [Modifications to the Expression Language](#modifications-to-the-expression-language)), so a
   wrapper may pass the list as `repr_sh(WrappedService.Ports)` without converting each entry.
 
 RFC 0008's rules extend to the new hooks as follows:
@@ -1436,8 +1437,8 @@ through verbatim: `join_host_port("fe80::1%eth0", 80)` is `"[fe80::1%eth0]:80"`.
 than an error and an already-bracketed host is not bracketed again. Under method syntax,
 `addr.join_host_port(port)`.
 
-**`repr_sh` of integers.** §2.2.6 gains two signatures, available wherever `repr_sh` is (they are
-not gated on `SERVICE`):
+**`repr_sh` of integers.** §2.2.6 gains two signatures, available — like the four functions above —
+only in documents that declare `SERVICE`:
 
 | Signature | Description |
 |---|---|
