@@ -379,6 +379,16 @@ does not know which branch will be taken at runtime. Both branches are evaluated
   is suppressed — that branch would always fail at runtime, so it can never produce a value.
 - If both branches fail, evaluation fails with an error describing both failures.
 
+**Operations on Values of Unknown Type:**
+
+An operand whose type is not known (`any`, or a type that static type checking leaves unbound,
+such as the element of a concatenation whose operands have no common element type) may have any
+type at run time. An operation on one is typed `any`, whichever signature it would otherwise
+select, and is not an error: `x[0]` with `x: any` is `any`, not the `string` of
+`__getitem__(string, int)`. A list literal with an element of unknown type has element type
+`any`. The exception is list concatenation, typed as described in
+[List Concatenation](#213-arithmetic-operators).
+
 **List Comprehensions with Unknown Elements:**
 
 When the iterable of a list comprehension is unresolved, or its condition is unresolved for one of
@@ -1180,8 +1190,8 @@ the elements it keeps are known:
   empty. An `iterable` whose value is known and cannot be iterated is an error. One whose
   value is not known and whose type cannot be iterated binds `any`: its type may come from
   typing an operation on values of unknown type, so a run reports it.
-- If `iterable` can only be the empty list, or `null` (which fails every run), `expr` is not
-  type-checked, and the comprehension has type `list[nulltype]`.
+- If the value of `iterable` is not known and it can only be the empty list, or `null` (which
+  fails every run), `expr` is not type-checked, and the comprehension has type `list[nulltype]`.
 
 Examples:
 - `[['-e', e] for e in Task.Environment]` transforms `["A=1", "B=2"]` into

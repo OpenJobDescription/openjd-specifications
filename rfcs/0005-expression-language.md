@@ -1148,6 +1148,16 @@ does not know which branch will be taken at runtime. Both branches are evaluated
   is suppressed — that branch would always fail at runtime, so it can never produce a value.
 - If both branches fail, evaluation fails with an error describing both failures.
 
+**Operations on Values of Unknown Type:**
+
+An operand whose type is not known (`any`, or a type that static type checking leaves unbound,
+such as the element of a concatenation whose operands have no common element type) may have any
+type at run time. An operation on one is typed `any`, whichever signature it would otherwise
+select, and is not an error: `x[0]` with `x: any` is `any`, not the `string` of
+`__getitem__(string, int)`. A list literal with an element of unknown type has element type
+`any`. The exception is list concatenation, typed as described in
+RFC 0006, List Concatenation Type Coercion.
+
 **List Comprehensions with Unknown Elements:**
 
 When the iterable of a list comprehension is unresolved, or its condition is unresolved for one of
@@ -2014,11 +2024,11 @@ element the filter keeps is an error, since every run keeps it, and so is a filt
 boolean for an earlier element, or whose type can never be a boolean for the first element it is not
 known for. A filter typed `noreturn` from operands whose values are not known can be a boolean in
 this sense: it fails the run itself, and the comprehension is typed from `expr`; one that fails on
-known operands fails to type-check. If the iterable can only be the empty list, or `null`, `expr` is
-not type-checked and the comprehension is `list[nulltype]`. An iterable whose value is known and
-cannot be iterated is an error; one whose value is not known and whose type cannot be iterated binds
-the loop variable to `any`, since its type may come from typing an operation on values of unknown
-type, and a run reports it.
+known operands fails to type-check. If the iterable's value is not known and it can only be the
+empty list, or `null`, `expr` is not type-checked and the comprehension is `list[nulltype]`. An
+iterable whose value is known and cannot be iterated is an error; one whose value is not known and
+whose type cannot be iterated binds the loop variable to `any`, since its type may come from typing
+an operation on values of unknown type, and a run reports it.
 
 Examples:
 - `[['-e', e] for e in Task.Environment]` transforms `["A=1", "B=2"]` into
