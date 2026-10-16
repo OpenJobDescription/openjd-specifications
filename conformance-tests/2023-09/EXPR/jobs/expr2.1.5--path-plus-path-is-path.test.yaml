@@ -7,7 +7,7 @@
 #
 # Relies on `__add__(path, string)` being chosen over `__add__(string,
 # string)`, which also matches after coercing both arguments; the spec has
-# no overload-ranking rule (see README-fuzz-findings.md).
+# no overload-ranking rule.
 #
 # openjd-rs types `path + path` as string during validation (through
 # `__add__(string, string)`) while evaluation returns a path, so it rejects

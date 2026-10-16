@@ -8,7 +8,7 @@
 #
 # Relies on an operation on a union-typed operand succeeding when one member
 # can succeed, which the spec states for target-type coercion but not for
-# function overloads (see README-fuzz-findings.md).
+# function overloads.
 #
 # openjd-rs dispatches the union argument to the `flatten(list[nulltype])`
 # overload, types the result as an always-empty list[nulltype], and rejects

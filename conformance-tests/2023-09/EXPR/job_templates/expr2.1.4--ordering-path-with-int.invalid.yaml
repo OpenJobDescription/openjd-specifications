@@ -5,10 +5,9 @@
 # value, so the expression fails on every run. This test expects template
 # validation to reject it, as it rejects `Param.X + "a"` for an INT X.
 #
-# Needs a spec decision before promotion: 2.1.4 lists the signatures as
+# The spec does not say this explicitly: 2.1.4 lists the signatures as
 # `__lt__(a: T1, b: T2) -> bool`, and "Progressive Expression Evaluation"
-# promises only "type errors in constant subexpressions" at validation (see
-# README-fuzz-findings.md).
+# promises only "type errors in constant subexpressions" at validation.
 #
 # openjd-rs refuses a mismatched pair only at run time, so this template
 # validates and every task then fails with "Cannot use '<' operator with path

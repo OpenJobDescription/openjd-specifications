@@ -7,7 +7,7 @@
 #
 # Relies on an operation on a union-typed operand succeeding when one member
 # can succeed, which the spec states for target-type coercion but not for
-# operator overloads (see README-fuzz-findings.md).
+# operator overloads.
 #
 # openjd-rs picks the `__mul__(int, int) -> int` overload's return type for
 # the union operand, types the product as int, and rejects the template with

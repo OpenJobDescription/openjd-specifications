@@ -4,8 +4,8 @@
 # equal as well, which keeps equality transitive: `range_expr("24-24:20") ==
 # range_expr("24")` is true.
 #
-# Needs spec text before promotion: 1.2.5 covers list vs range_expr but not
-# range_expr vs range_expr (see README-fuzz-findings.md).
+# The spec does not say this explicitly: 1.2.5 covers list vs range_expr but not
+# range_expr vs range_expr.
 #
 # openjd-rs compares two range_exprs by their stored sub-ranges rather than
 # their values, so the second comparison is false (found by fuzzing,

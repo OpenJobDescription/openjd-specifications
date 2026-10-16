@@ -6,8 +6,7 @@
 #
 # The spec says range expressions "must contain at least one value" (2.2.1,
 # after `range_expr("")`) and does not say whether an empty slice is an empty
-# range_expr or a list[int]; only the length is asserted (see
-# README-fuzz-findings.md).
+# range_expr or a list[int]; only the length is asserted.
 #
 # openjd-rs makes the slice an empty range_expr, serializes it as "", and
 # cannot parse that back, so the run fails with "Cannot convert '' to

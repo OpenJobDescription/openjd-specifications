@@ -6,10 +6,10 @@
 # template runs correctly on a Windows worker (it prints 2), so this test
 # expects template validation to accept it on any machine.
 #
-# Needs spec text before promotion: "Progressive Expression Evaluation" says
+# The spec does not say this explicitly: "Progressive Expression Evaluation" says
 # parts with only concrete values are fully evaluated during validation, and
 # nothing says a validator must treat a path-format-dependent operation on
-# literals as unresolved (see README-fuzz-findings.md).
+# literals as unresolved.
 #
 # openjd-rs folds the path operation in the validating machine's format, so
 # on a POSIX machine it rejects the template with "Cannot use '+' operator

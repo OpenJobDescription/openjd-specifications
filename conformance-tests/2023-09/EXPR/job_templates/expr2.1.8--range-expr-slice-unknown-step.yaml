@@ -6,8 +6,9 @@
 # template.
 #
 # Relies on an operation on a union-typed operand succeeding when one member
-# can succeed (see README-fuzz-findings.md). The literal-step case, which
-# needs no such rule, is expr2.1.8--range-expr-slice-negative-step.yaml.
+# can succeed, which the spec states for target-type coercion but not for
+# operator overloads. The literal-step case, which needs no such rule, is
+# expr2.1.8--range-expr-slice-negative-step.yaml.
 #
 # openjd-rs types every range_expr slice as range_expr during validation and
 # rejects the template with "Cannot use '*' operator with range_expr and int"
