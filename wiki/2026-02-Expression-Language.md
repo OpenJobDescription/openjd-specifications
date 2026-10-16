@@ -1180,8 +1180,8 @@ the elements it keeps are known:
   empty. An `iterable` whose value is known and cannot be iterated is an error. One whose
   value is not known and whose type cannot be iterated binds `any`: its type may come from
   typing an operation on values of unknown type, so a run reports it.
-- If `iterable` can only be the empty list, `expr` is not type-checked, and the comprehension
-  has type `list[nulltype]`.
+- If `iterable` can only be the empty list, or `null` (which fails every run), `expr` is not
+  type-checked, and the comprehension has type `list[nulltype]`.
 
 Examples:
 - `[['-e', e] for e in Task.Environment]` transforms `["A=1", "B=2"]` into
