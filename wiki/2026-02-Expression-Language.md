@@ -1150,19 +1150,19 @@ the elements it keeps are known:
   `int` for a `range_expr`, and `any` for `any` or for a type variable that static type checking
   leaves unbound (such as the `T3` of a `list[T3]` element). For a union it is the union of its
   members' element types (`list[int] | list[string]` gives `int | string`); a member whose type
-  cannot be iterated gives `any`, as for an `iterable` of that type (below). A `nulltype`
-  element type or member contributes nothing (see [section 1.2.1](#121-expression-types)). `T` is the type of
-  `expr` with `var` of that type, with a `nulltype` member removed: a list cannot hold `null`, so
-  a run whose `expr` produces `null` fails. The comprehension has type `list[T | nulltype]`. For
-  example, `[x * 2 for x in values]` with `values: list[int]` has type `list[int | nulltype]`, and
-  indexing it gives `int`. When the elements of `iterable` are known, they are evaluated in order
-  until `condition` is not known for one of them, and the comprehension is typed as a whole from
-  there. An element before it whose `condition` is true is kept by every run, so a failure of
-  `expr` on it is an error, as is a `condition` that is not a boolean for an element before it,
-  or whose value is not known but whose type can never be a boolean for the first element it is
-  not known for (every run evaluates it there):
-  `[x.upper() for x in [1, 2] if x == 1 or flag]` fails static type checking with `flag: bool`,
-  while `[x.upper() for x in [2, 1] if x == 1 or flag]` fails only when it runs.
+  cannot be iterated gives `any`, as for an `iterable` of that type (below). A `nulltype` element
+  type or member contributes nothing (see [section 1.2.1](#121-expression-types)). `T` is the type
+  of `expr` with `var` of that type, with a `nulltype` member removed: a list cannot hold `null`,
+  so a run whose `expr` produces `null` fails. The comprehension has type `list[T | nulltype]`.
+  For example, `[x * 2 for x in values]` with `values: list[int]` has type `list[int | nulltype]`,
+  and indexing it gives `int`. When the elements of `iterable` are known, they are evaluated in
+  order until `condition` is not known for one of them, and the comprehension is typed as a whole
+  from there. An element before it whose `condition` is true is kept by every run, so a failure of
+  `expr` on it is an error, as is a `condition` that is not a boolean for an element before it, or
+  whose value is not known but whose type can never be a boolean for the first element it is not
+  known for (every run evaluates it there): `[x.upper() for x in [1, 2] if x == 1 or flag]` fails
+  static type checking with `flag: bool`, while `[x.upper() for x in [2, 1] if x == 1 or flag]`
+  fails only when it runs.
 - In that case the comprehension has type `list[nulltype]` when only a run that keeps no element
   can succeed: nothing is left of `T` (`expr` can only be `null`), `T` is `noreturn` (`expr`
   never produces a value), every form of `T` (see [section 1.2.1](#121-expression-types)) is a
