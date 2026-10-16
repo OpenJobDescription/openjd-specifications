@@ -384,7 +384,9 @@ does not know which branch will be taken at runtime. Both branches are evaluated
 An operand whose type is not known (`any`, or a type that static type checking leaves unbound,
 such as the element of a concatenation whose operands have no common element type) may have any
 type at run time. An operation on one is typed `any`, whichever signature it would otherwise
-select, and is not an error: `x[0]` with `x: any` is `any`, not the `string` of
+select (or, when every signature of the operation returns the same type, such as a comparison
+or membership test's `bool`, that type), and is not an error when a signature of its arity
+exists: `x[0]` with `x: any` is `any`, not the `string` of
 `__getitem__(string, int)`. A list literal with an element of unknown type has element type
 `any`. The exception is list concatenation, typed as described in
 [List Concatenation](#213-arithmetic-operators).
@@ -1386,8 +1388,8 @@ finding a common type:
 
 Static type checking types a concatenation whose operands' values are not known the same way,
 from their types. An operand whose element type is not known (`any`) gives `list[any]`: the
-values decide the element type. Operands with no common element type are not an error there,
-since a run in which one of them is empty succeeds; the element type is then not known.
+values decide the element type. Operands with no common element type are not an error there: the
+values decide (an empty list literal joins with any list); the element type is then not known.
 
 #### 2.1.4. Comparison Operators
 

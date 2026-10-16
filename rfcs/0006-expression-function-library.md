@@ -191,8 +191,8 @@ Concatenation of incompatible list types (e.g., `list[string] + list[int]`) is a
 
 Static type checking types a concatenation whose operands' values are not known the same way,
 from their types. An operand whose element type is not known (`any`) gives `list[any]`: the
-values decide the element type. Operands with no common element type are not an error there,
-since a run in which one of them is empty succeeds; the element type is then not known.
+values decide the element type. Operands with no common element type are not an error there: the
+values decide (an empty list literal joins with any list); the element type is then not known.
 
 #### Path Operators
 
