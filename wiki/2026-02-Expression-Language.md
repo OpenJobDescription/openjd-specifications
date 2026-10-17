@@ -388,7 +388,7 @@ select (a comparison or membership test is still a `bool`), and is not an error 
 signature of its arity exists: `x[0]` with `x: any` is `any`, not the `string` of
 `__getitem__(string, int)`. A list literal with an element of unknown type has element type
 `any`. The exception is list concatenation, typed as described in
-[List Concatenation](#213-arithmetic-operators).
+[List Concatenation](#213-list-operators).
 
 **List Comprehensions with Unknown Elements:**
 
