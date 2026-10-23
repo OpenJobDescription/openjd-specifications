@@ -833,6 +833,11 @@ the list's forms into account:
   `int | float`, from the `list[int]`, `list[float]`, and `list[nulltype]` signatures of `sum`.
   A `list[nulltype]` parameter is matched only by an argument known to be the empty list; an
   argument of unknown element type takes the function's general signature.
+- An argument whose type is a union, such as the type of a conditional expression, is typed the
+  same way, one member at a time: `list[int] | list[string]` has the same forms as
+  `list[int | string]`, and `int | string` has the forms `int` and `string`. With
+  `names: list[string]` and `counts: list[int]`, `(names if flag else counts)[0]` has type
+  `string | int`, and `.upper()` of it is a `string`, from the run that takes `names`.
 
 #### 1.2.2. Built-in Symbol Types
 

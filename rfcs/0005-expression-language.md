@@ -762,7 +762,9 @@ have union element types. Indexing or iterating such a list gives the element ty
 `nulltype` (indexing the empty form is an out-of-bounds error). A function argument of such a
 type matches a signature when one of its forms does, the empty form matching a `list[nulltype]`
 parameter; the call has the union of the return types of the forms that match, and is an error
-when none does. A `list[nulltype]` parameter is matched only by an argument known to be the empty
+when none does. An argument whose type is a union, such as the type of a conditional expression,
+is typed the same way, one member at a time: `list[int] | list[string]` has the same forms as
+`list[int | string]`. A `list[nulltype]` parameter is matched only by an argument known to be the empty
 list; an argument of unknown element type, such as a `list[any]`, takes the function's general
 signature.
 
