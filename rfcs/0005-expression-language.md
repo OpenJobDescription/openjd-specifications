@@ -1158,7 +1158,9 @@ type at run time. An operation on one is typed `any`, whichever signature it wou
 select (a comparison or membership test is still a `bool`), and is not an error when a
 signature of its arity exists: `x[0]` with `x: any` is `any`, not the `string` of
 `__getitem__(string, int)`. A list literal with an element of unknown type has element type
-`any`. The exception is list concatenation, typed as described in
+`any`. A list whose element type is not known, such as `flatten` of a `list[any]`, holds
+values of unknown type: an operation on one that no signature matches is typed `any` the
+same way, so `1 in flatten([x])` is a `bool`. The exception is list concatenation, typed as described in
 RFC 0006, List Concatenation Type Coercion.
 
 **List Comprehensions with Unknown Elements:**
