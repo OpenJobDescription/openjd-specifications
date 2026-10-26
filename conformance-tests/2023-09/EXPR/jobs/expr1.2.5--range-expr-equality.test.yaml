@@ -1,0 +1,38 @@
+# Expression Language §1.2.5 and Template Schemas §3.4.1.1.1: a range_expr's value is its list of values, so two
+# range_expr values are equal exactly when they have the same values, however they were written.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r"""E0:[{{ range_expr("1,2,3") == range_expr("1-3") }}]""")
+            print(r"""E1:[{{ range_expr("1,3,5,7,9") == range_expr("1-9:2") }}]""")
+            print(r"""E2:[{{ range_expr("13-18,19") == range_expr("19-18:-5,13-18") }}]""")
+            print(r"""E3:[{{ range_expr("1-10:4") == range_expr("1-9:4") }}]""")
+            print(r"""E4:[{{ range_expr("1-3") == range_expr("1-4") }}]""")
+            print(r"""N0:[{{ range_expr("1,2,3") != range_expr("1-3") }}]""")
+            print(r"""N1:[{{ range_expr("1,3,5,7,9") != range_expr("1-9:2") }}]""")
+            print(r"""N2:[{{ range_expr("13-18,19") != range_expr("19-18:-5,13-18") }}]""")
+            print(r"""N3:[{{ range_expr("1-10:4") != range_expr("1-9:4") }}]""")
+            print(r"""N4:[{{ range_expr("1-3") != range_expr("1-4") }}]""")
+expected:
+  output:
+  - 'E0:[true]'
+  - 'E1:[true]'
+  - 'E2:[true]'
+  - 'E3:[true]'
+  - 'E4:[false]'
+  - 'N0:[false]'
+  - 'N1:[false]'
+  - 'N2:[false]'
+  - 'N3:[false]'
+  - 'N4:[true]'

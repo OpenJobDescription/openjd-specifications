@@ -137,8 +137,8 @@ For `int ** int`, the result is `int` when the exponent is non-negative, and `fl
 | Signature | Description |
 |-----------|-------------|
 | `__add__(a: string, b: string) -> string` | `a + b` concatenation |
-| `__add__(a: string, b: range_expr) -> string` | `a + b` concatenation (range_expr converted to canonical string form) |
-| `__add__(a: range_expr, b: string) -> string` | `a + b` concatenation (range_expr converted to canonical string form) |
+| `__add__(a: string, b: range_expr) -> string` | `a + b` concatenation (range_expr converted to its [canonical string form](https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#34111-intrangeexpr)) |
+| `__add__(a: range_expr, b: string) -> string` | `a + b` concatenation (range_expr converted to its [canonical string form](https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#34111-intrangeexpr)) |
 | `__mul__(s: string, n: int) -> string` | `s * n` repetition |
 | `__contains__(a: string, b: string) -> bool` | `b in a` substring test |
 | `__not_contains__(a: string, b: string) -> bool` | `b not in a` substring test |

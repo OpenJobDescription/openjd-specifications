@@ -1,0 +1,43 @@
+# Template Schemas §3.4.1.5 (rangeConstraint) and Expression Language §1.2.2: with EXPR, a CONTIGUOUS chunk value
+# keeps its <N>-<M> form wherever it is written as a string, even with one value; a range_expr computed from it is
+# written in canonical form.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - TASK_CHUNKING
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: CHUNK[INT]
+        range: 1-2
+        chunks:
+          defaultTaskCount: 1
+          rangeConstraint: CONTIGUOUS
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r"""CHUNK:[{{Task.Param.Frame}}]""")
+            print(r"""STR:[{{ string(Task.Param.Frame) }}]""")
+            print(r"""RAW:[{{Task.RawParam.Frame}}]""")
+            print(r"""PY:[{{ repr_py(Task.Param.Frame) }}]""")
+            print(r"""CAT:[{{ 'f' + Task.Param.Frame }}]""")
+            print(r"""COMPUTED:[{{ string(range_expr(list(Task.Param.Frame))) }}]""")
+expected:
+  output:
+  - 'CHUNK:[1-1]'
+  - 'CHUNK:[2-2]'
+  - 'STR:[1-1]'
+  - 'STR:[2-2]'
+  - 'RAW:[1-1]'
+  - 'PY:[''1-1'']'
+  - 'CAT:[f1-1]'
+  - 'COMPUTED:[1]'
+  - 'COMPUTED:[2]'

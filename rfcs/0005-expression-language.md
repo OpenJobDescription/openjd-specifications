@@ -849,7 +849,8 @@ destination is chosen, and with it the resulting value.
 The non-destructive conversions are:
 
 - `bool`/`int`/`float`/`path`/`range_expr` → `string` (a `range_expr` produces its canonical
-  form, like `"1-5"`)
+  form, like `"1-5"`; the canonical form is defined in
+  [Template Schemas §3.4.1.1.1](https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#34111-intrangeexpr))
 - `string` → `path`
 - `float`/`string` → `int` (error if the value cannot be represented exactly, e.g. `3.75`,
   `""`, `"nothing"`, `"3.1"`)
