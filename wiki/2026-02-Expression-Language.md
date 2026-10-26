@@ -747,7 +747,7 @@ args:
 | `float` | Floating-point values (64-bit IEEE) |
 | `string` | String values |
 | `path` | Filesystem path values |
-| `range_expr` | Range expression string conforming to the [`<IntRangeExpr>`](2023-09-Template-Schemas#34111-intrangeexpr) grammar |
+| `range_expr` | Range expression conforming to the [`<IntRangeExpr>`](2023-09-Template-Schemas#34111-intrangeexpr) grammar; its value is its list of values, and its string form is its [canonical form](2023-09-Template-Schemas#34111-intrangeexpr) |
 | `T?` | Optional type: the value is `T` or `None`/`null` |
 | `nulltype` | The null type; its value can only be `None`/`null` |
 | `list[T]` | Ordered list of values of type `T` |
@@ -837,6 +837,9 @@ and `Task.RawParam.<name>`:
 
 Note: `CHUNK[INT]` produces a `range_expr` type, not `list[int]`, enabling efficient
 representation of frame ranges. Use `list(Task.Param.Frame)` to convert to a list if needed.
+The string form of a `CHUNK[INT]` value is the chunk's own form: `<N>-<M>` for a `CONTIGUOUS` chunk, even with one or
+two values, and the canonical form for a `NONCONTIGUOUS` one. A `range_expr` computed from a chunk value, by slicing
+or `range_expr()` for example, is written in canonical form.
 
 ##### Session Symbols
 
@@ -887,8 +890,9 @@ rather than the expanded list.
 
 The conversions are:
 
-- `bool`/`int`/`float`/`path`/`range_expr` → `string` (a `range_expr` produces its canonical
-  form, like `"1-5"`)
+- `bool`/`int`/`float`/`path`/`range_expr` → `string` (a `range_expr` produces its
+  [canonical form](2023-09-Template-Schemas#34111-intrangeexpr), like `"1-5"` for `range_expr("1,2,3,4,5")`, or a
+  `CONTIGUOUS` chunk's `<N>-<M>`)
 - `string` → `path`
 - `float`/`string` → `int` (error if value cannot be represented exactly, e.g. `3.75`, `""`, `"3.1"`)
 - `int`/`string` → `float` (error if string cannot be parsed, e.g. `""`, `"nothing"`)
@@ -930,6 +934,8 @@ Equality (`==`) and inequality (`!=`) operators handle cross-type comparisons as
 
 - `string` vs `path`: The path is converted to string for comparison
 - `int` vs `float`: Numeric comparison (e.g., `5 == 5.0` is `true`)
+- `range_expr` vs `range_expr`: Equal when they have the same list of values, however they were written
+  (e.g., `range_expr("1,2,3") == range_expr("1-3")` is `true`)
 - `list` vs `range_expr`: The range_expr is expanded and compared element-by-element
 - `string` vs (`int` | `float`): Always unequal (e.g., `"5" == 5` is `false`)
 - `bool` vs any non-`bool`: Always unequal (e.g., `true == 1` is `false`)
@@ -1249,8 +1255,8 @@ a fractional power (e.g., `(-2.0) ** 0.5`) is an error (would produce a complex 
 | Signature | Description |
 |-----------|-------------|
 | `__add__(a: string, b: string) -> string` | `a + b` concatenation |
-| `__add__(a: string, b: range_expr) -> string` | `a + b` concatenation (range_expr converted to canonical string form) |
-| `__add__(a: range_expr, b: string) -> string` | `a + b` concatenation (range_expr converted to canonical string form) |
+| `__add__(a: string, b: range_expr) -> string` | `a + b` concatenation (range_expr converted to its string form, see §1.2.3) |
+| `__add__(a: range_expr, b: string) -> string` | `a + b` concatenation (range_expr converted to its string form, see §1.2.3) |
 | `__mul__(s: string, n: int) -> string` | `s * n` repetition |
 | `__contains__(a: string, b: string) -> bool` | `b in a` substring test |
 | `__not_contains__(a: string, b: string) -> bool` | `b not in a` substring test |
@@ -1397,7 +1403,7 @@ sequences.
 | `int(value: int \| float \| string) -> int` | Convert to integer (error if not exact) |
 | `float(value: int \| float \| string) -> float` | Convert to float |
 | `list(value: range_expr) -> list[int]` | Convert range expression to list |
-| `range_expr(s: string) -> range_expr` | Parse string as range expression (e.g., `"1-10"`, `"1,3,5-7"`) |
+| `range_expr(s: string) -> range_expr` | Parse string as range expression (e.g., `"1-10"`, `"1,3,5-7"`); the result keeps only the list of values, so `string(range_expr("1,5-7"))` is `"1,5-7"` and `string(range_expr("1,3,5,7"))` is `"1-7:2"` |
 | `range_expr(l: list[int]) -> range_expr` | Convert integer list to range expression |
 | `fail(message: string) -> noreturn` | Fail with error message |
 
@@ -1699,14 +1705,14 @@ re_escape("file[1].txt")                        # returns "file\\[1\\]\\.txt"
 | `repr_pwsh(f: float) -> string` | Float literal for PowerShell |
 | `repr_pwsh(b: bool) -> string` | Boolean literal (`$true`/`$false`) for PowerShell |
 | `repr_pwsh(p: path) -> string` | Escape a path for PowerShell |
-| `repr_pwsh(r: range_expr) -> string` | String representation of range (e.g., `'1-10'`) |
+| `repr_pwsh(r: range_expr) -> string` | PowerShell string literal of the range's string form (e.g., `'1-10'`) |
 | `repr_pwsh(args: list[T]) -> string` | PowerShell array literal `@(...)` |
 | `repr_py(value: nulltype) -> string` | Returns `"None"` |
-| `repr_py(r: range_expr) -> string` | String representation (e.g., `'1-10'`) |
+| `repr_py(r: range_expr) -> string` | Python string literal of the range's string form (e.g., `'1-10'`) |
 | `repr_py(p: path) -> string` | Python string repr of path's string representation |
 | `repr_py(value: T) -> string` | Convert to Python representation (`T` in `bool`, `int`, `float`, `string`, `list`) |
 | `repr_json(value: nulltype) -> string` | Returns `"null"` |
-| `repr_json(r: range_expr) -> string` | String representation (e.g., `"1-10"`) |
+| `repr_json(r: range_expr) -> string` | JSON string of the range's string form (e.g., `"1-10"`) |
 | `repr_json(p: path) -> string` | JSON string representation of path's string value |
 | `repr_json(value: T) -> string` | Convert to JSON representation (`T` in `bool`, `int`, `float`, `string`, `list`) |
 

@@ -1195,6 +1195,9 @@ The number of values that an `<IntRangeExpr>` expands to is not constrained by t
 
 The elements of the range expression are combined to form a list of values in increasing order.
 
+The value of a range expression is this list; the way it is written, including the order of its elements, how its
+values are split into elements, and white space, is not part of the value.
+
 For example:
 
 |`<IntRangeExpr>`|**List of values**|
@@ -1206,6 +1209,59 @@ For example:
 |"10-15:2,1-5"|`[1,2,3,4,5,10,12,14]`|
 |"1-10:4"|`[1,5,9]`|
 |"1-10:4,10-15"|Error: ranges overlap|
+
+**Canonical form.** Each range expression value has one *canonical form*, a string determined by its list of values
+alone. Wherever this specification writes a range expression value as a string, it is written in its canonical form,
+unless the specification gives that value another form (as it does for a `CONTIGUOUS` chunk; see
+[&lt;ChunkIntTaskParameterDefinition&gt;](#3415-chunkinttaskparameterdefinition-extension-task_chunking)).
+
+For a list of values $`v_1 < v_2 < \dots < v_n`$, the canonical form is built by splitting the list, from the left,
+into runs:
+
+1. A run starts at the first value not yet in a run, $`v_i`$. If $`v_i`$ is the last value, the run is $`v_i`$ alone.
+2. Otherwise let $`s = v_{i+1} - v_i`$, and extend the run to the last value $`v_j`$ such that every two consecutive
+   values from $`v_i`$ to $`v_j`$ differ by $`s`$.
+3. If the run has three or more values ($`j \geq i + 2`$), it is $`v_i, \dots, v_j`$, and the next run starts at
+   $`v_{j+1}`$. Otherwise the run is $`v_i`$ alone, and the next run starts at $`v_{i+1}`$.
+
+Each run is written as `x` when it is the single value `x`; as `x-y` when its values are `x` to `y` with step 1; and
+as `x-y:s` when they are `x` to `y` with step `s` > 1. Integers are written in base 10, with a leading `-` when
+negative, and with no `+` sign and no leading zeros. The runs are joined by `,`, with no white space.
+
+The canonical form is a valid `<IntRangeExpr>` whose list of values is the original list. Parsing it and writing the
+result in canonical form again gives the same string, and two range expressions have the same canonical form exactly
+when they have the same list of values.
+
+|List of values|**Canonical form**|
+|---|---|
+|`[5]`|"5"|
+|`[1,2]`|"1,2"|
+|`[1,2,3]`|"1-3"|
+|`[1,3,5,7,9]`|"1-9:2"|
+|`[3,7]`|"3,7"|
+|`[1,3,4,5]`|"1,3-5"|
+|`[1,2,4]`|"1,2,4"|
+|`[1,2,3,5,7,9]`|"1-3,5-9:2"|
+|`[2,4,6,8,9,10]`|"2-8:2,9,10"|
+|`[13,14,15,16,17,18,19]`|"13-19"|
+|`[-3,-2,-1]`|"-3--1"|
+|`[-2,-1,3,4,5,7,8,9,12,100]`|"-2,-1,3-5,7-9,12,100"|
+
+So "1-10:4" is written "1-9:4", "5-1:-1" is written "1-5", "1,3,5,7,9" is written "1-9:2", and "19-18:-5,13-18" and
+"13-18,19" are both written "13-19".
+
+A range expression can denote very many values with few elements, and an implementation should compute the canonical
+form without listing the values. One way (informative): represent the value as a sequence of arithmetic progressions
+in increasing order, each with a start, a positive step, and a count. Each `<Int>`, `<Range>`, or `<SkipRange>`
+element of the grammar is one progression. Walk the runs as above. Extending a run along a progression whose step is
+$`s`$ jumps to the end of that progression in one move, and crossing to the next progression compares its first value
+with the current one. Each progression is visited a bounded number of times, so the work is proportional to the number
+of progressions and never to the number of values. The canonical form has at most two runs per progression, so an
+implementation that keeps a range expression as the runs of its canonical form, and builds new values from those runs,
+does this work in time proportional to the number of runs. Reading an arbitrary `<IntRangeExpr>` is proportional to
+its number of elements, which can exceed its number of runs: "1,2,3,4,5,6" has six elements and one run. The step of a
+run of three or more values fits in a 64-bit signed integer; the difference between two consecutive values may not, so
+an implementation computes $`s`$ in wider arithmetic or checks for overflow first.
 
 ##### 3.4.1.2. `<FloatTaskParameterDefinition>`
 
@@ -1320,9 +1376,12 @@ See section `<IntTaskParameterDefinition>` for the definitions of `<IntRangeExpr
         for each chunk.
         1. Minimum value: 0
     3. *rangeConstraint* — If CONTIGUOUS, a chunk must always be a contiguous range
-        of integers with two integers separated by "-" like a single "5-5" or interval "1-10".
-        If NONCONTIGUOUS, a chunk can be an arbitrary set of integers following the
-        `<IntRangeExpr>` syntax like "1,3,7-10:2". Frame ranges are inclusive, so "10-20" contains 11 frames.
+        of integers, written as two integers separated by "-", `<N>-<M>`, like a single "5-5" or interval "1-10",
+        even when it has one or two values. This is the only range expression value this specification does not
+        write in canonical form.
+        If NONCONTIGUOUS, a chunk can be an arbitrary set of integers, written in the canonical form of
+        [§3.4.1.1.1](#34111-intrangeexpr) like "1,3,7,9" or "1-3,5-9:2". Frame ranges are inclusive, so "10-20"
+        contains 11 frames.
 5. `<IntRangeList>` is subject to the constraints:
    * Minimum number of elements: If provided, then this list must contain at least one element.
    * Maximum number of elements: The list must not contain more than 1024 elements.
