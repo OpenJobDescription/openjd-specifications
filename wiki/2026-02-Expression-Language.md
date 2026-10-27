@@ -614,7 +614,10 @@ class PathMappingRule:
     def apply(self, *, path: str) -> tuple[bool, str]
 ```
 
-For `POSIX` and `WINDOWS` rules, matching uses `PurePath.is_relative_to()`. For `URI` rules,
+For `POSIX` and `WINDOWS` rules, matching compares whole path components, as
+`PurePath.is_relative_to()` does, and `WINDOWS` components compare the way Windows compares file
+names. The rules for choosing between several matching rules, and the requirement that `source_path` is
+absolute, are in [How Jobs Are Run](How-Jobs-Are-Run#applying-path-mapping-rules-within-a-job-template). For `URI` rules,
 matching uses string prefix comparison on path boundaries — the input must start with the
 source URI and the next character (if any) must be `/`. This preserves the exact URI content
 without normalization.

@@ -174,7 +174,8 @@ The format for the path mapping rules is:
       {
          # The path format that the submitting operating system uses
          "source_path_format": "POSIX" | "WINDOWS",
-         # The filepath prefix to map (e.g. "/home/user" or "c:\Users\user")
+         # The filepath prefix to map (e.g. "/home/user" or "c:\Users\user").
+         # It must be an absolute path in source_path_format (see below).
          "source_path": <string>,
          # The location on the worker host where the path can be found
          # (e.g. "/mnt/shared/user" or "z:\")
@@ -190,8 +191,11 @@ use in [Format Strings](How-Jobs-Are-Constructed#format-strings) within a Job Te
 
 **`@extension EXPR` — URI source paths**: When the EXPR extension is enabled,
 `source_path_format` also accepts `"URI"` for mapping URI prefixes (e.g. `s3://bucket/assets`)
-to local filesystem paths. URI matching uses string prefix comparison on path boundaries,
-preserving the exact URI content without normalization.
+to local filesystem paths. A URI `source_path` must start with `<scheme>://`, where the scheme has at
+least two characters. URI matching uses string prefix comparison on path boundaries, preserving the exact URI
+content without normalization: the scheme and authority compare case-insensitively, and the path
+compares exactly, with empty segments kept. The scheme and authority count as one component for
+choosing between rules.
 
 1. `Session.HasPathMappingRules` -- Has the string value `true` or `false`.
     * `true` — means that the path mapping JSON contains path mapping rules.
@@ -203,5 +207,18 @@ preserving the exact URI content without normalization.
 
 The **PATH** type Job and Task parameters provide an integration point in the Job Template for the path mapping system.
 If a collection of path mapping rules are provided to a **Session**, then those rules are applied to all **PATH** type
-parameters when they are resolved in Format Strings. The path mapping rules that are supplied are applied in order of
-decreasing length of the source path, and processing stops for particular value once a rule matches.
+parameters when they are resolved in Format Strings. A rule applies to a path when the path is the rule's source path or a path under it, comparing whole path
+components. The rest of the path, after the source path, is appended to the destination path.
+
+1. Each `source_path` must be an absolute path in its `source_path_format`: for `POSIX`, a path that starts
+   with `/`; for `WINDOWS`, a path that starts with a drive and separator (`C:\`) or a UNC share
+   (`\\server\share`). A relative source path would only ever match relative paths, whose meaning depends on a
+   working directory that the rule cannot know, so a set of rules that contains one must be rejected.
+2. Paths are compared component by component. For `POSIX`, components are separated by `/`. For `WINDOWS`,
+   components are separated by `\` or `/`, a drive or UNC share must match as a whole, and components
+   compare case-insensitively the way Windows compares file names. Empty components (from repeated or
+   trailing separators) and `.` components are ignored; `..` components are not collapsed.
+3. When more than one rule applies to a path, the rule whose source path has the most components is used,
+   counting a UNC share as two components (its server and share). Rules whose source paths have the same
+   components name the same location (for example `/mnt/p` and `/mnt/p/`), and the rule that appears last in
+   the list is used.

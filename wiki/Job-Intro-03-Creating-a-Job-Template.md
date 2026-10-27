@@ -621,14 +621,16 @@ PATH_MAPPING_RULES='{
 ```
 
 Note that if you're following along on Windows with [Git for Windows](https://gitforwindows.org/) or another MinG bash,
-the POSIX path rewriting will put an incorrect path in the destination. Use this instead:
+the POSIX path rewriting will put an incorrect path in the destination, and turns `/mnt/shared/demo` in the
+parameter values into a Windows path such as `F:/mnt/shared/demo`. Use this instead, with your drive letter in
+place of `F:`:
 
 ```bash
 PATH_MAPPING_RULES='{
   "version": "pathmapping-1.0",
   "path_mapping_rules": [
     {
-      "source_path_format": "POSIX",
+      "source_path_format": "WINDOWS",
       "source_path": "F:/mnt/shared/demo",
       "destination_path": "'"$(cygpath -m $(pwd))"'"
     }
