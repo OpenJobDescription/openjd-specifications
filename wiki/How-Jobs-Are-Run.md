@@ -194,8 +194,7 @@ use in [Format Strings](How-Jobs-Are-Constructed#format-strings) within a Job Te
 to local filesystem paths. A URI `source_path` must start with `<scheme>://`, where the scheme has at
 least two characters. URI matching uses string prefix comparison on path boundaries, preserving the exact URI
 content without normalization: the scheme and authority compare case-insensitively, and the path
-compares exactly, with empty segments kept. The scheme and authority count as one component for
-choosing between rules.
+compares exactly, with empty segments kept.
 
 1. `Session.HasPathMappingRules` -- Has the string value `true` or `false`.
     * `true` — means that the path mapping JSON contains path mapping rules.
@@ -218,7 +217,9 @@ components. The rest of the path, after the source path, is appended to the dest
    components are separated by `\` or `/`, a drive or UNC share must match as a whole, and components
    compare case-insensitively the way Windows compares file names. Empty components (from repeated or
    trailing separators) and `.` components are ignored; `..` components are not collapsed.
-3. When more than one rule applies to a path, the rule whose source path has the most components is used,
-   counting a UNC share as two components (its server and share). Rules whose source paths have the same
+3. When more than one rule applies to a path, the rule whose source path has the most names is used. Each
+   component after the start of the path counts as one name. The start counts as no names for the `POSIX`
+   root `/`, one for a drive (`C:`) or a URI's scheme and authority, and two for a UNC share (its server and
+   share), so `/srv/share` and `\\srv\share` both have two. Rules whose source paths have the same
    components name the same location (for example `/mnt/p` and `/mnt/p/`), and the rule that appears last in
    the list is used.
