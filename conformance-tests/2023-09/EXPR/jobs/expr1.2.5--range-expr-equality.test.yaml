@@ -16,12 +16,12 @@ template:
           - |
             print(r"""E0:[{{ range_expr("1,2,3") == range_expr("1-3") }}]""")
             print(r"""E1:[{{ range_expr("1,3,5,7,9") == range_expr("1-9:2") }}]""")
-            print(r"""E2:[{{ range_expr("13-18,19") == range_expr("19-18:-5,13-18") }}]""")
+            print(r"""E2:[{{ range_expr("13-18,19") == range_expr("19-23:5,13-18") }}]""")
             print(r"""E3:[{{ range_expr("1-10:4") == range_expr("1-9:4") }}]""")
             print(r"""E4:[{{ range_expr("1-3") == range_expr("1-4") }}]""")
             print(r"""N0:[{{ range_expr("1,2,3") != range_expr("1-3") }}]""")
             print(r"""N1:[{{ range_expr("1,3,5,7,9") != range_expr("1-9:2") }}]""")
-            print(r"""N2:[{{ range_expr("13-18,19") != range_expr("19-18:-5,13-18") }}]""")
+            print(r"""N2:[{{ range_expr("13-18,19") != range_expr("19-23:5,13-18") }}]""")
             print(r"""N3:[{{ range_expr("1-10:4") != range_expr("1-9:4") }}]""")
             print(r"""N4:[{{ range_expr("1-3") != range_expr("1-4") }}]""")
 expected:

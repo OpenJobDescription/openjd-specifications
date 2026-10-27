@@ -1,7 +1,7 @@
 # Template Schemas §3.4.1.1.1 (canonical form, informative note): a range expression with very many values has a
-# short canonical form, and an implementation computes it from the elements without listing the values. Each value
-# here has more than 10^18 values; the endpoints of a 64-bit integer are included, where the difference between two
-# values does not fit in 64 bits.
+# short canonical form, and an implementation computes it from the elements without listing the values. B0, B3, and
+# B4 each have more than 10^18 values. B1 and B2 use values near the 64-bit limits (-9223372036854775807 and
+# 9223372036854775807), where the difference between two consecutive values does not fit in 64 bits.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
