@@ -1,0 +1,17 @@
+# Spec 3.4.1.1.1: elements overlap when their spans intersect, even when they share no value. 1-9:2 and 2-10:2 have the spans 1 to 9 and 2 to 10
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Frame
+      type: INT
+      range: "1-9:2,2-10:2"
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

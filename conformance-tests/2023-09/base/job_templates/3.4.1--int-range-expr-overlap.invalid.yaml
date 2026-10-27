@@ -1,4 +1,4 @@
-# Spec 3.4.1.1.1: "no two ranges in the expression are allowed to overlap"
+# Spec 3.4.1.1.1: no two elements of the expression overlap (their spans of actual values intersect)
 specificationVersion: jobtemplate-2023-09
 name: TestJob
 steps:

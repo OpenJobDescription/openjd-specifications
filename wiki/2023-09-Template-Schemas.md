@@ -1189,7 +1189,10 @@ With:
 3. `<SkipRange>` = `x-y:n`— The set of values
    $`\{x\}\cup\{x+mn: m\in\mathbb{Z}^+, x+mn\leq y\textrm{ if }n>0, x+mn\geq y\textrm{ if }n<0\}`$
 
-Subject to the constraint no two ranges in the expression are allowed to overlap.
+Subject to the constraint that no two elements of the expression overlap. The *span* of an element is the interval
+from the smallest to the largest value in its set, not its written endpoints, so the span of "1-10:4" is 1 to 9 and
+the span of "19-23:5" is the single value 19. Two elements overlap when their spans share at least one integer, even
+when their sets share no value: "1-9:2,2-10:2" is an error, since the spans 1 to 9 and 2 to 10 intersect.
 
 The number of values that an `<IntRangeExpr>` expands to is not constrained by this specification. In particular, the maximum of 1024 elements that §3.4.1.1 places on an `<IntRangeList>` does not apply to this form; expressing a range of more than 1024 values, such as a long frame range, is the motivating use-case for it. An implementation that needs to bound the number of Tasks a Step may define is expected to do so with its own limit on the Task count, not by constraining this expression.
 
@@ -1208,7 +1211,9 @@ For example:
 |"1-5:2"|`[1,3,5]`|
 |"10-15:2,1-5"|`[1,2,3,4,5,10,12,14]`|
 |"1-10:4"|`[1,5,9]`|
-|"1-10:4,10-15"|Error: ranges overlap|
+|"1-10:4,10-15"|`[1,5,9,10,11,12,13,14,15]`|
+|"1-10:4,9-15"|Error: ranges overlap|
+|"1-9:2,2-10:2"|Error: ranges overlap|
 
 **Canonical form.** Each range expression value has one *canonical form*, a string determined by its list of values
 alone. Wherever this specification writes a range expression value as a string, it is written in its canonical form,
