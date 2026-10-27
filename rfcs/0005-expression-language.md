@@ -1147,7 +1147,8 @@ does not know which branch will be taken at runtime. Both branches are evaluated
   types of the two branches (since either could be the runtime result).
 - If one branch succeeds and the other fails, the result is the type from the succeeding
   branch (wrapped in `unresolved` since the condition is unresolved). The failing branch's error
-  is suppressed — that branch would always fail at runtime, so it can never produce a value.
+  is suppressed — that branch would always fail at runtime, so it can never produce a value —
+  unless it names something that does not exist (see Names that Resolve Nowhere below).
 - If both branches fail, evaluation fails with an error describing both failures.
 
 **Operations on Values of Unknown Type:**
@@ -1174,6 +1175,21 @@ empty list. If they fail, the error is suppressed and the comprehension has type
 the error. Elements of a known iterable before the first unknown condition are evaluated as
 usual, and a failure on one that is kept is reported. See
 [List Comprehensions](#list-comprehensions).
+
+**Names that Resolve Nowhere:**
+
+Static type checking evaluates some parts of an expression that a run may skip: the branches of
+a conditional with an unknown condition, the operands of `and`/`or` after one whose value is not
+known, the links of a chained comparison after one whose value is not known, and the condition
+and element expression of a list comprehension over unknown elements. A failure in such a part
+is suppressed, as described above, because a run that skips it succeeds. A reference to a name
+that resolves nowhere is the exception, and is reported: an undefined symbol (`Param.Typo`), an
+unknown function (`strr(x)`), or a method that no type has (`x.uper()`). Whether a name exists
+does not depend on any value, so every run that evaluates the part fails on it, and reporting it
+loses only templates that succeed solely when the part is skipped. For example, both
+`1 if flag else strr(1)` and `[Param.Typo for x in values]` fail static type checking. A
+failure that depends on the values' types, such as `x.upper()` with `x: int`, is still
+suppressed.
 
 **Example:**
 
@@ -1224,10 +1240,11 @@ At each stage, known values are evaluated concretely while unresolved values pro
    based on their declared types, because the template is not yet bound to particular parameter
    values. Task parameters (`Task.Param.*`) and session symbols (`Session.*`) are also unresolved.
    Let bindings that depend only on literals may evaluate concretely. Catches syntax errors,
-   type errors in constant subexpressions, and structural issues like undefined symbols, except
-   in parts a run may not evaluate: the untaken branch of a conditional with an unknown
-   condition, and the condition and element expression of a list comprehension over unknown
-   elements.
+   type errors in constant subexpressions, and structural issues like undefined symbols. Errors
+   that depend on values are not reported in parts a run may not evaluate (the untaken branch
+   of a conditional with an unknown condition, and the condition and element expression of a
+   list comprehension over unknown elements), but a name that resolves nowhere is (see Names
+   that Resolve Nowhere above).
 
 2. **Job parameter binding** ("submit time"). Job parameter values are now known, so `Param.*`
    symbols are concrete. Expressions in TEMPLATE scope can be fully evaluated. Expressions in
@@ -2019,10 +2036,12 @@ comprehension is `list[T | nulltype]`. It is `list[nulltype]`, the only result a
 with, when nothing is left of `T`, `T` is `noreturn`, every form of `T` is a list of lists (each
 union member, and each form of a list with a union element type; the comprehension would nest three
 levels deep; a form holding a type variable does not count), or the filter or `expr` fails to
-type-check, including a filter that can never be a boolean, a reference to an undefined symbol or
-unknown function, and a failure on operands whose values are known (`[1 // 0 for x in values]`).
+type-check, including a filter that can never be a boolean and a failure on operands whose values
+are known (`[1 // 0 for x in values]`).
 Such a failure is not reported by static type checking: a run whose iterable is empty, or whose
-filter keeps nothing, succeeds, and a run that evaluates the failing part reports it there. When the
+filter keeps nothing, succeeds, and a run that evaluates the failing part reports it there. A
+reference to an undefined symbol or an unknown function or method is reported, since it fails every
+run that evaluates it whatever the values (see Names that Resolve Nowhere). When the
 iterable's elements are known, they are evaluated in order until the filter is not known for one of
 them, and the comprehension is typed as a whole from there; a failure of `expr` on an earlier
 element the filter keeps is an error, since every run keeps it, and so is a filter that is not a
