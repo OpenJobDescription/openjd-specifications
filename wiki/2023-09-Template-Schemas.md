@@ -1247,7 +1247,7 @@ when they have the same list of values.
 |`[-3,-2,-1]`|"-3--1"|
 |`[-2,-1,3,4,5,7,8,9,12,100]`|"-2,-1,3-5,7-9,12,100"|
 
-So "1-10:4" is written "1-9:4", "5-1:-1" is written "1-5", "1,3,5,7,9" is written "1-9:2", and "19-18:-5,13-18" and
+So "1-10:4" is written "1-9:4", "5-1:-1" is written "1-5", "1,3,5,7,9" is written "1-9:2", and "19-23:5,13-18" and
 "13-18,19" are both written "13-19".
 
 A range expression can denote very many values with few elements, and an implementation should compute the canonical
