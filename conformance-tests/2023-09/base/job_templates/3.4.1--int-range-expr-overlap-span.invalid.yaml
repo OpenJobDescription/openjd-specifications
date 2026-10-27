@@ -1,0 +1,17 @@
+# Spec 3.4.1.1.1: an element's span is its actual smallest to largest value. 1-10:4 has span 1 to 9, which intersects 9-15, so the expression is rejected
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Frame
+      type: INT
+      range: "1-10:4,9-15"
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"
