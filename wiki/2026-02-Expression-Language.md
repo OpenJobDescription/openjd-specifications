@@ -399,7 +399,8 @@ When the iterable of a list comprehension is unresolved, or its condition is unr
 its elements, the evaluator does not know which elements the comprehension keeps, and a run may
 keep none and never evaluate the element expression. The condition and element expression are
 type-checked once with the loop variable unresolved, and the comprehension's type includes the
-empty list. If they fail, the error is suppressed and the comprehension has type
+empty list. If they fail, the error is suppressed (unless it names something that does not exist, see
+Names that Resolve Nowhere below) and the comprehension has type
 `list[nulltype]`: only a run that keeps no element can succeed, and a run that keeps one reports
 the error. Elements of a known iterable before the first unknown condition are evaluated as
 usual, and a failure on one that is kept is reported. See
@@ -413,7 +414,7 @@ known, the links of a chained comparison after one whose value is not known, and
 and element expression of a list comprehension over unknown elements. A failure in such a part
 is suppressed, as described above, because a run that skips it succeeds. A reference to a name
 that resolves nowhere is the exception, and is reported: an undefined symbol (`Param.Typo`), an
-unknown function (`strr(x)`), or a method that no type has (`x.uper()`). Whether a name exists
+unknown function (`strr(x)`), or a method or property that no type has (`x.uper()`, `x.nam`, or a property called as a method, such as `x.name()`). Whether a name exists
 does not depend on any value, so every run that evaluates the part fails on it, and reporting it
 loses only templates that succeed solely when the part is skipped. For example, both
 `1 if flag else strr(1)` and `[Param.Typo for x in values]` fail static type checking. A
@@ -432,9 +433,10 @@ At each stage, known values are evaluated concretely while unresolved values pro
    Let bindings that depend only on literals may evaluate concretely. Catches syntax errors,
    type errors in constant subexpressions, and structural issues like undefined symbols. Errors
    that depend on values are not reported in parts a run may not evaluate (the untaken branch
-   of a conditional with an unknown condition, and the condition and element expression of a
-   list comprehension over unknown elements), but a name that resolves nowhere is (see Names
-   that Resolve Nowhere above).
+   of a conditional with an unknown condition, `and`/`or` operands and chained-comparison links
+   after one whose value is not known, and the condition and element expression of a list
+   comprehension over unknown elements), but a name that resolves nowhere is (see Names that
+   Resolve Nowhere above).
 
 2. **Job parameter binding** ("submit time"). Job parameter values are now known, so `Param.*`
    symbols are concrete. Expressions in TEMPLATE scope can be fully evaluated. Expressions in
@@ -1212,7 +1214,7 @@ the elements it keeps are known:
   whose `iterable` is empty, or whose `condition` keeps no element, succeeds, and a run that
   evaluates the failing part reports it there. For example, `[x.upper() for x in values]` with
   `values: list[int]` passes static type checking, and fails when it runs with `values` not
-  empty. A reference to an undefined symbol or unknown function or method in `condition` or
+  empty. A reference to an undefined symbol, an unknown function, or a method or property that no type has in `condition` or
   `expr` is reported, since it fails every run that evaluates it whatever the values (see Names
   that Resolve Nowhere in
   [Static Type Checking via Unresolved Values](#static-type-checking-via-unresolved-values)):
