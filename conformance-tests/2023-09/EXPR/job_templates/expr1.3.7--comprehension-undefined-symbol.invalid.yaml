@@ -1,0 +1,22 @@
+# Template validation does not know Param.Frames, so a run may keep no element
+# and never evaluate the element expression. But Param.Typo is not defined, and
+# whether a name exists does not depend on any value: every run that evaluates the
+# element expression fails on it, so static type checking reports it (Static Type
+# Checking, Names that Resolve Nowhere; §1.3.7).
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Frames
+  type: RANGE_EXPR
+  default: "1-3"
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ [x + Param.Typo for x in Param.Frames] }}')"
