@@ -1,8 +1,9 @@
 # Template Schemas §3.4.1.5 (rangeConstraint) and Expression Language §1.2.2: with EXPR, a CONTIGUOUS chunk value
 # keeps its <N>-<M> form wherever it is written as a string, including a one-value chunk between multi-value chunks;
-# a range_expr computed from it is written in canonical form (§3.4.1.1.1). The range 1,2,3,5,10-12 in contiguous
-# chunks of at most three is {1,2,3}, {5} and {10,11,12}: no chunk may span the gaps at 4 and 6-9, and each run
-# already fits in one chunk. They are written "1-3", "5-5" and "10-12"; computed in canonical form, "5-5" is "5".
+# a range_expr computed from it is written in canonical form (Template Schemas §3.4.1.1.1). A CONTIGUOUS chunk may
+# not span the gaps at 4 and 6-9, so the range 1,2,3,5,10-12 divided into the fewest chunks of at most three is
+# {1,2,3}, {5} and {10,11,12}. They are written "1-3", "5-5" and "10-12"; computed in canonical form, "5-5" is "5".
+# EQ wraps the comparison in a list so that the bool is written as JSON (Expression Language §2.2.1).
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
@@ -34,7 +35,7 @@ template:
             print(r"""CAT:[{{ 'f' + Task.Param.Frame }}]""")
             print(r"""LEN:[{{ len(Task.Param.Frame) }}]""")
             print(r"""LIST:[{{ list(Task.Param.Frame) }}]""")
-            print(r"""EQ:[{{ Task.Param.Frame == range_expr(list(Task.Param.Frame)) }}]""")
+            print(r"""EQ:{{ [Task.Param.Frame == range_expr(list(Task.Param.Frame))] }}""")
             print(r"""COMPUTED:[{{ string(range_expr(list(Task.Param.Frame))) }}]""")
 expected:
   output:
@@ -73,7 +74,5 @@ expected:
   - 'JSON:["5"]'
   - 'CAT:[f5]'
   - 'EQ:[false]'
-  - 'CHUNK:[1-5]'
-  - 'CHUNK:[3-10]'
-  - 'CHUNK:[5-10]'
-  - 'CHUNK:[5-12]'
+  - 'CHUNK:[5-11]'
+  - 'CHUNK:[12-12]'
