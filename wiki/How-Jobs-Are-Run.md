@@ -221,6 +221,7 @@ components. The rest of the path, after the source path, is appended to the dest
 3. When more than one rule applies to a path, the rule whose source path has the most names is used. Each
    component after the start of the path counts as one name. The start counts as no names for the `POSIX`
    root `/`, one for a drive (`C:`) or a URI's scheme and authority, and two for a UNC share (its server and
-   share), so `/srv/share` and `\\srv\share` both have two. Rules whose source paths have the same
-   components name the same location (for example `/mnt/p` and `/mnt/p/`), and the rule that appears last in
-   the list is used.
+   share), so `/srv/share` and `\\srv\share` both have two. If a `POSIX` rule and a `WINDOWS` rule with the
+   same number of names both apply (only a path such as `//srv/share/x` can match both), the `WINDOWS` rule is
+   used. Rules whose source paths have the same components name the same location (for example `/mnt/p` and
+   `/mnt/p/`), and the rule that appears last in the list is used.
