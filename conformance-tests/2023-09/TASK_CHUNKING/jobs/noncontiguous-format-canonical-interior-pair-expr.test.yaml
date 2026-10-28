@@ -1,9 +1,11 @@
 # Template Schemas §3.4.1.5 (rangeConstraint) and §3.4.1.1.1 (canonical form), and Expression Language §1.2.2: with
 # EXPR, a NONCONTIGUOUS chunk value is written in canonical form wherever it is written as a string. The range
-# 1,2,4,6,10,11,12,14 in chunks of four is {1,2,4,6} and {10,11,12,14}. Greedy runs from the left give "1,2-6:2" and
-# "10-12,14": in the first chunk, 1 and 2 differ by 1 but 4 does not continue that step, so 1 stands alone and the run
-# 2,4,6 starts at 2. A writer that splits at the first gap instead ("1,2,4,6") does not conform. A range_expr computed
-# from the chunk has the same list of values, so it has the same canonical form.
+# 1,2,4,6,10,11,12,14 in chunks of four, taken in order as the other TASK_CHUNKING tests assume, is {1,2,4,6} and
+# {10,11,12,14}. Greedy runs from the left give "1,2-6:2" and "10-12,14": in the first chunk, 1 and 2 differ by 1 but 4
+# does not continue that step, so 1 stands alone and the run 2,4,6 starts at 2. A writer that splits at the first gap
+# instead ("1,2,4,6") does not conform. A range_expr computed from the chunk has the same list of values, so it has the
+# same canonical form. EQ wraps the comparison in a list so that the bool is written as JSON (Expression Language
+# §2.2.1).
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
@@ -35,7 +37,7 @@ template:
             print(r"""CAT:[{{ 'f' + Task.Param.Frame }}]""")
             print(r"""LEN:[{{ len(Task.Param.Frame) }}]""")
             print(r"""LIST:[{{ list(Task.Param.Frame) }}]""")
-            print(r"""EQ:[{{ Task.Param.Frame == range_expr(list(Task.Param.Frame)) }}]""")
+            print(r"""EQ:{{ [Task.Param.Frame == range_expr(list(Task.Param.Frame))] }}""")
             print(r"""COMPUTED:[{{ string(range_expr(list(Task.Param.Frame))) }}]""")
 expected:
   output:
