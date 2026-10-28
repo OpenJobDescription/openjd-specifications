@@ -1,8 +1,8 @@
 # Template Schemas §3.4.1.5 (rangeConstraint) and §3.4.1.1.1 (canonical form): a NONCONTIGUOUS chunk is written in
 # canonical form. The range 1,2,4,6,10,11,12,14 in chunks of four is {1,2,4,6} and {10,11,12,14}. Greedy runs from the
 # left give "1,2-6:2" and "10-12,14": in the first chunk, 1 and 2 differ by 1 but 4 does not continue that step, so 1
-# stands alone and the run 2,4,6 starts at 2. A writer that splits at the first gap instead ("1,2,4,6") does not
-# conform.
+# stands alone and the run 2,4,6 starts at 2. A writer that, after rejecting a two-value run, restarts after the pair
+# instead of at its second value produces "1,2,4,6" and does not conform.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
