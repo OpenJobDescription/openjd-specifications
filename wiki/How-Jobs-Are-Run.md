@@ -213,7 +213,8 @@ components. The rest of the path, after the source path, is appended to the dest
    with `/`; for `WINDOWS`, a path that starts with a drive and separator (`C:\`) or a UNC share
    (`\\server\share`). A relative source path would only ever match relative paths, whose meaning depends on a
    working directory that the rule cannot know, so a set of rules that contains one must be rejected.
-2. Paths are compared component by component. For `POSIX`, components are separated by `/`. For `WINDOWS`,
+2. `POSIX` and `WINDOWS` paths are compared component by component. For `POSIX`, components are
+   separated by `/`. For `WINDOWS`,
    components are separated by `\` or `/`, a drive or UNC share must match as a whole, and components
    compare case-insensitively the way Windows compares file names. Empty components (from repeated or
    trailing separators) and `.` components are ignored; `..` components are not collapsed.
