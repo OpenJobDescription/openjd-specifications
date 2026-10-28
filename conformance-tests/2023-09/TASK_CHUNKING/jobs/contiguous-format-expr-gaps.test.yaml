@@ -1,0 +1,79 @@
+# Template Schemas §3.4.1.5 (rangeConstraint) and Expression Language §1.2.2: with EXPR, a CONTIGUOUS chunk value
+# keeps its <N>-<M> form wherever it is written as a string, including a one-value chunk between multi-value chunks;
+# a range_expr computed from it is written in canonical form (§3.4.1.1.1). The range 1,2,3,5,10-12 in contiguous
+# chunks of at most three is {1,2,3}, {5} and {10,11,12}: no chunk may span the gaps at 4 and 6-9, and each run
+# already fits in one chunk. They are written "1-3", "5-5" and "10-12"; computed in canonical form, "5-5" is "5".
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - TASK_CHUNKING
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: CHUNK[INT]
+        range: "1,2,3,5,10-12"
+        chunks:
+          defaultTaskCount: 3
+          rangeConstraint: CONTIGUOUS
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r"""CHUNK:[{{Task.Param.Frame}}]""")
+            print(r"""STR:[{{ string(Task.Param.Frame) }}]""")
+            print(r"""RAW:[{{Task.RawParam.Frame}}]""")
+            print(r"""PY:[{{ repr_py(Task.Param.Frame) }}]""")
+            print(r"""JSON:[{{ repr_json(Task.Param.Frame) }}]""")
+            print(r"""CAT:[{{ 'f' + Task.Param.Frame }}]""")
+            print(r"""LEN:[{{ len(Task.Param.Frame) }}]""")
+            print(r"""LIST:[{{ list(Task.Param.Frame) }}]""")
+            print(r"""EQ:[{{ Task.Param.Frame == range_expr(list(Task.Param.Frame)) }}]""")
+            print(r"""COMPUTED:[{{ string(range_expr(list(Task.Param.Frame))) }}]""")
+expected:
+  output:
+  - 'CHUNK:[1-3]'
+  - 'CHUNK:[5-5]'
+  - 'CHUNK:[10-12]'
+  - 'STR:[1-3]'
+  - 'STR:[5-5]'
+  - 'STR:[10-12]'
+  - 'RAW:[1-3]'
+  - 'RAW:[5-5]'
+  - 'RAW:[10-12]'
+  - 'PY:[''1-3'']'
+  - 'PY:[''5-5'']'
+  - 'PY:[''10-12'']'
+  - 'JSON:["1-3"]'
+  - 'JSON:["5-5"]'
+  - 'JSON:["10-12"]'
+  - 'CAT:[f1-3]'
+  - 'CAT:[f5-5]'
+  - 'CAT:[f10-12]'
+  - 'LEN:[3]'
+  - 'LEN:[1]'
+  - 'LIST:[[1, 2, 3]]'
+  - 'LIST:[[5]]'
+  - 'LIST:[[10, 11, 12]]'
+  - 'EQ:[true]'
+  - 'COMPUTED:[1-3]'
+  - 'COMPUTED:[5]'
+  - 'COMPUTED:[10-12]'
+  forbidden:
+  - 'CHUNK:[5]'
+  - 'STR:[5]'
+  - 'RAW:[5]'
+  - 'PY:[''5'']'
+  - 'JSON:["5"]'
+  - 'CAT:[f5]'
+  - 'EQ:[false]'
+  - 'CHUNK:[1-5]'
+  - 'CHUNK:[3-10]'
+  - 'CHUNK:[5-10]'
+  - 'CHUNK:[5-12]'
