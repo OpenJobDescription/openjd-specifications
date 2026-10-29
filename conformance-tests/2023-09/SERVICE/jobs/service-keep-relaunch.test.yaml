@@ -7,7 +7,7 @@
 # scheduler's choice (the RFC says MAY) and is not asserted.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: KeepRelaunch
   services:
   - name: Flaky
@@ -17,7 +17,7 @@ template:
       type: STDOUT
       readinessTimeoutSeconds: 60
     restartPolicy:
-      maxAttempts: 1
+      maxRestarts: 1
       completedTasks: KEEP
     script:
       actions:

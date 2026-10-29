@@ -7,7 +7,7 @@
 # (see REDACTED_ENV_VARS/jobs/redaction-without-extension).
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: OnEnterRedactedEnvWithoutExtension
   services:
   - name: Store

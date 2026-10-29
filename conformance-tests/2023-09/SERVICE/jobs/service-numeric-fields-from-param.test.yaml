@@ -2,10 +2,10 @@
 # resolved at job creation from Param.* and <Service>.let bindings. A
 # whole-field expression resolving to null leaves the field unset, so the
 # runtime allocates the port. The COMMAND check's readinessIntervalSeconds and
-# readinessTimeoutSeconds come from a parameter; maxAttempts from a `let`.
+# readinessTimeoutSeconds come from a parameter; maxRestarts from a `let`.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: NumericFieldsFromParam
   parameterDefinitions:
   - name: Port
@@ -17,7 +17,7 @@ template:
   services:
   - name: Store
     let:
-    - attempts = 1 if Param.Patience > 30 else 0
+    - restarts = 1 if Param.Patience > 30 else 0
     ports:
     - name: main
       port: "{{ null if Param.Port == 0 else Param.Port }}"
@@ -26,7 +26,7 @@ template:
       readinessIntervalSeconds: "{{ Param.Patience // 60 }}"
       readinessTimeoutSeconds: "{{ Param.Patience }}"
     restartPolicy:
-      maxAttempts: "{{ attempts }}"
+      maxRestarts: "{{ restarts }}"
       completedTasks: KEEP
     script:
       actions:

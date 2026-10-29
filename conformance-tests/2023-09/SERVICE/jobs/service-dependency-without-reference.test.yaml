@@ -9,7 +9,7 @@
 # it; the Task checks the file exists and leaves it for onExit.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: DependencyWithoutReference
   services:
   - name: Sidecar

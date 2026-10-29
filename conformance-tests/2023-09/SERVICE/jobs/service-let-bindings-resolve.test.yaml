@@ -5,7 +5,7 @@
 # is not available to a Service (see 7.3.1--step-let-not-available-in-service).
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: LetBindingsResolve
   parameterDefinitions:
   - name: Workers

@@ -1,19 +1,22 @@
-# RFC 0009 / Template Schemas §4.3 constraint 6 and §4.3.1: a SERVICE-scoped
-# wrapping Environment Template (the shape of a queue's container launcher)
-# defines onWrapEnvEnter, onWrapEnvExit, and the four onWrapService* hooks.
-# Each Service hook runs in place of the Service's action, receives the
-# wrapped action through WrappedAction.* and the Service's identity and ports
-# through WrappedService.* (four parallel lists), and forwards the wrapped
-# process's stdout verbatim -- which is how the wrapped onRun's
-# `openjd_service_ready` and the health check's exit status are honored.
-# onWrapServiceHealthCheck runs concurrently with onWrapServiceRun. The
-# wrapping Environment is not entered for the Task.
+# RFC 0009 / Template Schemas §4.3 constraint 6 and §4.3.1: a wrapping
+# Environment Template that the Service requests (`activation: ON_REQUEST`,
+# the shape of a queue's container launcher for Services) defines
+# onWrapEnvEnter, onWrapEnvExit, and the four onWrapService* hooks. Each
+# Service hook runs in place of the Service's action, receives the wrapped
+# action through WrappedAction.* and the Service's identity and ports through
+# WrappedService.* (four parallel lists), and forwards the wrapped process's
+# stdout verbatim -- which is how the wrapped onRun's `openjd_service_ready`
+# and the health check's exit status are honored. onWrapServiceHealthCheck
+# runs concurrently with onWrapServiceRun. The wrapping Environment is not
+# entered for the Task.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: WrapServiceScopedHooks
   services:
   - name: Store
+    dependencies:
+    - environment: ServiceWrapper
     ports:
     - name: main
     - name: admin
@@ -63,10 +66,10 @@ template:
 
 environments:
 - specificationVersion: environment-2023-09
-  extensions: [WRAP_ACTIONS, SERVICE, EXPR]
+  extensions: [WRAP_ACTIONS, SERVICE, ENV_PARAMS, EXPR]
   environment:
     name: ServiceWrapper
-    runScope: [SERVICE]
+    activation: ON_REQUEST
     script:
       actions:
         onWrapEnvEnter:

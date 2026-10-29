@@ -4,7 +4,7 @@
 # Session is still ended normally: onRun is canceled and onExit runs.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: OnExitAfterTaskFailure
   services:
   - name: Store

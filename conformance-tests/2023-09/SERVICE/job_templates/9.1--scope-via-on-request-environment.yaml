@@ -1,0 +1,43 @@
+# Section 9.1 rule 3 (RFC 0009): a Job Environment with `activation:
+# ON_REQUEST` that lists Service Store puts in Store's scope every Step that
+# requests it, and no other. Render requests Client and is in Store's scope;
+# Package neither requests Client nor lists Store, and is not.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Client
+  activation: ON_REQUEST
+  dependencies:
+  - service: Store
+  variables:
+    STORE_PORT: "{{ Service.Store.main.port }}"
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Render
+  dependencies:
+  - environment: Client
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+- name: Package
+  dependencies:
+  - step: Render
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

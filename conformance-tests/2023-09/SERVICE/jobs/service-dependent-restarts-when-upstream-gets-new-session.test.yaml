@@ -3,12 +3,12 @@
 # endpoint values that are no longer valid, so the scheduler must stop each
 # such dependent (dependents first, constraint 4) and start it again in a new
 # Service Session once the Service it lists is READY, without consuming the
-# dependent's restart attempts; a relaunch within the same Service Session
+# dependent's restarts; a relaunch within the same Service Session
 # keeps the same ports and requires nothing of dependents.
 #
 # Front lists Back and reaches Back, per request, at the endpoint its own
 # instance was given. Back's first instance exits after answering Task 1 (an
-# instance failure; maxAttempts: 1, KEEP). Whether Back is then relaunched in
+# instance failure; maxRestarts: 1, KEEP). Whether Back is then relaunched in
 # the same Service Session or in a new one is the scheduler's choice (the RFC
 # says MAY), so the fixture asserts the invariant that holds under either:
 # Front's onEnter has run exactly as many times as Back's has (once each if
@@ -23,7 +23,7 @@
 # as 2, which the TASK 1 assertion catches.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: DependentRestartsWhenUpstreamGetsNewSession
   services:
   - name: Back
@@ -33,7 +33,7 @@ template:
       type: STDOUT
       readinessTimeoutSeconds: 60
     restartPolicy:
-      maxAttempts: 1
+      maxRestarts: 1
       completedTasks: KEEP
     script:
       actions:

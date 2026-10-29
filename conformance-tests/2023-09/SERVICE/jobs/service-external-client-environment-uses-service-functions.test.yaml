@@ -2,8 +2,8 @@
 # extension listed here applies to the content of this document only") and
 # Expression Language §2.2.4 (join_host_port / split_host_port are added by
 # SERVICE): the Job Template declares no `extensions` at all, while the
-# attached Environment Template declares [SERVICE, EXPR], defines an external
-# Service, and publishes its endpoint through a TASK-scoped client Environment
+# attached Environment Template declares [SERVICE, ENV_PARAMS, EXPR], defines
+# an external Service, and publishes its endpoint through a client Environment
 # that lists the Service in `dependencies` and whose `variables` compose the
 # address with join_host_port and take it apart again with split_host_port.
 # The Task connects using the joined address and never mentions Service.*
@@ -41,7 +41,7 @@ template:
 
 environments:
 - specificationVersion: environment-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   services:
   - name: Cache
     ports:
@@ -82,7 +82,6 @@ environments:
     name: CacheClient
     dependencies:
     - service: Cache
-    runScope: [TASK]
     variables:
       CACHE_ADDR: "{{ join_host_port(Service.Cache.main.connectAddress, Service.Cache.main.port) }}"
       CACHE_HOST_FROM_SPLIT: "{{ split_host_port(join_host_port(Service.Cache.main.connectAddress, Service.Cache.main.port))[0] }}"

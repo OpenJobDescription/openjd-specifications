@@ -44,7 +44,8 @@ script at all), there is nothing to replace and the corresponding wrap hook does
 than one Environment
 in the session stack defines any wrap hook, the session is invalid and the scheduler must reject it
 before entering any Environment. If an Environment defines any wrap hook, it must define all three; with the SERVICE
-extension, the hooks it must define follow from its `runScope` instead (see
+extension, it must instead define the hook for every kind of action that runs inside it, which for an Environment that
+a **Service Session** enters includes the four `onWrapService*` hooks (see
 [Section 4.3](2023-09-Template-Schemas#43-environmentactions)).
 
 A wrap hook is treated as the action it replaces. A failed `onWrapEnvEnter` is an inner `onEnter`
@@ -98,13 +99,12 @@ and it outlives every **Session** that runs Tasks against it. A **Service Sessio
 in the same order a **Session** for a Task would, around the **Service**'s own actions, so a **Service** is provisioned
 by the same Conda, Rez, or container **Environments** as the Tasks; a **Service** belongs to no Step and enters no
 Step's **Environments**. Later **Environments** take precedence over earlier ones for environment variables, and the
-**Service**'s own `variables` over all of them. Which kinds of **Session** an **Environment** is entered in is declared
-by its `runScope`: by default every kind, and only an **Environment** whose `runScope` includes `SERVICE` is entered
-in a **Service Session**. An **Environment** that
-configures Tasks to use a **Service** lists `service: <name>` in its `dependencies`, which is what lets it reference
-`Service.*`, and is entered in Task **Sessions** only; that is its default `runScope`, and an explicit `runScope` on it
-must exclude `SERVICE`. Under the WRAP_ACTIONS extension, a
-wrapping **Environment** whose `runScope` includes `SERVICE` wraps the **Service**'s `onEnter`, `onRun`,
+**Service**'s own `variables` over all of them. An **Environment** that configures clients of a
+**Service** lists `service: <name>` in its `dependencies`, which is what lets it reference `Service.*`. Every
+**Session** that enters it, whether for Tasks or for another **Service**, therefore waits for the listed **Service** to
+be **READY**, and a **Service** whose **Sessions** enter it starts after the listed one. The listed **Service**'s own
+**Session** does not enter it, since that **Service** cannot wait for itself. Under the WRAP_ACTIONS extension, a
+wrapping **Environment** that a **Service Session** enters wraps the **Service**'s `onEnter`, `onRun`,
 `onHealthCheck`, and `onExit` with its `onWrapServiceEnter`, `onWrapServiceRun`, `onWrapServiceHealthCheck`, and
 `onWrapServiceExit` hooks, exactly as `onWrapTaskRun` wraps a Task's `onRun`, and wraps the inner **Environments** of
 the **Service Session** with `onWrapEnvEnter` and `onWrapEnvExit` as in any **Session**. Placement is up to the
@@ -125,8 +125,8 @@ has not exited), **UNHEALTHY** (the current instance has failed `failureThreshol
 is being stopped; a transient state in which, for every other purpose including Task scheduling, the **Service** is not
 **READY**), or **FAILED** (the **Service** will not be relaunched and its scope has failed). A **Service** is
 **UNREADY** from Job creation. Starting a **Service** means opening a **Service Session** on a host that satisfies the
-**Service**'s host requirements and, within it, entering the Job's **Environments** whose `runScope` includes
-`SERVICE`, running
+**Service**'s host requirements and, within it, entering the Job's **Environments** other than those that list the
+**Service**, running
 `onEnter` if defined, launching `onRun`, and probing it with its health check. When a probe succeeds, the **Service** is
 **READY**, and the health check keeps probing it for as long as `onRun` runs: `failureThreshold` consecutive failed
 probes after **READY** make the instance **UNHEALTHY**, which is an instance failure (see
@@ -166,7 +166,7 @@ A scheduler must satisfy the following constraints; how it satisfies them is its
    will schedule no Task. Once started, a **Service** is kept **READY** until its scope completes or it fails, with one
    exception. A scheduler may **suspend** a **Service** while no Task in its scope is running or can be scheduled. A
    suspension is not a failure: the **Service Session** ends as constraint 7 requires, the **Service** becomes
-   **UNREADY**, no restart attempt is consumed, completed Tasks keep their results, and the **Service** is started
+   **UNREADY**, no restart is consumed, completed Tasks keep their results, and the **Service** is started
    again in a new **Service Session** (constraint 8) when the scheduler is next prepared to schedule a Task in its
    scope. A **Service** must not be suspended unless its `completedTasks` is `KEEP`, nor while any **Service** that
    lists it has a **Service Session**; a **Service** that other **Services** depend on is therefore suspended only
@@ -198,15 +198,18 @@ scheduler takes steps 1–4; steps 5–8 govern the outcomes those steps can pro
    `Service.*` when it runs again; a Task that no longer needs the **Service** completes normally.
 2. If `onRun` is still running (the readiness-timeout, **UNHEALTHY**, and `openjd_fail` cases) the scheduler cancels
    it and waits for it to exit; constraint 5 above forbids a second `onRun` in the **Session** before then.
-3. If the **Service**'s restart policy has attempts remaining, the scheduler relaunches the **Service**. If the policy's
+3. If the **Service**'s restart policy has restarts remaining, the scheduler relaunches the **Service**. If the policy's
    `completedTasks` is `RERUN`, every Task in the scope that had completed successfully is first returned to the queue;
    with `KEEP`, completed Tasks keep their results. After a start failure or host loss the relaunch must begin a new **Service Session**. After an
    instance failure on a host that is still available, it may relaunch `onRun` within the existing **Service Session**
    (same working directory, same ports, `onEnter` not re-run), preserving the state `onEnter` established; it should
    begin a new **Service Session**, which allocates new ports, when the failure may be a port conflict (`onRun` exited
    without ever becoming **READY**); or it may relocate (step 5).
-4. If no attempts remain, the **Service** becomes **FAILED** and its scope fails: every Step in the scope fails, and
-   with it the Job when the scope is every Step. The **Service Session** is then ended per constraint 6.
+4. If no restarts remain, the **Service** becomes **FAILED** and its scope fails. Every Task in the scope that has not
+   completed successfully fails, and is not retried under the Task retry rules, since a retry would need the
+   **Service**: a running Task is canceled, and a Task not yet run is not scheduled. Tasks that completed successfully
+   keep that result. Every Step in the scope then fails, and with it the Job when the scope is every Step. The
+   **Service Session** is then ended per constraint 6.
 5. **Relocation.** Relaunching in a new **Service Session** on a different host is relocation. It counts as one
    relaunch, is governed by the same restart policy, and changes every `Service.<name>.*` value. When relocating away from a host that is still available, constraint 7 above applies to the
    old **Session** in full.
@@ -224,13 +227,13 @@ scheduler takes steps 1–4; steps 5–8 govern the outcomes those steps can pro
    host loss, suspected port conflict, suspension, or relocation), every **Service** that lists it, directly or
    transitively, holds endpoint values that are no longer valid. The scheduler must stop each such dependent in the
    order of constraint 4 (dependents before the **Services** they list) and start each again in a new **Service
-   Session** once every **Service** it lists is **READY**. This stop does not consume the dependent's restart attempts,
+   Session** once every **Service** it lists is **READY**. This stop does not consume the dependent's restarts,
    and the dependent's `completedTasks` applies to its own scope exactly as for any instance that is stopped and started
    again (its Tasks that completed against the old instance are returned under `RERUN`, kept under `KEEP`). A relaunch
    within the same **Service Session** keeps the same ports and requires nothing of dependents. A dependent whose
-   restart policy gives no `completedTasks` (permitted when its `maxAttempts` is 0) is stopped and started again as a
+   restart policy gives no `completedTasks` (permitted when its `maxRestarts` is 0) is stopped and started again as a
    `RERUN` **Service** here; one that wants its completed Tasks kept gives `completedTasks: KEEP` whatever its
-   `maxAttempts`.
+   `maxRestarts`.
 
 A Task failure never fails a **Service**.
 

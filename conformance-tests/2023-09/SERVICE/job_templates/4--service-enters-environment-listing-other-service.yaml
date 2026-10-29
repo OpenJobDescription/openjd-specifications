@@ -1,0 +1,44 @@
+# Section 4 item 3 / Section 3.2 constraint 3 (RFC 0009): every entity whose
+# Sessions enter an Environment that lists Service Front depends on Front.
+# Back's Session enters the ALWAYS Environment FrontClient, which lists Front
+# and not Back, so Back gains the edge Back -> Front and starts after Front is
+# READY. Front's own Session does not enter FrontClient. The graph is acyclic,
+# so the template is valid.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: FrontClient
+  dependencies:
+  - service: Front
+  variables:
+    FRONT_PORT: "{{ Service.Front.main.port }}"
+services:
+- name: Front
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+- name: Back
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Back
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

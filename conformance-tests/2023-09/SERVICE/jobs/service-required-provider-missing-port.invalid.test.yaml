@@ -2,7 +2,7 @@
 # the required `main`. The match fails and the submission is rejected.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: RequiredUnsatisfied
   externalServices:
   - name: Ext
@@ -20,7 +20,7 @@ template:
 
 environments:
 - specificationVersion: environment-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   services:
   - name: Ext
     ports:

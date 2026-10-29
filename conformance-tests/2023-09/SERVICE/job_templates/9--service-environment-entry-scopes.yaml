@@ -1,0 +1,51 @@
+# Section 9 item 4 (RFC 0009): the *parameters* values and *enableIf* of a
+# Service's `environment:` entry may reference RawParam.*, non-PATH Param.*,
+# Job.Name, Job.EnvNames, and the names bound by the Service's own `let`.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Version
+  type: STRING
+  default: "8"
+jobEnvironments:
+- name: Conda
+  activation: ON_REQUEST
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: ""
+  - name: Label
+    type: STRING
+    default: ""
+  variables:
+    CONDA_PACKAGES: "{{ Env.Param.Packages }}"
+services:
+- name: Store
+  let:
+  - pkg = 'valkey=' + Param.Version
+  dependencies:
+  - environment: Conda
+    enableIf: "'Conda' in Job.EnvNames and RawParam.Version != ''"
+    parameters:
+      Packages: "{{ pkg }}"
+      Label: "{{ Job.Name }}"
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

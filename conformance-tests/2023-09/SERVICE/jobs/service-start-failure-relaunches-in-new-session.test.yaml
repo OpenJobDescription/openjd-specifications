@@ -1,11 +1,10 @@
 # RFC 0009 "Failure and restart" (a start failure -- here the onEnter of a
-# SERVICE-scoped Job Environment exiting non-zero -- consumes a relaunch
-# attempt, and "After a start failure ... it MUST begin a new Service
-# Session"), lifecycle constraint 9 (a new Session means a new working
-# directory, Environments re-entered, onEnter re-run), and Design Choice
-# Rationale "Start failures consume a restart attempt" (Template Schemas
-# §9.5, §4 item 4). The Environment has `runScope: [SERVICE]` so no Task
-# Session enters it. With maxAttempts: 1 its onEnter fails on the first
+# Job Environment exiting non-zero -- consumes a restart, and "After a start
+# failure ... it MUST begin a new Service Session"), lifecycle constraint 9 (a
+# new Session means a new working directory, Environments re-entered, onEnter
+# re-run), and Design Choice Rationale "Start failures consume a restart"
+# (Template Schemas §9.5). The Environment is `activation: ON_REQUEST` and
+# only the Service requests it, so no Task Session enters it. With maxRestarts: 1 its onEnter fails on the first
 # Service Session and succeeds on the second, which runs in a different
 # working directory; the Service then comes up and the Task runs.
 #
@@ -20,11 +19,11 @@
 # number being chosen again.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: StartFailureRelaunchesInNewSession
   jobEnvironments:
   - name: Provision
-    runScope: [SERVICE]
+    activation: ON_REQUEST
     script:
       actions:
         onEnter:
@@ -48,13 +47,15 @@ template:
           print("PROVISION_OK", flush=True)
   services:
   - name: Store
+    dependencies:
+    - environment: Provision
     ports:
     - name: main
     healthCheck:
       type: STDOUT
       readinessTimeoutSeconds: 60
     restartPolicy:
-      maxAttempts: 1
+      maxRestarts: 1
       completedTasks: KEEP
     script:
       actions:

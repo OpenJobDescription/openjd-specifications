@@ -1,0 +1,81 @@
+# RFC 0009 "Services run inside Environments": a Service Session enters the
+# Job Environments a Task Session would, by `activation`, with one exception.
+# The ALWAYS Environment `Everywhere` is entered for both the Service and the
+# Task; `TaskOnly`, also ALWAYS, lists the Service in `dependencies` and reads
+# its endpoint, so the Service's own Session does not enter it; `ServiceOnly`
+# is ON_REQUEST and requested only by the Service. An Environment's
+# `variables` reach the Service's actions, with the Service's own `variables`
+# taking precedence.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: EnvironmentsFollowActivation
+  jobEnvironments:
+  - name: Everywhere
+    variables:
+      SEEN_EVERYWHERE: "yes"
+      OVERRIDDEN: by-environment
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('EVERYWHERE_ENTER')"]
+  - name: TaskOnly
+    dependencies:
+    - service: Store
+    variables:
+      SEEN_TASK_ONLY: "yes"
+      STORE_PORT: "{{ Service.Store.main.port }}"
+  - name: ServiceOnly
+    activation: ON_REQUEST
+    variables:
+      SEEN_SERVICE_ONLY: "yes"
+  services:
+  - name: Store
+    dependencies:
+    - environment: ServiceOnly
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    variables:
+      OVERRIDDEN: by-service
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Report }}", "SERVICE"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Report
+        type: TEXT
+        data: |
+          import os, sys, time
+          who = sys.argv[1]
+          for var in ["SEEN_EVERYWHERE", "SEEN_TASK_ONLY", "SEEN_SERVICE_ONLY", "OVERRIDDEN"]:
+              print(who + "_" + var + "=" + os.environ.get(var, "unset"), flush=True)
+          print("openjd_service_ready: reported", flush=True)
+          time.sleep(600)
+  steps:
+  - name: Use
+    dependencies:
+    - service: Store
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os; [print('TASK_' + v + '=' + os.environ.get(v, 'unset')) for v in ['SEEN_EVERYWHERE', 'SEEN_TASK_ONLY', 'SEEN_SERVICE_ONLY', 'OVERRIDDEN']]; print('TASK_STORE_PORT_MATCHES', os.environ['STORE_PORT'] == '{{ Service.Store.main.port }}')"]
+
+expected:
+  output:
+  - EVERYWHERE_ENTER
+  - SERVICE_SEEN_EVERYWHERE=yes
+  - SERVICE_SEEN_TASK_ONLY=unset
+  - SERVICE_SEEN_SERVICE_ONLY=yes
+  - SERVICE_OVERRIDDEN=by-service
+  - TASK_SEEN_EVERYWHERE=yes
+  - TASK_SEEN_TASK_ONLY=yes
+  - TASK_SEEN_SERVICE_ONLY=unset
+  - TASK_OVERRIDDEN=by-environment
+  - TASK_STORE_PORT_MATCHES True

@@ -1,0 +1,31 @@
+# Section 1.2 item 6 constraint 4 (RFC 0009): within an Environment Template,
+# a Service whose Sessions enter the document's `environment` gains an edge to
+# each Service it lists. Front lists Back (Front -> Back), and Back's Session
+# enters CacheClient, which lists Front and not Back (Back -> Front): a cycle.
+specificationVersion: environment-2023-09
+extensions: [SERVICE, ENV_PARAMS, EXPR]
+environment:
+  name: CacheClient
+  dependencies:
+  - service: Front
+  variables:
+    FRONT_PORT: "{{ Service.Front.main.port }}"
+services:
+- name: Front
+  dependencies:
+  - service: Back
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+- name: Back
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

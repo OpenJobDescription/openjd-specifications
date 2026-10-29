@@ -1,11 +1,12 @@
 # Section 9 scope rule 4 / Section 9.8 item 2 (RFC 0009): a Job Environment
 # that lists a required Service in `dependencies` may reference its `port` and
 # `connectAddress`, under the same rule as a Step or a Service; listing a
-# required Service grants visibility and nothing more. The Environment's
-# runScope defaults to [TASK]. Neither Step lists or references the Service.
+# required Service grants visibility and nothing more. Neither Step lists or
+# references the Service.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
+- ENV_PARAMS
 - EXPR
 name: TestJob
 jobEnvironments:

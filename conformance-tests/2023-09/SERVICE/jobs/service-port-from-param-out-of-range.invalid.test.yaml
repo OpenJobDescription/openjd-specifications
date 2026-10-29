@@ -4,7 +4,7 @@
 # which must be rejected.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: PortFromParamOutOfRange
   parameterDefinitions:
   - name: Port

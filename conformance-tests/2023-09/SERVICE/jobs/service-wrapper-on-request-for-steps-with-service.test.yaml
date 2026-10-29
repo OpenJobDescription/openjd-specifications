@@ -1,0 +1,63 @@
+# Template Schemas §1.2.2 item 4: one remedy for the rejected wrapper is to
+# declare ENV_PARAMS and make it `activation: ON_REQUEST`, requested only by
+# Steps. Such a queue wrapper with RFC 0008's three hooks, attached to a Job
+# with a Service, is accepted: it wraps the Task and is never entered by the
+# Service's Session.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: WrapperTaskScopedWithService
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import time; print(\"openjd_service_ready: up\", flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  steps:
+  - name: Use
+    dependencies:
+    - environment: QueueWrapper
+    - service: Store
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print(\"TASK_RAN\", {{ Service.Store.main.port }} > 0)"]
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [WRAP_ACTIONS, SERVICE, ENV_PARAMS, EXPR]
+  environment:
+    name: QueueWrapper
+    activation: ON_REQUEST
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args: ["{{ Env.File.Launch }}", "{{ WrappedAction.Command }}", "{{ repr_py(WrappedAction.Args) }}"]
+        onWrapTaskRun:
+          command: python
+          args: ["{{ Env.File.Launch }}", "{{ WrappedAction.Command }}", "{{ repr_py(WrappedAction.Args) }}", "WRAP_TASK_RUN={{ WrappedStep.Name }}"]
+        onWrapEnvExit:
+          command: python
+          args: ["{{ Env.File.Launch }}", "{{ WrappedAction.Command }}", "{{ repr_py(WrappedAction.Args) }}"]
+      embeddedFiles:
+      - name: Launch
+        type: TEXT
+        data: |
+          import ast, subprocess, sys
+          if len(sys.argv) > 3:
+              print(sys.argv[3], flush=True)
+          sys.exit(subprocess.call([sys.argv[1], *ast.literal_eval(sys.argv[2])]))
+
+expected:
+  output:
+  - WRAP_TASK_RUN=Use
+  - TASK_RAN True

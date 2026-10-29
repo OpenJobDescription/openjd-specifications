@@ -9,7 +9,7 @@
 # finds the endpoint refused.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: ScopeTwoOfThreeSteps
   services:
   - name: Coord

@@ -1,15 +1,16 @@
 # Section 4 scope rule / Section 4.3.1: WrappedService.* is not available in
-# onWrapEnvEnter, even in a SERVICE-scoped wrapping Environment whose inner
-# Environments are entered in a Service Session.
+# onWrapEnvEnter, even in a wrapping Environment that a Service requests,
+# whose inner Environments are entered in a Service Session.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - WRAP_ACTIONS
 - SERVICE
+- ENV_PARAMS
 - EXPR
 name: TestJob
 jobEnvironments:
 - name: Wrapper
-  runScope: [SERVICE]
+  activation: ON_REQUEST
   script:
     actions:
       onWrapEnvEnter:
@@ -32,6 +33,8 @@ jobEnvironments:
         args: ["-c", "print()"]
 services:
 - name: Store
+  dependencies:
+  - environment: Wrapper
   ports:
   - name: main
   script:
