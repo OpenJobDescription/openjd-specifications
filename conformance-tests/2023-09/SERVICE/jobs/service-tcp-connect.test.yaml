@@ -6,7 +6,7 @@
 # binds Service.Store.main.bindAddress, which only it may reference.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: ServiceTcpConnect
   services:
   - name: Store

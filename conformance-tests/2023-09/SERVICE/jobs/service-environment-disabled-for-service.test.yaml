@@ -1,0 +1,60 @@
+# RFC 0009 "Services run inside Environments" / RFC 0010 <Environment>
+# enableIf: an Environment's enableIf is evaluated for a Service with the
+# Service's effective values. Conda is entered only when Packages is not
+# empty; the Service supplies '' and so does not enter it, while the Step
+# supplies a package list and does.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: EnvironmentDisabledForService
+  jobEnvironments:
+  - name: Conda
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: ""
+    enableIf: "Env.Param.Packages != ''"
+    variables:
+      CONDA_PACKAGES: "{{ Env.Param.Packages }}"
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('CONDA_ENTER[{{ Env.Param.Packages }}]')"]
+  services:
+  - name: Store
+    dependencies:
+    - environment: Conda
+      parameters:
+        Packages: ""
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os, time; print('SERVICE_PKGS=' + os.environ.get('CONDA_PACKAGES', 'unset'), flush=True); print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  steps:
+  - name: Use
+    dependencies:
+    - service: Store
+    - environment: Conda
+      parameters:
+        Packages: numpy
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os; print('TASK_PKGS=' + os.environ.get('CONDA_PACKAGES', 'unset'))"]
+
+expected:
+  output:
+  - SERVICE_PKGS=unset
+  - CONDA_ENTER[numpy]
+  - TASK_PKGS=numpy
+  forbidden:
+  - CONDA_ENTER[]

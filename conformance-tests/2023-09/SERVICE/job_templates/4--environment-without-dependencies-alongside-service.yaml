@@ -1,0 +1,32 @@
+# Section 4 item 3 (RFC 0009): an Environment that lists no Service in
+# `dependencies` is entered in every Session, a Service's included. It may
+# therefore define nothing that is unavailable in a Service Session, and is
+# valid alongside a Service.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  variables:
+    CONDA_PREFIX: /opt/conda
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port }}"]

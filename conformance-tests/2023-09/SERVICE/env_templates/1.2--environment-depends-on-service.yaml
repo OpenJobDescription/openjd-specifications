@@ -1,11 +1,11 @@
 # Section 1.2 item 5 / Section 4 item 3 (RFC 0009): an Environment Template's
 # Environment may list the document's Services in `dependencies`, in the
 # `service: <name>` form, and may then reference the listed Service's `port` and
-# `connectAddress`. Because it depends on a Service its runScope defaults to
-# [TASK].
+# `connectAddress`. The listed Service's own Session does not enter it.
 specificationVersion: environment-2023-09
 extensions:
 - SERVICE
+- ENV_PARAMS
 - EXPR
 services:
 - name: Cache

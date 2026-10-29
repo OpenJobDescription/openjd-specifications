@@ -17,7 +17,7 @@ parameters:
 
 environments:
 - specificationVersion: environment-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   parameterDefinitions:
   - name: CachePayload
     type: STRING
@@ -51,7 +51,6 @@ environments:
     name: CacheClient
     dependencies:
     - service: Cache
-    runScope: [TASK]
     variables:
       CACHE_HOST: "{{ Service.Cache.main.connectAddress }}"
       CACHE_PORT: "{{ Service.Cache.main.port }}"

@@ -6,11 +6,12 @@ specificationVersion: jobtemplate-2023-09
 extensions:
 - WRAP_ACTIONS
 - SERVICE
+- ENV_PARAMS
 - EXPR
 name: TestJob
 jobEnvironments:
 - name: Wrapper
-  runScope: [SERVICE]
+  activation: ON_REQUEST
   script:
     actions:
       onWrapEnvEnter:
@@ -38,6 +39,8 @@ jobEnvironments:
         - "{{ WrappedService.PortNames[0].upper() }}"
 services:
 - name: Store
+  dependencies:
+  - environment: Wrapper
   ports:
   - name: main
   script:

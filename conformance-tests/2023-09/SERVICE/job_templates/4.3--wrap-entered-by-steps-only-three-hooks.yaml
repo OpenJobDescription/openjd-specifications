@@ -1,0 +1,45 @@
+# Section 4.3 WRAP_ACTIONS constraint 6 (RFC 0009 rule 1): a wrapping
+# Environment that only Task Sessions enter (`activation: ON_REQUEST`,
+# requested by the Step and by no Service) needs exactly RFC 0008's three
+# hooks: onWrapEnvEnter, onWrapTaskRun, onWrapEnvExit. It is valid alongside a
+# Service, whose Session never enters it.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- WRAP_ACTIONS
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Wrapper
+  activation: ON_REQUEST
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapEnvExit:
+        command: python
+        args: ["-c", "print()"]
+      onWrapTaskRun:
+        command: python
+        args: ["-c", "print()"]
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - environment: Wrapper
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

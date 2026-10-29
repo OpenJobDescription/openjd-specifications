@@ -6,7 +6,7 @@
 # datagram to connectAddress:port and prints the echo.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: UdpPortEcho
   services:
   - name: Udp

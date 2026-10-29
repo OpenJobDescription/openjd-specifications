@@ -17,7 +17,7 @@ template:
 
 environments:
 - specificationVersion: environment-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   services:
   - name: Telemetry
     ports:

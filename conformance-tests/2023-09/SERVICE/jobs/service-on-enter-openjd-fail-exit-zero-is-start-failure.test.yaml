@@ -2,12 +2,12 @@
 # failure and restart"): an openjd_fail message on a Service's onEnter stdout
 # marks the action failed when it exits, whatever its exit status. onEnter
 # here exits 0 after printing openjd_fail; that is a start failure. With the
-# default maxAttempts of 0 the Service is FAILED, the scope fails before any
+# default maxRestarts of 0 the Service is FAILED, the scope fails before any
 # Task runs, and onExit still runs because an action of the Service ran
 # (lifecycle constraint 7).
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: OnEnterOpenjdFailExitZeroIsStartFailure
   services:
   - name: Store

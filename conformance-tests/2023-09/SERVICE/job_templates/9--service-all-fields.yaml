@@ -5,6 +5,7 @@
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
+- ENV_PARAMS
 - EXPR
 name: TestJob
 parameterDefinitions:
@@ -32,7 +33,7 @@ services:
     ports: [main]
     readinessTimeoutSeconds: 120
   restartPolicy:
-    maxAttempts: 2
+    maxRestarts: 2
     completedTasks: KEEP
   variables:
     STORE_LOGLEVEL: "{{ loglevel }}"

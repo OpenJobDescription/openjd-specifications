@@ -4,12 +4,12 @@
 # closes its listening socket and sleeps, still holding the process. With
 # healthIntervalSeconds: 1 and failureThreshold: 2, two refused connections
 # make the instance UNHEALTHY, an instance failure; with the default
-# maxAttempts of 0 the Service becomes FAILED and the Job fails. onRun is
+# maxRestarts of 0 the Service becomes FAILED and the Job fails. onRun is
 # canceled, Task 2 never starts, and onExit still runs because an action of
 # the Service ran.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: HealthTcpPortClosedWhileProcessHangs
   services:
   - name: Store

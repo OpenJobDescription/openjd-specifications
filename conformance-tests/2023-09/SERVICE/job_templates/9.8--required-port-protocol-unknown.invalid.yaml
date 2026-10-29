@@ -2,6 +2,7 @@
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
+- ENV_PARAMS
 - EXPR
 name: TestJob
 externalServices:

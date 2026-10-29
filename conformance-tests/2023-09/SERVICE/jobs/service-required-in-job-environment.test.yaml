@@ -1,12 +1,12 @@
-# Template Schemas §9.8 item 2, §4 items 3 and 4: a required Service's
-# endpoint is in scope in the Job Template's own Job Environment, which lists
-# `service: Ext` in its `dependencies`; its runScope defaults to [TASK] because
-# it depends on a Service, so the Environment is entered in the Task Session
-# and not in the attached Service's Session. The Task reads the endpoint from
-# the Environment's variables and reaches the Service.
+# Template Schemas §9.8 item 2, §4 item 3: a required Service's endpoint is in
+# scope in the Job Template's own Job Environment, which lists `service: Ext`
+# in its `dependencies`. The Environment is entered in the Task Session and
+# not in the attached Service's Session, since it lists that Service. The Task
+# reads the endpoint from the Environment's variables and reaches the
+# Service.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: RequiredInJobEnvironment
   externalServices:
   - name: Ext
@@ -34,7 +34,7 @@ template:
 
 environments:
 - specificationVersion: environment-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   services:
   - name: Ext
     ports:

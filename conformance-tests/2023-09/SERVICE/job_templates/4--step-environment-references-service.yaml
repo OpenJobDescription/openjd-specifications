@@ -1,11 +1,11 @@
-# Section 4 item 4 / Section 9 scope rule 3 (RFC 0009): a Step Environment is
-# entered only by the Task Sessions of its Step and gives no runScope, so it
-# is never entered in the Service's Session and a reference to the Service is
-# valid. The Step lists the Service in `dependencies`, which is what lets its
-# Step Environment reference it.
+# Section 4 / Section 9 scope rule 3 (RFC 0009): a Step Environment is entered
+# only by the Task Sessions of its Step, never in a Service's Session, so a
+# reference to a Service is valid. The Step lists the Service in
+# `dependencies`, which is what lets its Step Environment reference it.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
+- ENV_PARAMS
 - EXPR
 name: TestJob
 services:
