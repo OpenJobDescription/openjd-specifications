@@ -1,16 +1,17 @@
 # Template Schemas §1.2.2 item 3, both Services consumed: the RFC's shared
 # Valkey Job Template (inline Service `Cache`) is submitted alongside the RFC's
 # queue-cache Environment Template (external Service `Cache`, published to
-# Tasks by a TASK-scoped client Environment that lists `service: Cache` and
-# sets VALKEY_HOST / VALKEY_PORT). A scheduler must keep the two distinct: the
+# Tasks by a client Environment that lists `service: Cache` and sets
+# VALKEY_HOST / VALKEY_PORT). A scheduler must keep the two distinct: the
 # Task's Service.Cache.* resolves to the Job Template's Cache (which answers
 # JOB_CACHE), the client Environment's variables to the queue's (which
 # answers QUEUE_CACHE), and the two listen on different ports. Each listener
 # stands in for valkey-server: it replies with its payload to any connection
-# that sends data.
+# that sends data. The client Environment lists only the queue's Cache, so the
+# Job Template's Cache enters it and starts after the queue's Cache is READY.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: SameNameBothConsumed
   services:
   - name: Cache
@@ -19,7 +20,7 @@ template:
     healthCheck:
       type: TCP_CONNECT
     restartPolicy:
-      maxAttempts: 3
+      maxRestarts: 3
       completedTasks: KEEP
     script:
       actions:
@@ -77,7 +78,7 @@ template:
 
 environments:
 - specificationVersion: environment-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   parameterDefinitions:
   - name: CachePayload
     type: STRING
@@ -87,7 +88,7 @@ environments:
     ports:
     - name: main
     restartPolicy:
-      maxAttempts: 3
+      maxRestarts: 3
       completedTasks: KEEP
     script:
       actions:
@@ -116,7 +117,6 @@ environments:
     name: CacheClient
     dependencies:
     - service: Cache
-    runScope: [TASK]
     variables:
       VALKEY_HOST: "{{ Service.Cache.main.connectAddress }}"
       VALKEY_PORT: "{{ Service.Cache.main.port }}"

@@ -1,12 +1,12 @@
 # Section 4.3 item 5: the onWrapService* hooks require WRAP_ACTIONS; a
-# document declaring only SERVICE and EXPR cannot define them.
+# document declaring only SERVICE, ENV_PARAMS, and EXPR cannot define them.
 specificationVersion: environment-2023-09
 extensions:
 - SERVICE
+- ENV_PARAMS
 - EXPR
 environment:
   name: Wrapper
-  runScope: [SERVICE]
   script:
     actions:
       onEnter:

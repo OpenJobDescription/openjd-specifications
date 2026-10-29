@@ -7,7 +7,7 @@
 # talk to an upstream Service can.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: StopOrderReferencingServiceStoppedFirst
   services:
   - name: Back

@@ -1,20 +1,24 @@
-# Section 1.2.2 / Section 4.3: one document may define Services and a
-# SERVICE-scoped wrapping Environment that wraps them; the wrapping
-# Environment references no Service.* value.
+# Section 1.2.2 / Section 4.3: one document may define Services and a wrapping
+# Environment that wraps them. The Environment is entered by every Session,
+# the document's own Service's included, so it defines all seven hooks; it
+# references no Service.* value.
 specificationVersion: environment-2023-09
 extensions:
 - WRAP_ACTIONS
 - SERVICE
+- ENV_PARAMS
 - EXPR
 environment:
   name: Wrapper
-  runScope: [SERVICE]
   script:
     actions:
       onWrapEnvEnter:
         command: python
         args: ["-c", "print()"]
       onWrapEnvExit:
+        command: python
+        args: ["-c", "print()"]
+      onWrapTaskRun:
         command: python
         args: ["-c", "print()"]
       onWrapServiceEnter:

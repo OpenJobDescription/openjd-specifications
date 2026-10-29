@@ -6,7 +6,7 @@
 # the Step's state.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: ServiceStdout
   services:
   - name: Coordinator

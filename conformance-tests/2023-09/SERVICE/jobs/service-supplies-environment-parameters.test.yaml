@@ -1,0 +1,51 @@
+# RFC 0009 "Services run inside Environments" / §3.2 item 3: a Service supplies
+# values to a parameterized Environment with an `environment:` entry, as a
+# Step does. The ALWAYS Environment Conda is entered by the Service Session and
+# the Task Session, each with its own entity's values, so the Service and the
+# Task see different packages.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: ServiceSuppliesEnvironmentParameters
+  jobEnvironments:
+  - name: Conda
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: none
+    variables:
+      CONDA_PACKAGES: "{{ Env.Param.Packages }}"
+  services:
+  - name: Store
+    dependencies:
+    - environment: Conda
+      parameters:
+        Packages: valkey
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os, time; print('SERVICE_PKGS=' + os.environ.get('CONDA_PACKAGES', 'unset'), flush=True); print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  steps:
+  - name: Use
+    dependencies:
+    - service: Store
+    - environment: Conda
+      parameters:
+        Packages: numpy
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os; print('TASK_PKGS=' + os.environ.get('CONDA_PACKAGES', 'unset'))"]
+
+expected:
+  output:
+  - SERVICE_PKGS=valkey
+  - TASK_PKGS=numpy

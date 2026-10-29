@@ -1,0 +1,29 @@
+# Section 1.2 item 6 constraint 5 / Section 3.2 item 3 (RFC 0009): a Service
+# in an Environment Template's `services` has only `service` entries in its
+# `dependencies`. The document's author writes its `environment` too and can
+# give it the values directly, so an `environment:` entry is rejected.
+specificationVersion: environment-2023-09
+extensions: [SERVICE, ENV_PARAMS, EXPR]
+environment:
+  name: CacheClient
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: ""
+  dependencies:
+  - service: Cache
+  variables:
+    CACHE_PORT: "{{ Service.Cache.main.port }}"
+services:
+- name: Cache
+  dependencies:
+  - environment: CacheClient
+    parameters:
+      Packages: valkey
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

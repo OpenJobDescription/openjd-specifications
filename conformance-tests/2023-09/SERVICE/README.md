@@ -9,8 +9,12 @@ Conformance tests for the `SERVICE` extension defined in
 process that a scheduler starts before scheduling the Tasks in its scope, keeps
 running for the lifetime of its scope, and stops once the scope no longer needs
 it. A Step depends on a Service by listing `service: <name>` in its
-`dependencies` (§3.2), beside the Steps it lists with `dependsOn`, and a
-Service depends on Steps and other Services the same way. A Service publishes
+`dependencies` (§3.2), beside the Steps it lists with `step` (or `dependsOn`),
+and a Service depends on Steps and other Services the same way. `SERVICE`
+requires `ENV_PARAMS` (RFC 0010) and `EXPR`, so a Service may also request
+Environments and supply their parameters with `environment:` entries, and a
+Service Session enters the Job Environments a Task Session would, by RFC 0010's
+`activation`, except an `ALWAYS` Environment that lists that Service. A Service publishes
 one or more named ports, each TCP (the default) or UDP, whose endpoint the
 entities that depend on it read through the `Service.*` format-string scope.
 
@@ -19,17 +23,18 @@ entities that depend on it read through the `Service.*` format-string scope.
 services: [ <Service>, ... ]                   # NEW — scope from dependencies (§9.1)
 externalServices: [ <ServiceRequirement>, ... ] # NEW — external Services used directly (§9.8)
 # <StepDependency> (§3.2), in a Step's, a Service's, or a Job Environment's `dependencies`
-dependsOn: "<StepName>" | service: "<ServiceName>"  # one key; `service` is NEW
+dependsOn | step: "<StepName>" | service: "<ServiceName>" | environment: ...  # one key; `service` is NEW
 # Environment Template (§1.2)
 services: [ <Service>, ... ]                   # NEW — external Services, scoped like inline ones
 # <Environment> (§4)
 dependencies: [ <StepDependency>, ... ]        # NEW — `service` entries only;
                                                #       on jobEnvironments and an
                                                #       Environment Template's environment,
-                                               #       never on stepEnvironments
-runScope: [ TASK | SERVICE, ... ]              # NEW — which kinds of Session enter it;
-                                               #       [TASK] by default when it lists a
-                                               #       Service; never on stepEnvironments
+                                               #       never on stepEnvironments. Every
+                                               #       entity whose Sessions enter it
+                                               #       depends on each listed Service; the
+                                               #       listed Service's own Sessions do not
+                                               #       enter an ALWAYS Environment
 # <EnvironmentActions> (§4.3), with WRAP_ACTIONS
 onWrapServiceEnter / onWrapServiceRun / onWrapServiceHealthCheck / onWrapServiceExit
 ```
@@ -39,14 +44,15 @@ onWrapServiceEnter / onWrapServiceRun / onWrapServiceHealthCheck / onWrapService
   name: <ServiceName>                         # an <Identifier>, not `File`
   description: <Description>                  # optional
   let: <LetBindings>                          # optional (job creation)
-  dependencies: [ <StepDependency>, ... ]     # optional; Steps (complete) and Services (READY) first
+  dependencies: [ <StepDependency>, ... ]     # optional; Steps (complete) and Services (READY) first;
+                                              #   `environment:` entries in a Job Template only
   hostRequirements: <HostRequirements>        # optional
   ports: [ <ServicePort>, ... ]               # 1–10, unique names; { name, port?, protocol?: TCP | UDP }
   healthCheck: <ServiceHealthCheck>           # TCP_CONNECT (default, TCP ports only) | COMMAND | STDOUT
                                               #   readinessIntervalSeconds, readinessTimeoutSeconds,
                                               #   healthIntervalSeconds, failureThreshold
-  restartPolicy: <ServiceRestartPolicy>       # maxAttempts (0), completedTasks (KEEP | RERUN;
-                                              #   required when maxAttempts > 0)
+  restartPolicy: <ServiceRestartPolicy>       # maxRestarts (0), completedTasks (KEEP | RERUN;
+                                              #   required when maxRestarts > 0)
   variables: <EnvironmentVariables>           # optional
   script:
     let: <LetBindings>                        # optional (service execution)
@@ -64,15 +70,17 @@ The **scope** of a Service declared in a Job Template is the set of Steps whose
 Tasks depend on it, declared in the template's `dependencies` lists (§9.1): a
 Step that lists `service: X` is in X's scope; a Service that lists `service: X`
 contributes its own scope, transitively; a Job Environment that lists
-`service: X` puts every Step in its scope, because every Step's Session enters
-it; a Service that no Step, Service, or Job Environment lists is unused and
+`service: X` puts in its scope every Step whose Sessions enter it (every Step,
+for an `ALWAYS` Environment; the Steps that request it, for `ON_REQUEST`); a
+Service that no Step, Service, or Job Environment lists is unused and
 rejected. External Services are scoped by the same rules over the combined Job;
 one that nothing lists is never started. The `dependencies`
 of a template's Steps, Services, and Job Environments form one graph
 (Step→Step, Step→Service, Service→Step, Service→Service), which must be
-acyclic; a Job Environment that lists X adds an edge from every Step to X, so a
-Service a Job Environment lists, directly or transitively, cannot depend on a
-Step.
+acyclic; a Job Environment that lists X adds an edge to X from every Step and
+every Service whose Sessions enter it, so a Service an `ALWAYS` Job Environment
+lists, directly or transitively, cannot depend on a Step, and a Service's own
+`environment:` entry for an Environment that lists it is the cycle X → X.
 
 A Step, Service, or Job Environment may reference `Service.X.<port>.port` and
 `.connectAddress` if and only if it lists `service: X` in its `dependencies`; a
@@ -89,11 +97,13 @@ values. The rule has no exceptions.
 
 ## RFC rules these tests verify
 
-- **Extension gating**: `services`, `externalServices`, `runScope`,
+- **Extension gating**: `services`, `externalServices`,
   `dependencies` on an Environment, and the string functions
   `join_host_port`, `split_host_port`, `is_ipv4`, and `is_ipv6` require
   `SERVICE`; the `onWrapService*` hooks require both
-  `WRAP_ACTIONS` and `SERVICE`; `SERVICE` requires `EXPR` (§9.9 item 7).
+  `WRAP_ACTIONS` and `SERVICE`; `SERVICE` requires `ENV_PARAMS` and `EXPR`
+  (§9.9). `runScope`, a field of earlier RFC 0009 drafts, is an unknown
+  property.
 - **List shape and names** (§1.1 items 8–9, §1.2 item 6, §9 item 6, §9.2,
   §9.3, §9.8): 1–10 elements, unique names, identifiers that are not `File`; a
   requirement's name is not also declared inline. A `<Service>` has a closed
@@ -101,9 +111,9 @@ values. The rule has no exceptions.
   and so are the keys `jobServices` (on either root) and `stepServices` (on a
   Step), which are not part of the schema.
 - **`<StepDependency>` with `service`** (§3 item 4, §3.1, §3.2): a Step's
-  `dependencies` may name Steps (`dependsOn`) and Services (`service`) in one
-  list; an entry gives exactly one of the two keys (both, or neither, is
-  rejected); a `service` entry must name a Service in `services` or
+  `dependencies` may name Steps (`dependsOn` or `step`), Services (`service`),
+  and Environments (`environment`) in one list; an entry gives exactly one of
+  those keys (two, or none, is rejected); a Service may use `step:` too; a `service` entry must name a Service in `services` or
   `externalServices` (an unknown one is rejected), may not repeat within a
   list, and may name a required Service (satisfied when it is READY, scope
   unchanged; the listing is what lets the Step reference the required
@@ -125,28 +135,36 @@ values. The rule has no exceptions.
   Services in `dependencies`, every entry a `service` key naming a Service of
   the same document's `services` or the Job Template's
   `externalServices`, with no duplicates; a Step name, an unknown Service, a
-  duplicate, a list on a `stepEnvironments` entry (which follows its Step's
-  list), and a list together with an explicit `runScope` that includes
-  `SERVICE` are each rejected. An Environment that lists a Service and gives
-  no `runScope` defaults to `[TASK]`, whether or not it references the
-  Service.
+  duplicate, an `environment:` entry, and a list on a `stepEnvironments` entry
+  (which follows its Step's list) are each rejected. An Environment that lists
+  a Service is not entered by that Service's Sessions when it is `ALWAYS`,
+  whether or not it references the Service.
 - **One acyclic graph** (§3.2 constraint 3, §9.9 item 10): cycles through
   Services only (two and three), through a Step and a Service (Step → Service
   X → Step), through a Step and two Services, and a Service that lists itself
   are rejected; so is a Service that a Job Environment lists, directly or
   through a Service that depends on it, and that depends on a Step, since the
-  Job Environment puts every Step in its scope.
+  Job Environment puts every Step in its scope. Entering an Environment adds
+  edges too: a Service whose Session enters an `ALWAYS` Environment that lists
+  another Service depends on it (valid when acyclic, rejected when the other
+  Service depends back on it, and fixed by making the Environment
+  `ON_REQUEST`), in a Job Template and within an Environment Template; and a
+  Service's own `environment:` entry for an Environment that lists it is a
+  cycle, whether that Environment is `ALWAYS` or `ON_REQUEST`.
 - **Service `dependencies`** (§9 item 4): same shape as a Step's; a Service
   may depend on Steps (complete first) and on Services (READY first, with or
   without referencing their endpoints); an entry must name a Step of the
   template or a Service other than itself; in an Environment Template every
   entry uses the `service` key and names a Service of the same document (a
-  Step name is rejected); not empty.
+  Step name and an `environment:` entry are rejected); not empty. A Service's
+  `environment:` entry may read `RawParam.*`, `Param.*`, `Job.Name`,
+  `Job.EnvNames`, and the Service's `let`, not `Step.Name`; a Service supplies
+  every required parameter of each Environment its Session enters, as a Step
+  does (RFC 0010 constraint 7).
 - **`externalServices`** (§1.1 item 9, §9.8, §9.8.1): a requirement makes the
   listed ports' `port` and `connectAddress` available under the inline rule:
   to Steps (script and Step Environments), inline Services, and Job
-  Environments that list `service: <name>` in `dependencies` (a Job
-  Environment's default `runScope` is then `[TASK]`); a Step, inline Service,
+  Environments that list `service: <name>` in `dependencies`; a Step, inline Service,
   or Job Environment that references a required Service without listing it is
   rejected; never `bindAddress` or an unlisted port; an entry that nothing
   lists is rejected, like an unused inline Service; `ports` is
@@ -154,19 +172,18 @@ values. The rule has no exceptions.
   (default) or `UDP` and no port number; no other property; Job Template only.
 - **Environment Template root** (§1.2): `$schema` and `extensions` accepted,
   `environment` optional, at least one of `environment` or `services`.
-- **`runScope`** (§4 item 4): recognized names only, no duplicates, not empty;
-  an Environment whose explicit `runScope` includes `SERVICE` neither lists
-  nor references a Service; an Environment that lists a Service and gives no
-  `runScope` defaults to `[TASK]` and is valid, and one that lists nothing
-  defaults to every kind of Session. A `stepEnvironments` entry must not give
-  `runScope` at all (constraint 4): a Step Environment is entered only by the
-  Task Sessions of its Step.
-- **Hooks follow `runScope`** (§4.3 `WRAP_ACTIONS` constraint 6): a wrapping
-  Environment defines `onWrapEnvEnter`/`onWrapEnvExit` always, `onWrapTaskRun`
-  iff `TASK`,
-  and all four `onWrapService*` hooks iff `SERVICE`; a hook the `runScope` does
-  not call for is rejected. A Service Session's stack (the Job Environments
-  whose `runScope` includes `SERVICE`) holds at most one wrap layer.
+- **Every action inside a wrapper is wrapped** (§4.3 `WRAP_ACTIONS`
+  constraint 6): a wrapping Environment that a Task Session enters defines
+  `onWrapEnvEnter`, `onWrapTaskRun`, and `onWrapEnvExit`; one that a Service
+  Session enters defines `onWrapEnvEnter`, `onWrapEnvExit`, and all four
+  `onWrapService*` hooks, whether or not the Service's actions would use them.
+  Which kinds of Session enter it follow from `activation` and the entities
+  that request it. A hook for a kind of action that never runs inside the
+  wrapper is permitted, so a wrapper only Steps enter may define the Service
+  hooks, and a Step Environment wrapper may too. An Environment Template's
+  wrapper is checked on its own only for what it defines; whether a Service
+  Session enters it is checked at submission. A Service Session's stack holds
+  at most one wrap layer.
 - **Scope rules** (§7.3.1, §9, §9.9 items 1–2): a Service, inline or
   required, visible to the scripts and Step Environments of the Steps that
   list it, to the Services that list it, and to the Job Environments that
@@ -190,16 +207,16 @@ values. The rule has no exceptions.
   `TCP_CONNECT` as well as `COMMAND`; the keys `readinessCheck` and
   `timeoutSeconds` are unknown and rejected; ranges of `port`,
   `readinessIntervalSeconds`, `readinessTimeoutSeconds`, `healthIntervalSeconds`,
-  `failureThreshold`, `maxAttempts`; `@fmtstring` numeric fields (all four
+  `failureThreshold`, `maxRestarts`; `@fmtstring` numeric fields (all four
   health-check fields included) resolved at job creation in the
   `<Service>.let` scope with a whole-field `null` meaning "not provided";
   `completedTasks` is a literal enum, not `@fmtstring`, so a format string
   over a parameter is rejected at validation; `completedTasks` is required
-  when `maxAttempts` is greater than 0 and may be omitted when it is 0 (§9.9
+  when `maxRestarts` is greater than 0 and may be omitted when it is 0 (§9.9
   item 12).
 - **Extensions are per document** (§1.2 item 3): an Environment Template's
   `extensions` apply to that document only, so an attachment that declares
-  `SERVICE` and `EXPR` may use `services`, `runScope`, and the §2.2.4 host/port
+  `SERVICE`, `ENV_PARAMS`, and `EXPR` may use `services` and the §2.2.4 host/port
   functions while the Job Template it is applied to declares no extensions.
 - **Expression Language §2.2.4**: `join_host_port`, `split_host_port`,
   `is_ipv4`, `is_ipv6` and their signatures.
@@ -212,9 +229,11 @@ values. The rule has no exceptions.
 - **Submission-time checks** (§1.2.2 items 2 and 4): each requirement matches
   exactly one attached Service of its name declaring every listed port with the
   same protocol (no provider, two providers, a missing port, or a protocol
-  mismatch rejects the Job); a wrapping Environment from a document that does
-  not declare `SERVICE` placed in `jobEnvironments` of a Job with any Service
-  is rejected — the two checks that need the combined Job.
+  mismatch rejects the Job); an attached wrapping Environment that a Service
+  Session enters but that lacks the `onWrapService*` hooks, such as one from a
+  document that does not declare `SERVICE`, is rejected; and a Service's
+  combined host requirements, its own with those of the Environments its
+  Session enters, must not conflict.
 - **Lifecycle** (*How Jobs Are Run* § Services): READY before any Task of a
   Step in the scope, a Service READY before any Service that depends on it
   starts its Session and stopped after that Service is stopped, a Service
@@ -223,7 +242,11 @@ values. The rule has no exceptions.
   completes, a Service that lists another is stopped and started again in a
   new Service Session when that Service begins a new Service Session, Service
   Sessions
-  enter the Job Environments whose `runScope` includes `SERVICE`, `onEnter` once
+  enter the Job Environments a Task Session would (by `activation`, the
+  Service's own `environment:` requests and values, and each Environment's
+  `enableIf`), except an `ALWAYS` Environment that lists the Service, and a
+  Service whose Session enters an Environment that lists another Service
+  starts after it, `onEnter` once
   per Session, `openjd_env` and `openjd_redacted_env` from `onEnter` reach
   `onRun`, `onHealthCheck`, and `onExit` (the latter setting the variable
   only with `REDACTED_ENV_VARS`, masked in the log regardless),
@@ -234,8 +257,8 @@ values. The rule has no exceptions.
   non-zero, a `TCP_CONNECT` refused, a `STDOUT` heartbeat missed) make the
   instance UNHEALTHY, which is an instance failure taking the ordinary restart
   decision, while fewer failures change nothing and a `STDOUT` check without
-  `healthIntervalSeconds` expects no heartbeat, a start failure consumes an
-  attempt and relaunches in a new Service Session, `maxAttempts` exhaustion
+  `healthIntervalSeconds` expects no heartbeat, a start failure consumes a
+  restart and relaunches in a new Service Session, `maxRestarts` exhaustion
   fails the scope whether before or after the first Task, a FAILED or
   failed-scope Service still runs `onExit` if any of its actions ran and not
   otherwise, a failing `onExit` does not fail the scope, and wrap hooks run in
@@ -285,6 +308,7 @@ SERVICE/
 │   ├── 1.1--external-services-empty-list.invalid.yaml
 │   ├── 1.1--external-services-more-than-ten.invalid.yaml
 │   ├── 1.1--external-services-without-service-extension.invalid.yaml
+│   ├── 1.1--service-without-env-params.invalid.yaml
 │   ├── 1.1--service-without-expr-no-services.invalid.yaml
 │   ├── 1.1--service-without-expr.invalid.yaml
 │   ├── 1.1--services-duplicate-name.invalid.yaml
@@ -294,6 +318,7 @@ SERVICE/
 │   │  # §3 no Service list on a Step; §3.1 `:` in Step names allowed; §3.2 the `service` key
 │   │  # §3.3.2 attr.worker.preemptible
 │   ├── 3.1--step-name-with-colon-allowed.yaml
+│   ├── 3.2--service-depends-on-step-key.yaml
 │   ├── 3.2--step-depends-on-step-and-service.yaml
 │   ├── 3.3.2--attr-worker-preemptible-on-service.yaml
 │   ├── 3.3.2--attr-worker-preemptible-on-step.yaml
@@ -301,51 +326,44 @@ SERVICE/
 │   ├── 3.2--service-key-without-service-extension.invalid.yaml
 │   ├── 3.2--step-dependency-both-keys.invalid.yaml
 │   ├── 3.2--step-dependency-no-keys.invalid.yaml
+│   ├── 3.2--step-dependency-service-and-environment-keys.invalid.yaml
 │   ├── 3.2--step-depends-on-same-service-twice.invalid.yaml
 │   ├── 3.2--step-depends-on-unknown-service.invalid.yaml
-│   │  # §4 Environment dependencies and runScope
+│   │  # §4 Environment dependencies, the exception for the listed Service, graph edges
 │   ├── 4--environment-dependencies-service-form.yaml
-│   ├── 4--environment-dependency-defaults-run-scope-task.yaml
-│   ├── 4--run-scope-both.yaml
-│   ├── 4--run-scope-default-no-reference-is-every-kind.yaml
-│   ├── 4--run-scope-default-references-service-value.yaml
-│   ├── 4--run-scope-service.yaml
-│   ├── 4--run-scope-task-references-service-value.yaml
-│   ├── 4--run-scope-task.yaml
+│   ├── 4--environment-dependency-without-reference.yaml
+│   ├── 4--environment-without-dependencies-alongside-service.yaml
+│   ├── 4--environment-references-listed-service-value.yaml
+│   ├── 4--on-request-client-environment-breaks-cycle.yaml
+│   ├── 4--service-enters-environment-listing-other-service.yaml
 │   ├── 4--step-environment-references-service.yaml
 │   ├── 4--environment-dependencies-duplicate.invalid.yaml
+│   ├── 4--environment-dependencies-environment-entry.invalid.yaml
 │   ├── 4--environment-dependencies-step-name.invalid.yaml
 │   ├── 4--environment-dependencies-unknown-service.invalid.yaml
-│   ├── 4--environment-dependency-with-service-run-scope.invalid.yaml
+│   ├── 4--environment-edge-cycle.invalid.yaml
+│   ├── 4--run-scope-not-a-property.invalid.yaml
+│   ├── 4--service-requests-always-environment-that-lists-it.invalid.yaml
 │   ├── 4--environment-references-service-without-dependency.invalid.yaml
-│   ├── 4--run-scope-both-references-service-value.invalid.yaml
-│   ├── 4--run-scope-case-sensitive.invalid.yaml
-│   ├── 4--run-scope-duplicate.invalid.yaml
-│   ├── 4--run-scope-empty.invalid.yaml
-│   ├── 4--run-scope-on-step-environment.invalid.yaml
-│   ├── 4--run-scope-service-references-service-value.invalid.yaml
-│   ├── 4--run-scope-unknown-name.invalid.yaml
-│   ├── 4--run-scope-without-service-extension.invalid.yaml
+│   ├── 4--service-requests-on-request-environment-that-lists-it.invalid.yaml
 │   ├── 4--step-environment-dependencies.invalid.yaml
-│   │  # §4.3 hooks follow runScope; §4.3.1 WrappedService.*
+│   │  # §4.3 every action inside a wrapper is wrapped; §4.3.1 WrappedService.*
 │   ├── 4.3--non-wrapping-environment-not-subject-to-rule.yaml
-│   ├── 4.3--wrap-default-run-scope-seven-hooks.yaml
-│   ├── 4.3--wrap-run-scope-both-seven-hooks.yaml
-│   ├── 4.3--wrap-run-scope-service-six-hooks.yaml
-│   ├── 4.3--wrap-run-scope-task-three-hooks.yaml
+│   ├── 4.3--wrap-entered-by-steps-seven-hooks-permitted.yaml
+│   ├── 4.3--wrap-seven-hooks.yaml
+│   ├── 4.3--wrap-entered-by-services-only-six-hooks.yaml
+│   ├── 4.3--wrap-entered-by-steps-only-three-hooks.yaml
 │   ├── 4.3--wrap-step-environment-three-hooks.yaml
+│   ├── 4.3--wrap-step-environment-with-service-hooks-permitted.yaml
 │   ├── 4.3.1--wrapped-action-in-service-hooks.yaml
 │   ├── 4.3.1--wrapped-service-in-service-hooks.yaml
 │   ├── 4.3.1--wrapped-service-lists-type-check.yaml
 │   ├── 4.3--service-hooks-without-service-extension.invalid.yaml
 │   ├── 4.3--service-hooks-without-wrap-actions.invalid.yaml
-│   ├── 4.3--wrap-default-run-scope-missing-service-hooks.invalid.yaml
-│   ├── 4.3--wrap-default-run-scope-missing-task-hook.invalid.yaml
-│   ├── 4.3--wrap-run-scope-service-missing-env-hooks.invalid.yaml
-│   ├── 4.3--wrap-run-scope-service-missing-one-service-hook.invalid.yaml
-│   ├── 4.3--wrap-run-scope-service-with-task-hook.invalid.yaml
-│   ├── 4.3--wrap-run-scope-task-with-service-hook.invalid.yaml
-│   ├── 4.3--wrap-step-environment-with-service-hooks.invalid.yaml
+│   ├── 4.3--wrap-entered-by-service-missing-service-hooks.invalid.yaml
+│   ├── 4.3--wrap-entered-by-steps-missing-task-hook.invalid.yaml
+│   ├── 4.3--wrap-entered-by-service-missing-env-hooks.invalid.yaml
+│   ├── 4.3--wrap-entered-by-service-missing-one-service-hook.invalid.yaml
 │   ├── 4.3.1--wrapped-env-in-service-hook.invalid.yaml
 │   ├── 4.3.1--wrapped-service-in-env-enter-hook.invalid.yaml
 │   ├── 4.3.1--wrapped-service-in-own-on-enter.invalid.yaml
@@ -365,7 +383,7 @@ SERVICE/
 │   ├── 7.3.1--step-script-sees-service.yaml
 │   ├── 7.3.1--bind-address-in-other-service.invalid.yaml
 │   ├── 7.3.1--bind-address-in-step-script.invalid.yaml
-│   ├── 7.3.1--bind-address-in-task-scoped-environment.invalid.yaml
+│   ├── 7.3.1--bind-address-in-job-environment.invalid.yaml
 │   ├── 7.3.1--service-connect-address-is-string-plus-int-type-error.invalid.yaml
 │   ├── 7.3.1--service-file-in-step-script.invalid.yaml
 │   ├── 7.3.1--service-file-of-other-service.invalid.yaml
@@ -400,6 +418,8 @@ SERVICE/
 │   ├── 9--dependencies-two-steps.yaml
 │   ├── 9--ports-ten.yaml
 │   ├── 9--service-all-fields.yaml
+│   ├── 9--service-environment-entry-scopes.yaml
+│   ├── 9--service-supplies-required-environment-parameter.yaml
 │   ├── 9--dependencies-cycle-step-service-service-step.invalid.yaml
 │   ├── 9--dependencies-cycle-step-service-step.invalid.yaml
 │   ├── 9--dependencies-cycle-via-job-environment-scope-transitive.invalid.yaml
@@ -411,13 +431,16 @@ SERVICE/
 │   ├── 9--ports-duplicate-name.invalid.yaml
 │   ├── 9--ports-empty.invalid.yaml
 │   ├── 9--ports-more-than-ten.invalid.yaml
+│   ├── 9--service-environment-entry-step-name.invalid.yaml
 │   ├── 9--service-environments-not-a-property.invalid.yaml
 │   ├── 9--service-missing-on-run.invalid.yaml
 │   ├── 9--service-missing-ports.invalid.yaml
+│   ├── 9--service-must-supply-required-environment-parameter.invalid.yaml
 │   ├── 9--service-unknown-field.invalid.yaml
 │   │  # §9.1 scope from dependencies
 │   ├── 9.1--scope-one-step-by-dependency.yaml
 │   ├── 9.1--scope-via-job-environment-dependency.yaml
+│   ├── 9.1--scope-via-on-request-environment.yaml
 │   ├── 9.1--service-depended-on-by-two-steps.yaml
 │   ├── 9.1--step-depends-on-service-without-reference.yaml
 │   ├── 9.1--transitive-scope-via-dependent-service.yaml
@@ -426,6 +449,7 @@ SERVICE/
 │   ├── 9.1--service-references-service-without-dependency.invalid.yaml
 │   ├── 9.1--step-environment-references-service-without-dependency.invalid.yaml
 │   ├── 9.1--step-script-references-service-without-dependency.invalid.yaml
+│   ├── 9.1--unused-service-via-unrequested-environment.invalid.yaml
 │   ├── 9.1--unused-service-with-own-dependencies.invalid.yaml
 │   ├── 9.1--unused-service.invalid.yaml
 │   │  # §9.2–§9.7 <ServiceName>, <ServicePort>, health, restart, script, actions
@@ -445,9 +469,9 @@ SERVICE/
 │   ├── 9.4--health-tcp-connect-default-ports.yaml
 │   ├── 9.4--health-tcp-connect-ports.yaml
 │   ├── 9.4--health-tcp-connect-with-readiness-interval.yaml
-│   ├── 9.5--max-attempts-zero-without-completed-tasks.yaml
+│   ├── 9.5--max-restarts-zero-without-completed-tasks.yaml
 │   ├── 9.5--restart-policy-keep.yaml
-│   ├── 9.5--restart-policy-max-attempts-zero-explicit.yaml
+│   ├── 9.5--restart-policy-max-restarts-zero-explicit.yaml
 │   ├── 9.6--script-let-requires-expr.yaml
 │   ├── 9.7--service-actions-all-four.yaml
 │   ├── 9.2--service-name-file.invalid.yaml
@@ -488,9 +512,9 @@ SERVICE/
 │   ├── 9.5--completed-tasks-format-string.invalid.yaml
 │   ├── 9.5--completed-tasks-lowercase.invalid.yaml
 │   ├── 9.5--completed-tasks-unknown.invalid.yaml
-│   ├── 9.5--max-attempts-negative.invalid.yaml
-│   ├── 9.5--max-attempts-not-integer.invalid.yaml
-│   ├── 9.5--max-attempts-without-completed-tasks.invalid.yaml
+│   ├── 9.5--max-restarts-negative.invalid.yaml
+│   ├── 9.5--max-restarts-not-integer.invalid.yaml
+│   ├── 9.5--max-restarts-without-completed-tasks.invalid.yaml
 │   ├── 9.6--embedded-files-empty.invalid.yaml
 │   ├── 9.6--script-let-duplicate-name.invalid.yaml
 │   ├── 9.6--service-let-shadows-script-let.invalid.yaml
@@ -521,7 +545,7 @@ SERVICE/
 │   └── 9.8--step-references-required-service-without-dependency.invalid.yaml
 ├── env_templates/                  # Environment template validation tests
 │   │  # §1.2 root, §1.2.2 Services from Environment Templates
-│   ├── 1.2--environment-default-run-scope-references-service.yaml
+│   ├── 1.2--environment-references-listed-service.yaml
 │   ├── 1.2--environment-depends-on-service.yaml
 │   ├── 1.2--environment-only-no-extensions.yaml
 │   ├── 1.2--schema-field-accepted.yaml
@@ -533,11 +557,11 @@ SERVICE/
 │   ├── 1.2--services-and-environment.yaml
 │   ├── 1.2--services-only.yaml
 │   ├── 1.2--environment-depends-on-step-name.invalid.yaml
+│   ├── 1.2--environment-edge-cycle.invalid.yaml
 │   ├── 1.2--environment-only-references-service.invalid.yaml
 │   ├── 1.2--environment-references-bind-address.invalid.yaml
 │   ├── 1.2--environment-references-service-without-dependency.invalid.yaml
 │   ├── 1.2--environment-references-undeclared-service.invalid.yaml
-│   ├── 1.2--environment-service-run-scope-references-service.invalid.yaml
 │   ├── 1.2--job-services-unknown-property.invalid.yaml
 │   ├── 1.2--neither-environment-nor-services-no-extensions.invalid.yaml
 │   ├── 1.2--neither-environment-nor-services.invalid.yaml
@@ -545,6 +569,7 @@ SERVICE/
 │   ├── 1.2--service-dependency-cycle.invalid.yaml
 │   ├── 1.2--service-dependency-on-step-not-permitted.invalid.yaml
 │   ├── 1.2--service-depends-on-unknown-service.invalid.yaml
+│   ├── 1.2--service-environment-entry-not-permitted.invalid.yaml
 │   ├── 1.2--service-in-environment-template-missing-on-run.invalid.yaml
 │   ├── 1.2--service-references-service-without-dependency.invalid.yaml
 │   ├── 1.2--service-references-step-name.invalid.yaml
@@ -554,25 +579,16 @@ SERVICE/
 │   ├── 1.2--services-empty-list.invalid.yaml
 │   ├── 1.2--services-more-than-ten.invalid.yaml
 │   ├── 1.2--services-without-service-extension.invalid.yaml
-│   │  # §4 runScope
-│   ├── 4--run-scope-service-environment.yaml
-│   ├── 4--run-scope-duplicate.invalid.yaml
-│   ├── 4--run-scope-unknown-name.invalid.yaml
-│   ├── 4--run-scope-without-service-extension.invalid.yaml
 │   │  # §4.3 / §4.3.1 wrap hooks
 │   ├── 4.3--rfc0008-three-hooks-without-service-unchanged.yaml
 │   ├── 4.3--services-and-wrapping-environment-compose.yaml
-│   ├── 4.3--wrap-default-run-scope-seven-hooks.yaml
-│   ├── 4.3--wrap-run-scope-service-six-hooks.yaml
-│   ├── 4.3--wrap-run-scope-task-three-hooks.yaml
+│   ├── 4.3--wrap-seven-hooks.yaml
+│   ├── 4.3--wrap-on-request-six-hooks.yaml
+│   ├── 4.3--wrap-three-hooks-with-service-extension.yaml
 │   ├── 4.3.1--wrapped-service-in-service-hook-timing-fields.yaml
 │   ├── 4.3.1--wrapped-service-in-service-hooks.yaml
 │   ├── 4.3--service-hooks-without-service-extension.invalid.yaml
 │   ├── 4.3--service-hooks-without-wrap-actions.invalid.yaml
-│   ├── 4.3--wrap-default-run-scope-missing-service-hooks.invalid.yaml
-│   ├── 4.3--wrap-run-scope-service-missing-service-exit.invalid.yaml
-│   ├── 4.3--wrap-run-scope-service-with-task-hook.invalid.yaml
-│   ├── 4.3--wrap-run-scope-task-with-service-hooks.invalid.yaml
 │   ├── 4.3.1--wrapped-service-in-embedded-file.invalid.yaml
 │   ├── 4.3.1--wrapped-service-in-env-exit-hook.invalid.yaml
 │   ├── 4.3.1--wrapped-step-in-service-hook-timeout.invalid.yaml
@@ -591,17 +607,19 @@ SERVICE/
     ├── service-stdout-health-check.test.yaml
     ├── service-tcp-connect.test.yaml
     ├── service-udp-port-echo.test.yaml
-    │  # Scope from dependencies, runScope default
+    │  # Scope from dependencies
     ├── service-dependencies-starts-after-step.test.yaml
     ├── service-dependency-without-reference.test.yaml
-    ├── service-run-scope-default-follows-dependency.test.yaml
+    ├── service-client-environment-not-entered-by-its-service.test.yaml
     ├── service-scope-one-step-each.test.yaml
     ├── service-scope-stopped-before-dependent-step.test.yaml
     ├── service-scope-transitive-via-dependent-service.test.yaml
     ├── service-scope-two-of-three-steps-state-persists.test.yaml
     ├── service-scope-via-job-environment-dependency.test.yaml
     │  # The Service Session
-    ├── service-environments-follow-run-scope.test.yaml
+    ├── service-environments-follow-activation.test.yaml
+    ├── service-environment-disabled-for-service.test.yaml
+    ├── service-enters-environment-listing-other-service.test.yaml
     ├── service-on-enter-openjd-env-reaches-health-check.test.yaml
     ├── service-on-enter-openjd-env-reaches-on-run.test.yaml
     ├── service-on-enter-openjd-fail-exit-zero-is-start-failure.test.yaml
@@ -611,6 +629,7 @@ SERVICE/
     ├── service-on-exit-runs-after-task-failure.test.yaml
     ├── service-on-run-openjd-fail-cancels-and-relaunches.test.yaml
     ├── service-session-is-its-own-session.test.yaml
+    ├── service-supplies-environment-parameters.test.yaml
     ├── service-stop-order-dependent-service-stopped-first.test.yaml
     │  # External Services (§1.2.2) and externalServices (§9.8)
     ├── service-external-client-environment-uses-service-functions.test.yaml
@@ -619,17 +638,17 @@ SERVICE/
     ├── service-external-same-name-both-consumed.test.yaml
     ├── service-external-same-name-in-two-attachments.test.yaml
     ├── service-external-services-only-attachment.test.yaml
-    ├── service-external-task-scoped-client-environment.test.yaml
+    ├── service-external-client-environment.test.yaml
     ├── service-required-in-job-environment.test.yaml
     ├── service-required-satisfied-by-attachment.test.yaml
     │  # Failure and restart
     ├── service-dependent-restarts-when-upstream-gets-new-session.test.yaml
-    ├── service-keep-max-attempts-exhausted-mid-scope.test.yaml
+    ├── service-keep-max-restarts-exhausted-mid-scope.test.yaml
     ├── service-keep-relaunch.test.yaml
-    ├── service-max-attempts-exhausted-task-never-runs.test.yaml
+    ├── service-max-restarts-exhausted-task-never-runs.test.yaml
     ├── service-readiness-timeout-fails-scope.test.yaml
     ├── service-rerun-relaunch.test.yaml
-    ├── service-start-failure-no-attempts-on-exit-not-run.test.yaml
+    ├── service-start-failure-no-restarts-on-exit-not-run.test.yaml
     ├── service-start-failure-relaunches-in-new-session.test.yaml
     │  # Health checks after READY
     ├── service-health-command-fails-after-ready-relaunches.test.yaml
@@ -641,11 +660,12 @@ SERVICE/
     ├── service-wrap-env-hooks-wrap-inner-environment-in-service-session.test.yaml
     ├── service-wrap-service-hooks-python.test.yaml
     ├── service-wrap-service-scoped-hooks.test.yaml
-    ├── service-wrapper-task-scoped-with-service.test.yaml
+    ├── service-wrapper-on-request-for-steps-with-service.test.yaml
     │  # Runs the runner must reject
+    ├── service-combined-host-requirements-conflict.invalid.test.yaml
     ├── service-job-wrapper-with-external-service.invalid.test.yaml
-    ├── service-max-attempts-exhausted.invalid.test.yaml
-    ├── service-max-attempts-from-param-negative.invalid.test.yaml
+    ├── service-max-restarts-exhausted.invalid.test.yaml
+    ├── service-max-restarts-from-param-negative.invalid.test.yaml
     ├── service-port-from-param-out-of-range.invalid.test.yaml
     ├── service-port-from-string-param-not-integer.invalid.test.yaml
     ├── service-required-no-provider.invalid.test.yaml
@@ -655,6 +675,7 @@ SERVICE/
     ├── service-scope-unused-service.invalid.test.yaml
     ├── service-without-expr.invalid.test.yaml
     ├── service-without-extension.invalid.test.yaml
+    ├── service-wrapper-three-hooks-entered-by-service.invalid.test.yaml
     └── service-wrapper-without-service-declaration.invalid.test.yaml
 ```
 
@@ -701,10 +722,13 @@ SERVICE/
   on a Step is not started until the Step has completed, and then serves the
   Step's output to the Step that depends on it
   (`service-dependencies-starts-after-step`).
-- **`runScope` default** (§4 item 4): an Environment that lists a Service in
-  `dependencies` without a `runScope` is entered in Task Sessions only, while
-  one that lists nothing is entered in the Service Session too
-  (`service-run-scope-default-follows-dependency`).
+- **The listed Service stays out** (§4 item 3): an `ALWAYS` Environment that
+  lists a Service in `dependencies` is entered in Task Sessions but not in that
+  Service's Session, while one that lists nothing is entered in the Service
+  Session too (`service-client-environment-not-entered-by-its-service`). A
+  Service whose Session enters an Environment that lists another Service
+  starts after it, with the Environment's variables set from its endpoint
+  (`service-enters-environment-listing-other-service`).
 - **`Service.File.*` and `let`**: embedded files materialize into the Service
   Session and resolve through `<ServiceScript>.let`; `<Service>.let` resolves
   `Param.*` and `Job.Name` (`service-file-embedded`,
@@ -720,15 +744,20 @@ SERVICE/
   rejected at job creation (`service-numeric-fields-from-param`,
   `service-port-from-param-out-of-range`,
   `service-port-from-string-param-not-integer`,
-  `service-max-attempts-from-param-negative`).
+  `service-max-restarts-from-param-negative`).
 - **A Session of its own**: `Session.WorkingDirectory` is the Service
   Session's, distinct from the Task's; `OPENJD_SESSION_WORKING_DIR` is set
   (`service-session-is-its-own-session`).
-- **Environments by `runScope`** ("Services run inside Environments"): the
-  Service Session enters the Job Environments whose `runScope` includes
-  `SERVICE`;
-  Environment `variables` reach the Service's actions with the Service's own
-  `variables` taking precedence (`service-environments-follow-run-scope`).
+- **Environments by `activation`** ("Services run inside Environments"): the
+  Service Session enters every `ALWAYS` Job Environment except one that lists
+  it, and the `ON_REQUEST` ones it requests; Environment `variables` reach the
+  Service's actions with the Service's own `variables` taking precedence
+  (`service-environments-follow-activation`). A Service supplies its own
+  values to a parameterized Environment, so its Session and a Task Session see
+  different configurations of one Environment
+  (`service-supplies-environment-parameters`), and an Environment's `enableIf`
+  is evaluated with the Service's values, so it may exclude the Service's
+  Session and not the Task's (`service-environment-disabled-for-service`).
 - **`openjd_env` within a Service** (§9.7): variables set by `onEnter` reach
   `onRun` and `onExit`, override declarative `variables`, and never propagate to
   Tasks (`service-on-enter-openjd-env-reaches-on-run`); they reach every
@@ -741,16 +770,16 @@ SERVICE/
   `service-on-enter-openjd-redacted-env-without-extension`).
 - **Session end** (constraints 6–7): a Service's Session is ended, and its
   `onExit` run, when the scope fails (`service-on-exit-runs-after-task-failure`,
-  `service-max-attempts-exhausted-task-never-runs`); a failing `onExit` does not
+  `service-max-restarts-exhausted-task-never-runs`); a failing `onExit` does not
   fail the scope (`service-on-exit-failure-does-not-fail-scope`); `onExit` is
-  not run when no action of the Service ran, as when a SERVICE-scoped
-  Environment's `onEnter` fails with no attempts left
-  (`service-start-failure-no-attempts-on-exit-not-run`).
+  not run when no action of the Service ran, as when the `onEnter` of an
+  Environment only the Service requests fails with no restarts left
+  (`service-start-failure-no-restarts-on-exit-not-run`).
 - **External Services** (§1.2.2): a services-plus-environment attachment
   publishes an endpoint to a Job Template that knows nothing of `SERVICE`; the
   attachment's parameters are Job Parameters; a services-only attachment whose
   Service nothing in the Job lists is accepted but the Service never starts
-  (`service-external-task-scoped-client-environment`,
+  (`service-external-client-environment`,
   `service-external-parameter-override`,
   `service-external-services-only-attachment`); the attachment's `extensions`
   gate the §2.2.4 host/port functions for its own `variables` while the Job
@@ -770,8 +799,8 @@ SERVICE/
 - **`externalServices`** (§1.1 item 9, §1.2.2 item 2, §9.8): a requirement
   satisfied by one attachment makes `Service.Ext.main.port` and
   `.connectAddress` resolve in the Task of a Step that lists `service: Ext`,
-  and in a Job Environment of the Job Template that lists `service: Ext`, whose
-  `runScope` then defaults to `[TASK]`, to the attached Service's endpoint
+  and in a Job Environment of the Job Template that lists `service: Ext`, to
+  the attached Service's endpoint
   (`service-required-satisfied-by-attachment`,
   `service-required-in-job-environment`); a Job whose requirement has no
   provider, two providers, a provider lacking the port, or a provider with the
@@ -784,20 +813,20 @@ SERVICE/
   Tasks against the new instance; `KEEP` lets the running Task finish and keeps
   completed results, gating only not-yet-started Tasks on the new instance
   (`service-rerun-relaunch`, `service-keep-relaunch`). Exhausting
-  `maxAttempts` makes the Service FAILED and fails its scope, whether before
-  any Task runs (`service-max-attempts-exhausted*`) or after some Tasks have
+  `maxRestarts` makes the Service FAILED and fails its scope, whether before
+  any Task runs (`service-max-restarts-exhausted*`) or after some Tasks have
   completed, in which case the remaining Tasks never start and `onExit` runs
-  (`service-keep-max-attempts-exhausted-mid-scope`). A ready timeout is an
+  (`service-keep-max-restarts-exhausted-mid-scope`). A ready timeout is an
   instance failure: the in-flight `onHealthCheck` is canceled, no Task runs,
   and `onExit` runs (`service-readiness-timeout-fails-scope`). An `openjd_fail`
   message from `onRun` is an instance failure in itself: the runtime cancels
   `onRun` — the instance never gets to print past it — and relaunches with the
   message as the reason (`service-on-run-openjd-fail-cancels-and-relaunches`);
   from `onEnter` the message fails the action whatever its exit status, a start
-  failure that with `maxAttempts` 0 fails the scope while `onExit` still runs
+  failure that with `maxRestarts` 0 fails the scope while `onExit` still runs
   (`service-on-enter-openjd-fail-exit-zero-is-start-failure`). A start failure
-  — a SERVICE-scoped Environment's `onEnter` exiting non-zero — consumes an
-  attempt and the relaunch begins a new Service Session with a new working
+  — the `onEnter` of an Environment only the Service requests exiting non-zero —
+  consumes a restart and the relaunch begins a new Service Session with a new working
   directory, re-entering the Environments and re-running `onEnter`
   (`service-start-failure-relaunches-in-new-session`). When an upstream
   Service begins a new Service Session, every Service that lists it is stopped
@@ -812,19 +841,19 @@ SERVICE/
   `failureThreshold` consecutive failures make the instance UNHEALTHY, an
   instance failure that takes the ordinary restart decision. A `COMMAND` probe
   that starts exiting non-zero after Task 1 gets instance 1 canceled and, under
-  `maxAttempts: 1` and `KEEP`, a second instance that serves the remaining Tasks
+  `maxRestarts: 1` and `KEEP`, a second instance that serves the remaining Tasks
   (`service-health-command-fails-after-ready-relaunches`); a probe that fails
   twice and recovers under `failureThreshold: 3` changes nothing
   (`service-health-threshold-tolerates-blips`); a `TCP_CONNECT` probe refused
   by a process that closed its listener but is still running makes the
-  instance UNHEALTHY, and with no attempts left the Job fails and `onExit` runs
+  instance UNHEALTHY, and with no restarts left the Job fails and `onExit` runs
   (`service-health-tcp-port-closed-while-process-hangs`); a `STDOUT` check with
   `healthIntervalSeconds` treats `openjd_service_ready` as a heartbeat and
   fails the instance when it stops (`service-health-stdout-heartbeat-missed`),
   while one without expects no heartbeat and a single ready line serves the
   whole Job (`service-health-stdout-no-heartbeat-configured`).
-- **Wrap hooks** (§4.3 `WRAP_ACTIONS` constraint 6, §4.3.1): a SERVICE-scoped
-  wrapping Environment's four `onWrapService*` hooks run in place of the
+- **Wrap hooks** (§4.3 `WRAP_ACTIONS` constraint 6, §4.3.1): the four
+  `onWrapService*` hooks of a wrapping Environment the Service requests run in place of the
   Service's actions with `WrappedAction.*` and the parallel `WrappedService.*`
   lists; the
   wrapped `onRun`'s `openjd_service_ready` and the health check's exit status
@@ -832,14 +861,19 @@ SERVICE/
   the inner Environments the Service Session enters; the wrapper is not entered
   for the Task (`service-wrap-service-scoped-hooks`,
   `service-wrap-env-hooks-wrap-inner-environment-in-service-session`,
-  `service-wrap-service-hooks-python`). A TASK-scoped wrapper coexists with a
-  Service (`service-wrapper-task-scoped-with-service`).
-- **Submission-time wrapper check** (§1.2.2 item 4): a wrapping Environment
-  from a document without `SERVICE`, placed in `jobEnvironments`, is rejected
-  when the Job has any Service — attached to a Job declaring a Service, or in
-  a Job submitted alongside an external Service
+  `service-wrap-service-hooks-python`). An `ON_REQUEST` wrapper that only
+  Steps request coexists with a Service
+  (`service-wrapper-on-request-for-steps-with-service`).
+- **Submission-time checks** (§1.2.2 item 4): a wrapping Environment that a
+  Service Session enters but that lacks the `onWrapService*` hooks is rejected
+  — from a document without `SERVICE` attached to a Job declaring a Service,
+  in a Job submitted alongside an external Service, or from a document that
+  declares `SERVICE` but defines three hooks
   (`service-wrapper-without-service-declaration`,
-  `service-job-wrapper-with-external-service`).
+  `service-job-wrapper-with-external-service`,
+  `service-wrapper-three-hooks-entered-by-service`). A Service whose own host
+  requirements conflict with those of an Environment its Session enters is
+  rejected (`service-combined-host-requirements-conflict`).
 
 ## Running the tests
 
@@ -861,22 +895,25 @@ uv run conformance-tests/run_openjd_cli_tests.py '*service*relaunch*'
 See the top-level [conformance README](../../README.md) for the standard
 runner contract. The behavior specific to `SERVICE`:
 
-1. When a template declares `extensions: [SERVICE, EXPR]`, the runner must
-   accept `services`, `externalServices`, `runScope` on Job Environments,
-   `dependencies` on a Job Environment (`service` entries only), and the
-   `service: <name>` entry in every `dependencies` list, each entry giving
-   exactly one of `dependsOn` and `service`; compute each Service's scope from
-   those lists (§9.1: the Steps that list it, directly or through other
-   Services, plus every Step when a Job Environment lists it); reject an unused
-   Service or `externalServices` entry, a `Service.*` reference from a Step, Service, or Job Environment
-   that does not list the dependency, a `dependencies` list or a `runScope` on
-   a Step Environment, a `dependencies` entry on an Environment naming a Step,
-   and a cycle in the combined Step/Service graph, in which a Job Environment
-   that lists a Service adds an edge from every Step to it; and validate every
-   `<Service>` and `<ServiceRequirement>` per Template Schemas §9.9. Without
-   `SERVICE` it must reject those fields, the `service` key included; with
-   `SERVICE` but without `EXPR` it must reject the template. `jobServices` and
-   `stepServices` are unknown properties.
+1. When a template declares `extensions: [SERVICE, ENV_PARAMS, EXPR]`, the
+   runner must accept `services`, `externalServices`, `dependencies` on a Job
+   Environment (`service` entries only), the `service: <name>` entry in every
+   `dependencies` list, and `environment:` entries on Steps and on a Job
+   Template's Services, each entry giving exactly one of `dependsOn`, `step`,
+   `service`, and `environment`; compute each Service's scope from those lists
+   (§9.1: the Steps that list it, directly or through other Services, plus
+   every Step whose Sessions enter a Job Environment that lists it); reject an
+   unused Service or `externalServices` entry, a `Service.*` reference from a
+   Step, Service, or Job Environment that does not list the dependency, a
+   `dependencies` list on a Step Environment, a `dependencies` entry on an
+   Environment naming a Step or an Environment, and a cycle in the combined
+   Step/Service graph, in which a Job Environment that lists a Service adds an
+   edge to it from every Step and Service whose Sessions enter it; and validate
+   every `<Service>` and `<ServiceRequirement>` per Template Schemas §9.9.
+   Without `SERVICE` it must reject those fields, the `service` key included;
+   with `SERVICE` but without `ENV_PARAMS` or `EXPR` it must reject the
+   template. `runScope`, `jobServices`, and `stepServices` are unknown
+   properties.
 2. `openjd run` with `--env` must add an Environment Template's `services` to
    the Job as external Services, scoped by the same rules as inline ones over
    the combined Job and never started when nothing lists them, match each
@@ -891,8 +928,9 @@ runner contract. The behavior specific to `SERVICE`:
 3. Before any Task of a Step runs, every Service whose scope includes the Step
    must be started in a Service Session of its own — after the Steps in its
    `dependencies` have completed and the Services in it are READY,
-   entering the Job Environments whose `runScope` includes `SERVICE` (an
-   Environment that lists a Service and gives no `runScope` is `[TASK]`),
+   entering the Job Environments its Sessions enter (every `ALWAYS` one that
+   does not list it and is not disabled for it by `enableIf`, and every
+   `ON_REQUEST` one it requests), with its own effective values,
    allocating its ports in each port's own `protocol` space,
    running `onEnter`, launching `onRun`, and probing it with its health check
    every `readinessIntervalSeconds` — and be READY.
@@ -906,16 +944,16 @@ runner contract. The behavior specific to `SERVICE`:
    exit, and take the restart decision below.
 5. An `onRun` exit while the scope has work, a ready timeout, or an UNHEALTHY
    instance is an instance failure governed by `restartPolicy`: relaunch up to
-   `maxAttempts` times, applying `completedTasks`; otherwise fail the scope. A
+   `maxRestarts` times, applying `completedTasks`; otherwise fail the scope. A
    failure before `onRun` is launched (an Environment's or the Service's
-   `onEnter` exiting non-zero) is a start failure that consumes an attempt and
+   `onEnter` exiting non-zero) is a start failure that consumes a restart and
    must be relaunched in a new Service Session. In every case the Service
    Session must be ended (`onRun` and any in-flight `onHealthCheck` canceled,
    `onExit` run if any action of the Service ran, Environments exited) when the
    scope completes or fails — that is, when no Step in the Service's scope has
    a Task left to run — a Service being stopped before any Service it depends
    on.
-6. Under `WRAP_ACTIONS`, a wrapping Environment whose `runScope` includes
-   `SERVICE` must run its `onWrapService*` hooks in place of the Service's
+6. Under `WRAP_ACTIONS`, a wrapping Environment that a Service Session enters
+   must run its `onWrapService*` hooks in place of the Service's
    actions with `WrappedAction.*` and `WrappedService.*` populated, scanning
    the wrap script's stdout for `openjd_*` messages.

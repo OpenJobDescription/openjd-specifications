@@ -1,0 +1,33 @@
+# Section 4 item 3 (RFC 0009): an Environment that lists a Service in
+# `dependencies` is not entered by that Service's Sessions, even when it never
+# references the Service's endpoint. The template is valid; Client is not
+# entered in Store's Session, and Step1 is in Store's scope through the
+# dependency.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Client
+  dependencies:
+  - service: Store
+  variables:
+    GREETING: hello
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port }}"]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

@@ -6,7 +6,7 @@
 # Environment defined alongside it lists it. Both must start before the Task.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: ExternalSameNameAsInlineService
   services:
   - name: Store
@@ -33,7 +33,7 @@ template:
 
 environments:
 - specificationVersion: environment-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   services:
   - name: Store
     ports:

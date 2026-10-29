@@ -4,7 +4,7 @@
 # is not scheduled until then, so it never sees a refused connection.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: CommandHealthCheck
   services:
   - name: Slow

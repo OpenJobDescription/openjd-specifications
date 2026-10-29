@@ -1,0 +1,33 @@
+# Section 4 (RFC 0009): earlier drafts of RFC 0009 gave <Environment> a
+# `runScope` list of Session kinds. It is not a property of <Environment>;
+# RFC 0010's `activation` replaces it, and `runScope` is an unknown property
+# even in a template that lists SERVICE and ENV_PARAMS.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Client
+  dependencies:
+  - service: Store
+  runScope: [TASK]
+  variables:
+    STORE_PORT: "{{ Service.Store.main.port }}"
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

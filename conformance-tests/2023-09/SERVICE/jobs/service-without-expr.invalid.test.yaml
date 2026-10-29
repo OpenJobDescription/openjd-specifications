@@ -2,7 +2,7 @@
 # lists SERVICE alone must be rejected.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE]
+  extensions: [SERVICE, ENV_PARAMS]
   name: ServiceWithoutExpr
   services:
   - name: Store

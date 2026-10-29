@@ -4,7 +4,7 @@
 # delay, and only then does the Task run. A second emission has no effect.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: ReadyOnlyFromOnRun
   services:
   - name: Store

@@ -1,11 +1,12 @@
 # Section 9.3 (RFC 0009): the numeric @fmtstring fields -- <ServicePort>.port,
 # <ServiceHealthCheck>.readinessTimeoutSeconds and readinessIntervalSeconds (see
 # 9.3--health-numeric-fields-from-param for all four), and
-# <ServiceRestartPolicy>.maxAttempts -- may be format strings over Param.*,
+# <ServiceRestartPolicy>.maxRestarts -- may be format strings over Param.*,
 # RawParam.*, Job.Name, and <Service>.let bindings, resolved at job creation.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
+- ENV_PARAMS
 - EXPR
 name: TestJob
 parameterDefinitions:
@@ -18,7 +19,7 @@ parameterDefinitions:
 services:
 - name: Store
   let:
-  - attempts = 1 if Param.Patience > 30 else 0
+  - restarts = 1 if Param.Patience > 30 else 0
   ports:
   - name: main
     port: "{{ Param.Port }}"
@@ -27,7 +28,7 @@ services:
     readinessIntervalSeconds: "{{ Param.Patience // 10 }}"
     readinessTimeoutSeconds: "{{ Param.Patience }}"
   restartPolicy:
-    maxAttempts: "{{ attempts }}"
+    maxRestarts: "{{ restarts }}"
     completedTasks: KEEP
   script:
     actions:

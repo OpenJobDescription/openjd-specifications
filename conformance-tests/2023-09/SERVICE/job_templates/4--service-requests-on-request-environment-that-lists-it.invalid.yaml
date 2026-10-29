@@ -1,0 +1,36 @@
+# Section 3.2 constraint 3 (RFC 0009): an `environment:` entry by Service Store
+# for an Environment that lists Store in its `dependencies` is the edge
+# Store -> Store in the dependency graph, a cycle: it says that Store's
+# Sessions enter an Environment that waits for Store to be READY. Here the
+# Environment is `activation: ON_REQUEST`.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Env1
+  dependencies:
+  - service: Store
+  activation: ON_REQUEST
+  variables:
+    STORE_PORT: "{{ Service.Store.main.port }}"
+services:
+- name: Store
+  dependencies:
+  - environment: Env1
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
