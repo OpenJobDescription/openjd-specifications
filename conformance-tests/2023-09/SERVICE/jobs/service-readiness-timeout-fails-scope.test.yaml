@@ -4,13 +4,13 @@
 # invocation in progress when the Session ends is canceled before onExit),
 # "Failure and restart" step 4, and lifecycle constraints 6-7 (Template
 # Schemas §9.4, §9.7.1): a COMMAND check whose onHealthCheck never
-# finishes inside readinessTimeoutSeconds. With the default maxAttempts of 0 the
+# finishes inside readinessTimeoutSeconds. With the default maxRestarts of 0 the
 # Service becomes FAILED and fails the Job before any Task runs; the
 # in-flight check is canceled (CHECK_FINISHED never prints) and onExit still
 # runs because an action of the Service ran.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: ReadyTimeoutFailsScope
   services:
   - name: Slow

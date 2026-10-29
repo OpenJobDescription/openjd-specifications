@@ -7,7 +7,7 @@
 # plain onEnter-set variable, and the onEnter override of a declared one.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: OnEnterOpenjdEnvReachesHealthCheck
   services:
   - name: Store

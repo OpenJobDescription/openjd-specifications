@@ -2,13 +2,13 @@
 # How Jobs Are Run "Service failure and restart"): an openjd_fail message on
 # onRun's stdout is itself an instance failure. The runtime cancels onRun at
 # once with its cancelation method (TERMINATE here) and takes the restart
-# decision with the message as the reason: with maxAttempts: 1 and KEEP a
+# decision with the message as the reason: with maxRestarts: 1 and KEEP a
 # second instance is launched. Instance 1 prints openjd_fail after Task 1 has
 # been served and then tries to keep running; the cancel must reach it before
 # INSTANCE 1 SURVIVED prints. Task 1 (running under KEEP) keeps its result.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: OnRunOpenjdFailCancelsAndRelaunches
   services:
   - name: Store
@@ -18,7 +18,7 @@ template:
       type: STDOUT
       readinessTimeoutSeconds: 60
     restartPolicy:
-      maxAttempts: 1
+      maxRestarts: 1
       completedTasks: KEEP
     script:
       actions:

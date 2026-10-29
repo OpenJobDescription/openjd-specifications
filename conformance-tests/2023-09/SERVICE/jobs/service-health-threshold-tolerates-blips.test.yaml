@@ -3,11 +3,11 @@
 # successful probe resets the count". The COMMAND probe fails exactly twice
 # after READY and then recovers; with failureThreshold: 3 the instance stays
 # READY, nothing is relaunched, and every Task is served by instance 1.
-# maxAttempts: 1 is given so that a wrongly triggered relaunch shows up as
+# maxRestarts: 1 is given so that a wrongly triggered relaunch shows up as
 # INSTANCE 2 rather than as a failed Job.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: HealthThresholdToleratesBlips
   services:
   - name: Store
@@ -20,7 +20,7 @@ template:
       healthIntervalSeconds: 1
       failureThreshold: 3
     restartPolicy:
-      maxAttempts: 1
+      maxRestarts: 1
       completedTasks: KEEP
     script:
       actions:

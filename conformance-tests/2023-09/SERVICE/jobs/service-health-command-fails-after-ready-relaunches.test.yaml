@@ -2,14 +2,14 @@
 # constraint 11, and "Failure and restart": a COMMAND probe that passes until
 # Task 1 writes a marker, then fails. With healthIntervalSeconds: 1 and
 # failureThreshold: 2, two consecutive failed probes make instance 1 UNHEALTHY,
-# an instance failure: onRun is canceled and, with maxAttempts: 1 and KEEP, a
+# an instance failure: onRun is canceled and, with maxRestarts: 1 and KEEP, a
 # second instance is launched. Instance 2 clears the marker, passes a probe,
 # and serves the remaining Tasks. Task 1 (running under KEEP) completes against
 # instance 1 and keeps its result. Whether the relaunch reuses the Service
 # Session is the scheduler's choice and is not asserted.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: HealthCommandFailsAfterReadyRelaunches
   services:
   - name: Store
@@ -22,7 +22,7 @@ template:
       healthIntervalSeconds: 1
       failureThreshold: 2
     restartPolicy:
-      maxAttempts: 1
+      maxRestarts: 1
       completedTasks: KEEP
     script:
       actions:

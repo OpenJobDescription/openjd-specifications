@@ -8,7 +8,7 @@
 # masked in the log, and nothing set within a Service reaches the Task.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR, REDACTED_ENV_VARS]
+  extensions: [SERVICE, ENV_PARAMS, EXPR, REDACTED_ENV_VARS]
   name: OnEnterRedactedEnvWithExtension
   services:
   - name: Store

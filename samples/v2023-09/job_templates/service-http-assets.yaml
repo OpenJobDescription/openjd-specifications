@@ -16,7 +16,7 @@
 #     the runtime can connect to the port;
 #   - prepares its asset directory once in onEnter, hands the directory name to
 #     onRun with openjd_env, and cleans up in onExit;
-#   - may be relaunched once if it exits (restartPolicy.maxAttempts: 1); the
+#   - may be relaunched once if it exits (restartPolicy.maxRestarts: 1); the
 #     assets are static, so completed Tasks are kept (completedTasks: KEEP).
 #
 # The "Fetch" Step declares that it depends on the Service with
@@ -50,6 +50,7 @@
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
+- ENV_PARAMS
 - EXPR
 name: ServiceHttpAssets
 
@@ -73,7 +74,7 @@ services:
     type: TCP_CONNECT
     readinessTimeoutSeconds: 60
   restartPolicy:
-    maxAttempts: 1
+    maxRestarts: 1
     completedTasks: KEEP
   script:
     actions:
@@ -132,7 +133,7 @@ services:
 steps:
 - name: Fetch
   # A Step depends on a Service as it depends on a Step; `service` names a
-  # Service as `dependsOn` names a Step. Fetch's Tasks are scheduled only once
+  # Service as `step` names a Step. Fetch's Tasks are scheduled only once
   # AssetServer is READY.
   dependencies:
   - service: AssetServer

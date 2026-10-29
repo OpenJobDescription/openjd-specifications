@@ -4,7 +4,7 @@
 # .connectAddress resolve in the Task to the attached Service's endpoint.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: RequiredSatisfied
   externalServices:
   - name: Ext
@@ -22,7 +22,7 @@ template:
 
 environments:
 - specificationVersion: environment-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   services:
   - name: Ext
     ports:

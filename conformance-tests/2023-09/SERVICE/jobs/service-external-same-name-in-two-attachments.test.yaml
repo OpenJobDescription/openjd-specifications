@@ -5,11 +5,20 @@
 # lists its own Cache, so both Services start, each resolving its own
 # Service.Cache.main.port, and the Job Template — which declares no Service —
 # runs its Task once both are READY.
+#
+# Both client Environments are ON_REQUEST and requested by the Step. Were
+# they ALWAYS, each Cache's Sessions would enter the other document's client
+# Environment, which lists the other Cache, and the two Services would form
+# the cycle Cache -> Cache -> Cache (`<StepDependency>` constraint 3).
 template:
   specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
   name: TwoAttachmentsSameName
   steps:
   - name: Use
+    dependencies:
+    - environment: FirstCacheClient
+    - environment: SecondCacheClient
     script:
       actions:
         onRun:
@@ -18,7 +27,7 @@ template:
 
 environments:
 - specificationVersion: environment-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   services:
   - name: Cache
     ports:
@@ -34,12 +43,13 @@ environments:
             mode: TERMINATE
   environment:
     name: FirstCacheClient
+    activation: ON_REQUEST
     dependencies:
     - service: Cache
     variables:
       FIRST_CACHE_PORT: "{{ Service.Cache.main.port }}"
 - specificationVersion: environment-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   services:
   - name: Cache
     ports:
@@ -55,6 +65,7 @@ environments:
             mode: TERMINATE
   environment:
     name: SecondCacheClient
+    activation: ON_REQUEST
     dependencies:
     - service: Cache
     variables:

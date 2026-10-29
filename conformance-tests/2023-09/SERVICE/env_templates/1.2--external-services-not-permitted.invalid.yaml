@@ -4,6 +4,7 @@
 specificationVersion: environment-2023-09
 extensions:
 - SERVICE
+- ENV_PARAMS
 - EXPR
 externalServices:
 - name: Ext

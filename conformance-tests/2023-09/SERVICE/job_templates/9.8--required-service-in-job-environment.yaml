@@ -1,10 +1,11 @@
-# Section 9.8 item 2 / Section 4 item 4 (RFC 0009): a required Service's
+# Section 9.8 item 2 / Section 4 item 3 (RFC 0009): a required Service's
 # `port` and `connectAddress` are in scope in a Job Environment that lists
-# `service: Ext` in its `dependencies`, whose runScope then defaults to [TASK],
-# and in a Step Environment, which follows its Step's `service: Ext`.
+# `service: Ext` in its `dependencies`, and in a Step Environment, which
+# follows its Step's `service: Ext`.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
+- ENV_PARAMS
 - EXPR
 name: TestJob
 jobEnvironments:

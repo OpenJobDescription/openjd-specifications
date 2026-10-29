@@ -4,11 +4,11 @@
 # per interval. It heartbeats every 0.3 seconds until it has answered Task 1,
 # then stops while continuing to serve. With healthIntervalSeconds: 1 and
 # failureThreshold: 2, two intervals without a line make the instance
-# UNHEALTHY, an instance failure; with the default maxAttempts of 0 the Job
+# UNHEALTHY, an instance failure; with the default maxRestarts of 0 the Job
 # fails, Task 2 never starts, and onExit runs.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: HealthStdoutHeartbeatMissed
   services:
   - name: Store

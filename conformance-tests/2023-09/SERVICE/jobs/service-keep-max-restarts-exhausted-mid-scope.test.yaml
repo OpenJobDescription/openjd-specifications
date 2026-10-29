@@ -1,0 +1,94 @@
+# RFC 0009 "Failure and restart" step 4 and Template Schemas §9.5 ("If
+# maxRestarts is exhausted, an instance failure fails the scope regardless of
+# completedTasks"), lifecycle constraints 6-7: the same shape as
+# service-keep-relaunch, but with the default maxRestarts of 0. The instance
+# exits shortly after answering Task 1, while the scope still has Tasks 2 and
+# 3 to run. No relaunch is available, so the Service becomes FAILED and the
+# Job fails: Tasks 2 and 3 never start, and the Service Session is still
+# ended normally so onExit runs. Whether Task 1 (already running under KEEP)
+# completes is a scheduler choice and is not asserted.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: KeepMaxRestartsExhaustedMidScope
+  services:
+  - name: Flaky
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+      readinessTimeoutSeconds: 60
+    restartPolicy:
+      maxRestarts: 0
+      completedTasks: KEEP
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Flaky.main.bindAddress }}", "{{ Service.Flaky.main.port }}"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "print('FLAKY_EXIT_RAN')"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys, time
+          host, port = sys.argv[1], int(sys.argv[2])
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready: instance 1", flush=True)
+          while True:
+              c, _ = s.accept()
+              msg = c.recv(64).decode()
+              c.sendall(b"1")
+              c.close()
+              if msg == "task 1":
+                  # Exit shortly after Task 1 has its answer, while Task 1 is
+                  # still running: an instance failure with no restarts left.
+                  time.sleep(0.3)
+                  print("INSTANCE 1 EXITING", flush=True)
+                  sys.exit(1)
+  steps:
+  - name: Work
+    dependencies:
+    - service: Flaky
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: N
+        type: INT
+        range: "1-3"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Service.Flaky.main.connectAddress }}", "{{ Service.Flaky.main.port }}", "{{ Task.Param.N }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import socket, sys, time
+          host, port, n = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          c = socket.create_connection((host, port), timeout=10)
+          c.sendall(("task " + n).encode())
+          instance = c.recv(64).decode()
+          c.close()
+          print("TASK", n, "GOT INSTANCE", instance, flush=True)
+          time.sleep(1.5)
+          print("TASK", n, "INSTANCE", instance, "DONE", flush=True)
+
+expected:
+  taskFailure: {}
+  output:
+  - TASK 1 GOT INSTANCE 1
+  - INSTANCE 1 EXITING
+  - FLAKY_EXIT_RAN
+  forbidden:
+  - TASK 2 GOT
+  - TASK 3 GOT
