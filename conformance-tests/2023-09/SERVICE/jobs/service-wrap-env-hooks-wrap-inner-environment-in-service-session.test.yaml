@@ -1,11 +1,12 @@
 # RFC 0009 "Services run inside Environments" / Template Schemas §4.3
-# constraint 6: in a Service Session, a SERVICE-scoped wrapping Environment
-# wraps the inner Environments the Session enters with onWrapEnvEnter and
-# onWrapEnvExit, as in any Session, while the Task Session (which the
-# wrapper does not enter) runs the inner Environment's actions unwrapped.
+# constraint 6: in a Service Session, a wrapping Environment that the Service
+# requests (`activation: ON_REQUEST`) wraps the inner Environments the Session
+# enters with onWrapEnvEnter and onWrapEnvExit, as in any Session, while the
+# Task Session (which does not request the wrapper) runs the inner
+# Environment's actions unwrapped.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: WrapInnerEnvironmentInServiceSession
   jobEnvironments:
   - name: Tooling
@@ -19,6 +20,8 @@ template:
           args: ["TOOLING_EXIT"]
   services:
   - name: Store
+    dependencies:
+    - environment: ServiceWrapper
     ports:
     - name: main
     healthCheck:
@@ -42,10 +45,10 @@ template:
 
 environments:
 - specificationVersion: environment-2023-09
-  extensions: [WRAP_ACTIONS, SERVICE, EXPR]
+  extensions: [WRAP_ACTIONS, SERVICE, ENV_PARAMS, EXPR]
   environment:
     name: ServiceWrapper
-    runScope: [SERVICE]
+    activation: ON_REQUEST
     script:
       actions:
         onWrapEnvEnter:

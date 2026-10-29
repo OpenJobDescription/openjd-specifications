@@ -9,7 +9,7 @@
 # the reference runner's do); Beta's Task deletes it.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: ScopeOneStepEach
   services:
   - name: AlphaCoordinator

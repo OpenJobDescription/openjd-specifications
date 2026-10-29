@@ -3,7 +3,7 @@
 # submission must be rejected; the template itself is valid on its own.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: RequiredUnsatisfied
   externalServices:
   - name: Ext

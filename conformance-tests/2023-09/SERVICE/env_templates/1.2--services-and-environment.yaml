@@ -1,10 +1,12 @@
-# Section 1.2.2 (RFC 0009 example 3): one document defines a Service and a
-# TASK-scoped Environment that publishes its endpoint to Tasks through
-# environment variables; the Environment lists the Service in `dependencies`,
-# which is what lets it reference the Service's `port` and `connectAddress`.
+# Section 1.2.2 (RFC 0009 example 3): one document defines a Service and an
+# Environment that publishes its endpoint to Tasks through environment
+# variables; the Environment lists the Service in `dependencies`, which is what
+# lets it reference the Service's `port` and `connectAddress`, and keeps the
+# Service's own Session out of it.
 specificationVersion: environment-2023-09
 extensions:
 - SERVICE
+- ENV_PARAMS
 - EXPR
 parameterDefinitions:
 - name: CacheSize
@@ -23,7 +25,6 @@ environment:
   name: CacheClient
   dependencies:
   - service: Cache
-  runScope: [TASK]
   variables:
     CACHE_HOST: "{{ Service.Cache.main.connectAddress }}"
     CACHE_PORT: "{{ Service.Cache.main.port }}"

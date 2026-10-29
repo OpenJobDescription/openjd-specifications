@@ -1,0 +1,26 @@
+# Section 4.3 WRAP_ACTIONS constraint 6 (RFC 0009): a wrapping Environment must
+# define the hook for every kind of action that a kind of Session entering it
+# may run. Whether a Service Session enters an attached Environment is known
+# only for the combined Job (Section 1.2.2 item 4), so an Environment Template
+# that declares SERVICE and defines RFC 0008's three hooks alone is valid on
+# its own; it is rejected at submission only in a Job with a Service whose
+# Sessions enter it (jobs/service-wrapper-three-hooks-entered-by-service).
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- SERVICE
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Wrapper
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapEnvExit:
+        command: python
+        args: ["-c", "print()"]
+      onWrapTaskRun:
+        command: python
+        args: ["-c", "print()"]

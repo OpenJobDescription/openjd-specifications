@@ -1,0 +1,44 @@
+# Section 4 item 3 / Section 9 scope rule 4 (RFC 0009): a Job Environment
+# may reference the `port` and `connectAddress` of a Service it lists in
+# `dependencies`, in its variables, actions, and embedded files. The listed
+# Service's own Session does not enter it, and the listing puts every Step in
+# the Service's scope (Section 9.1 rule 3).
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Client
+  dependencies:
+  - service: Store
+  variables:
+    STORE_HOST: "{{ Service.Store.main.connectAddress }}"
+    STORE_PORT: "{{ Service.Store.main.port }}"
+  script:
+    actions:
+      onEnter:
+        command: python
+        args: ["{{ Env.File.Setup }}"]
+    embeddedFiles:
+    - name: Setup
+      type: TEXT
+      data: |
+        print("{{ join_host_port(Service.Store.main.connectAddress, Service.Store.main.port) }}")
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

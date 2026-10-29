@@ -4,11 +4,11 @@
 specificationVersion: environment-2023-09
 extensions:
 - SERVICE
+- ENV_PARAMS
 - EXPR
 environment:
   name: Client
   dependencies:
   - service: Store
-  runScope: [TASK]
   variables:
     STORE_PORT: "{{ Service.Store.main.port }}"

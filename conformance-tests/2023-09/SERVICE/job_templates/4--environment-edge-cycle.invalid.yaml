@@ -1,0 +1,42 @@
+# Section 3.2 constraint 3 (RFC 0009): Front lists Back (Front -> Back), and
+# Back's Session enters the ALWAYS Environment FrontClient, which lists Front
+# (Back -> Front). The two edges form a cycle, which is rejected at template
+# validation, naming it.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: FrontClient
+  dependencies:
+  - service: Front
+  variables:
+    FRONT_PORT: "{{ Service.Front.main.port }}"
+services:
+- name: Front
+  dependencies:
+  - service: Back
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+- name: Back
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

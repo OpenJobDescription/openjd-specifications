@@ -1,0 +1,35 @@
+# Section 3.2 constraint 3 / Section 4 item 3 (RFC 0009): a Service's Sessions
+# do not enter an `activation: ALWAYS` Environment that lists that Service,
+# but the exception applies only where no entry is written. Store's explicit
+# `environment: Client` entry is the edge Store -> Store, a cycle, and is
+# rejected rather than ignored.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Client
+  dependencies:
+  - service: Store
+  variables:
+    GREETING: hello
+services:
+- name: Store
+  dependencies:
+  - environment: Client
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port }}"]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

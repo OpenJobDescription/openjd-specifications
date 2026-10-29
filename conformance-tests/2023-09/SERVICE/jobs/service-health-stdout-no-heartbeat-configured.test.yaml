@@ -3,11 +3,11 @@
 # instance is that its onRun process is still running. The service prints
 # `openjd_service_ready` exactly once and never again; the Tasks take long
 # enough between them that any wrongly assumed heartbeat interval would have
-# elapsed several times over. With the default maxAttempts of 0 a wrongly
+# elapsed several times over. With the default maxRestarts of 0 a wrongly
 # detected UNHEALTHY instance would fail the Job; instead every Task runs.
 template:
   specificationVersion: jobtemplate-2023-09
-  extensions: [SERVICE, EXPR]
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
   name: HealthStdoutNoHeartbeatConfigured
   services:
   - name: Store
