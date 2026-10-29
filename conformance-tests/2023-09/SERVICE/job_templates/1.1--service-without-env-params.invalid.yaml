@@ -1,0 +1,26 @@
+# Backward compatibility (RFC 0009): a template that lists SERVICE must also
+# list ENV_PARAMS, which supplies the `environment:` entries and the
+# `activation` rule a Service's Sessions follow. EXPR alone is not enough.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

@@ -1,0 +1,49 @@
+# Section 1.1 item 9 constraint 2: `externalServices` must not contain more
+# than 10 elements.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+externalServices:
+- name: Ext1
+  ports:
+  - name: main
+- name: Ext2
+  ports:
+  - name: main
+- name: Ext3
+  ports:
+  - name: main
+- name: Ext4
+  ports:
+  - name: main
+- name: Ext5
+  ports:
+  - name: main
+- name: Ext6
+  ports:
+  - name: main
+- name: Ext7
+  ports:
+  - name: main
+- name: Ext8
+  ports:
+  - name: main
+- name: Ext9
+  ports:
+  - name: main
+- name: Ext10
+  ports:
+  - name: main
+- name: Ext11
+  ports:
+  - name: main
+steps:
+- name: Use
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

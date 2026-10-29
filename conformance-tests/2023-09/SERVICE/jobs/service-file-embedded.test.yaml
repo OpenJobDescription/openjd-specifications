@@ -1,0 +1,60 @@
+# Template Schemas §9.6 item 3 / §7.3.1: Service.File.<name> is the location
+# of an embedded file of the Service, available in its actions, in other
+# embedded files, and in <ServiceScript>.let. The Service reads its config
+# file (whose content references the Service's own endpoint) and serves it.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: ServiceFile
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      let:
+      - config_path = Service.File.Conf
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ config_path }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Conf
+        type: TEXT
+        filename: store.conf
+        data: |
+          bind={{ Service.Store.main.bindAddress }}
+          port={{ Service.Store.main.port }}
+          greeting=HELLO_FROM_CONF
+      - name: Serve
+        type: TEXT
+        data: |
+          import os, socket, sys
+          conf = dict(line.strip().split("=", 1) for line in open(sys.argv[1]) if "=" in line)
+          print("CONF_BASENAME", os.path.basename(sys.argv[1]), flush=True)
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((conf["bind"], int(conf["port"])))
+          s.listen(16)
+          print("openjd_service_ready: configured", flush=True)
+          while True:
+              c, _ = s.accept()
+              c.sendall(conf["greeting"].encode())
+              c.close()
+  steps:
+  - name: Use
+    dependencies:
+    - service: Store
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import socket,sys; c=socket.create_connection((sys.argv[1], int(sys.argv[2])), timeout=10); print('TASK_GOT', c.recv(64).decode(), flush=True)", "{{ Service.Store.main.connectAddress }}", "{{ Service.Store.main.port }}"]
+
+expected:
+  output:
+  - CONF_BASENAME store.conf
+  - TASK_GOT HELLO_FROM_CONF

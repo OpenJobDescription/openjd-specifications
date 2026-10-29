@@ -1,0 +1,120 @@
+# RFC 0009 / Template Schemas §4.3 constraint 6 and §4.3.1: a wrapping
+# Environment Template that the Service requests (`activation: ON_REQUEST`,
+# the shape of a queue's container launcher for Services) defines
+# onWrapEnvEnter, onWrapEnvExit, and the four onWrapService* hooks. Each
+# Service hook runs in place of the Service's action, receives the wrapped
+# action through WrappedAction.* and the Service's identity and ports through
+# WrappedService.* (four parallel lists), and forwards the wrapped process's
+# stdout verbatim -- which is how the wrapped onRun's `openjd_service_ready`
+# and the health check's exit status are honored. onWrapServiceHealthCheck
+# runs concurrently with onWrapServiceRun. The wrapping Environment is not
+# entered for the Task.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: WrapServiceScopedHooks
+  services:
+  - name: Store
+    dependencies:
+    - environment: ServiceWrapper
+    ports:
+    - name: main
+    - name: admin
+    healthCheck:
+      type: COMMAND
+      readinessIntervalSeconds: 1
+      readinessTimeoutSeconds: 60
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: ["SERVICE_ENTER_ORIGINAL"]
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Store.main.bindAddress }}", "{{ Service.Store.main.port }}"]
+          cancelation:
+            mode: TERMINATE
+        onHealthCheck:
+          command: python
+          args: ["-c", "import socket,sys; socket.create_connection((sys.argv[1], int(sys.argv[2])), timeout=1).close(); print('CHECK_ORIGINAL_OK')", "{{ Service.Store.main.connectAddress }}", "{{ Service.Store.main.port }}"]
+        onExit:
+          command: echo
+          args: ["SERVICE_EXIT_ORIGINAL"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((sys.argv[1], int(sys.argv[2])))
+          s.listen(16)
+          print("STORE_LISTENING", flush=True)
+          while True:
+              c, _ = s.accept()
+              c.sendall(b"hello")
+              c.close()
+  steps:
+  - name: Use
+    dependencies:
+    - service: Store
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import socket,sys; c=socket.create_connection((sys.argv[1], int(sys.argv[2])), timeout=10); print('TASK_GOT', c.recv(64).decode(), flush=True)", "{{ Service.Store.main.connectAddress }}", "{{ Service.Store.main.port }}"]
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [WRAP_ACTIONS, SERVICE, ENV_PARAMS, EXPR]
+  environment:
+    name: ServiceWrapper
+    activation: ON_REQUEST
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: bash
+          args: ["-c", "echo WRAP_ENV_ENTER={{ WrappedEnv.Name }}; exec {{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"]
+        onWrapEnvExit:
+          command: bash
+          args: ["-c", "echo WRAP_ENV_EXIT={{ WrappedEnv.Name }}; exec {{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"]
+        onWrapServiceEnter:
+          command: bash
+          args: ["-c", "echo WRAP_SERVICE_ENTER={{ WrappedService.Name }}; exec {{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"]
+        onWrapServiceRun:
+          command: bash
+          args:
+          - "-c"
+          # The four lists are parallel: index i of each describes port i.
+          # WrappedService.Ports is list[int], so convert before quoting.
+          - "echo WRAP_SERVICE_RUN_PORTNAMES={{ repr_sh(WrappedService.PortNames) }}; echo WRAP_SERVICE_RUN_PORTCOUNT={{ len(WrappedService.Ports) }}; echo WRAP_SERVICE_RUN_PROTOCOLS={{ repr_sh(WrappedService.Protocols) }}; echo WRAP_SERVICE_RUN_MAIN={{ join_host_port(WrappedService.BindAddresses[0], WrappedService.Ports[0]) }}; echo WRAP_SERVICE_RUN_FORWARD={{ repr_sh(flatten([['-p', string(p) + ':' + string(p)] for p in WrappedService.Ports])) }}; exec {{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapServiceHealthCheck:
+          command: bash
+          args: ["-c", "echo WRAP_SERVICE_CHECK={{ WrappedService.Name }}; exec {{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"]
+        onWrapServiceExit:
+          command: bash
+          args: ["-c", "echo WRAP_SERVICE_EXIT={{ WrappedService.Name }}; exec {{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"]
+
+runOn:
+- posix
+
+expected:
+  output:
+  - WRAP_SERVICE_ENTER=Store
+  - SERVICE_ENTER_ORIGINAL
+  - WRAP_SERVICE_RUN_PORTNAMES=main admin
+  - WRAP_SERVICE_RUN_PORTCOUNT=2
+  - WRAP_SERVICE_RUN_PROTOCOLS=TCP TCP
+  - "WRAP_SERVICE_RUN_MAIN=127.0.0.1:"
+  - "WRAP_SERVICE_RUN_FORWARD=-p "
+  - STORE_LISTENING
+  - WRAP_SERVICE_CHECK=Store
+  - CHECK_ORIGINAL_OK
+  - TASK_GOT hello
+  - WRAP_SERVICE_EXIT=Store
+  - SERVICE_EXIT_ORIGINAL
+  forbidden:
+  # No inner Environment is entered in the Service Session, and the wrapper
+  # is never entered for the Task, so the env hooks never run.
+  - WRAP_ENV_ENTER=
+  - WRAP_ENV_EXIT=

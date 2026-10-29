@@ -1,0 +1,33 @@
+# Section 9 scope rule 2 / Section 9.8 item 2 / Section 9.9 item 1 (RFC 0009):
+# an inline Service may reference a required Service's `port` and
+# `connectAddress` only when it lists `service: <name>` in its `dependencies`.
+# Proxy references Service.Ext.main without depending on Ext and is rejected.
+# Use depends on Service Proxy, so Proxy is not unused.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+externalServices:
+- name: Ext
+  ports:
+  - name: main
+services:
+- name: Proxy
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Ext.main.connectAddress }}", "{{ Service.Ext.main.port }}"]
+steps:
+- name: Use
+  dependencies:
+  - service: Proxy
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Proxy.main.port }}"]

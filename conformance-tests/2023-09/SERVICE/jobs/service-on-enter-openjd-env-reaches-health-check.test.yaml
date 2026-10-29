@@ -1,0 +1,53 @@
+# RFC 0009 <ServiceActions> "Environment variables within a Service" (Template
+# Schemas §9.7): a variable set with openjd_env by the Service's onEnter "is
+# set in the process environment of every subsequent action of the same
+# Service Session -- every instance of onRun, onHealthCheck, and onExit"
+# and "take[s] precedence over the Service's declarative variables". The
+# onHealthCheck of a COMMAND check sees the declarative variable, the
+# plain onEnter-set variable, and the onEnter override of a declared one.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: OnEnterOpenjdEnvReachesHealthCheck
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: COMMAND
+      readinessIntervalSeconds: 1
+      readinessTimeoutSeconds: 60
+    variables:
+      DECL: declared
+      OVERRIDE_ME: from-variables
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('openjd_env: OVERRIDE_ME=from-on-enter'); print('openjd_env: PLAIN=plain')"]
+        onRun:
+          command: python
+          args: ["-c", "import time; print('STORE_RUNNING', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+        onHealthCheck:
+          command: python
+          args: ["-c", "import os; print('CHECK_DECL=' + os.environ.get('DECL', 'unset')); print('CHECK_PLAIN=' + os.environ.get('PLAIN', 'unset')); print('CHECK_OVERRIDE=' + os.environ.get('OVERRIDE_ME', 'unset'))"]
+  steps:
+  - name: Use
+    dependencies:
+    - service: Store
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_RAN', {{ Service.Store.main.port }} > 0)"]
+
+expected:
+  output:
+  - CHECK_DECL=declared
+  - CHECK_PLAIN=plain
+  - CHECK_OVERRIDE=from-on-enter
+  - TASK_RAN True
+  forbidden:
+  - CHECK_OVERRIDE=from-variables

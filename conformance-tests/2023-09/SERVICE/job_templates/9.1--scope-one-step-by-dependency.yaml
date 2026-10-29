@@ -1,0 +1,36 @@
+# Section 9.1 rule 1 (RFC 0009): a Service that one Step lists in its
+# `dependencies` has that Step as its scope. It is started before the Step's
+# Tasks and stopped once the Step has no Task left to run; Step2, which
+# depends on Step1 but not on the Service, is outside its scope.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Coordinator
+  ports:
+  - name: api
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Coordinator
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print({{ Service.Coordinator.api.port }})"]
+- name: Step2
+  dependencies:
+  - dependsOn: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

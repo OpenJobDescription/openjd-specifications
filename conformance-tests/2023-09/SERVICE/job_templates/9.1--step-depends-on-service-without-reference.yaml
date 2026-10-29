@@ -1,0 +1,30 @@
+# Section 9.1 rule 1 (RFC 0009): a dependency is a declaration, not an
+# inference from format strings. Use depends on Service Store and never
+# references Service.Store.*; it is in Store's scope all the same, so Store is
+# READY before Use's Tasks run and is stopped once they complete. This is how
+# a Step that reaches a Service through a file or a wrapper declares the
+# dependency.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port }}"]
+steps:
+- name: Use
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

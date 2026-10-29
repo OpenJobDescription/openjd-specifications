@@ -1,0 +1,24 @@
+# Section 1.2.2 / Section 9 item 5: external Services belong to the Job, so
+# Job.Name and the document's own parameters are available within them.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+parameterDefinitions:
+- name: Region
+  type: STRING
+  default: local
+services:
+- name: Cache
+  let:
+  - label = Job.Name + "/" + Param.Region
+  ports:
+  - name: main
+  variables:
+    CACHE_LABEL: "{{ label }}"
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Job.Name }}", "{{ Param.Region }}"]

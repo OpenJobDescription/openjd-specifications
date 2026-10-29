@@ -1,0 +1,44 @@
+# Section 9.7: a Service may define onEnter, onRun, onHealthCheck (with a
+# COMMAND check), and onExit, each an ordinary <Action> with timeout and
+# cancelation.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  healthCheck:
+    type: COMMAND
+  script:
+    actions:
+      onEnter:
+        command: python
+        args: ["-c", "print()"]
+        timeout: 60
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+        cancelation:
+          mode: NOTIFY_THEN_TERMINATE
+          notifyPeriodInSeconds: 30
+      onHealthCheck:
+        command: python
+        args: ["-c", "print()"]
+        timeout: 5
+      onExit:
+        command: python
+        args: ["-c", "print()"]
+        timeout: 30
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

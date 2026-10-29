@@ -1,0 +1,37 @@
+# Section 7.3.1 / Section 9 scope rule 2 (RFC 0009): a Service that depends
+# on another sees its `port` and `connectAddress` but not its `bindAddress`,
+# which is available only within the declaring Service.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Back
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]
+- name: Front
+  dependencies:
+  - service: Back
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Back.main.bindAddress }}"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Front
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]

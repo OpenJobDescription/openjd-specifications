@@ -1,0 +1,39 @@
+# Section 9.1 rule 3 (RFC 0009): a Job Environment with the default
+# `activation: ALWAYS` that lists `service: X` in its `dependencies` puts every
+# Step in X's scope, including Steps that neither list the Service nor mention
+# it, because every Step's Session enters the Job Environment. The Service is
+# listed by no Step, yet is not unused (rule 4).
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Client
+  dependencies:
+  - service: Coordinator
+  variables:
+    COORD_PORT: "{{ Service.Coordinator.main.port }}"
+services:
+- name: Coordinator
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+- name: Step2
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

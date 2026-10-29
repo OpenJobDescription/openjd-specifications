@@ -1,0 +1,23 @@
+# Section 1.1 item 9 / Section 9.8 (RFC 0009): a Job Template that reads an
+# external Service's endpoint declares the Service and the ports it uses in
+# `externalServices`. Service.Ext.main.port and .connectAddress are then in
+# scope in the Step's script without any Service being declared.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+externalServices:
+- name: Ext
+  ports:
+  - name: main
+steps:
+- name: Use
+  dependencies:
+  - service: Ext
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Ext.main.connectAddress }}", "{{ Service.Ext.main.port }}"]

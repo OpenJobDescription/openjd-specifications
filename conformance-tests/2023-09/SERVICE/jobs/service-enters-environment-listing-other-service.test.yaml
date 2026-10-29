@@ -1,0 +1,54 @@
+# RFC 0009 §4 item 3 / How Jobs Are Run § Services: Back's Session enters the
+# ALWAYS Environment FrontClient, which lists Front, so Back depends on Front
+# and starts once Front is READY, with FRONT_PORT set from Front's endpoint.
+# Front's own Session does not enter FrontClient.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: ServiceEntersEnvironmentListingOtherService
+  jobEnvironments:
+  - name: FrontClient
+    dependencies:
+    - service: Front
+    variables:
+      FRONT_PORT: "{{ Service.Front.main.port }}"
+  services:
+  - name: Front
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os, time; print('FRONT_SEES=' + os.environ.get('FRONT_PORT', 'unset'), flush=True); print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  - name: Back
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os, time; print('BACK_SEES_FRONT_PORT', os.environ.get('FRONT_PORT', 'unset').isdigit(), flush=True); print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  steps:
+  - name: Use
+    dependencies:
+    - service: Back
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os; print('TASK_SEES_FRONT_PORT', os.environ.get('FRONT_PORT', 'unset').isdigit())"]
+
+expected:
+  output:
+  - FRONT_SEES=unset
+  - BACK_SEES_FRONT_PORT True
+  - TASK_SEES_FRONT_PORT True

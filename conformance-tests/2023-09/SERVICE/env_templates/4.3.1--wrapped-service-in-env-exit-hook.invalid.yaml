@@ -1,0 +1,31 @@
+# Section 4 scope rule / Section 4.3.1: WrappedService.* is not available in
+# onWrapEnvExit.
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- SERVICE
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Wrapper
+  activation: ON_REQUEST
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapEnvExit:
+        command: python
+        args: ["-c", "print()", "{{ WrappedService.Name }} {{ WrappedService.Ports[0] }}"]
+      onWrapServiceEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceRun:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceHealthCheck:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceExit:
+        command: python
+        args: ["-c", "print()"]

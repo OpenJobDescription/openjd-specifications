@@ -1,0 +1,26 @@
+# Section 9.2: a Service's `name` must not be `File`, which is reserved for
+# `Service.File.*` embedded-file references.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: File
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: File
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

@@ -1,0 +1,96 @@
+# Template Schemas §1.2 item 3 / RFC 0009 "Environment Template" ("An
+# extension listed here applies to the content of this document only") and
+# Expression Language §2.2.4 (join_host_port / split_host_port are added by
+# SERVICE): the Job Template declares no `extensions` at all, while the
+# attached Environment Template declares [SERVICE, ENV_PARAMS, EXPR], defines
+# an external Service, and publishes its endpoint through a client Environment
+# that lists the Service in `dependencies` and whose `variables` compose the
+# address with join_host_port and take it apart again with split_host_port.
+# The Task connects using the joined address and never mentions Service.*
+# itself. The extension gating of the string functions is per document, so
+# the Job Template needs nothing.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: ExternalClientUsesServiceFunctions
+  steps:
+  - name: Process
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range: "1-2"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Task.Param.Frame }}"]
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import os, socket, sys
+          addr = os.environ["CACHE_ADDR"]
+          host, port = addr.rsplit(":", 1)
+          host = host.strip("[]")
+          print("CACHE_ADDR_HAS_PORT", port == os.environ["CACHE_PORT_FROM_SPLIT"] and port.isdigit(), flush=True)
+          print("CACHE_HOST_FROM_SPLIT_MATCHES", host == os.environ["CACHE_HOST_FROM_SPLIT"], flush=True)
+          c = socket.create_connection((host, int(port)), timeout=10)
+          c.sendall(b"GET x")
+          print("FRAME", sys.argv[1], "CACHE_SAYS", c.recv(64).decode(), flush=True)
+          c.close()
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  services:
+  - name: Cache
+    ports:
+    - name: main
+    healthCheck:
+      type: TCP_CONNECT
+      readinessTimeoutSeconds: 60
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Cache.main.bindAddress }}", "{{ Service.Cache.main.port }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port = sys.argv[1], int(sys.argv[2])
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("CACHE_LISTENING", flush=True)
+          while True:
+              c, _ = s.accept()
+              # A TCP_CONNECT health-check probe connects and closes without
+              # sending; recv may return b"" or raise on an abortive close.
+              try:
+                  data = c.recv(64)
+              except OSError:
+                  data = b""
+              if data:
+                  c.sendall(b"cached-value")
+              c.close()
+  environment:
+    name: CacheClient
+    dependencies:
+    - service: Cache
+    variables:
+      CACHE_ADDR: "{{ join_host_port(Service.Cache.main.connectAddress, Service.Cache.main.port) }}"
+      CACHE_HOST_FROM_SPLIT: "{{ split_host_port(join_host_port(Service.Cache.main.connectAddress, Service.Cache.main.port))[0] }}"
+      CACHE_PORT_FROM_SPLIT: "{{ split_host_port(join_host_port(Service.Cache.main.connectAddress, Service.Cache.main.port))[1] }}"
+
+expected:
+  output:
+  - CACHE_LISTENING
+  - CACHE_ADDR_HAS_PORT True
+  - CACHE_HOST_FROM_SPLIT_MATCHES True
+  - FRAME 1 CACHE_SAYS cached-value
+  - FRAME 2 CACHE_SAYS cached-value

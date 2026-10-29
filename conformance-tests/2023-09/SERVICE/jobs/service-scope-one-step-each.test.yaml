@@ -1,0 +1,130 @@
+# Template Schemas §9.1 rule 1 / How Jobs Are Run constraints 3, 4, and 6:
+# two Services, each listed in one Step's `dependencies`. Each has that Step
+# as its scope: it is started for the Step and stopped, with its onExit run,
+# when the Step completes, and each Step's Tasks reach their own Service.
+# Beta's Task, which depends on Alpha, finds Alpha's Coordinator already gone.
+#
+# Alpha's Task records its Coordinator's endpoint in a file in the host's temp
+# directory keyed by Job.Name (assuming both Steps' Tasks run on one host, as
+# the reference runner's do); Beta's Task deletes it.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: ScopeOneStepEach
+  services:
+  - name: AlphaCoordinator
+    ports:
+    - name: api
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.AlphaCoordinator.api.bindAddress }}", "{{ Service.AlphaCoordinator.api.port }}", "ALPHA"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "print('ALPHA_COORDINATOR_EXIT')"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port, tag = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready:", tag, flush=True)
+          while True:
+              c, _ = s.accept()
+              c.sendall(tag.encode())
+              c.close()
+  - name: BetaCoordinator
+    ports:
+    - name: api
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.BetaCoordinator.api.bindAddress }}", "{{ Service.BetaCoordinator.api.port }}", "BETA"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port, tag = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready:", tag, flush=True)
+          while True:
+              c, _ = s.accept()
+              c.sendall(tag.encode())
+              c.close()
+  steps:
+  - name: Alpha
+    dependencies:
+    - service: AlphaCoordinator
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Service.AlphaCoordinator.api.connectAddress }}", "{{ Service.AlphaCoordinator.api.port }}", "{{ Job.Name }}"]
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import os, socket, sys, tempfile
+          host, port, job = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          c = socket.create_connection((host, port), timeout=10)
+          print("ALPHA_TASK_GOT", c.recv(64).decode(), flush=True)
+          c.close()
+          with open(os.path.join(tempfile.gettempdir(), "openjd-" + job + ".port"), "w") as f:
+              f.write(host + "\n" + str(port))
+  - name: Beta
+    dependencies:
+    - dependsOn: Alpha
+    - service: BetaCoordinator
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Service.BetaCoordinator.api.connectAddress }}", "{{ Service.BetaCoordinator.api.port }}", "{{ Job.Name }}"]
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import os, socket, sys, tempfile
+          host, port, job = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          c = socket.create_connection((host, port), timeout=10)
+          print("BETA_TASK_GOT", c.recv(64).decode(), flush=True)
+          c.close()
+          path = os.path.join(tempfile.gettempdir(), "openjd-" + job + ".port")
+          with open(path) as f:
+              ahost, aport = f.read().split("\n")
+          os.remove(path)
+          try:
+              socket.create_connection((ahost, int(aport)), timeout=5).close()
+              gone = False
+          except OSError:
+              gone = True
+          print("ALPHA_COORDINATOR_GONE", gone, flush=True)
+
+expected:
+  output:
+  - ALPHA_TASK_GOT ALPHA
+  - ALPHA_COORDINATOR_EXIT
+  - BETA_TASK_GOT BETA
+  - ALPHA_COORDINATOR_GONE True
+  forbidden:
+  - ALPHA_TASK_GOT BETA
+  - BETA_TASK_GOT ALPHA
+  - ALPHA_COORDINATOR_GONE False

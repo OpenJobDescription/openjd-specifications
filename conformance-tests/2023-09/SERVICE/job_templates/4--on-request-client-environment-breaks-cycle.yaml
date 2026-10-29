@@ -1,0 +1,45 @@
+# Section 3.2 constraint 3 (RFC 0009): the remedy for the cycle in
+# 4--environment-edge-cycle.invalid is to make the client Environment
+# `activation: ON_REQUEST`, so that Back's Session does not enter it. Only the
+# Step requests it, so the graph has no Back -> Front edge and is acyclic.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: FrontClient
+  activation: ON_REQUEST
+  dependencies:
+  - service: Front
+  variables:
+    FRONT_PORT: "{{ Service.Front.main.port }}"
+services:
+- name: Front
+  dependencies:
+  - service: Back
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+- name: Back
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - environment: FrontClient
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

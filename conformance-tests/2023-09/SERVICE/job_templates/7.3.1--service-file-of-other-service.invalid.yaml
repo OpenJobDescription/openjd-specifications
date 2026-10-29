@@ -1,0 +1,39 @@
+# Section 7.3.1: `Service.File.<name>` is scoped to the declaring Service; a
+# Service cannot reference another Service's embedded files.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Back
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["{{ Service.File.Serve }}"]
+    embeddedFiles:
+    - name: Serve
+      type: TEXT
+      data: "print()"
+- name: Front
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.File.Serve }}"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Back
+  - service: Front
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]

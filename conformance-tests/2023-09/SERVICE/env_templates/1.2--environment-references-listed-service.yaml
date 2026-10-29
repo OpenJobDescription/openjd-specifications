@@ -1,0 +1,24 @@
+# Section 1.2 item 5 / Section 4 item 3 (RFC 0009): the Environment may list
+# the document's Services in `dependencies` and reference their endpoints.
+# The listed Service's own Session does not enter it, since the Environment
+# waits for that Service to be READY.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+services:
+- name: Cache
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]
+environment:
+  name: CacheClient
+  dependencies:
+  - service: Cache
+  variables:
+    CACHE_PORT: "{{ Service.Cache.main.port }}"

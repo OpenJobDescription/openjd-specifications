@@ -1,0 +1,49 @@
+# Template Schemas §9.1 rule 4 / §1.1 item 8 constraint 6 / §9.9 item 11: a
+# Service that no Step, Service, or Job Environment lists in `dependencies`
+# has an empty scope and is rejected before the Job is created; neither Step
+# runs and the Service is never started.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: UnusedServiceRejected
+  services:
+  - name: Sidecar
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Job.Name }}"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "import os,tempfile; os.remove(os.path.join(tempfile.gettempdir(), 'openjd-' + '{{ Job.Name }}' + '.up')); print('SIDECAR_EXIT')"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import os, sys, tempfile, time
+          with open(os.path.join(tempfile.gettempdir(), "openjd-" + sys.argv[1] + ".up"), "w") as f:
+              f.write("up")
+          print("openjd_service_ready: sidecar up", flush=True)
+          time.sleep(600)
+  steps:
+  - name: First
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os,tempfile; print('FIRST_SEES_SIDECAR', os.path.exists(os.path.join(tempfile.gettempdir(), 'openjd-' + '{{ Job.Name }}' + '.up')))"]
+  - name: Last
+    dependencies:
+    - dependsOn: First
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os,tempfile; print('LAST_SEES_SIDECAR', os.path.exists(os.path.join(tempfile.gettempdir(), 'openjd-' + '{{ Job.Name }}' + '.up')))"]
+
