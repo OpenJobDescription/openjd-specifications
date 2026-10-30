@@ -1009,7 +1009,7 @@ representation of a positive floating point or integer value in base-10, and:
    for a Session running Tasks from this Step to be scheduled to the host. If not provided, then the default is 0 unless
    the specific host capability defines a minimum. Can only be a
    `<nonnegativefloatstring>` when using the extension `FEATURE_BUNDLE_1`.
-3. *max* — If provided, then the host must have at least the given amount of the named capability available and reserved
+3. *max* — If provided, then the host must have at most the given amount of the named capability available and reserved
    for a Session running Tasks from this Step to be scheduled to the host. Can
    only be a `<positivefloatstring>` when using the extension `FEATURE_BUNDLE_1`.
 
