@@ -1,0 +1,28 @@
+# Expression Language §1.3.2 and §1.2.3: with EXPR, an element that is exactly "{{<expr>}}" is coerced to its target
+# type, and coercion does not trim. The STRING value " 7 " does not coerce to int, so the job cannot be created.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Text
+    type: STRING
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: X
+        type: INT
+        range:
+        - 1
+        - "{{ Param.Text }}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'TASK:X=[{{Task.Param.X}}]')
+parameters:
+  Text: " 7 "

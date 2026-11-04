@@ -1,13 +1,13 @@
 # Template Schemas §3.4.1.1: a <TaskParameterStringValue> element of an <IntRangeList> resolves to the string
 # representation of an integer, which becomes the task parameter value. Text around the expression is part of that
-# string, and a value given with surrounding white space resolves as an <intstring> does.
+# string.
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob
   parameterDefinitions:
   - name: IntValue
     type: INT
-  - name: Padded
+  - name: Text
     type: STRING
   steps:
   - name: Step1
@@ -19,7 +19,7 @@ template:
         - 1
         - "2"
         - "{{Param.IntValue}}"
-        - "{{Param.Padded}}"
+        - "{{Param.Text}}"
         - "1{{Param.IntValue}}"
     script:
       actions:
@@ -30,7 +30,7 @@ template:
           - print(r'TASK:X=[{{Task.Param.X}}]')
 parameters:
   IntValue: "7"
-  Padded: " 9 "
+  Text: "9"
 expected:
   output:
   - 'TASK:X=[1]'

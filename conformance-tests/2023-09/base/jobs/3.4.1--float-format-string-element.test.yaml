@@ -1,11 +1,11 @@
 # Template Schemas §3.4.1.2: a <TaskParameterStringValue> element of a <FloatRangeList> resolves to the string
-# representation of a floating point value, which becomes the task parameter value. A value given with surrounding
-# white space resolves as a <floatstring> does, and an integer is a valid floating point value.
+# representation of a floating point value, which becomes the task parameter value. An integer is a valid floating
+# point value.
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob
   parameterDefinitions:
-  - name: Padded
+  - name: Text
     type: STRING
   - name: IntValue
     type: INT
@@ -17,7 +17,7 @@ template:
         type: FLOAT
         range:
         - 0.5
-        - "{{Param.Padded}}"
+        - "{{Param.Text}}"
         - "{{Param.IntValue}}"
     script:
       actions:
@@ -27,7 +27,7 @@ template:
           - -c
           - print(r'TASK:X=[{{Task.Param.X}}]')
 parameters:
-  Padded: " 2.5 "
+  Text: "2.5"
   IntValue: "7"
 expected:
   output:
