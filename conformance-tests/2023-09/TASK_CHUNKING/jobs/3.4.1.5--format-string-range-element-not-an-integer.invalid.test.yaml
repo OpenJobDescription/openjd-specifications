@@ -1,0 +1,31 @@
+# Template Schemas §3.4.1.5 and §3.4.1.1: a <TaskParameterStringValue> element of a CHUNK[INT] range list must
+# resolve to the string representation of an integer. "abc" does not, so the job cannot be created.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - TASK_CHUNKING
+  name: TestJob
+  parameterDefinitions:
+  - name: Text
+    type: STRING
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: X
+        type: CHUNK[INT]
+        range:
+        - 1
+        - "{{Param.Text}}"
+        chunks:
+          defaultTaskCount: 1
+          rangeConstraint: NONCONTIGUOUS
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'TASK:X=[{{Task.Param.X}}]')
+parameters:
+  Text: abc

@@ -1,0 +1,28 @@
+# Template Schemas §3.4.1.5: a CHUNK[INT] range is an <IntRangeList> or an <IntRangeExpr>, so an <IntRangeList>
+# element can be a <TaskParameterStringValue>, as in §3.4.1.1.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- TASK_CHUNKING
+name: TestJob
+parameterDefinitions:
+- name: IntValue
+  type: INT
+  default: 10
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: X
+      type: CHUNK[INT]
+      range:
+      - 1
+      - "{{Param.IntValue}}"
+      chunks:
+        defaultTaskCount: 1
+        rangeConstraint: NONCONTIGUOUS
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - '{{Task.Param.X}}'

@@ -1,0 +1,28 @@
+# Template Schemas §3.4.1.2: a <FloatRangeList> element is a <float>, a <floatstring>, or a
+# <TaskParameterStringValue>, a format string that must resolve to a floating point value. The elements can be mixed.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: FloatValue
+  type: FLOAT
+  default: 2.5
+- name: IntValue
+  type: INT
+  default: 10
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: X
+      type: FLOAT
+      range:
+      - 0.5
+      - "1.5"
+      - "{{Param.FloatValue}}"
+      - "{{Param.IntValue}}"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - '{{Task.Param.X}}'

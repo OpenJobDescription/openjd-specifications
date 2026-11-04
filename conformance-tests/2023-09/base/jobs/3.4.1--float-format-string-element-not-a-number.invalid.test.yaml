@@ -1,0 +1,27 @@
+# Template Schemas §3.4.1.2: a <TaskParameterStringValue> element of a <FloatRangeList> must resolve to the string
+# representation of a floating point value in base-10. "abc" does not, so the job cannot be created. The template itself
+# is valid.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Text
+    type: STRING
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: X
+        type: FLOAT
+        range:
+        - 0.5
+        - "{{Param.Text}}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'TASK:X=[{{Task.Param.X}}]')
+parameters:
+  Text: abc

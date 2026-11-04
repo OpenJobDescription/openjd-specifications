@@ -1,0 +1,35 @@
+# Template Schemas §3.4.1.5 and §3.4.1.1: a <TaskParameterStringValue> element of a CHUNK[INT] range list resolves
+# to an integer, which the chunks then contain.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - TASK_CHUNKING
+  name: TestJob
+  parameterDefinitions:
+  - name: IntValue
+    type: INT
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: X
+        type: CHUNK[INT]
+        range:
+        - 1
+        - "{{Param.IntValue}}"
+        chunks:
+          defaultTaskCount: 1
+          rangeConstraint: NONCONTIGUOUS
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'TASK:X=[{{Task.Param.X}}]')
+parameters:
+  IntValue: "7"
+expected:
+  output:
+  - 'TASK:X=[1]'
+  - 'TASK:X=[7]'
