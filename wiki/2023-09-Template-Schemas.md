@@ -145,6 +145,8 @@ or submission, and the Job Template is always processed last. The exception to t
 Job Parameter Definition; the default value for a job parameter is always the last `default` value defined in the template
 processing order. The merged job parameter definition that results from this process must be internally consistent to be considered
 valid -- for example, the value of the `default` property must adhere to the constraints in the definition.
+For a `RANGE_EXPR` parameter, each definition's *minLength* and *maxLength* keep the rule of the document that
+contains it (see [§2.10](#210-jobrangeexprparameterdefinition-extension-expr)).
 
 This merge applies to the top-level `parameterDefinitions` of each template only. The `envParameterDefinitions` of an
 [&lt;Environment&gt;](#4-environment) (`@extension ENV_PARAMS`) are never merged. Each Environment's parameters are a
@@ -586,7 +588,9 @@ In a document that lists the `ENV_PARAMS` extension, *minLength* and *maxLength*
 both must satisfy them. The strings are the value as written (the string submitted for the parameter, or the
 `default`), and its [canonical form](#34111-intrangeexpr). So with `maxLength: 3`, the value `1,2,3` is rejected
 although its canonical form `1-3` fits. With `minLength: 4`, the value `1-3:2` is rejected because its canonical form
-`1,3` is too short. In any other document, they are checked against the value as written.
+`1,3` is too short. In any other document, they are checked against the value as written. When a Job Parameter's
+definitions in several templates are merged ([§1.2.1](#121-merging-environment-template-parameter-definitions)), each
+definition's *minLength* and *maxLength* are checked under the rule of the document that contains it.
 
 The value of a Job Parameter of this type is referenced in format strings as:
 
