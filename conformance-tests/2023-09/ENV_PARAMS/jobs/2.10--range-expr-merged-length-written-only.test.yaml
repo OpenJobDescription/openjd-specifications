@@ -1,0 +1,44 @@
+# Template Schemas §2.10, §1.2.1 (RFC 0010): when a Job Parameter's definitions are merged, each definition's minLength
+# and maxLength are checked under the rule of the document that contains it. Here minLength 4 comes from an Environment
+# Template that lists EXPR but not ENV_PARAMS, so it applies to "1-3:2" as written (5 characters) and not to its
+# canonical form "1,3". The Job Template lists ENV_PARAMS but sets no length. The Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: MergedRangeExprLength
+  parameterDefinitions:
+  - name: Frames
+    type: RANGE_EXPR
+  steps:
+  - name: A
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range: "{{Param.Frames}}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, "{{Task.Param.Frame}}"]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [EXPR]
+  parameterDefinitions:
+  - name: Frames
+    type: RANGE_EXPR
+    minLength: 4
+  environment:
+    name: Frames
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Frames]
+parameters:
+  Frames: "1-3:2"
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK 1
+  - TASK 3

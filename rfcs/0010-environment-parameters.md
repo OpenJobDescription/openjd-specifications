@@ -775,7 +775,9 @@ after mapping, which a LIST[STRING] of `RawParam` values could not.
 
 Effective values compare by canonical form, so a length rule on one string would treat equal values differently: under
 `minLength: 4`, `1,2,3` passes and the equal `1-3` fails. Checking both forms gives equal values one outcome. For a Job
-Parameter the rule is gated on `ENV_PARAMS`, so an existing `EXPR` template keeps its meaning.
+Parameter the rule is gated on `ENV_PARAMS`, so an existing `EXPR` template keeps its meaning. Where a Job Parameter's
+definitions are merged, each definition's lengths keep the rule of the document that contains it, so adding `ENV_PARAMS`
+to a Job Template never changes how an Environment Template's constraints are checked.
 
 ### Required parameters are allowed
 
