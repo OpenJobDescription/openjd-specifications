@@ -1,0 +1,44 @@
+# Expression Language §1.3.2: with EXPR, each element of a task parameter range list is a list item, with
+# target type T? | list[T] for element type T.
+# For a CHUNK[INT] range list, a null element is dropped and a list is flattened, so the range is 1, 4, 5.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - TASK_CHUNKING
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Skip
+    type: BOOL
+  - name: Frames
+    type: LIST[INT]
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: X
+        type: CHUNK[INT]
+        range:
+        - 1
+        - "{{ null if Param.Skip else 2 }}"
+        - "{{ Param.Frames }}"
+        chunks:
+          defaultTaskCount: 1
+          rangeConstraint: NONCONTIGUOUS
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'TASK:X=[{{Task.Param.X}}]')
+parameters:
+  Skip: "true"
+  Frames: [4, 5]
+expected:
+  output:
+  - 'TASK:X=[1]'
+  - 'TASK:X=[4]'
+  - 'TASK:X=[5]'
+  forbidden:
+  - 'TASK:X=[2]'

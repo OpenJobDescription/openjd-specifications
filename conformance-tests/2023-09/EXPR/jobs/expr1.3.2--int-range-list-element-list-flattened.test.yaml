@@ -1,0 +1,38 @@
+# Expression Language §1.3.2: with EXPR, each element of a task parameter range list is a list item, with
+# target type T? | list[T] for element type T.
+# An element that evaluates to a list is flattened into one range element per member.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Frames
+    type: LIST[INT]
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: X
+        type: INT
+        range:
+        - 1
+        - "{{ Param.Frames }}"
+        - 9
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'TASK:X=[{{Task.Param.X}}]')
+parameters:
+  Frames: [4, 5]
+expected:
+  output:
+  - 'TASK:X=[1]'
+  - 'TASK:X=[4]'
+  - 'TASK:X=[5]'
+  - 'TASK:X=[9]'
+  forbidden:
+  - 'TASK:X=[[4, 5]]'

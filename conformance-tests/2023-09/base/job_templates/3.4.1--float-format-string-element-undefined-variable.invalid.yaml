@@ -1,0 +1,23 @@
+# Template Schemas §3.4.1.2 and §7.3: a <TaskParameterStringValue> element of a <FloatRangeList> is a format
+# string, and a format string may only reference variables defined at its location. Param.Missing is not defined.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: FloatValue
+  type: FLOAT
+  default: 2.5
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: X
+      type: FLOAT
+      range:
+      - 0.5
+      - "{{Param.Missing}}"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - '{{Task.Param.X}}'
