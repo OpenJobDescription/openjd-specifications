@@ -30,10 +30,18 @@ available in existing distributed batch computing systems and pipeline tools.
 
 What are the specific changes that are being proposed?
 
-Please write this in a form similar to the official formal specification documents as though
-it could just be dropped in to the existing documentation as-is.
+The pull request for this RFC also edits the specification in the `wiki/` directory, and those edits are the
+normative text of the proposal: formal in [Template Schemas] and [Expression Language], and more
+approachable in narrative pages such as [How Jobs Are Run]. Please do not reproduce them here.
+Instead, describe every change the pull request makes to the wiki, in particular to Template Schemas and
+the Expression Language, in short prose focused on why the change is made, and link to the wiki section
+that holds its text. Where this RFC and the wiki differ, the wiki governs.
 
 We suggest keeping our [design tenets] in mind while writing this part.
+
+[Template Schemas]: https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas
+[Expression Language]: https://github.com/OpenJobDescription/openjd-specifications/wiki/2026-02-Expression-Language
+[How Jobs Are Run]: https://github.com/OpenJobDescription/openjd-specifications/wiki/How-Jobs-Are-Run
 
 [design tenets]: https://github.com/OpenJobDescription/openjd-specifications/wiki/Design-Tenets
 
@@ -48,6 +56,14 @@ briefly provide the rationale you used for the choice.
 
 Discuss prior art, both the good and the bad, in relation to the proposal. Does a feature
 like this exist in other systems? How is it expressed in those system(s)?
+
+## Prototype
+
+Link the branch of the prototype implementation in [openjd-rs] that was developed in parallel with this
+RFC, and say what the prototype taught you. Which parts of the proposal changed because of it? What
+turned out to be unclear, hard to use, or hard to implement?
+
+[openjd-rs]: https://github.com/OpenJobDescription/openjd-rs
 
 ## Implementation Impact
 

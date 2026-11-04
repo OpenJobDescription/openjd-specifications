@@ -32,9 +32,10 @@ Required sections per `0000-template.md`:
 - **Summary** - One paragraph overview
 - **Basic Examples** - Usage demonstrations for schema/syntax changes
 - **Motivation** - Use cases, workflows enabled, how common they are
-- **Specification** - Specific changes in formal specification style
+- **Specification** - Short prose on why each change is made, with links to the wiki sections the PR edits
 - **Design Choice Rationale** - Reasoning for each significant decision
 - **Prior Art** - Similar features in other systems
+- **Prototype** - Link to the openjd-rs prototype branch, and what it taught
 - **Rejected Ideas** - Ideas considered but not pursued
 - **Copyright** - Public domain or CC0-1.0-Universal
 
@@ -48,7 +49,8 @@ Required header fields:
 
 ### Compatibility with Open Job Description Specifications
 Every RFC proposed change must fit into the formal template specification in the `openjd-specifications` repo
-in wiki/2023-09-Template-Schemas, or downloadable at https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas.
+in wiki/2023-09-Template-Schemas, or downloadable at https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas,
+and changes to expressions must fit into wiki/2026-02-Expression-Language.
 
 * If the RFC adds sections similar to existing sections, are they consistent with the existing sections in context?
 * Does the proposed new language fit naturally into the specification?
@@ -63,12 +65,15 @@ in wiki/2023-09-Template-Schemas, or downloadable at https://github.com/OpenJobD
 - [ ] Metadata fields filled correctly
 - [ ] Tracking issue exists and linked
 - [ ] Examples are runnable and demonstrate the feature
+- [ ] The PR includes the wiki edits for every change: formal in `wiki/2023-09-Template-Schemas.md` and
+      `wiki/2026-02-Expression-Language.md`, approachable in narrative pages such as `wiki/How-Jobs-Are-Run.md`
+- [ ] The wiki edits are normative text, precise enough to implement, and the RFC agrees with them
 
 ### Clarity
 - [ ] Summary captures the essence in one paragraph
 - [ ] Motivation explains WHY, not just WHAT
 - [ ] Examples succinctly demonstrate the proposal in practice
-- [ ] Specification is precise enough to implement
+- [ ] Specification section explains why each change is made, in short prose that links to the wiki sections, rather than repeating the wiki text
 - [ ] Design rationale explains key decisions
 
 ### Tenet Alignment
@@ -85,7 +90,7 @@ in wiki/2023-09-Template-Schemas, or downloadable at https://github.com/OpenJobD
 - [ ] Combined work is consistent and whole
 
 ### Technical Quality
-- [ ] Specification diff is syntactically correct
+- [ ] Specification diff (the wiki edits) is syntactically correct
 - [ ] Examples validate against proposed schema
 - [ ] Edge cases addressed
 - [ ] Backward compatibility considered
@@ -95,6 +100,7 @@ in wiki/2023-09-Template-Schemas, or downloadable at https://github.com/OpenJobD
 - [ ] Prior art section shows research was done
 - [ ] Rejected ideas explain why alternatives weren't chosen
 - [ ] No unresolved open questions blocking acceptance
+- [ ] A prototype in openjd-rs exists and is linked, and the RFC reflects what it taught
 
 ## Common Issues
 
@@ -102,9 +108,13 @@ in wiki/2023-09-Template-Schemas, or downloadable at https://github.com/OpenJobD
 **Problem**: "Users want this feature" without explaining workflows enabled.
 **Fix**: Describe concrete use cases and how common they are.
 
-### Vague Specification
-**Problem**: Prose description instead of formal specification language.
-**Fix**: Write as if it could be dropped into the spec document directly.
+### Specification Not in the Wiki
+**Problem**: The RFC carries the formal specification text itself, or describes changes that the PR's wiki edits do not make.
+**Fix**: Put the normative text in the wiki edits in the same PR. In the RFC, describe each change in short prose, say why it is made, and link to the wiki section.
+
+### No Prototype
+**Problem**: The RFC was written without a prototype, so nothing has tested whether it is clear, usable, and implementable.
+**Fix**: Develop a prototype in openjd-rs alongside the RFC, link its branch, and update the RFC with what it taught.
 
 ### Missing Rationale
 **Problem**: Design choices made without explaining alternatives considered.
@@ -120,7 +130,8 @@ in wiki/2023-09-Template-Schemas, or downloadable at https://github.com/OpenJobD
 |---------------|--------------|
 | Summary | Does one paragraph capture the proposal? |
 | Motivation | Are use cases concrete and common? |
-| Specification | Could this be copy-pasted into the spec? |
+| Specification | Are the wiki edits in the PR, and does the RFC explain why each change is made? |
+| Prototype | Does an openjd-rs prototype exist, and does the RFC reflect what it taught? |
 | Rationale | Are design choices explained? |
 | Portability | Does this work everywhere? |
 | Expressiveness | Is this general enough? |
