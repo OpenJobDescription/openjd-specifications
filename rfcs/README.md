@@ -64,16 +64,30 @@ The next step is to write the first revision of the RFC document itself.
        `NNNN` in the filename is your tracking issue number, and `name` should be a one
        or two word summary of the proposal.
     2. Please follow the template; it includes useful guidance and tips on how to write a good RFC.
+    3. Alongside the RFC document, edit the specification in the [`wiki/`] directory to make your proposed
+       changes: the formal text in `wiki/2023-09-Template-Schemas.md` and
+       `wiki/2026-02-Expression-Language.md`, and the more approachable explanation in narrative pages
+       such as `wiki/How-Jobs-Are-Run.md`. These wiki edits are the normative text of your proposal.
+       The RFC describes each change in short prose, focused on why it is made, and links to the wiki
+       sections it edits. Where the RFC and the wiki differ, the wiki governs.
+4. We recommend that you develop a prototype implementation in [openjd-rs] in parallel with the RFC,
+   on a branch in your fork of that repository. Practical experience with the prototype should guide
+   the RFC directly: writing templates against it, running them, and implementing the validation
+   rules will show where the proposal is unclear, hard to use, or hard to implement. Link the
+   prototype branch from the RFC, and say what it taught you.
 
 [design tenets]: https://github.com/OpenJobDescription/openjd-specifications/wiki/Design-Tenets
 [Fork this repository]: https://help.github.com/articles/fork-a-repo/
 [0000-template.md]: https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0000-template.md
+[`wiki/`]: https://github.com/OpenJobDescription/openjd-specifications/tree/mainline/wiki
+[openjd-rs]: https://github.com/OpenJobDescription/openjd-rs
 
 ### 5. Feedback
 
 Once you have an initial version of your RFC document (it is completely fine to
 submit an unfinished RFC to get initial feedback), [submit it as a pull request]
-against this repository to start collecting feedback.
+against this repository to start collecting feedback. The pull request includes
+both the RFC document and its wiki edits.
 
 This is the likely going to be the longest part of your RFC process, and where
 most of the feedback is collected.
@@ -86,6 +100,8 @@ A few tips:
   folks to elaborate and describe their use case or provide concrete examples.
 - Work with the team member assigned to your tracking issue: if there are disagreements,
   @mention them in a comment and ask them to provide their opinion.
+- As the proposal changes, update the wiki edits, the RFC, and the prototype together, so that they
+  continue to agree.
 - Be patient: it sometimes takes time for an RFC to converge. Some ideas need to "bake"
   and solutions oftentimes emerge via a healthy debate.
 - Not everything must be resolved in the first revision. It is okay to leave
@@ -109,7 +125,7 @@ will be notified.
 
 Once the final comments period is over, seek an approval of one of the core team
 members, and you can merge your PR to the main branch. This will move your RFC
-to the "Accepted-Future" state.
+to the "Released" state.
 
 ### 7. Accepted and Beyond
 
@@ -117,14 +133,8 @@ The pull request for your RFC will be merged in to this repository when your pro
 has been accepted. This requires an approval of the pull request by one of the core
 members of the Open Job Description team.
 
-After merging the pull request, it may take some time for the core team to identify
-which draft of the specification to include the proposal in; it may not be the current/next
-one.
-
-The team will contact you through your RFCs tracking issue when it is time to include
-the proposal in the current draft specification. When that happens, we ask that you
-prepare pull requests that modify the draft specification, user documentation, and
-so on to include your proposed changes.
+Because the pull request includes the wiki edits, merging it publishes your proposed changes in the
+specification. This moves your RFC to the "Released" state.
 
 ## RFC Process Stages
 
@@ -133,12 +143,17 @@ An RFC's tracking ticket is tagged to indicate what stage of the process it is i
 | Stage | Tracking Label | Description |
 | ----- | -------------- | ----------- |
 | [0 - Proposed](#Proposed) | [rfc/proposed] | A proposal for a change that is offered for community and team evaluation. |
-| [1 - Exploring](#Exploring) | [rfc/exploring] | The author(s), team, and community are working together to refine and iterate on the proposal. |
+| [1 - Exploring](#Exploring) | [rfc/exploring] | The author(s), team, and community are working together to refine and iterate on the proposal, its wiki edits, and its prototype. |
 | [2 - Final Comments](#LastCall) | [rfc/exploring] and [rfc/final-comments] | Consensus has been reached on the RFC. A "last call" has been announced for feedback. |
 | [3 - Accepted-Future](#Future) | [rfc/accepted-future] | The proposal has been accepted for inclusion in a future revision of the Open Job Description specification. |
 | [4 - Accepted-Draft](#Draft) | [rfc/accepted-draft] | The author has been given the green light to include the proposal in a draft of the Open Job Description specification. |
 | [5 - Accepted-Staged](#Staged) | [rfc/accepted-staged] | The proposal has been accepted and included in a draft revision of the Open Job Description specification. |
 | [6 - Released](#Released) | [rfc/released] | The proposal has been included in a published revision of the Open Job Description specification. |
+
+Because an RFC's pull request includes its wiki edits, the RFC moves from Final Comments to Released when the pull
+request is merged. The Accepted-Future, Accepted-Draft, and Accepted-Staged stages are for RFCs accepted before the wiki
+edits were part of the RFC's pull request, under an earlier process that made the specification changes in later
+pull requests.
 
 There are two additional statuses for RFCs that will not move forward:
 - **[Abandoned](#Abandoned)** (label: [rfc/abandoned]) - The RFC's author(s) have ceased to engage in the process, and the RFC's process is
