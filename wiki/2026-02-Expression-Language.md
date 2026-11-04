@@ -1342,8 +1342,8 @@ steps:
           range: "{{ [Param.Scale * 2, Param.Scale + 0.5] }}"
 ```
 
-Each element of a `range` list is a list item ([section 1.3.2](#132-evaluation-within-template-schemas)),
-for every parameter type. An element that is exactly `"{{<expr>}}"` has the target type `T? | list[T]`,
+For every parameter type, an element of a `range` list that is exactly `"{{<expr>}}"` is a list item
+([section 1.3.2](#132-evaluation-within-template-schemas)) with the target type `T? | list[T]`,
 where `T` is `int` for INT and CHUNK[INT], `float` for FLOAT, and `string` for STRING and PATH: a `null`
 result drops the element, a list result is flattened into one element per member, and a result that does not
 coerce to the target ([section 1.2.3](#123-implicit-type-coercion)) is an error. For FLOAT the target also
@@ -1354,8 +1354,7 @@ The list's minimum and maximum number of elements apply to the list as written, 
 this resolution, since dropped and flattened elements change its length.
 
 An element with text around its expressions, or with more than one expression, resolves to a string, as every
-element does in a template without EXPR, where each element is a `<TaskParameterStringValue>`. Coercion does
-not trim, so a STRING value `" 7 "` as the whole element `"{{ Param.Value }}"` in an INT range is an error.
+element does in a template without EXPR, where each element is a `<TaskParameterStringValue>`.
 
 ```yaml
 - name: Frame

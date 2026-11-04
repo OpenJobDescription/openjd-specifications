@@ -1,7 +1,8 @@
 # Expression Language §1.3.2: with EXPR, each element of a task parameter range list is a list item, with
 # target type T? | list[T] for element type T.
 # An element that evaluates to a list is flattened into one range element per member. An element with text around
-# its expression is not a list item: it resolves to a string, so "1{{ 2 }}" is 12.
+# its expression, or with more than one expression, is not a list item: it resolves to a string, so "1{{ 2 }}" is 12
+# and "{{ 3 }}{{ 4 }}" is 34.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
@@ -21,6 +22,7 @@ template:
         - "{{ Param.Frames }}"
         - 9
         - "1{{ 2 }}"
+        - "{{ 3 }}{{ 4 }}"
     script:
       actions:
         onRun:
@@ -37,5 +39,6 @@ expected:
   - 'TASK:X=[5]'
   - 'TASK:X=[9]'
   - 'TASK:X=[12]'
+  - 'TASK:X=[34]'
   forbidden:
   - 'TASK:X=[[4, 5]]'
