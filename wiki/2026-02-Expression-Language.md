@@ -1084,8 +1084,9 @@ type is determined by the schema context in which the expression appears:
 - For a required field of type `T`, the target type is `T`.
 - For an optional field of type `T`, the target type is `T?`. If the expression evaluates
   to `None`/`null`, the field is omitted as if it were not specified.
-- For list items (e.g., in `args`), the target type is `T? | list[T]` where `T` is
-  the item type. This enables three behaviors:
+- For list items (e.g., in `args`, or a task parameter `range` list; see
+  [section 1.3.12](#1312-task-parameter-range-field-extensions)), the target type is
+  `T? | list[T]` where `T` is the item type. This enables three behaviors:
   1. If the result is a value of type `T`, it is added as a single item.
   2. If the result is `None`/`null`, the item is skipped and the list is one shorter.
   3. If the result is a `list[T]`, the list is flattened inline.
@@ -1339,6 +1340,23 @@ steps:
         - name: Factor
           type: FLOAT
           range: "{{ [Param.Scale * 2, Param.Scale + 0.5] }}"
+```
+
+Each element of a `range` list is a list item ([section 1.3.2](#132-evaluation-within-template-schemas)),
+for every parameter type. An element that is exactly `"{{<expr>}}"` has the target type `T? | list[T]`,
+where `T` is `int` for INT and CHUNK[INT], `float` for FLOAT, and `string` for STRING and PATH: a `null`
+result drops the element, a list result is flattened into one element per member, and a result that does not
+coerce to the target is an error. The list's constraints, such as its minimum and maximum number of elements,
+apply to the list after this resolution. An element with text around its expressions resolves to a string, as
+in a template without EXPR, where each element is a `<TaskParameterStringValue>` that resolves to a string.
+
+```yaml
+- name: Frame
+  type: INT
+  range:
+    - 1
+    - "{{ Param.ExtraFrames }}"                     # a LIST[INT] parameter: flattened
+    - "{{ 100 if Param.IncludeHundred else null }}"  # dropped when false
 ```
 
 ---
