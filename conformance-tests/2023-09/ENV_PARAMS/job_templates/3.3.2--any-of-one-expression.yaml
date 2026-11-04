@@ -1,0 +1,30 @@
+# Template Schemas §3.3.2 (RFC 0010): with ENV_PARAMS, an attribute's anyOf may be a single format string that
+# is exactly one {{ }} expression, typed list[string]?. Here a Job Environment's anyOf is a list with the
+# requested GPU model, or None, which omits the field, when none is requested.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Gpu
+  envParameterDefinitions:
+  - name: Model
+    type: STRING
+    default: ""
+  hostRequirements:
+    attributes:
+    - name: conformance:attr.gpu.model
+      anyOf: "{{ [Env.Param.Model] if Env.Param.Model != '' else None }}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

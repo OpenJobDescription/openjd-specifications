@@ -1,0 +1,17 @@
+# Template Schemas §4.5 (RFC 0010): type RANGE_EXPR is available to an Environment parameter of an
+# Environment Template that lists EXPR.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Conda
+  envParameterDefinitions:
+  - name: Frames
+    type: RANGE_EXPR
+    default: "1-10"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]

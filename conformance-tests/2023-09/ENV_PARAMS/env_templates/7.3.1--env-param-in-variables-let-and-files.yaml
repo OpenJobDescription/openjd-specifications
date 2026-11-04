@@ -1,0 +1,25 @@
+# Template Schemas §7.3.1 Env.Param.<ParamName> and §3.6.2 <EnvironmentScript>.let (RFC 0010):
+# Env.Param.* is available in the declaring Environment's variables, script let, and embedded files.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+  variables:
+    CONDA_PACKAGES: "{{Env.Param.Packages}}"
+  script:
+    let:
+    - pkgs = Env.Param.Packages.split(' ')
+    embeddedFiles:
+    - name: Spec
+      type: TEXT
+      data: "{{Env.Param.Packages}}"
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{ pkgs.join(',') }}", "{{Env.File.Spec}}"]

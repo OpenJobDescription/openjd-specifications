@@ -1,0 +1,29 @@
+# Template Schemas §3.2 constraint 5 (RFC 0010): every key of parameters must name a parameter declared in
+# the named Environment's envParameterDefinitions. Conda declares Packages, not Channels.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]
+steps:
+- name: Render
+  dependencies:
+  - environment: Conda
+    parameters:
+      Channels: conda-forge
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

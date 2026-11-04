@@ -1,0 +1,16 @@
+# Template Schemas §3.2 item 2 (RFC 0010): a step: entry obeys every rule of the dependsOn: entry it is a
+# synonym of, so a Step that depends on itself through step: is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+steps:
+- name: First
+  dependencies:
+  - step: First
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["first"]

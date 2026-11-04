@@ -1,0 +1,41 @@
+# Template Schemas §4.5 (RFC 0010): a RANGE_EXPR Environment parameter. Step A supplies "1,2,3,7"; Step B takes the
+# default "1-10". Env.Param.Frames is a range_expr in each Session, so len() and max() read its integers.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: RangeExprValue
+  jobEnvironments:
+  - name: Cache
+    envParameterDefinitions:
+    - name: Frames
+      type: RANGE_EXPR
+      default: "1-10"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Cache, "count={{ len(Env.Param.Frames) }}", "max={{ max(Env.Param.Frames) }}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Cache
+      parameters:
+        Frames: "1,2,3,7"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+  - name: B
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, B]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Cache count=4 max=7
+  - ENTER Cache count=10 max=10
+  - TASK A
+  - TASK B

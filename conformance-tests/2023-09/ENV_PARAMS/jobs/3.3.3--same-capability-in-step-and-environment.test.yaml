@@ -1,0 +1,40 @@
+# RFC 0010 / Template Schemas §3.3.3 ("The constraints of §3.3 ... on
+# duplicate names apply to each source's hostRequirements separately"): the Step
+# and an Environment each require amount min 1 of the same capability. That is
+# not a duplicate-name error, and the Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: SameCapabilityInStepAndEnvironment
+  jobEnvironments:
+  - name: Hw
+    activation: ALWAYS
+    envParameterDefinitions:
+    - name: Flavor
+      type: STRING
+      default: a
+    hostRequirements:
+      amounts:
+      - name: conformance:amount.widgets
+        min: 1
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Hw, "Flavor={{Env.Param.Flavor}}"]
+  steps:
+  - name: A
+    hostRequirements:
+      amounts:
+      - name: conformance:amount.widgets
+        min: 1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Hw Flavor=a
+  - TASK A

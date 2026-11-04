@@ -1,0 +1,22 @@
+# Template Schemas §3.2 item 2 (RFC 0010): a step: entry obeys every rule of the dependsOn: entry it is a
+# synonym of, so naming a Step that does not exist is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+steps:
+- name: First
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["first"]
+- name: Second
+  dependencies:
+  - step: Missing
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["second"]

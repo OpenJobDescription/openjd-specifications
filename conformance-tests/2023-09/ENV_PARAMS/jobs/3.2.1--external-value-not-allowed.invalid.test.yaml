@@ -1,0 +1,33 @@
+# RFC 0010 / Template Schemas §3.2.1 item 1, §3.2 constraint 6: a value outside
+# an attached Environment parameter's allowedValues is rejected at job creation.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalValueNotAllowed
+  steps:
+  - name: A
+    dependencies:
+    - environment: Lic
+      parameters:
+        Product: vray
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Lic
+    envParameterDefinitions:
+    - name: Product
+      type: STRING
+      allowedValues: [arnold, redshift]
+      default: arnold
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Lic, "Product={{Env.Param.Product}}"]
+runOn: [posix, windows]

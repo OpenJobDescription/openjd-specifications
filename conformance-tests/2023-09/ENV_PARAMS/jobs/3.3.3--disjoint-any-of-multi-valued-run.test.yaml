@@ -1,0 +1,34 @@
+# RFC 0010 / Template Schemas §3.3.3 item 2.2: a host has a set of values of an attribute other than os.family and
+# cpu.arch, so the Step's anyOf [a] and an Environment's anyOf [b] are allOf [a, b], which a host with both values
+# satisfies. Not a conflict; the Job runs. openjd run does not place Sessions, so only job creation is observable.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: DisjointAnyOfMultiValued
+  jobEnvironments:
+  - name: Hw
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.flavor
+        anyOf: [b]
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Hw]
+  steps:
+  - name: A
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.flavor
+        anyOf: [a]
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Hw
+  - TASK A

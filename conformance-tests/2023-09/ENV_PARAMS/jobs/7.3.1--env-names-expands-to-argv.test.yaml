@@ -1,0 +1,36 @@
+# RFC 0010 / Template Schemas §7.3.1 Job.EnvNames ("A list"); Expression
+# Language §1.3.2 (a list result in an args item is flattened): an args item
+# "{{Job.EnvNames}}" in a Step script expands to one argv entry per name.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnvNamesExpandsToArgv
+  jobEnvironments:
+  - name: B
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, B]
+  - name: A
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, A]
+  steps:
+  - name: S
+    script:
+      actions:
+        onRun:
+          command: bash
+          args: ["-c", "printf 'ARG[%s]\\n' \"$@\"", argv0, "{{Job.EnvNames}}"]
+runOn: [posix]
+expected:
+  output:
+  - ARG[B]
+  - ARG[A]
+  forbidden:
+  - ARG[B,A]
+  - ARG[B A]
+  - "ARG[['B', 'A']]"

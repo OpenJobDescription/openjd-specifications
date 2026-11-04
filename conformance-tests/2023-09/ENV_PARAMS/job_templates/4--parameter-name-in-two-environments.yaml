@@ -1,0 +1,35 @@
+# Template Schemas §4 item 3 constraint 3 (RFC 0010): two Environments may each declare a parameter of the
+# same name; each Environment's parameters are a namespace of their own.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]
+- name: Rez
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: maya-2025
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

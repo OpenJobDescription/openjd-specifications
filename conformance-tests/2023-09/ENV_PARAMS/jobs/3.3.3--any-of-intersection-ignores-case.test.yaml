@@ -1,0 +1,35 @@
+# RFC 0010 / Template Schemas §3.3.3 item 2 ("comparing values ignoring
+# case"): the Step requires anyOf [A] and a Job Environment requires anyOf [a]
+# of the same attribute. The intersection is non-empty, so the Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: AnyOfIntersectionIgnoresCase
+  jobEnvironments:
+  - name: Hw
+    activation: ALWAYS
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.flavor
+        anyOf: [a]
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Hw]
+  steps:
+  - name: A
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.flavor
+        anyOf: [A]
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Hw
+  - TASK A

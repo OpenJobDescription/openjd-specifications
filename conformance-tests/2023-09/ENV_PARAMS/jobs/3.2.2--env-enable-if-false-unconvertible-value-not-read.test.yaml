@@ -1,0 +1,45 @@
+# Template Schemas §3.2.2 (RFC 0010): Lic's enableIf is evaluated with the values that are known. A's value for the
+# INT Seats resolves to "many", which does not convert and so is unknown, but the enableIf reads only Param.Use and is
+# false. Lic is disabled for A, Seats is not checked, and the Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: UnconvertibleValueNotRead
+  parameterDefinitions:
+  - name: Use
+    type: STRING
+    allowedValues: ["yes", "no"]
+  - name: N
+    type: STRING
+  jobEnvironments:
+  - name: Lic
+    activation: ON_REQUEST
+    enableIf: "Param.Use == 'yes'"
+    envParameterDefinitions:
+    - name: Seats
+      type: INT
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Lic, "Seats={{Env.Param.Seats}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Lic
+      parameters:
+        Seats: "{{Param.N}}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+parameters:
+  Use: "no"
+  N: many
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A
+  forbidden:
+  - ENTER Lic Seats

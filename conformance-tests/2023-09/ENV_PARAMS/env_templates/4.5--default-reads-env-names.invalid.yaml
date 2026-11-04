@@ -1,0 +1,17 @@
+# Template Schemas §4.5 item 1 and §7.3.1 Job.EnvNames (RFC 0010): Job.EnvNames is not available in an
+# Environment parameter default.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Conda
+  envParameterDefinitions:
+  - name: Names
+    type: LIST[STRING]
+    default: "{{ Job.EnvNames }}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]

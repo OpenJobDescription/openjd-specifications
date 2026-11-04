@@ -1,0 +1,16 @@
+# Template Schemas §3.6.2 <StepTemplate>.let (RFC 0010): with ENV_PARAMS, a Step's let bindings may
+# reference Job.EnvNames.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+steps:
+- name: Render
+  let:
+  - names = Job.EnvNames.join(',')
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["{{names}}"]

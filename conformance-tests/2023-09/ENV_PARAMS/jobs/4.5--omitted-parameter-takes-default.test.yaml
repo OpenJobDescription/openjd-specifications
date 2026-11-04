@@ -1,0 +1,37 @@
+# RFC 0010 / Template Schemas §3.2 item 3.3, §3.2.2 item 2: a parameter the entry
+# omits takes its literal default; the parameter it supplies does not.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: OmittedTakesDefault
+  jobEnvironments:
+  - name: Conda
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: pkgdefault
+    - name: Channels
+      type: STRING
+      default: chandefault
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Packages={{Env.Param.Packages}}", "Channels={{Env.Param.Channels}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      parameters:
+        Packages: ffmpeg=7
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda Packages=ffmpeg=7 Channels=chandefault
+  forbidden:
+  - Packages=pkgdefault

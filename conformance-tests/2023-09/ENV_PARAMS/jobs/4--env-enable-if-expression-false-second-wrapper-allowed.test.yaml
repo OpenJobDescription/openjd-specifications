@@ -1,0 +1,69 @@
+# Template Schemas §4 item 6 (enableIf tail) and §7.5 rule 5, with RFC 0008 (single-layer rule): the template of
+# JT-150. Inner's enableIf is an expression, so the single-layer rule waits for job creation; there it resolves to
+# false, the Session's stack holds one wrapping Environment, and the Job runs wrapped by Outer only.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, WRAP_ACTIONS, EXPR]
+  name: SecondWrapperUndetermined
+  parameterDefinitions:
+  - name: Use
+    type: STRING
+    allowedValues: ["yes", "no"]
+    default: "yes"
+  jobEnvironments:
+  - name: Outer
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Outer]
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: echo
+          args: [WRAP, Outer]
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+  - name: Inner
+    enableIf: "Param.Use == 'yes'"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Inner]
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: echo
+          args: [WRAP, Inner]
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+parameters:
+  Use: "no"
+runOn: [posix]
+expected:
+  output:
+  - ENTER Outer
+  - WRAP Outer
+  forbidden:
+  - ENTER Inner
+  - WRAP Inner

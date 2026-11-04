@@ -1,0 +1,41 @@
+# RFC 0010 / Template Schemas §4 hostRequirements, §3.3 constraint 4 (names
+# compared after resolution, within one source, per Step): an Environment's two
+# attribute names "{{Env.Param.First}}" and "{{Env.Param.Second}}" resolve to
+# the same name for Step A, which is rejected at job creation.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ResolvedHostRequirementsDuplicateName
+  jobEnvironments:
+  - name: Hw
+    envParameterDefinitions:
+    - name: First
+      type: STRING
+      default: conformance:attr.one
+    - name: Second
+      type: STRING
+      default: conformance:attr.two
+    hostRequirements:
+      attributes:
+      - name: "{{Env.Param.First}}"
+        anyOf: [x]
+      - name: "{{Env.Param.Second}}"
+        anyOf: [x]
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Hw]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Hw
+      parameters:
+        First: conformance:attr.same
+        Second: conformance:attr.same
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]

@@ -1,0 +1,14 @@
+# Template Schemas §4 item 5 and §1.2 item 3 (RFC 0010): an Environment's hostRequirements require
+# ENV_PARAMS in the document that contains them. This Environment Template lists no extensions.
+specificationVersion: environment-2023-09
+environment:
+  name: Conda
+  hostRequirements:
+    attributes:
+    - name: conformance:attr.flavor
+      anyOf: [vanilla]
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]

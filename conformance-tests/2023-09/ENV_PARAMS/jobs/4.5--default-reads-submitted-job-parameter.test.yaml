@@ -1,0 +1,44 @@
+# RFC 0010 / Template Schemas §4.5 item 1, §1.2.1: an Environment parameter
+# default "{{Param.CondaPackages}}" reads the submitted Job Parameter value.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: DefaultReadsSubmittedJobParameter
+  parameterDefinitions:
+  - name: CondaPackages
+    type: STRING
+    default: jobdefault
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+parameters:
+  CondaPackages: submitted
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  parameterDefinitions:
+  - name: CondaPackages
+    type: STRING
+    default: envdefault
+  environment:
+    name: Conda
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: "{{Param.CondaPackages}}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda Packages=submitted
+  forbidden:
+  - ENTER Conda Packages=jobdefault
+  - ENTER Conda Packages=envdefault
