@@ -35,3 +35,5 @@ expected:
   forbidden:
   - 'TASK:X=[b]'
   - 'TASK:X=[]'
+  - 'TASK:X=[null]'
+  - 'TASK:X=[None]'

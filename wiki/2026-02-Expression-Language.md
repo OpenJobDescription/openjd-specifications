@@ -1346,9 +1346,17 @@ Each element of a `range` list is a list item ([section 1.3.2](#132-evaluation-w
 for every parameter type. An element that is exactly `"{{<expr>}}"` has the target type `T? | list[T]`,
 where `T` is `int` for INT and CHUNK[INT], `float` for FLOAT, and `string` for STRING and PATH: a `null`
 result drops the element, a list result is flattened into one element per member, and a result that does not
-coerce to the target is an error. The list's constraints, such as its minimum and maximum number of elements,
-apply to the list after this resolution. An element with text around its expressions resolves to a string, as
-in a template without EXPR, where each element is a `<TaskParameterStringValue>` that resolves to a string.
+coerce to the target ([section 1.2.3](#123-implicit-type-coercion)) is an error. For FLOAT the target also
+includes `int`, so `float? | int | list[float]`: an `int` result is kept as written rather than converted, as
+the `<floatstring>` it stands for would be, while the members of a list result are converted to `float`.
+
+The list's minimum and maximum number of elements apply to the list as written, and again to the list after
+this resolution, since dropped and flattened elements change its length.
+
+An element with text around its expressions, or with more than one expression, resolves to a string, as every
+element does in a template without EXPR, where each element is a `<TaskParameterStringValue>`. Coercion does
+not trim: a STRING value `" 7 "` as the whole element `"{{ Param.Value }}"` in an INT range is an error with
+EXPR, while without EXPR the element resolves to the string `" 7 "` and no coercion applies.
 
 ```yaml
 - name: Frame
