@@ -1,0 +1,17 @@
+# Template Schemas §4.5 and its item 1 (RFC 0010): with EXPR, a LIST[PATH] Environment parameter with the
+# literal default [] is valid, as in the Docker sample Environment Template.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Docker
+  envParameterDefinitions:
+  - name: Mounts
+    type: LIST[PATH]
+    default: []
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]

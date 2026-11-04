@@ -1,0 +1,59 @@
+# Template Schemas §4 item 6 (enableIf tail) and §7.5 rule 5, with RFC 0008 (single-layer rule): Outer is certainly
+# entered and Inner's enableIf is an expression. Whether the Session's stack holds two wrapping Environments depends
+# on a value not known until the Job is created, so template validation reports no error; the check is made at job
+# creation (JB-103 runs this template).
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, WRAP_ACTIONS, EXPR]
+name: SecondWrapperUndetermined
+parameterDefinitions:
+- name: Use
+  type: STRING
+  allowedValues: ["yes", "no"]
+  default: "yes"
+jobEnvironments:
+- name: Outer
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Outer]
+      onWrapEnvEnter:
+        command: bash
+        args:
+        - "-c"
+        - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+      onWrapTaskRun:
+        command: echo
+        args: [WRAP, Outer]
+      onWrapEnvExit:
+        command: bash
+        args:
+        - "-c"
+        - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+- name: Inner
+  enableIf: "Param.Use == 'yes'"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Inner]
+      onWrapEnvEnter:
+        command: bash
+        args:
+        - "-c"
+        - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+      onWrapTaskRun:
+        command: echo
+        args: [WRAP, Inner]
+      onWrapEnvExit:
+        command: bash
+        args:
+        - "-c"
+        - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+steps:
+- name: A
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

@@ -1,0 +1,32 @@
+# Template Schemas §3.2 <EnvironmentParameterValue> (RFC 0010): Param.* is available in a parameters value
+# only for Job Parameters not of type PATH or LIST[PATH], so a value reading Param.<PATH> is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Dir
+  type: PATH
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Tag
+    type: STRING
+    default: none
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  dependencies:
+  - environment: Conda
+    parameters:
+      Tag: "{{Param.Dir}}"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

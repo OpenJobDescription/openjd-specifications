@@ -1,0 +1,45 @@
+# Template Schemas §3.2.2 (RFC 0010): A's value for the INT Seats is {{ Param.L[5] }}, which fails to resolve (L has
+# one element) and so is unknown, but Lic's enableIf reads only Param.Use and is false. Lic is disabled for A, Seats's
+# error is not reported, and the Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: UnresolvableValueNotRead
+  parameterDefinitions:
+  - name: Use
+    type: STRING
+    allowedValues: ["yes", "no"]
+  - name: L
+    type: LIST[INT]
+    default: [1]
+  jobEnvironments:
+  - name: Lic
+    activation: ON_REQUEST
+    enableIf: "Param.Use == 'yes'"
+    envParameterDefinitions:
+    - name: Seats
+      type: INT
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Lic, "Seats={{Env.Param.Seats}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Lic
+      parameters:
+        Seats: "{{ Param.L[5] }}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+parameters:
+  Use: "no"
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A
+  forbidden:
+  - ENTER Lic Seats

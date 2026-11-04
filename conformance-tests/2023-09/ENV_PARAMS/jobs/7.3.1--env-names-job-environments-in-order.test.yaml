@@ -1,0 +1,31 @@
+# RFC 0010 / Template Schemas §7.3.1 Job.EnvNames: with no attached
+# Environments, the list is the Job Template's jobEnvironments names in entry
+# order (B before A).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnvNamesInOrder
+  jobEnvironments:
+  - name: B
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, B]
+  - name: A
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, A]
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A, "NAMES=[{{ Job.EnvNames.join(',') }}]"]
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A NAMES=[B,A]

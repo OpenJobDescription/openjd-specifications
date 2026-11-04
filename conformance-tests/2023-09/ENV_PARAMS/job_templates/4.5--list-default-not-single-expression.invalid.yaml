@@ -1,0 +1,30 @@
+# Template Schemas §4.5 item 1 (RFC 0010): a list-typed parameter has no string form, so a list default
+# that is not a literal must be a single {{ }} expression. A format string with text around its
+# expression is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Pkg
+  type: STRING
+  default: numpy
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Channels
+    type: LIST[STRING]
+    default: "extra-{{Param.Pkg}}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

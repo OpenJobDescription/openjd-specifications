@@ -1,0 +1,27 @@
+# Template Schemas §4 item 6 and §7.5 rule 2 (RFC 0010): an Environment's enableIf is an expression field of
+# type bool, and an expression field widens only int to float, so an expression of type int is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: ""
+  - name: Seats
+    type: INT
+    default: 1
+  enableIf: "Env.Param.Seats"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+steps:
+- name: A
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

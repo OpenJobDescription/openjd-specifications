@@ -1,0 +1,26 @@
+# Template Schemas §2.10 (RFC 0010): in a document that lists ENV_PARAMS, minLength and maxLength of a RANGE_EXPR Job
+# Parameter are checked against the value as written and its canonical form. "1-3:2" is 5 characters, but its canonical
+# form "1,3" is 3, shorter than minLength 4, so job creation fails. EXPR's 2.10--range-expr-min-length-written-only
+# runs the same Job without ENV_PARAMS.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: RangeExprMinLengthCanonical
+  parameterDefinitions:
+  - name: Frames
+    type: RANGE_EXPR
+    minLength: 4
+  steps:
+  - name: A
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range: "{{Param.Frames}}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["{{Task.Param.Frame}}"]
+parameters:
+  Frames: "1-3:2"

@@ -1,0 +1,24 @@
+# RFC 0010 / Template Schemas §4 item 6: a Step for which an Environment's enableIf is false does not have the
+# Environment's variables set.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnvEnableIfVariables
+  jobEnvironments:
+  - name: Marker
+    enableIf: false
+    variables:
+      CONFORMANCE_MARKER: present
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os; print('MARKER=' + os.environ.get('CONFORMANCE_MARKER', 'absent'))"]
+runOn: [posix, windows]
+expected:
+  output:
+  - MARKER=absent
+  forbidden:
+  - MARKER=present

@@ -1,0 +1,33 @@
+# RFC 0010 / Template Schemas §4.5 ("a relative path is an error, since an
+# Environment parameter has no directory to be relative to"): a supplied PATH
+# value relative/dir is rejected at job creation. The Environment is attached,
+# so template validation cannot see the parameter's type.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: RelativePathValue
+  steps:
+  - name: A
+    dependencies:
+    - environment: Mnt
+      parameters:
+        Dir: relative/dir
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Mnt
+    envParameterDefinitions:
+    - name: Dir
+      type: PATH
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Mnt, "Dir={{Env.RawParam.Dir}}"]
+runOn: [posix, windows]

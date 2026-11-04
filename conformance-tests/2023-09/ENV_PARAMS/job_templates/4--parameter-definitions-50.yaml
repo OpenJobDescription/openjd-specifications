@@ -1,0 +1,172 @@
+# Template Schemas §4 item 3 constraint 2 (RFC 0010): an Environment's envParameterDefinitions may contain up
+# to 50 elements, so 50 are valid.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: P01
+    type: STRING
+    default: v
+  - name: P02
+    type: STRING
+    default: v
+  - name: P03
+    type: STRING
+    default: v
+  - name: P04
+    type: STRING
+    default: v
+  - name: P05
+    type: STRING
+    default: v
+  - name: P06
+    type: STRING
+    default: v
+  - name: P07
+    type: STRING
+    default: v
+  - name: P08
+    type: STRING
+    default: v
+  - name: P09
+    type: STRING
+    default: v
+  - name: P10
+    type: STRING
+    default: v
+  - name: P11
+    type: STRING
+    default: v
+  - name: P12
+    type: STRING
+    default: v
+  - name: P13
+    type: STRING
+    default: v
+  - name: P14
+    type: STRING
+    default: v
+  - name: P15
+    type: STRING
+    default: v
+  - name: P16
+    type: STRING
+    default: v
+  - name: P17
+    type: STRING
+    default: v
+  - name: P18
+    type: STRING
+    default: v
+  - name: P19
+    type: STRING
+    default: v
+  - name: P20
+    type: STRING
+    default: v
+  - name: P21
+    type: STRING
+    default: v
+  - name: P22
+    type: STRING
+    default: v
+  - name: P23
+    type: STRING
+    default: v
+  - name: P24
+    type: STRING
+    default: v
+  - name: P25
+    type: STRING
+    default: v
+  - name: P26
+    type: STRING
+    default: v
+  - name: P27
+    type: STRING
+    default: v
+  - name: P28
+    type: STRING
+    default: v
+  - name: P29
+    type: STRING
+    default: v
+  - name: P30
+    type: STRING
+    default: v
+  - name: P31
+    type: STRING
+    default: v
+  - name: P32
+    type: STRING
+    default: v
+  - name: P33
+    type: STRING
+    default: v
+  - name: P34
+    type: STRING
+    default: v
+  - name: P35
+    type: STRING
+    default: v
+  - name: P36
+    type: STRING
+    default: v
+  - name: P37
+    type: STRING
+    default: v
+  - name: P38
+    type: STRING
+    default: v
+  - name: P39
+    type: STRING
+    default: v
+  - name: P40
+    type: STRING
+    default: v
+  - name: P41
+    type: STRING
+    default: v
+  - name: P42
+    type: STRING
+    default: v
+  - name: P43
+    type: STRING
+    default: v
+  - name: P44
+    type: STRING
+    default: v
+  - name: P45
+    type: STRING
+    default: v
+  - name: P46
+    type: STRING
+    default: v
+  - name: P47
+    type: STRING
+    default: v
+  - name: P48
+    type: STRING
+    default: v
+  - name: P49
+    type: STRING
+    default: v
+  - name: P50
+    type: STRING
+    default: v
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

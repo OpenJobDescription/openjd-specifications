@@ -1,0 +1,20 @@
+# Template Schemas §4 item 4 (RFC 0010): activation: BY_DEFAULT on a Job Environment is valid. It is the value an
+# Environment that omits activation has.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: TestJob
+jobEnvironments:
+- name: Conda
+  activation: BY_DEFAULT
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Conda]
+steps:
+- name: A
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

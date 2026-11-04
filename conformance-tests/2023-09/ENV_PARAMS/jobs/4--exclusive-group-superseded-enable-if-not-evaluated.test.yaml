@@ -1,0 +1,55 @@
+# Template Schemas §4 item 7, §7.4.1 step 6 (RFC 0010): once an Environment of a group is entered for a Step, the
+# enableIf of the later ones is not evaluated. Docker's enableIf reads Image, which has no default and which the
+# Step does not supply, so evaluating it would be an error (§3.2.2 rule 5). Conda, attached first, is entered, so
+# Docker is superseded and the Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: GroupJob
+  steps:
+  - name: S
+    dependencies:
+    - environment: Conda
+      parameters:
+        Packages: colmap=3.11
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, S]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    exclusiveGroup: SoftwareProvider
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: ""
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda]
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Docker
+    enableIf: "Env.Param.Image != ''"
+    exclusiveGroup: SoftwareProvider
+    envParameterDefinitions:
+    - name: Image
+      type: STRING
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Docker]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda
+  - TASK S
+  forbidden:
+  - ENTER Docker

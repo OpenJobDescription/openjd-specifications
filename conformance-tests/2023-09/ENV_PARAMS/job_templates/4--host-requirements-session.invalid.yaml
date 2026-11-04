@@ -1,0 +1,25 @@
+# Template Schemas §7.3.2 (RFC 0010): Session.* is not available in an Environment's
+# hostRequirements, so a reference to Session.WorkingDirectory is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Gpu
+  hostRequirements:
+    attributes:
+    - name: conformance:attr.flavor
+      anyOf: ["{{Session.WorkingDirectory}}"]
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

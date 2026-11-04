@@ -1,0 +1,34 @@
+# Template Schemas §4 item 7 (RFC 0010): only Environments with the same exclusiveGroup supersede one another. A is
+# in group G and B in group H, so the Step's Sessions enter both.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: GroupJob
+  jobEnvironments:
+  - name: A
+    exclusiveGroup: G
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, A]
+  - name: B
+    exclusiveGroup: H
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, B]
+  steps:
+  - name: S
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, S]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER A
+  - ENTER B
+  - TASK S

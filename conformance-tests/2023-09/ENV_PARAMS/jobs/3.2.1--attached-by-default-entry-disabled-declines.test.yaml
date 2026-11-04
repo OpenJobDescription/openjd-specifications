@@ -1,0 +1,40 @@
+# RFC 0010 / Template Schemas §3.2 item 3.2 and §3.2.1: a disabled entry's name is still resolved against the attached
+# Environments, and for an attached BY_DEFAULT Environment it declines it. Conda omits activation, so it is
+# BY_DEFAULT. Step A's entry for Conda has enableIf "'Docker' in Job.EnvNames", which is false, so A's Sessions do
+# not enter Conda, although every Session would otherwise enter it with its default.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: AttachedByDefaultEntryDisabled
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      enableIf: "'Docker' in Job.EnvNames"
+      parameters:
+        Packages: colmap
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: base
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A
+  forbidden:
+  - ENTER Conda

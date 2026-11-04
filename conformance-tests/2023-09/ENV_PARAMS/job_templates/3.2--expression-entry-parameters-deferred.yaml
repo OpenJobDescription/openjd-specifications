@@ -1,0 +1,38 @@
+# Template Schemas §3.2 (checked-at paragraph) and §7.5 rule 5 (RFC 0010): an entry whose enableIf is an expression
+# may turn out to be disabled, and a disabled entry's parameters are not checked, so its undeclared key and its value
+# outside allowedValues are not errors at template validation. JB-143 and JB-144 create Jobs from the same shape.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Mode
+  type: STRING
+  allowedValues: ["on", "off"]
+  default: "off"
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    allowedValues: [numpy, ffmpeg]
+    default: numpy
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]
+steps:
+- name: Render
+  dependencies:
+  - environment: Conda
+    enableIf: "Param.Mode == 'on'"
+    parameters:
+      Packages: colmap
+      Bogus: x
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

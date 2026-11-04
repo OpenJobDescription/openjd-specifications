@@ -1,0 +1,33 @@
+# RFC 0010 / Template Schemas §7.3.1 Job.EnvNames ("whatever their activation"):
+# an ON_REQUEST Job Environment that the Step does not request is listed.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnvNamesIncludesUnrequested
+  jobEnvironments:
+  - name: J1
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, J1]
+  - name: J2
+    activation: ON_REQUEST
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, J2]
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A, "NAMES=[{{ Job.EnvNames.join(',') }}]"]
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A NAMES=[J1,J2]
+  forbidden:
+  - ENTER J2

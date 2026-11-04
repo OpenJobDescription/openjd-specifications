@@ -1,0 +1,46 @@
+# RFC 0010 / Template Schemas §4 item 6: an Environment's enableIf is decided per Step with that Step's
+# effective values. Step A supplies Packages and enters Conda; Step B takes the default none, for which
+# enableIf is false, so B's Session never enters Conda.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnvEnableIfPerStep
+  jobEnvironments:
+  - name: Conda
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: none
+    enableIf: "Env.Param.Packages != 'none'"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      parameters:
+        Packages: colmap
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+  - name: B
+    dependencies:
+    - step: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, B]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda Packages=colmap
+  - TASK A
+  - TASK B
+  forbidden:
+  - ENTER Conda Packages=none

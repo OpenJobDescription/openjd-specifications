@@ -1,0 +1,46 @@
+# Template Schemas §7.3.2 (RFC 0010): Cache's enableIf reads its own Env.RawParam.Dir, the unmapped
+# PATH value. Step A supplies /none, so Cache is disabled for A; Step B takes the default /data and enters it.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnableIfReadsEnvRawPath
+  jobEnvironments:
+  - name: Cache
+    activation: ON_REQUEST
+    enableIf: "Env.RawParam.Dir != '/none'"
+    envParameterDefinitions:
+    - name: Dir
+      type: PATH
+      default: /data
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Cache, "{{Env.RawParam.Dir}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Cache
+      parameters:
+        Dir: /none
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+  - name: B
+    dependencies:
+    - environment: Cache
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, B]
+runOn: [posix]
+expected:
+  output:
+  - TASK A
+  - ENTER Cache /data
+  - TASK B
+  forbidden:
+  - ENTER Cache /none

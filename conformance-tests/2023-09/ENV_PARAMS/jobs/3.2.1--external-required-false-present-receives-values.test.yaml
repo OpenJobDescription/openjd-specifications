@@ -1,0 +1,42 @@
+# RFC 0010 / Template Schemas §3.2 item 3.1, §3.2.1 item 1: a required: false
+# entry whose name does resolve to an attached Environment applies like any
+# other entry, so the attached ON_REQUEST Environment is entered with the
+# entry's value.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalRequiredFalsePresent
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      required: false
+      parameters:
+        Packages: ffmpeg=7
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    activation: ON_REQUEST
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: pkgdefault
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda Packages=ffmpeg=7
+  - TASK A
+  forbidden:
+  - ENTER Conda Packages=pkgdefault

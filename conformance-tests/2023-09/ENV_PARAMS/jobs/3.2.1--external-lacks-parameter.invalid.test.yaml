@@ -1,0 +1,35 @@
+# RFC 0010 / Template Schemas §3.2.1 item 1, §3.2 constraint 5: a required:
+# false entry that resolves to an attached Environment is checked against it, so
+# supplying a parameter (Flavor) the Environment does not declare is rejected.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalLacksParameter
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      required: false
+      parameters:
+        Packages: ffmpeg=7
+        Flavor: extra
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: pkgdefault
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+runOn: [posix, windows]

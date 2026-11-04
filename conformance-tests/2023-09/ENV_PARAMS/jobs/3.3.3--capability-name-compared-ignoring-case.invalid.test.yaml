@@ -1,0 +1,31 @@
+# RFC 0010 / Template Schemas §3.3.3 ("names compare after resolution and ignoring case") and item 2.1: the Step's
+# attr.worker.OS.family and a Job Environment's attr.worker.os.family are one capability, so anyOf [linux] and anyOf
+# [windows] have no common value and the submission is rejected at job creation.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: CapabilityNameIgnoresCase
+  jobEnvironments:
+  - name: Hw
+    activation: ALWAYS
+    hostRequirements:
+      attributes:
+      - name: attr.worker.os.family
+        anyOf: [windows]
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Hw]
+  steps:
+  - name: A
+    hostRequirements:
+      attributes:
+      - name: attr.worker.OS.family
+        anyOf: [linux]
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]

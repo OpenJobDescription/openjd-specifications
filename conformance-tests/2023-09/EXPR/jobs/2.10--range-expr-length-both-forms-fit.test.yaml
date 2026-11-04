@@ -1,0 +1,30 @@
+# Template Schemas §2.10: "1-3" and its canonical form "1-3" are both within minLength 3 and maxLength 3, so
+# the Job runs. The control for the two length tests beside it.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [EXPR]
+  name: RangeExprLengthBothFit
+  parameterDefinitions:
+  - name: Frames
+    type: RANGE_EXPR
+    minLength: 3
+    maxLength: 3
+  steps:
+  - name: A
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range: "{{Param.Frames}}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["F{{Task.Param.Frame}}"]
+parameters:
+  Frames: "1-3"
+expected:
+  output:
+  - F1
+  - F2
+  - F3

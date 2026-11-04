@@ -1,0 +1,23 @@
+# Template Schemas §3.2 constraint 7 and §3.2.2 (RFC 0010): Lic's enableIf is the literal false, so Lic is disabled
+# for Step A, and constraint 7 does not apply to it: A need not supply Product, which has no default.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: TestJob
+jobEnvironments:
+- name: Lic
+  envParameterDefinitions:
+  - name: Product
+    type: STRING
+  enableIf: false
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Lic, "{{Env.Param.Product}}"]
+steps:
+- name: A
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

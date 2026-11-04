@@ -1,0 +1,43 @@
+# Template Schemas §3.2.2 and §4 item 6 (RFC 0010): the template of JT-157. Lic's enableIf resolves to false for A,
+# so A does not enter Lic, and A's value vray, outside Product's allowedValues, is not checked; the Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ValuesOfDisabledEnvironment
+  parameterDefinitions:
+  - name: Use
+    type: STRING
+    allowedValues: ["yes", "no"]
+    default: "yes"
+  jobEnvironments:
+  - name: Lic
+    activation: ON_REQUEST
+    enableIf: "Param.Use == 'yes'"
+    envParameterDefinitions:
+    - name: Product
+      type: STRING
+      allowedValues: [arnold, redshift]
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Lic, "Product={{Env.Param.Product}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Lic
+      parameters:
+        Product: vray
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+parameters:
+  Use: "no"
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A
+  forbidden:
+  - ENTER Lic
