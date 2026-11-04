@@ -1405,8 +1405,8 @@ A [Format String](#73-format-strings) subject to the following constraints:
 2. Minimum length: 1 character.
 3. Maximum length: 1024 characters after the format string has been resolved.
 
-With the EXPR extension, an element of a task parameter's `range` list that is a single expression is a list item,
-which can resolve to no value or to several. See
+With the EXPR extension, an element of a task parameter's `range` list that is exactly `"{{<expr>}}"` is a list
+item, which can resolve to no value or to several. See
 [Task Parameter Range Field Extensions](2026-02-Expression-Language#1312-task-parameter-range-field-extensions).
 
 #### 3.4.3. `<CombinationExpr>`

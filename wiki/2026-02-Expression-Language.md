@@ -1355,8 +1355,7 @@ this resolution, since dropped and flattened elements change its length.
 
 An element with text around its expressions, or with more than one expression, resolves to a string, as every
 element does in a template without EXPR, where each element is a `<TaskParameterStringValue>`. Coercion does
-not trim: a STRING value `" 7 "` as the whole element `"{{ Param.Value }}"` in an INT range is an error with
-EXPR, while without EXPR the element resolves to the string `" 7 "` and no coercion applies.
+not trim, so a STRING value `" 7 "` as the whole element `"{{ Param.Value }}"` in an INT range is an error.
 
 ```yaml
 - name: Frame
