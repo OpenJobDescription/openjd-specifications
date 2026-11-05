@@ -375,9 +375,10 @@ dependencies:
 ```
 
 An *environment* entry names a Job Environment of that name if there is one, and otherwise an external Environment. It
-does not delay scheduling. *required* says whether the Environment must be present. *enableIf* is evaluated when the
-Job is created; a `false` entry requests and supplies nothing, declines a `BY_DEFAULT` Environment, and is an error for
-an `ALWAYS` one. *parameters* supplies values, each a literal or a format string resolved when the Job is created.
+is met when the Step's Sessions enter the Environment, so it does not delay scheduling. *required* says whether the
+Environment must be present. *enableIf* is evaluated when the Job is created; a `false` entry requests and supplies
+nothing, declines a `BY_DEFAULT` Environment, and is an error for an `ALWAYS` one. *parameters* supplies values, each a
+literal or a format string resolved when the Job is created.
 
 The constraints keep an entry to one form and one Environment to one entry, require each key to be declared and each
 value to be valid, require every Step whose Sessions enter an Environment to supply each parameter without a `default`
@@ -562,11 +563,15 @@ Environment can both call their input `Packages` without sharing a value.
 
 ### The `environment:` form of `<StepDependency>`
 
-`dependencies` is where a Step says what it needs, and RFC 0009 adds `service:` there for the same reason. Putting the
-values beside the name groups everything a Step says about one Environment in one entry, and the name keeps the values
-unambiguous when two Environments use the same parameter name (see [Rejected Ideas](#a-flat-per-step-map-of-values)).
-The entry does not delay scheduling, but it is still a dependency: a `required: true` entry rejects a submission without
-the Environment.
+Each entry in `dependencies` names something that must be in place before the Step's Tasks run: a completed Step, a
+running Service (RFC 0009), or, with this RFC, an Environment entered with the Step's parameter values. The forms differ
+in how that is met. A Step dependency is met by waiting for another Step, and an Environment dependency is met in each
+of the Step's Sessions before it runs the Step's Tasks, so it does not delay scheduling. `required: true` still rejects
+a submission in which the Environment is missing.
+
+Putting the values beside the name groups everything a Step says about one Environment in one entry, and the name keeps
+the values unambiguous when two Environments use the same parameter name (see [Rejected
+Ideas](#a-flat-per-step-map-of-values)).
 
 ### `step:` as a synonym of `dependsOn:`
 
