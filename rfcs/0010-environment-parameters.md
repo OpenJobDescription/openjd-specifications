@@ -351,8 +351,7 @@ up to 50 parameters, read only inside it as `Env.Param.<name>` and `Env.RawParam
 
 * The `default` is a format string resolved when the Job is created, and may read the same document's Job Parameters.
   A parameter without one must be supplied by every Step whose Sessions enter the Environment.
-* A PATH or LIST[PATH] value must be absolute, in some path format, or a URI, since it is never joined with a
-  directory.
+* A PATH or LIST[PATH] value is used as given: never joined with a directory, and not required to be absolute.
 * A RANGE_EXPR value's *minLength* and *maxLength* apply to the value as written and to its canonical form.
 
 Environment parameters are never merged with Job Parameters
@@ -535,7 +534,7 @@ the section governs. Constraint numbers refer to
 | A resolved, non-literal `default` satisfies its parameter's type and constraints, for each Step that takes it (§4.5) | Job creation |
 | An Environment disabled for a Step (its *enableIf* is `false` with the values that are known, or it is superseded) is not held to constraint 7, and the Step's effective values for it are not checked; the entry's keys (constraint 5) and value forms still are (§3.2.2 items 3, 4) | Template validation for a literal `false`; Job creation otherwise |
 | An Environment *enableIf* whose result depends on a missing, unresolvable, or unconvertible value is an error (§3.2.2) | The earliest stage at which it is known: template validation for a value known then to be missing, whatever every value still unknown resolves to; Job creation otherwise |
-| PATH and LIST[PATH] values absolute in some path format (POSIX, a Windows drive path, or a UNC path), or URIs; their string constraints, against the unmapped value. This includes a literal `default` that no Step uses (§4.5) | Job creation |
+| PATH and LIST[PATH] string constraints are checked against the unmapped value, including for a literal `default` that no Step uses (§4.5) | Job creation |
 
 ## Design Choice Rationale
 
@@ -750,14 +749,14 @@ the Job that a scheduler can compare. Values that depended on host state would d
 value reads `RawParam.*` of a PATH Job Parameter and not `Param.*`, which is the host-mapped path; the Environment's
 own `Env.Param.*` applies the mapping on the host.
 
-### Path values are absolute in any path format
+### Path values are used as given
 
-An Environment parameter has no directory to be relative to, so a path value must be absolute. It is not checked against
-one path format, because a Job has none to check against: its path mapping rules can come from several sources, such as
-storage profiles and job attachments, whose paths have different formats, and a service that creates the Job often does
-not know them. Job Parameter PATH values are not checked against a format either. A value that is absolute in any format
-is accepted, and path mapping on the Worker Host maps it by the rules that match it. A literal path is portable only
-between submitters that use its format, and a host-local path owned by the Environment Template is better a STRING.
+A PATH Job Parameter's value is resolved on the submitting workstation: a relative value is joined with a directory
+there, and a submitter may use the value to choose files to send with the Job, so its form matters. An Environment
+parameter value has no such role. It only reaches the Environment's own actions, mapped on the Worker Host by the Job's
+path mapping rules, so the specification does not check whether it is absolute or which path format it has. A value that
+matches no mapping rule passes through unchanged. A literal path is portable only between submitters that use its
+format, and a host-local path owned by the Environment Template is better a STRING.
 
 ### Not on Step Environments
 
