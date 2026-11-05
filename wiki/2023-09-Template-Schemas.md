@@ -940,8 +940,9 @@ Where:
    *stepEnvironments*, *hostRequirements*, *parameterSpace*, and *script* fields, and with the `ENV_PARAMS` extension in
    the *parameters* values and *enableIf* of *dependencies* entries. See: [&lt;LetBindings&gt;](#36-letbindings).
 4. *dependencies* — A list of the dependencies of this Step. These dependencies must be resolved before the Tasks of the
-   Step may be scheduled. With the `ENV_PARAMS` extension, an entry may instead request an Environment that this
-   Step's Sessions enter, and supply values for its parameters. Such an entry does not delay scheduling.
+   Step run. A dependency on a Step is resolved before the Tasks are scheduled. With the `ENV_PARAMS` extension, an
+   entry may instead name an Environment for the Step's Sessions to enter, with the Step's parameter values for it,
+   before they run the Step's Tasks. Such an entry is resolved in each Session, so it does not delay scheduling.
    See: [&lt;StepDependency&gt;](#32-stepdependency)
     * Minimum number of elements: If provided, then this list must contain at least one element.
     * Maximum number of elements: There is no maximum defined, though implementations may choose to constrain the number of
@@ -1016,9 +1017,10 @@ Where:
    the Job is created (see [Resolving External Environments](#321-resolving-external-environments)). The name of a
    disabled entry resolves in the same way. An enabled entry declares that the Step's Sessions need the Environment,
    entered with the entry's values. The Environment's *activation*, *enableIf*, and *exclusiveGroup* decide whether the
-   Step's Sessions enter it (see [&lt;Environment&gt;](#4-environment)). The entry does not delay scheduling the Step's
-   Tasks. It does not change the position of the Environment in the order a Session enters its Environments. Available
-   with the `ENV_PARAMS` extension. The other fields of this form are:
+   Step's Sessions enter it (see [&lt;Environment&gt;](#4-environment)). The entry is met when the Step's Sessions enter
+   the Environment, before they run the Step's Tasks, so it does not delay scheduling them. It does not change the
+   position of the Environment in the order a Session enters its Environments. Available with the `ENV_PARAMS`
+   extension. The other fields of this form are:
     1. *required* — Whether the Environment must be present. Default `true`. When `false` and the name resolves to no
        Environment when the Job is created, the entry has no effect, and the Step's Sessions run without that
        Environment.
