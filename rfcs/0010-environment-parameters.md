@@ -15,8 +15,8 @@
     (https://github.com/OpenJobDescription/openjd-specifications/pull/130)
   * RFC 0009, Service (`SERVICE`) (draft), whose `service:` dependency form this RFC's `environment:` form follows, and
     whose earlier drafts defined a `runScope` field that this RFC replaces with `activation`
-  * RFC 0011, Control Flow (`CONTROL_FLOW`) (draft), whose draft also proposes `enableIf` on an Environment, which this
-    RFC defines
+  * RFC 0011, Control Flow (`CONTROL_FLOW`) (draft), which defines `enableIf` on Steps and extends this RFC's `enableIf`
+    on Environments with what needs its later stages
 
 ## Summary
 
@@ -468,7 +468,9 @@ and Environment parameter names that Environment Templates and Job Templates sho
 
 This RFC is specified against mainline. Every value it adds is fixed when the Job is created: effective values, each
 Step's Environment set, each Environment's *enableIf*, and combined host requirements. An RFC accepted after this one
-that adds a kind of Session or a later stage of evaluation specifies how it extends these rules.
+that adds a kind of Session or a later stage of evaluation specifies how it extends these rules. In particular, this RFC
+defines *enableIf* on every `<Environment>`, decided at Job creation. RFC 0011 (`CONTROL_FLOW`) extends that definition
+with what needs its own stages, such as an *enableIf* that reads `Steps.*`, rather than defining it again.
 
 ### Recommended names (non-normative)
 
@@ -944,25 +946,20 @@ Environment must not become opt-in because one Step's entry says so, and two Ste
 
 ## Open Questions
 
-Question 2 should be settled before acceptance. The others do not block it.
+A field name is permanent once implementations ship it, so this should be settled before acceptance.
 
-1. **Interaction with `WRAP_ACTIONS` beyond the wrapper's own values.** A wrapping Environment reads its own parameters
-   (the image to run) but not those of the Environments it wraps. No use case for the latter is known;
-   `WrappedEnv.Param.*` is listed under [Future Work](#future-work).
-2. **The extension name.** `ENV_PARAMS` covers more than parameters: it also gates `activation`, `enableIf` on
-   Environments and entries, an Environment's `hostRequirements`, and the `step:` form of `<StepDependency>`. It is the
-   extension under which a Step requests an Environment. The name is kept for continuity with the discussion thread, and
-   a reviewer may prefer one that names the request. An extension name is permanent once implementations ship it, so
-   this should be settled during the final comment period.
-3. **`enableIf` on `<Environment>` and RFC 0011.** This RFC defines *enableIf* on every `<Environment>`, decided at Job
-   creation, which RFC 0011 (`CONTROL_FLOW`) also defines in its current draft. If this RFC is accepted first, RFC 0011
-   should drop its definition and extend this one with what needs its own stages, such as a Step Environment's
-   *enableIf* reading `Steps.*`.
+1. **The name `enableIf`.** This RFC uses `enableIf`, the name discussion #81 proposed and RFC 0011 uses for Steps (see
+   [The name `enableIf`](#the-name-enableif)). Most of the systems surveyed use `when:` for the same idea: Argo
+   Workflows, Tekton, CWL, Nextflow, Ansible, CircleCI, and Jenkins. GitHub Actions, Buildkite, and GitLab CI use `if:`,
+   and Azure Pipelines uses `condition:`. Should the field be named `when` instead, so that it reads as authors of those
+   systems expect? `when` is shorter and familiar. `enableIf` says what `false` does, where `when` can read as "wait
+   until this is true", and OpenJD Steps do wait. RFC 0011 would need to make the same choice for Steps, so that one
+   idea has one name across the specification.
 
 ## Future Work
 
 * **`WrappedEnv.Param.*` for wrap hooks**, so a wrapping Environment can read the effective values of the inner
-  Environment whose action it wraps.
+  Environment whose action it wraps, if a use case appears. A wrapping Environment reads its own parameters today.
 * **Matching external Environments by a standard kind** (see [Rejected
   Ideas](#matching-external-environments-by-something-other-than-name)).
 * **A Job-level default for a whole `environment:` entry**, so a Job Template can set a value once for all its Steps
