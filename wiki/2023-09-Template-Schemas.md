@@ -2257,22 +2257,19 @@ Job runs, and does not declare the files that the Job reads or writes.
    `{{ }}`, is also checked at template validation, even when every Step supplies the parameter and even when the
    Environment's *enableIf* disables it for every Step that would take the `default`. Any other `default` is checked
    only for the Steps that take it.
-3. *PATH values* — A value of a PATH parameter, and each element of a LIST[PATH] value, is never joined with a
-   directory. When the Job is created, each such path must be absolute in some path format, or a URI: a POSIX path that
-   starts with `/`, a Windows path that starts with a drive letter followed by `:\` or `:/`, as in `C:\proj`, or a
-   Windows UNC path, as in `\\server\share\proj`. It is not checked against one path format, since the path mapping
-   rules for a Job can come from several sources whose paths have different formats (see [How Jobs Are
-   Run](How-Jobs-Are-Run#path-mapping)). A relative literal `default` is an error even when every Step supplies the
-   parameter. The path's constraints are checked at the same time, against the unmapped value, and path mapping on the
-   Worker Host does not re-check them.
+3. *PATH values* — A value of a PATH parameter, and each element of a LIST[PATH] value, is used as given. It is never
+   joined with a directory, and it need not be absolute: unlike a PATH Job Parameter, whose value the submitting
+   workstation resolves and may use to choose files to send with the Job, an Environment parameter value only reaches
+   the Environment's own actions, mapped by the path mapping rules on the Worker Host. Its constraints are checked when
+   the Job is created, against the unmapped value, and path mapping on the Worker Host does not re-check them.
 4. *RANGE_EXPR values* — *minLength* and *maxLength* check both the value as written and its canonical form (see
    [§2.10](#210-jobrangeexprparameterdefinition-extension-expr)). The value as written is the literal's string, a format
    string's resolved string, or the string result of a single `{{ }}` expression. A single expression whose result is
    a `range_expr`, such as `{{Param.Frames}}`, has only its canonical form.
 
 > **NOTE:** Take path values from PATH Job Parameters, through `RawParam.<name>`, so that they have the path format the
-> Job's path mapping rules expect. A literal absolute path is portable only across submitters that use its path format.
-> A host-local path that an Environment Template owns and that needs no path mapping is better declared as a STRING.
+> Job's path mapping rules expect. A literal path is portable only across submitters that use its path format. A
+> host-local path that an Environment Template owns and that needs no path mapping is better declared as a STRING.
 
 Within the Environment that defines it, an Environment parameter is referenced as `Env.Param.<name>` and
 `Env.RawParam.<name>` (see [Value References](#731-value-references)).
@@ -2685,8 +2682,7 @@ With the `ENV_PARAMS` extension, Job creation takes these steps in order:
    values is an error (see [§3.3](#33-hostrequirements)). They are then combined with the Step's own (see
    [Combined Host Requirements](#333-combined-host-requirements)).
 
-Environment parameter PATH and LIST[PATH] values are not joined with any directory and must be absolute, in some path
-format, or a URI (see
+Environment parameter PATH and LIST[PATH] values are used as given, never joined with any directory (see
 [§4.5](#45-environmentparameterdefinition-extension-env_params)).
 
 ### 7.5. Numeric strings
