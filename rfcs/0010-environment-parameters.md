@@ -309,9 +309,10 @@ This RFC is additive and gated by the `ENV_PARAMS` extension name declared under
 
 The normative text of this extension is the wiki edits in this pull request: [Template
 Schemas](../wiki/2023-09-Template-Schemas.md), [Expression Language](../wiki/2026-02-Expression-Language.md), and [How
-Jobs Are Run](../wiki/How-Jobs-Are-Run.md). This section summarizes each change and links to the wiki section that holds
-the formal text; where the two differ, the wiki governs. A section number (§) in this RFC refers to Template Schemas
-unless another page is named.
+Jobs Are Run](../wiki/How-Jobs-Are-Run.md). It also adds a non-normative page, [Environment Name
+Conventions](../wiki/Environment-Name-Conventions.md). This section summarizes each change and links to the wiki section
+that holds the formal text; where the two differ, the wiki governs. A section number (§) in this RFC refers to Template
+Schemas unless another page is named.
 
 ### Terminology
 
@@ -459,7 +460,9 @@ Evaluation](../wiki/2026-02-Expression-Language.md#progressive-expression-evalua
 
 [How Jobs Are Run](../wiki/How-Jobs-Are-Run.md) gains an [Environment
 Parameters](../wiki/How-Jobs-Are-Run.md#environment-parameters) section for template authors, and its Sessions and Host
-Requirements sections describe the per-Step Environment set and an Environment's host requirements.
+Requirements sections describe the per-Step Environment set and an Environment's host requirements. A new page alongside
+it, [Environment Name Conventions](../wiki/Environment-Name-Conventions.md), recommends the Environment, Job Parameter,
+and Environment parameter names that Environment Templates and Job Templates should share.
 
 ### Extensions specified after this one (non-normative)
 
@@ -470,21 +473,12 @@ that adds a kind of Session or a later stage of evaluation specifies how it exte
 ### Recommended names (non-normative)
 
 The portability of a Job Template that writes `environment: Conda` depends on Environment Templates using the same
-Environment and parameter names. The specification does not mandate names. This RFC recommends the following, which the
-samples use, for Environment Templates that provision software. Each parameter defaults to the template-level Job
-Parameter that Deadline Cloud's Conda and Rez queue environments already use, so existing Job Templates keep working.
-Such an Environment keeps the default `activation`, `BY_DEFAULT`, or uses `ON_REQUEST`, uses its `enableIf` to skip a
-Step with nothing to install, and has `exclusiveGroup: SoftwareProvider`, so that where several are attached each Step
-uses the first one attached.
-
-| Environment | Parameter | Type | Default | Meaning |
-|-------------|-----------|------|---------|---------|
-| `Conda` | `Packages` | STRING | `{{Param.CondaPackages}}` | Space-separated package specs. Empty means use the host's software. |
-| `Conda` | `Channels` | STRING | `{{Param.CondaChannels}}` | Space-separated channels. |
-| `Rez` | `Packages` | STRING | `{{Param.RezPackages}}` | Space-separated Rez package requests. |
-| `Docker` | `Image` | STRING | `{{Param.DockerImage}}` | The container image. |
-| `Docker` | `Mounts` | LIST[PATH] | `[]` | Host paths to make visible at the same path in the container. |
-| `Docker` | `Gpus` | STRING | `""` | The value for `docker run --gpus`. |
+Environment, Job Parameter, and Environment parameter names. The specification does not mandate names. This pull request
+adds a wiki page, [Environment Name Conventions](../wiki/Environment-Name-Conventions.md), that explains why shared
+names matter and recommends names for Conda, Rez, and Docker Environments, which the samples use. Each Environment
+parameter defaults to the Job Parameter that Deadline Cloud's Conda and Rez queue environments already use, so existing
+Job Templates keep working, and each such Environment has `exclusiveGroup: SoftwareProvider`, so that where several are
+attached each Step uses the first one attached.
 
 ### Validation
 
@@ -950,22 +944,17 @@ Environment must not become opt-in because one Step's entry says so, and two Ste
 
 ## Open Questions
 
-Question 3 should be settled before acceptance. The others do not block it.
+Question 2 should be settled before acceptance. The others do not block it.
 
-1. **Standard names for external Environments.** The portability of a Job Template that writes `environment: Conda`
-   depends on Environment Templates naming their Conda Environment `Conda` and its input `Packages`, and on their
-   sharing one `exclusiveGroup`. [Recommended names](#recommended-names-non-normative) proposes a table, which the
-   samples follow. Whether it should become a wiki conventions page on acceptance, and which further Environments it
-   should cover, is open.
-2. **Interaction with `WRAP_ACTIONS` beyond the wrapper's own values.** A wrapping Environment reads its own parameters
+1. **Interaction with `WRAP_ACTIONS` beyond the wrapper's own values.** A wrapping Environment reads its own parameters
    (the image to run) but not those of the Environments it wraps. No use case for the latter is known;
    `WrappedEnv.Param.*` is listed under [Future Work](#future-work).
-3. **The extension name.** `ENV_PARAMS` covers more than parameters: it also gates `activation`, `enableIf` on
+2. **The extension name.** `ENV_PARAMS` covers more than parameters: it also gates `activation`, `enableIf` on
    Environments and entries, an Environment's `hostRequirements`, and the `step:` form of `<StepDependency>`. It is the
    extension under which a Step requests an Environment. The name is kept for continuity with the discussion thread, and
    a reviewer may prefer one that names the request. An extension name is permanent once implementations ship it, so
    this should be settled during the final comment period.
-4. **`enableIf` on `<Environment>` and RFC 0011.** This RFC defines *enableIf* on every `<Environment>`, decided at Job
+3. **`enableIf` on `<Environment>` and RFC 0011.** This RFC defines *enableIf* on every `<Environment>`, decided at Job
    creation, which RFC 0011 (`CONTROL_FLOW`) also defines in its current draft. If this RFC is accepted first, RFC 0011
    should drop its definition and extend this one with what needs its own stages, such as a Step Environment's
    *enableIf* reading `Steps.*`.

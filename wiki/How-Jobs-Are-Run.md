@@ -128,7 +128,8 @@ Several **Environments** can provide the same thing in different ways, such as C
 them the same `exclusiveGroup`, and each Step's **Sessions** enter only the first of them, in the Job's order, that is
 enabled for that Step. Attached **Environments** come first, in the order they were attached. A Job Template then has
 one `environment:` entry for each kind it can use, and the system that attaches the **Environments** decides which one
-each Step gets.
+each Step gets. [Environment Name Conventions](Environment-Name-Conventions) lists the names that such **Environments**
+and the Job Templates that use them should share.
 
 All of these values and decisions are worked out once, when the Job is created, from the Job Parameters and the
 templates. So before anything runs, the render management system knows which **Environments** each Step's
