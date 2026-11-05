@@ -117,7 +117,7 @@ an `ALWAYS` Environment, an `enableIf` that is false for a Step is an error inst
 - **Effective values** (§3.2.2, §1.2.1): supplied value or `default`; a `default` reads the merged Job Parameter
   value; format strings convert to the parameter's type; Environment parameters are never merged with Job
   Parameters; values reach `onEnter`, Tasks (through `variables`), and `onExit` unchanged.
-- **Path values** (§4.5): PATH and LIST[PATH] values are absolute in the submission path format (or URIs), never joined with a directory, checked unmapped, path-mapped in `Env.Param.*` and not in `Env.RawParam.*`.
+- **Path values** (§4.5): PATH and LIST[PATH] values are absolute in some path format (POSIX, a Windows drive path, or a UNC path) or URIs, never joined with a directory, checked unmapped, path-mapped in `Env.Param.*` and not in `Env.RawParam.*`.
 - **`Job.EnvNames`** (§7.3.1): the names of every Job Environment, own and attached, whatever its `activation`, in
   the Job's Environment order (the attached ones first, in the order they are attached; §1.1 item 7), excluding Step
   Environments, with a name repeated when two attached Environments share it.
@@ -160,8 +160,8 @@ Directory rules, from the task plan:
 
 Commands: tests that only print values use `echo` with `runOn: [posix, windows]`. Tests that inspect exact argv or
 build a variable across Environments use `bash` and `runOn: [posix]`. Tests that print an environment variable from
-a Task use `python -c`, the suite's portable interpreter. PATH tests have `-posix` and `-windows` variants, because
-`openjd run` takes the host's path format as the submission path format and a literal path is absolute in only one.
+a Task use `python -c`, the suite's portable interpreter. PATH tests that check path mapping have `-posix` and
+`-windows` variants, because `openjd run` maps paths to the host's path format.
 
 Each test file starts with a comment naming the RFC or wiki section and the one rule it checks.
 
@@ -626,6 +626,14 @@ Attached Environment Templates are given in the test's `environments` list.
 | JB-61 | `4.5--relative-literal-path-default-unused.invalid.test.yaml` | EP | A literal PATH `default: relative/dir` is rejected even though every Step supplies an absolute value (from a PATH Job Parameter whose relative `default` is joined with the template directory, so it is absolute on every host). The Environment Template may already fail `openjd check` (ambiguity 2); the run is rejected either way. |
 | JB-62 | `4.5--path-allowed-values-checked-unmapped-posix.test.yaml` | EP | `runOn: [posix]`. `allowedValues` lists the unmapped path; a mapping rule changes it on the host; the Job runs and `Env.Param` prints the mapped path. |
 | JB-63 | `4.5--path-uri-value.test.yaml` | EP, EX | A PATH value `s3://bucket/key` is accepted, and `Env.RawParam` prints it unchanged. Both documents list `EXPR` (see ambiguity 10). |
+| JB-157 | `4.5--path-absolute-posix.test.yaml` | EP, EX | A POSIX PATH value `/mnt/proj` is accepted on any host. |
+| JB-158 | `4.5--path-absolute-windows-drive.test.yaml` | EP, EX | A Windows drive PATH value `C:\proj` is accepted on any host, including a POSIX one. |
+| JB-159 | `4.5--path-absolute-windows-drive-forward-slash.test.yaml` | EP, EX | `C:/proj` is accepted on any host. |
+| JB-160 | `4.5--path-absolute-windows-unc.test.yaml` | EP, EX | A UNC PATH value `\\server\share\proj` is accepted on any host. |
+| JB-161 | `4.5--list-path-mixed-formats.test.yaml` | EP, EX | A LIST[PATH] value mixing a POSIX, a Windows drive, and a UNC path is accepted. |
+| JB-162 | `4.5--path-relative-windows-backslash.invalid.test.yaml` | EP, EX | `relative\dir` is absolute in no format; rejected. |
+| JB-163 | `4.5--path-relative-windows-drive.invalid.test.yaml` | EP, EX | The drive-relative `C:dir` is rejected. |
+| JB-164 | `4.5--path-relative-windows-rooted.invalid.test.yaml` | EP, EX | The drive-less rooted `\dir` is rejected. |
 
 #### Host requirements (§3.3.3, §4 item 5)
 
@@ -746,7 +754,7 @@ here (the constraints 5 and 6 row is V19 and V45).
 | V23 | Removed: `ENV_PARAMS` requires `EXPR`, so no requesting document lacks `EXPR`; see V36 | — | — |
 | V24 | A format-string value or `default` for a list-typed parameter is one `{{ }}` expression | Template validation for `default`s and Job Environment entries; job creation for external | JT-37, JT-38, JT-91, ET-24, JB-29 |
 | V25 | A resolved, non-literal `default` satisfies its type and constraints for each Step that takes it | Job creation | JB-11, JB-12 |
-| V26 | PATH / LIST[PATH] values absolute in the submission path format or URIs; string constraints on the unmapped value; including an unused literal `default` | Job creation | JB-60–JB-63; mapping: JB-54–JB-59 |
+| V26 | PATH / LIST[PATH] values absolute in some path format (POSIX, Windows drive, UNC) or URIs; string constraints on the unmapped value; including an unused literal `default` | Job creation | JB-60–JB-63, JB-157–JB-164; mapping: JB-54–JB-59 |
 | V27 | Merged into V20: the RFC table now has one row for constraint 7 | — | — |
 | V28 | Removed: the RFC no longer specifies composition with `SERVICE` | — | — |
 | V29 | Removed: the RFC no longer specifies composition with `SERVICE`. RFC 0008's wrap-hook rules apply per Session stack, which with `activation` and `enableIf` is per Step's Environment set | Job creation | JB-77 |
@@ -803,8 +811,8 @@ See the top-level [conformance README](../../README.md) for the standard runner 
 1. Each entry of a test's `environments` list is an Environment Template the scheduler attaches to the Job, in list
    order. The runner must resolve `environment:` entries against them at job creation as §3.2.1 describes, and reject
    the run (non-zero exit) for every job-creation error the RFC lists.
-2. The runner's submission path format is the host's path format, and `pathMapping` rules apply to PATH and
-   LIST[PATH] Environment parameter values in `Env.Param.*`.
+2. `pathMapping` rules apply to PATH and LIST[PATH] Environment parameter values in `Env.Param.*`, mapping them to the
+   host's path format. A value is accepted when it is absolute in any path format, whatever the host's.
 3. The runner need not place Sessions by host requirements, but it must compute the combined host requirements of
    each Step at job creation and reject a conflict.
 
@@ -818,7 +826,7 @@ These rules, or parts of rules, have no planned test with a definite expected ou
    JB-49 and JB-52 assert it, and the base suite's `1.1--attached-environments-entered-first` tests the order in which
    a Session enters them.
 2. **Whether a template validator may reject a relative literal PATH `default` early.** §4.5 item 3 says "When the Job
-   is created, each such path must be absolute in that format or a URI". A string such as `relative/dir` is relative in
+   is created, each such path must be absolute in some path format, or a URI". A string such as `relative/dir` is relative in
    every path format, so a validator could know at template validation; the text does not say whether rejecting it then
    is permitted or forbidden. JB-61 tests rejection at job creation only, which is definite either way; no
    `job_templates/` or `env_templates/` test asserts that `openjd check` accepts it.
