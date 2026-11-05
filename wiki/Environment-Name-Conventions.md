@@ -53,8 +53,14 @@ environments already use.
 
 Each of these **Environments** provides software, and a Step normally wants one of them. With ENV_PARAMS, give each one
 `exclusiveGroup: SoftwareProvider`. Each Step's **Sessions** then enter only the first of them, in the order they were
-attached, that is enabled for that Step. Keep the default `activation`, `BY_DEFAULT`, so that Job Templates written
-before ENV_PARAMS still get the software, and use `enableIf` to skip the Steps that ask for nothing:
+attached, that is enabled for that Step. Choose each one's `activation` by who should get it:
+
+* Keep the default, `BY_DEFAULT`, for an **Environment** that Job Templates written before ENV_PARAMS rely on, such as
+  Conda, so that they still get the software. Use `enableIf` to skip the Steps that ask for nothing.
+* Use `ON_REQUEST` for an **Environment** that only the Steps asking for it should enter, such as Docker, which runs
+  every action of a **Session** in a container.
+
+A Conda **Environment** that follows these conventions:
 
 ```yaml
 environment:
