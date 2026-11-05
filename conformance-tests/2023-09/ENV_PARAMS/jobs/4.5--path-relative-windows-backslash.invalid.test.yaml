@@ -1,0 +1,32 @@
+# Template Schemas §4.5 item 3 (RFC 0010): a PATH Environment parameter value must be absolute in some path format,
+# or a URI; it is not checked against one path format.
+# A relative path written with backslashes, relative\dir, is absolute in no format and is rejected.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: PathAbsoluteAnyFormat
+  steps:
+  - name: A
+    dependencies:
+    - environment: Mnt
+      parameters:
+        Dir: "relative\\dir"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Mnt
+    envParameterDefinitions:
+    - name: Dir
+      type: PATH
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Mnt, "Dir={{Env.RawParam.Dir}}"]
+runOn: [posix, windows]

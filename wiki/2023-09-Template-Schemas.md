@@ -2257,21 +2257,22 @@ Job runs, and does not declare the files that the Job reads or writes.
    `{{ }}`, is also checked at template validation, even when every Step supplies the parameter and even when the
    Environment's *enableIf* disables it for every Step that would take the `default`. Any other `default` is checked
    only for the Steps that take it.
-3. *PATH values* — A value of a PATH parameter, and each element of a LIST[PATH] value, is a path in the Job's
-   submission path format: the path format of the Job's PATH Job Parameter values, which path mapping rules for the
-   Job are keyed on (see [How Jobs Are Run](How-Jobs-Are-Run#path-mapping)). When the Job is created, each such path
-   must be absolute in that format or a URI, since it is never joined with a directory. A relative literal `default` is
-   an error even when every Step supplies the parameter. The path's constraints are checked at the same time, against
-   the unmapped value, and path mapping on the Worker Host does not re-check them.
+3. *PATH values* — A value of a PATH parameter, and each element of a LIST[PATH] value, is never joined with a
+   directory. When the Job is created, each such path must be absolute in some path format, or a URI: a POSIX path that
+   starts with `/`, a Windows path that starts with a drive letter followed by `:\` or `:/`, as in `C:\proj`, or a
+   Windows UNC path, as in `\\server\share\proj`. It is not checked against one path format, since the path mapping
+   rules for a Job can come from several sources whose paths have different formats (see [How Jobs Are
+   Run](How-Jobs-Are-Run#path-mapping)). A relative literal `default` is an error even when every Step supplies the
+   parameter. The path's constraints are checked at the same time, against the unmapped value, and path mapping on the
+   Worker Host does not re-check them.
 4. *RANGE_EXPR values* — *minLength* and *maxLength* check both the value as written and its canonical form (see
    [§2.10](#210-jobrangeexprparameterdefinition-extension-expr)). The value as written is the literal's string, a format
    string's resolved string, or the string result of a single `{{ }}` expression. A single expression whose result is
    a `range_expr`, such as `{{Param.Frames}}`, has only its canonical form.
 
-> **NOTE:** Take path values from PATH Job Parameters, through `RawParam.<name>`, which always have the submission path
-> format. A literal absolute path is absolute in only one operating system's format, so a literal PATH value is portable
-> only across submitters that use that format. A host-local path that an Environment Template owns and that needs no
-> path mapping is better declared as a STRING.
+> **NOTE:** Take path values from PATH Job Parameters, through `RawParam.<name>`, so that they have the path format the
+> Job's path mapping rules expect. A literal absolute path is portable only across submitters that use its path format.
+> A host-local path that an Environment Template owns and that needs no path mapping is better declared as a STRING.
 
 Within the Environment that defines it, an Environment parameter is referenced as `Env.Param.<name>` and
 `Env.RawParam.<name>` (see [Value References](#731-value-references)).
@@ -2684,7 +2685,8 @@ With the `ENV_PARAMS` extension, Job creation takes these steps in order:
    values is an error (see [§3.3](#33-hostrequirements)). They are then combined with the Step's own (see
    [Combined Host Requirements](#333-combined-host-requirements)).
 
-Environment parameter PATH and LIST[PATH] values are not joined with any directory and must be absolute or a URI (see
+Environment parameter PATH and LIST[PATH] values are not joined with any directory and must be absolute, in some path
+format, or a URI (see
 [§4.5](#45-environmentparameterdefinition-extension-env_params)).
 
 ### 7.5. Numeric strings
@@ -2763,7 +2765,7 @@ Rules:
    for every such value.
 
 With the `ENV_PARAMS` extension, the *enableIf* of an *environment* entry and of an Environment is evaluated in
-template scope, not in a host context. `path` values have POSIX semantics whatever the Job's submission path format,
+template scope, not in a host context. `path` values have POSIX semantics whatever path format the Job's paths have,
 and no path mapping applies (see [Expression Language §1.2.1](2026-02-Expression-Language#121-expression-types)). A
 `let` binding that it reads has its template-scope value. The format strings of an Environment's *hostRequirements* are
 also resolved in template scope, without a host, so they cannot read a path-mapped value.

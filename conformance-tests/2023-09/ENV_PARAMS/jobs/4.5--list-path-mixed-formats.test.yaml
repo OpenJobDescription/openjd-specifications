@@ -1,0 +1,39 @@
+# Template Schemas §4.5 item 3 (RFC 0010): a PATH Environment parameter value must be absolute in some path format,
+# or a URI; it is not checked against one path format.
+# Each element of a LIST[PATH] value is checked on its own, so a list with a POSIX, a Windows drive, and a
+# UNC path is accepted.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: PathAbsoluteAnyFormat
+  steps:
+  - name: A
+    dependencies:
+    - environment: Mnt
+      parameters:
+        Dirs:
+        - "/mnt/a"
+        - "D:\\b"
+        - "\\\\server\\share\\c"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Mnt
+    envParameterDefinitions:
+    - name: Dirs
+      type: LIST[PATH]
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Mnt, "{{Env.RawParam.Dirs}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - "TASK A"
