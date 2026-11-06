@@ -1481,6 +1481,8 @@ cross-type pairs is an error. Bool comparison treats `False < True`.
 
 The `/` operator creates child paths by joining components. If the right operand is an
 absolute path, it replaces the left operand entirely (matching Python's `pathlib` behavior).
+An empty path, such as an empty `PATH` parameter value or `path("")`, adds nothing to a join, as
+in `pathlib`: `path("") / "k"` is `k`, `path("a") / ""` is `a`, and joining two empty paths gives `.`.
 For URI paths, joining a relative child is equivalent to `path(p.parts + child.parts)`,
 ensuring forward-slash separators are used regardless of the evaluator's `path_format`.
 A trailing slash on the left operand is consumed by the join (matching `pathlib` behavior),
