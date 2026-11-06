@@ -1,0 +1,40 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Empty
+    type: PATH
+    default: ""
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'PARAM_LEFT:[{{ (Param.Empty / 'k').as_posix() }}]')
+            print(r'PARAM_LEFT_TWO:[{{ (Param.Empty / 'a' / 'b').as_posix() }}]')
+            print(r'CTOR_LEFT:[{{ (path('') / 'k').as_posix() }}]')
+            print(r'CTOR_LEFT_PATH:[{{ (path('') / path('k')).as_posix() }}]')
+            print(r'ABS_RIGHT:[{{ (Param.Empty / path('/abs')).as_posix() }}]')
+            print(r'STR_RIGHT:[{{ (path('a') / '').as_posix() }}]')
+            print(r'PARAM_RIGHT:[{{ (path('a/b') / Param.Empty).as_posix() }}]')
+            print(r'CTOR_RIGHT:[{{ (path('a') / path('')).as_posix() }}]')
+            print(r'BOTH:[{{ (Param.Empty / '').as_posix() }}]')
+            print(r'URI_RIGHT:[{{ path('s3://bucket/prefix') / Param.Empty }}]')
+expected:
+  output:
+  - PARAM_LEFT:[k]
+  - PARAM_LEFT_TWO:[a/b]
+  - CTOR_LEFT:[k]
+  - CTOR_LEFT_PATH:[k]
+  - ABS_RIGHT:[/abs]
+  - STR_RIGHT:[a]
+  - PARAM_RIGHT:[a/b]
+  - CTOR_RIGHT:[a]
+  - BOTH:[.]
+  - URI_RIGHT:[s3://bucket/prefix]
