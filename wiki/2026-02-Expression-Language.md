@@ -443,6 +443,9 @@ At each stage, known values are evaluated concretely while unresolved values pro
    host-context scopes (SESSION/TASK) still have `Task.Param.*`, `Session.*`, `Task.File.*`,
    and `Env.File.*` as unresolved, but can now type-check operations on the known `Param.*`
    values combined with the unresolved task/session symbols.
+   With the `ENV_PARAMS` extension, an Environment's *enableIf* is the exception. A Step's effective value that is
+   missing, fails to resolve, or does not convert is `unresolved[T]` of its type, and a result that stays unresolved
+   is an error ([Template Schemas §3.2.2](2023-09-Template-Schemas#322-effective-environment-parameter-values)).
 
 3. **Worker host execution**. All symbols are known — `Task.Param.*`, `Session.*`, file paths,
    and path mapping rules are all concrete. Every expression is fully evaluated with no
@@ -926,6 +929,7 @@ or `range_expr()` for example, is written in canonical form.
 | Symbol | Type | Description |
 |--------|------|-------------|
 | `Job.Name` | `string` | The resolved job name |
+| `Job.EnvNames` | `list[string]` | The names of the Job's Environments, with `ENV_PARAMS` (see [Template Schemas §7.3.1](2023-09-Template-Schemas#731-value-references)) |
 | `Step.Name` | `string` | The name of the current step |
 | `Session.WorkingDirectory` | `path` | The session's temporary working directory |
 | `Session.PathMappingRulesFile` | `path` | Path to the JSON file containing path mapping rules |
@@ -937,6 +941,17 @@ or `range_expr()` for example, is written in canonical form.
 |--------|------|-------------|
 | `Task.File.<name>` | `path` | Location of the embedded file within a Step Script |
 | `Env.File.<name>` | `path` | Location of the embedded file within an Environment |
+
+##### Environment Parameter Symbols
+
+With the `ENV_PARAMS` extension, an Environment that declares *envParameterDefinitions* (see
+[Template Schemas](2023-09-Template-Schemas#45-environmentparameterdefinition-extension-env_params)) can read their
+values within that Environment only:
+
+| Symbol | Type | Description |
+|--------|------|-------------|
+| `Env.Param.<name>` | As `Param.<name>` for a Job Parameter of its type (table above) | The value with which the Session entered the Environment, or at Job creation the Step's effective value |
+| `Env.RawParam.<name>` | As `RawParam.<name>` for a Job Parameter of its type (table above) | The same value, read as `RawParam.<name>` reads a Job Parameter |
 
 #### 1.2.3. Implicit Type Coercion
 
@@ -1100,6 +1115,10 @@ type is determined by the schema context in which the expression appears:
     - "{{ '--verbose' if Param.Verbose else null }}"  # Dropped when false
     - "{{ ['--quality', Param.Quality] if Param.Quality > 0 else null }}"  # Flattened or dropped
   ```
+
+Some fields of the Template Schemas are *expression fields*, marked `@expr <type>`, whose value is one expression
+written without `{{ }}` and whose target type is `<type>` (see
+[Template Schemas §7.5](2023-09-Template-Schemas#75-expression-fields) for how the result must fit it).
 
 When a format string is exactly `"{{<expr>}}"` with no surrounding text, the target type is
 inherited from the field context — the format string is transparent and the expression can
@@ -1364,6 +1383,10 @@ element does in a template without EXPR, where each element is a `<TaskParameter
     - "{{ Param.ExtraFrames }}"                     # a LIST[INT] parameter: flattened
     - "{{ 100 if Param.IncludeHundred else null }}"  # dropped when false
 ```
+
+With the `ENV_PARAMS` extension, the *anyOf* and *allOf* fields of an `<AttributeRequirement>` also accept a
+`<ListExpressionString>`, evaluated with the target type `list[string]?`
+([Template Schemas §3.3.2](2023-09-Template-Schemas#332-attributerequirement)).
 
 ---
 

@@ -1,0 +1,34 @@
+# Template Schemas §3.2 <EnvironmentParameterValue> (RFC 0010): Task.* is not available in a parameters
+# value, since a value is fixed for the whole Step.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Tag
+    type: STRING
+    default: none
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Frame
+      type: INT
+      range: "1-2"
+  dependencies:
+  - environment: Conda
+    parameters:
+      Tag: "{{Task.Param.Frame}}"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

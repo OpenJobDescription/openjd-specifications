@@ -1,0 +1,35 @@
+# Template Schemas §3.2 constraint 1 (RFC 0010): parameters are permitted only with environment, so
+# parameters on a step: entry is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]
+steps:
+- name: First
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["first"]
+- name: Second
+  dependencies:
+  - step: First
+    parameters:
+      Packages: ffmpeg
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["second"]

@@ -1,0 +1,18 @@
+# Template Schemas §4.5 "A default is checked" item 1 (RFC 0010): a literal default is checked at template
+# validation, so one outside allowedValues is rejected.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: License
+  envParameterDefinitions:
+  - name: Renderer
+    type: STRING
+    allowedValues: [arnold, redshift]
+    default: karma
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]

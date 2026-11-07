@@ -1,0 +1,43 @@
+# RFC 0010 / Template Schemas §4 activation ON_REQUEST ("does not have its
+# variables set"): the variables of an ON_REQUEST Job Environment are set in
+# the requesting Step's Task and not in a non-requesting Step's Task.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: OnRequestVariables
+  jobEnvironments:
+  - name: Lic
+    activation: ON_REQUEST
+    envParameterDefinitions:
+    - name: Product
+      type: STRING
+      default: pdefault
+    variables:
+      LIC_PRODUCT: "{{Env.Param.Product}}"
+  steps:
+  - name: A
+    dependencies:
+    - environment: Lic
+      parameters:
+        Product: arnold
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_A_LIC='+os.environ.get('LIC_PRODUCT','unset'))"]
+  - name: B
+    dependencies:
+    - dependsOn: A
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_B_LIC='+os.environ.get('LIC_PRODUCT','unset'))"]
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK_A_LIC=arnold
+  - TASK_B_LIC=unset
+  forbidden:
+  - TASK_B_LIC=pdefault
+  - TASK_B_LIC=arnold

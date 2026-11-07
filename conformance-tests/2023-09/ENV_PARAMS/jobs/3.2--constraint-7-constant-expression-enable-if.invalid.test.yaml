@@ -1,0 +1,29 @@
+# Template Schemas §3.2 (checked-at paragraph) and §7.5 rule 5: the template of JT-152, which passes template
+# validation because its entry's enableIf "true" is undetermined there. At job creation the entry resolves to true,
+# so A requests Lic without supplying Product, and constraint 7 rejects the Job.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ConstantExpressionEnableIf
+  jobEnvironments:
+  - name: Lic
+    activation: ON_REQUEST
+    envParameterDefinitions:
+    - name: Product
+      type: STRING
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Lic, "Product={{Env.Param.Product}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Lic
+      enableIf: "true"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]

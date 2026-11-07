@@ -1,0 +1,28 @@
+# Template Schemas §4 item 3 constraint 3 (RFC 0010): no two definitions in an Environment's
+# envParameterDefinitions may have the same name.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+  - name: Packages
+    type: STRING
+    default: scipy
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

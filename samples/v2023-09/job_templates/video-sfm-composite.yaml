@@ -1,0 +1,328 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# ----
+# Demonstrates
+# ----
+# A multi-application pipeline in one Job, where each Step asks an external
+# software Environment for only the software it needs, using the ENV_PARAMS
+# extension (RFC 0010):
+#
+#   DecodeFrames (ffmpeg) -> SolveSfM (COLMAP) -> Composite (Maya) -> EncodeVideo (ffmpeg)
+#
+# Each Step has two `environment:` dependencies, both `required: false`:
+#   - Conda, matching environment_templates/conda-env-params.yaml
+#   - Docker, matching environment_templates/docker-env-params.yaml
+# When a Conda Environment is attached the Conda entries apply, when a Docker
+# Environment is attached the Docker entries apply, and when neither is
+# attached because the hosts have the software preinstalled, neither applies.
+# The Job Template is the same in all three cases.
+#
+# A scheduler may attach both. The two Environments share an exclusiveGroup,
+# so each Step's Sessions enter only the first one attached that is enabled
+# for the Step, and the Job Template does not choose between them.
+#
+# `required: false` covers a Job with no Environment of that name attached.
+# An attached Conda (or Docker) Environment that declares no ENV_PARAMS
+# parameters, such as the Deadline Cloud console Conda queue environment, has
+# the name but not the parameters, so it rejects this Job at submission,
+# naming the entry. Its author updates it to declare Packages and
+# Channels with defaults that read CondaPackages and CondaChannels, as
+# environment_templates/conda-env-params.yaml does.
+#
+# The Step scripts receive Job Parameter values as argv rather than having
+# them substituted into the script text, as the RFC recommends.
+#
+# The Docker entries also tell the container which host paths to mount (the
+# Job's PATH parameters, path-mapped on the host) and, for SolveSfM, to pass
+# the host's GPUs. The Mounts value is the same for every Step, so it is
+# written once with a YAML anchor (&mounts) and reused.
+#
+# Steps whose values differ never run under one entry of an Environment (a
+# Session may exit it and enter it again with the other Step's values), so
+# each entry installs (or pulls) only one application. DecodeFrames and
+# EncodeVideo supply equal values for both Environments, so a scheduler may
+# run them under one entry or reuse a host that already prepared that
+# software.
+#
+# Once ENV_PARAMS is implemented in the openjd tools, see the Steps and their
+# dependencies with:
+#
+#   openjd summary video-sfm-composite.yaml
+#
+# ----
+# Requirements
+# ----
+# - bash shell, linux
+# - On the hosts, through an attached Conda or Docker Environment or preinstalled:
+#   - ffmpeg
+#   - COLMAP 3.x
+#   - Autodesk Maya with mayapy (not available from conda-forge; the Conda
+#     packages for Composite assume a studio channel that provides it)
+#
+# -----
+# Contributors to this template:
+#   Mark Wiebe (https://github.com/mwiebe)
+
+specificationVersion: 'jobtemplate-2023-09'
+extensions:
+- ENV_PARAMS
+- EXPR
+name: "{{Param.JobName}}"
+description: >
+  Decode a video to frames, solve camera motion with COLMAP, composite 3D
+  objects into the solved scene with Maya, and encode the result.
+parameterDefinitions:
+- name: JobName
+  type: STRING
+  default: Video SfM Composite
+- name: InputVideo
+  type: PATH
+  objectType: FILE
+  dataFlow: IN
+  default: ./input/plate.mp4
+  description: The source video plate.
+- name: MayaScene
+  type: PATH
+  objectType: FILE
+  dataFlow: IN
+  default: ./input/objects.ma
+  description: A Maya scene containing the 3D objects to place in the shot.
+- name: WorkDir
+  type: PATH
+  objectType: DIRECTORY
+  dataFlow: INOUT
+  default: ./work
+  description: Intermediate frames, the COLMAP model, and rendered frames.
+- name: OutputVideo
+  type: PATH
+  objectType: FILE
+  dataFlow: OUT
+  default: ./output/composite.mp4
+- name: FrameRate
+  type: INT
+  default: 24
+  minValue: 1
+- name: FrameCount
+  type: INT
+  description: The number of frames to composite (frames 1 through FrameCount).
+  default: 240
+  minValue: 1
+- name: FramesPerTask
+  type: INT
+  default: 10
+  minValue: 1
+
+steps:
+- name: DecodeFrames
+  dependencies:
+  - environment: Conda
+    required: false
+    parameters:
+      Packages: "ffmpeg=7"
+  - environment: Docker
+    required: false
+    parameters:
+      Image: "docker.io/linuxserver/ffmpeg:latest"
+      Mounts: &mounts "{{ [RawParam.InputVideo, RawParam.MayaScene, RawParam.WorkDir, RawParam.OutputVideo] }}"
+  script:
+    actions:
+      onRun:
+        command: bash
+        args: ["{{Task.File.Run}}", "{{Param.WorkDir}}", "{{Param.InputVideo}}", "{{Param.FrameRate}}"]
+    embeddedFiles:
+    - name: Run
+      type: TEXT
+      data: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        # argv: <work dir> <input video> <frame rate>
+        WORK="$1" INPUT="$2" FPS="$3"
+        mkdir -p "$WORK/frames"
+        ffmpeg -y -i "$INPUT" -vf "fps=$FPS" "$WORK/frames/frame_%04d.png"
+
+- name: SolveSfM
+  dependencies:
+  - step: DecodeFrames
+  - environment: Conda
+    required: false
+    parameters:
+      Packages: "colmap=3.11"
+  - environment: Docker
+    required: false
+    parameters:
+      Image: "docker.io/colmap/colmap:latest"
+      Mounts: *mounts
+      Gpus: "all"
+  hostRequirements:
+    amounts:
+    - name: amount.worker.gpu
+      min: 1
+  script:
+    actions:
+      onRun:
+        command: bash
+        args: ["{{Task.File.Run}}", "{{Param.WorkDir}}"]
+    embeddedFiles:
+    - name: Run
+      type: TEXT
+      data: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        # argv: <work dir>
+        WORK="$1"
+        SFM="$WORK/sfm"
+        mkdir -p "$SFM/sparse"
+        colmap feature_extractor --database_path "$SFM/db.db" \
+          --image_path "$WORK/frames" --ImageReader.single_camera 1
+        colmap sequential_matcher --database_path "$SFM/db.db"
+        colmap mapper --database_path "$SFM/db.db" \
+          --image_path "$WORK/frames" --output_path "$SFM/sparse"
+        mkdir -p "$SFM/text"
+        colmap model_converter --input_path "$SFM/sparse/0" \
+          --output_path "$SFM/text" --output_type TXT
+
+- name: Composite
+  dependencies:
+  - step: SolveSfM
+  - environment: Conda
+    required: false
+    parameters:
+      Packages: "maya=2025 mtoa"
+      Channels: "studio-internal conda-forge"
+  - environment: Docker
+    required: false
+    parameters:
+      Image: "registry.example.com/studio/maya:2025"
+      Mounts: *mounts
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: StartFrame
+      type: INT
+      range: "1-{{Param.FrameCount}}:{{Param.FramesPerTask}}"
+  script:
+    actions:
+      onRun:
+        command: bash
+        args:
+        - "{{Task.File.Run}}"
+        - "{{Task.File.Composite}}"
+        - "{{Param.MayaScene}}"
+        - "{{Param.WorkDir}}"
+        - "{{Task.Param.StartFrame}}"
+        - "{{Param.FramesPerTask}}"
+        - "{{Param.FrameCount}}"
+    embeddedFiles:
+    - name: Run
+      type: TEXT
+      data: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        # argv: <composite.py> <maya scene> <work dir> <start frame> <frames per task> <frame count>
+        COMPOSITE="$1" SCENE="$2" WORK="$3" START="$4" PER_TASK="$5" COUNT="$6"
+        END=$(( START + PER_TASK - 1 ))
+        if [ "$END" -gt "$COUNT" ]; then END="$COUNT"; fi
+        mkdir -p "$WORK/render"
+        mayapy "$COMPOSITE" \
+          --scene "$SCENE" \
+          --model "$WORK/sfm/text" \
+          --plates "$WORK/frames" \
+          --out "$WORK/render" \
+          --start "$START" --end "$END"
+    - name: Composite
+      type: TEXT
+      filename: composite.py
+      data: |
+        # Animates a camera from the COLMAP solve, puts the plate behind it,
+        # and renders the 3D objects over it with Arnold.
+        import argparse, math, os, re
+        import maya.standalone
+        maya.standalone.initialize()
+        import maya.cmds as cmds
+        import maya.api.OpenMaya as om
+
+        ap = argparse.ArgumentParser()
+        for a in ("--scene", "--model", "--plates", "--out"):
+            ap.add_argument(a, required=True)
+        ap.add_argument("--start", type=int, required=True)
+        ap.add_argument("--end", type=int, required=True)
+        args = ap.parse_args()
+
+        cmds.file(args.scene, open=True, force=True)
+        cmds.loadPlugin("mtoa", quiet=True)
+
+        # cameras.txt: CAMERA_ID MODEL WIDTH HEIGHT f ... (single camera)
+        with open(os.path.join(args.model, "cameras.txt")) as f:
+            cam_line = next(l for l in f if l.strip() and not l.startswith("#")).split()
+        width, height, focal_px = int(cam_line[2]), int(cam_line[3]), float(cam_line[4])
+
+        # images.txt: IMAGE_ID QW QX QY QZ TX TY TZ CAMERA_ID NAME, then a points line.
+        poses = {}
+        with open(os.path.join(args.model, "images.txt")) as f:
+            lines = [l for l in f if not l.startswith("#")]
+        for line in lines[0::2]:
+            v = line.split()
+            frame = int(re.search(r"(\d+)", v[9]).group(1))
+            poses[frame] = [float(x) for x in v[1:8]]
+
+        cam, cam_shape = cmds.camera(name="solvedCam")
+        aperture_in = 1.417
+        cmds.setAttr(cam_shape + ".horizontalFilmAperture", aperture_in)
+        cmds.setAttr(cam_shape + ".verticalFilmAperture", aperture_in * height / width)
+        cmds.setAttr(cam_shape + ".focalLength", focal_px / width * aperture_in * 25.4)
+
+        for frame, (qw, qx, qy, qz, tx, ty, tz) in sorted(poses.items()):
+            # COLMAP stores world-to-camera; invert, then flip Y and Z for Maya's camera.
+            r = om.MQuaternion(qx, qy, qz, qw).asMatrix().transpose()
+            c = -om.MVector(tx, ty, tz) * r
+            m = om.MTransformationMatrix(om.MMatrix([1,0,0,0, 0,-1,0,0, 0,0,-1,0, 0,0,0,1]) * r)
+            rot = [math.degrees(a) for a in m.rotation()]
+            cmds.setAttr(cam + ".translate", c.x, c.y, c.z)
+            cmds.setAttr(cam + ".rotate", *rot)
+            cmds.setKeyframe(cam, attribute=["translate", "rotate"], time=frame)
+
+        plate = cmds.imagePlane(camera=cam_shape,
+                                fileName=os.path.join(args.plates, "frame_0001.png"))[1]
+        cmds.setAttr(plate + ".useFrameExtension", 1)
+
+        cmds.setAttr("defaultRenderGlobals.currentRenderer", "arnold", type="string")
+        cmds.setAttr("defaultResolution.width", width)
+        cmds.setAttr("defaultResolution.height", height)
+        cmds.setAttr("defaultArnoldDriver.ai_translator", "png", type="string")
+        for frame in range(args.start, args.end + 1):
+            cmds.currentTime(frame)
+            cmds.setAttr("defaultArnoldDriver.prefix",
+                         os.path.join(args.out, "frame_%04d" % frame), type="string")
+            cmds.arnoldRender(camera=cam, width=width, height=height)
+
+- name: EncodeVideo
+  dependencies:
+  - step: Composite
+  # Same values as DecodeFrames, so a scheduler may run this Step in the
+  # Session that ran DecodeFrames, or reuse a host that already created this
+  # conda environment or pulled this image.
+  - environment: Conda
+    required: false
+    parameters:
+      Packages: "ffmpeg=7"
+  - environment: Docker
+    required: false
+    parameters:
+      Image: "docker.io/linuxserver/ffmpeg:latest"
+      Mounts: *mounts
+  script:
+    actions:
+      onRun:
+        command: bash
+        args: ["{{Task.File.Run}}", "{{Param.WorkDir}}", "{{Param.OutputVideo}}", "{{Param.FrameRate}}"]
+    embeddedFiles:
+    - name: Run
+      type: TEXT
+      data: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        # argv: <work dir> <output video> <frame rate>
+        WORK="$1" OUTPUT="$2" FPS="$3"
+        mkdir -p "$(dirname "$OUTPUT")"
+        ffmpeg -y -framerate "$FPS" \
+          -i "$WORK/render/frame_%04d.png" \
+          -c:v libx264 -pix_fmt yuv420p "$OUTPUT"

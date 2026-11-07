@@ -1,0 +1,28 @@
+# RFC 0010 / Template Schemas §4 (Env.* scope), §4.5: an Environment's variables
+# may read {{Env.Param.<name>}}, and the Step's Task sees the resulting variable.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ValueThroughVariables
+  jobEnvironments:
+  - name: Conda
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+    variables:
+      PKG: "{{Env.Param.Packages}}"
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      parameters:
+        Packages: ffmpeg=7
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_PKG='+os.environ['PKG'])"]
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK_PKG=ffmpeg=7

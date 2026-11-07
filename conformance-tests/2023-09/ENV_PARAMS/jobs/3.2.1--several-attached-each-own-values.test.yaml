@@ -1,0 +1,54 @@
+# RFC 0010 / Template Schemas §3.2.1 (each resolved entry applies
+# independently): a Step that requests two attached Environments enters both,
+# each with the values of its own entry.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: SeveralAttachedEachOwnValues
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      parameters:
+        Packages: ffmpeg=7
+    - environment: Docker
+      parameters:
+        Image: ffmpeg-image
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    activation: ON_REQUEST
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Docker
+    activation: ON_REQUEST
+    envParameterDefinitions:
+    - name: Image
+      type: STRING
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Docker, "Image={{Env.Param.Image}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda Packages=ffmpeg=7
+  - ENTER Docker Image=ffmpeg-image
+  - TASK A

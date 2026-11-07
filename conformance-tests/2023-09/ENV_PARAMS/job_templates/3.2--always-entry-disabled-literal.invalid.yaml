@@ -1,0 +1,31 @@
+# Template Schemas §3.2 item 3.2 (RFC 0010): no Step can leave an ALWAYS Environment out, so a Step's disabled entry
+# for one is an error. Render's entry for Lic has enableIf: false, a literal, and names a jobEnvironments entry, so
+# the error is known at template validation (§7.5 rule 5). Lic's parameter has a default, so constraint 7 is not
+# what rejects it.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Lic
+  activation: ALWAYS
+  envParameterDefinitions:
+  - name: Product
+    type: STRING
+    default: pdefault
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Product}}"]
+steps:
+- name: Render
+  dependencies:
+  - environment: Lic
+    enableIf: false
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

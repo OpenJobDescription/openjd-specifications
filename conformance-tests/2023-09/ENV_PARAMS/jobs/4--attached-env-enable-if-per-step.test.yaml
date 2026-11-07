@@ -1,0 +1,48 @@
+# RFC 0010 / Template Schemas §7.3.2: an attached Environment's enableIf reads its own
+# effective values per Step. Step A supplies Packages and enters Conda; Step B does not.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: AttachedEnvEnableIf
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      parameters:
+        Packages: ffmpeg
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+  - name: B
+    dependencies:
+    - step: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, B]
+environments:
+  - specificationVersion: environment-2023-09
+    extensions: [ENV_PARAMS, EXPR]
+    environment:
+      name: Conda
+      envParameterDefinitions:
+      - name: Packages
+        type: STRING
+        default: none
+      enableIf: "Env.Param.Packages != 'none'"
+      script:
+        actions:
+          onEnter:
+            command: echo
+            args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda Packages=ffmpeg
+  - TASK A
+  - TASK B
+  forbidden:
+  - ENTER Conda Packages=none

@@ -1,0 +1,43 @@
+# Template Schemas §3.2.1 item 4 and constraint 7 (RFC 0010): the template of JB-123 with UseLic set to yes, so the
+# unreachable attachment's enableIf is true, Step A's Sessions enter it, and Product, which no entry can supply,
+# rejects the submission.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: UnreachableAttached
+  jobEnvironments:
+  - name: Lic
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, JobLic]
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  parameterDefinitions:
+  - name: UseLic
+    type: STRING
+    default: "no"
+  environment:
+    name: Lic
+    activation: BY_DEFAULT
+    enableIf: "Param.UseLic == 'yes'"
+    envParameterDefinitions:
+    - name: Product
+      type: STRING
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, AttachedLic, "Product={{Env.Param.Product}}"]
+parameters:
+  UseLic: "yes"
+runOn: [posix, windows]

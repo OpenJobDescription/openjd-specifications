@@ -1,0 +1,27 @@
+# RFC 0010 / Template Schemas §7.3.1 and §4 item 6: Job.EnvNames lists an Environment whatever its enableIf,
+# so the disabled Setup is still named.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnvNamesIncludesDisabled
+  jobEnvironments:
+  - name: Setup
+    enableIf: false
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Setup]
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["NAMES={{ Job.EnvNames.join(',') }}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - NAMES=Setup
+  forbidden:
+  - ENTER Setup

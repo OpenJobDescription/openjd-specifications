@@ -1,0 +1,62 @@
+# RFC 0010 / Template Schemas §4 item 6 with RFC 0008 (single-layer rule, §4.3 constraint 2): InnerWrap's enableIf
+# is an expression, so the rule is checked when the Job is created; it resolves to true, the Session's stack would
+# hold two wrapping Environments, and the Job is rejected.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, WRAP_ACTIONS, EXPR]
+  name: SecondWrapperEnabledByExpression
+  parameterDefinitions:
+  - name: UseInner
+    type: STRING
+    allowedValues: ["yes", "no"]
+  jobEnvironments:
+  - name: OuterWrap
+    enableIf: true
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, OuterWrap]
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: echo
+          args: ["OUTER_WRAP"]
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+  - name: InnerWrap
+    enableIf: "Param.UseInner == 'yes'"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, InnerWrap]
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: echo
+          args: ["INNER_WRAP"]
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [ORIGINAL]
+parameters:
+  UseInner: "yes"
+runOn: [posix]

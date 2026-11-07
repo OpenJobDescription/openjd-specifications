@@ -1,0 +1,45 @@
+# RFC 0010 / Template Schemas §3.2.1 item 3: an entry whose name matches two
+# attached Environments is ambiguous and rejected at job creation.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalAmbiguousName
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      parameters:
+        Packages: ffmpeg=7
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: first
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda1, "Packages={{Env.Param.Packages}}"]
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: second
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda2, "Packages={{Env.Param.Packages}}"]
+runOn: [posix, windows]

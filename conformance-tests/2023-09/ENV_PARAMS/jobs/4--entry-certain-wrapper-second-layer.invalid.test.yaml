@@ -1,0 +1,59 @@
+# Template Schemas §3.2 (checked-at paragraph) and §4 item 6 (enableIf tail), with RFC 0008 (single-layer rule): as
+# JT-151, but the entry for the ON_REQUEST wrapping Environment has enableIf: true, a scalar, so A's Sessions
+# certainly enter both wrapping Environments, and the Job is rejected; an implementation may already report it at
+# template validation (README item 18).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, WRAP_ACTIONS, EXPR]
+  name: EntryWrapperCertain
+  jobEnvironments:
+  - name: Always
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Always]
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: echo
+          args: [WRAP, Always]
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+  - name: OnRequest
+    activation: ON_REQUEST
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, OnRequest]
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: echo
+          args: [WRAP, OnRequest]
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+  steps:
+  - name: A
+    dependencies:
+    - environment: OnRequest
+      enableIf: true
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix]

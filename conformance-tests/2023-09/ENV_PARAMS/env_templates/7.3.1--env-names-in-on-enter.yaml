@@ -1,0 +1,13 @@
+# Template Schemas §7.3.1 Job.EnvNames (RFC 0010): with ENV_PARAMS and EXPR, Job.EnvNames is available in
+# an Environment Template's actions.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Conda
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{ Job.EnvNames.join(',') }}"]

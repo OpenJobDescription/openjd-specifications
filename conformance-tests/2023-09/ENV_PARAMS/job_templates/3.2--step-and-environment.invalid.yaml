@@ -1,0 +1,34 @@
+# Template Schemas §3.2 constraint 1 (RFC 0010): exactly one of dependsOn, step, or environment must be
+# present in a <StepDependency>, so an entry with both step and environment is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]
+steps:
+- name: First
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["first"]
+- name: Second
+  dependencies:
+  - step: First
+    environment: Conda
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["second"]

@@ -1,0 +1,35 @@
+# Template Schemas §4 Env.* scope and §7.3.1 (RFC 0010): no Environment can reference another
+# Environment's parameters. Conda reads Env.Param.Image, which only Docker declares.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Docker
+  envParameterDefinitions:
+  - name: Image
+    type: STRING
+    default: ubuntu
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Image}}"]
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Image}}"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

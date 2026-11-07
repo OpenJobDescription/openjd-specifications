@@ -1,0 +1,59 @@
+# RFC 0010 / Template Schemas §4 activation ON_REQUEST with RFC 0008 wrap
+# hooks: an ON_REQUEST wrapping Environment wraps the Task of the Step that
+# requests it (A) and not that of a Step that does not (B), whose onRun runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: OnRequestWrapper
+  steps:
+  - name: A
+    dependencies:
+    - environment: Docker
+      parameters:
+        Image: img1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+  - name: B
+    dependencies:
+    - dependsOn: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, B]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, WRAP_ACTIONS, EXPR]
+  environment:
+    name: Docker
+    activation: ON_REQUEST
+    envParameterDefinitions:
+    - name: Image
+      type: STRING
+      default: imgdefault
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys;sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        onWrapTaskRun:
+          command: echo
+          args: [WRAP, Docker, "Image={{Env.Param.Image}}"]
+        onWrapEnvExit:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys;sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+runOn: [posix, windows]
+expected:
+  output:
+  - WRAP Docker Image=img1
+  - TASK B
+  forbidden:
+  - TASK A
+  - WRAP Docker Image=imgdefault

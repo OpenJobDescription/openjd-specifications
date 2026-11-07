@@ -1,0 +1,44 @@
+# Template Schemas §3.2 item 3.2 (RFC 0010): an entry whose enableIf reads Job.EnvNames. With only Conda attached,
+# the Conda entry is enabled and its Session enters Conda with colmap=3.11; the required: false Docker entry is
+# ignored.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: VideoToCompositeChoose
+  steps:
+  - name: SolveSfM
+    dependencies:
+    - environment: Conda
+      required: false
+      enableIf: "'Docker' not in Job.EnvNames"
+      parameters:
+        Packages: colmap=3.11
+    - environment: Docker
+      required: false
+      parameters:
+        Image: docker.io/colmap/colmap:latest
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, SolveSfM]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    activation: ON_REQUEST
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: ""
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda Packages=colmap=3.11
+  - TASK SolveSfM

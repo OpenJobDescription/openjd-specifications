@@ -1,0 +1,23 @@
+# Template Schemas §3.2 constraint 2 (RFC 0010): environment must not name a stepEnvironments entry of the
+# same Step.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+steps:
+- name: Render
+  stepEnvironments:
+  - name: Setup
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: ["enter"]
+  dependencies:
+  - environment: Setup
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

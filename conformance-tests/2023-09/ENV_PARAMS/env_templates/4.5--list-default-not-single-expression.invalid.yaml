@@ -1,0 +1,21 @@
+# Template Schemas §4.5 item 1 (RFC 0010): a list default that is not a literal must be a single {{ }}
+# expression, so a format string with text around its expression is rejected.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+parameterDefinitions:
+- name: Pkg
+  type: STRING
+  default: numpy
+environment:
+  name: Conda
+  envParameterDefinitions:
+  - name: Channels
+    type: LIST[STRING]
+    default: "extra-{{Param.Pkg}}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]

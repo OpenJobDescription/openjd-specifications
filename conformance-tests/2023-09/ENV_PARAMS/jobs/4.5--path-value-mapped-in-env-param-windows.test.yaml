@@ -1,0 +1,43 @@
+# RFC 0010 / Template Schemas §4.5 (Env.Param.<name> for PATH has path mapping
+# rules applied): a Windows PATH value supplied from "{{RawParam.Dir}}" is
+# path-mapped when read as Env.Param.Dir.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: PathValueMappedWindows
+  parameterDefinitions:
+  - name: Dir
+    type: PATH
+  jobEnvironments:
+  - name: Mnt
+    envParameterDefinitions:
+    - name: Dir
+      type: PATH
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print(r'ENV_DIR:{{Env.Param.Dir}}')"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Mnt
+      parameters:
+        Dir: "{{RawParam.Dir}}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+parameters:
+  Dir: 'D:\original\data'
+pathMapping:
+- source_path_format: WINDOWS
+  source_path: 'D:\original'
+  destination_path: 'E:\mapped'
+runOn: [windows]
+expected:
+  output:
+  - 'ENV_DIR:E:\mapped\data'
+  forbidden:
+  - 'ENV_DIR:D:\original\data'

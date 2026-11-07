@@ -1,0 +1,24 @@
+# Template Schemas §3.2 item 2 (RFC 0010): step: and dependsOn: entries are edges of one dependency graph,
+# so a cycle formed by one of each is rejected, as a cycle of two dependsOn: entries is.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+steps:
+- name: First
+  dependencies:
+  - dependsOn: Second
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["first"]
+- name: Second
+  dependencies:
+  - step: First
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["second"]

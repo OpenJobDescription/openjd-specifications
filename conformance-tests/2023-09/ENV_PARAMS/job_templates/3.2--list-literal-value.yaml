@@ -1,0 +1,29 @@
+# Template Schemas §3.2 <EnvironmentParameterValue> (RFC 0010): with EXPR, a list literal is a valid value
+# for a LIST[STRING] parameter.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Channels
+    type: LIST[STRING]
+    default: [conda-forge]
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  dependencies:
+  - environment: Conda
+    parameters:
+      Channels: [conda-forge, bioconda]
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

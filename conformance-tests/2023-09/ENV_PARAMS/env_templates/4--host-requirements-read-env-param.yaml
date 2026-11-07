@@ -1,0 +1,21 @@
+# Template Schemas §7.3.2 (RFC 0010): an Environment Template's hostRequirements may reference the
+# Environment's own Env.Param.* of a type other than PATH or LIST[PATH].
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Gpu
+  envParameterDefinitions:
+  - name: Flavor
+    type: STRING
+    default: vanilla
+  hostRequirements:
+    attributes:
+    - name: conformance:attr.flavor
+      anyOf: ["{{Env.Param.Flavor}}"]
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]

@@ -1,0 +1,27 @@
+# Template Schemas §4 (the known/undetermined bullets) and item 7 (RFC 0010): a Job Environment with an
+# exclusiveGroup is never known to be entered at template validation, because an attached Environment of the same
+# group comes before it in the Job's Environment order and may supersede it. So constraint 7 is not an error here
+# even though no Step supplies Product, which has no default.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: License
+  exclusiveGroup: Licensing
+  envParameterDefinitions:
+  - name: Product
+    type: STRING
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Product}}"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [render]

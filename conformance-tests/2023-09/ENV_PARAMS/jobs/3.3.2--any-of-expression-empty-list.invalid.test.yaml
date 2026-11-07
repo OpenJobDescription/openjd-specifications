@@ -1,0 +1,24 @@
+# Template Schemas §3.3 item 3 and §3.3.2 (RFC 0010): an anyOf written as one expression whose result is an
+# empty list is an error at job creation, as an empty list is under §3.3.2; only a null result omits the
+# field. The Step's anyOf keeps Flavor only when it is not empty, and Flavor is empty, so the Job is
+# rejected, naming the Step and the attribute.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: AnyOfExpressionEmptyList
+  parameterDefinitions:
+  - name: Flavor
+    type: STRING
+    default: ""
+  steps:
+  - name: Render
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.flavor
+        anyOf: "{{ [f for f in [Param.Flavor] if f != ''] }}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, Render]
+runOn: [posix, windows]

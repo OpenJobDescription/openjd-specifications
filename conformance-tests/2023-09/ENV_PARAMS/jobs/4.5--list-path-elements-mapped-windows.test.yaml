@@ -1,0 +1,45 @@
+# RFC 0010 / Template Schemas §4.5: each element of a Windows LIST[PATH] value
+# is path-mapped in Env.Param.<name>.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ListPathMappedWindows
+  parameterDefinitions:
+  - name: D1
+    type: PATH
+  - name: D2
+    type: PATH
+  jobEnvironments:
+  - name: Mnt
+    envParameterDefinitions:
+    - name: Dirs
+      type: LIST[PATH]
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print(r'ENV_DIRS:{{ Env.Param.Dirs.join(',') }}')"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Mnt
+      parameters:
+        Dirs: "{{ [RawParam.D1, RawParam.D2] }}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+parameters:
+  D1: 'D:\original\a'
+  D2: 'D:\original\b'
+pathMapping:
+- source_path_format: WINDOWS
+  source_path: 'D:\original'
+  destination_path: 'E:\mapped'
+runOn: [windows]
+expected:
+  output:
+  - 'ENV_DIRS:E:\mapped\a,E:\mapped\b'
+  forbidden:
+  - 'D:\original\a,'
