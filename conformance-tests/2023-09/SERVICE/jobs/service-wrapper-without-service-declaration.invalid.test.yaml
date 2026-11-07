@@ -1,0 +1,56 @@
+# Template Schemas §1.2.2 item 4 (submission-time check): a wrapping
+# Environment in a document that does not declare SERVICE cannot define the
+# onWrapService* hooks, and without ENV_PARAMS it is `activation: ALWAYS`, so
+# every Session enters it. The attached queue wrapper is valid on its own
+# (RFC 0008's three hooks), but the Job it is attached to declares a Service
+# whose Session would enter the wrapper, which cannot wrap the Service's
+# actions, so the submission must be rejected.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: WrapperWithoutServiceDeclaration
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import time; print(\"openjd_service_ready: up\", flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  steps:
+  - name: Use
+    dependencies:
+    - service: Store
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print(\"TASK_RAN\", {{ Service.Store.main.port }} > 0)"]
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [WRAP_ACTIONS, EXPR]
+  environment:
+    name: QueueWrapper
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args: ["{{ Env.File.Launch }}", "{{ WrappedAction.Command }}", "{{ repr_py(WrappedAction.Args) }}"]
+        onWrapTaskRun:
+          command: python
+          args: ["{{ Env.File.Launch }}", "{{ WrappedAction.Command }}", "{{ repr_py(WrappedAction.Args) }}"]
+        onWrapEnvExit:
+          command: python
+          args: ["{{ Env.File.Launch }}", "{{ WrappedAction.Command }}", "{{ repr_py(WrappedAction.Args) }}"]
+      embeddedFiles:
+      - name: Launch
+        type: TEXT
+        data: |
+          import ast, subprocess, sys
+          sys.exit(subprocess.call([sys.argv[1], *ast.literal_eval(sys.argv[2])]))

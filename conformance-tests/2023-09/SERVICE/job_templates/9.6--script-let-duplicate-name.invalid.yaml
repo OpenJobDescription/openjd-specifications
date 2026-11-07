@@ -1,0 +1,29 @@
+# Section 9.6 item 1 / Section 3.6: a name may not be bound twice in one
+# <LetBindings> list, in a <ServiceScript> as anywhere else.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    let:
+    - X = 1
+    - X = 2
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

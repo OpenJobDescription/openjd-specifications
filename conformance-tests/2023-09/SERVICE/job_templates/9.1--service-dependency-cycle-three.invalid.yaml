@@ -1,0 +1,49 @@
+# Section 3.2 constraint 3 / Section 9.9 item 10: a cycle through three
+# Services (A -> B -> C -> A) is rejected like a cycle of two. Step1's
+# dependency on A is an edge into the cycle, not part of it.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: A
+  dependencies:
+  - service: B
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.B.main.connectAddress }}"]
+- name: B
+  dependencies:
+  - service: C
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.C.main.connectAddress }}"]
+- name: C
+  dependencies:
+  - service: A
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.A.main.connectAddress }}"]
+steps:
+- name: Step1
+  dependencies:
+  - service: A
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.A.main.port }}"]

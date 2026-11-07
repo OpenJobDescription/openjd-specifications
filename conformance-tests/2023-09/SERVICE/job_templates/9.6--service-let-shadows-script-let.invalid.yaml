@@ -1,0 +1,31 @@
+# Section 3.6.2 / Section 9: the <Service>.let and <ServiceScript>.let share
+# one namespace with the enclosing scopes, so <ServiceScript>.let may not
+# rebind a name bound by <Service>.let.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Store
+  let:
+  - X = 1
+  ports:
+  - name: main
+  script:
+    let:
+    - X = 2
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

@@ -1,0 +1,84 @@
+# Template Schemas §9 item 4 / How Jobs Are Run constraint 2: a Service whose
+# `dependencies` list a Step starts only after that Step has completed; the
+# graph Prepare -> Indexer -> Use (Use depends on Service Indexer and on
+# Prepare) has edges of both kinds. Prepare's Task writes a file in the host's
+# temp directory keyed by Job.Name and records whether the Indexer was already
+# up (it must not be); the Indexer's onRun reads the file and serves its
+# content; Use's Task receives it. The Indexer's onExit deletes the file.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: DependenciesStartAfterStep
+  services:
+  - name: Indexer
+    dependencies:
+    - dependsOn: Prepare
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Indexer.main.bindAddress }}", "{{ Service.Indexer.main.port }}", "{{ Job.Name }}"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "import os,tempfile; os.remove(os.path.join(tempfile.gettempdir(), 'openjd-' + '{{ Job.Name }}' + '.prepared')); os.remove(os.path.join(tempfile.gettempdir(), 'openjd-' + '{{ Job.Name }}' + '.indexer')); print('INDEXER_EXIT')"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import os, socket, sys, tempfile
+          host, port, job = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          with open(os.path.join(tempfile.gettempdir(), "openjd-" + job + ".indexer"), "w") as f:
+              f.write("up")
+          with open(os.path.join(tempfile.gettempdir(), "openjd-" + job + ".prepared")) as f:
+              content = f.read().strip()
+          print("INDEXER_READ", content, flush=True)
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready: indexed", flush=True)
+          while True:
+              c, _ = s.accept()
+              c.sendall(content.encode())
+              c.close()
+  steps:
+  - name: Prepare
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Job.Name }}"]
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import os, sys, tempfile
+          job = sys.argv[1]
+          up = os.path.exists(os.path.join(tempfile.gettempdir(), "openjd-" + job + ".indexer"))
+          print("INDEXER_UP_DURING_PREPARE", up, flush=True)
+          with open(os.path.join(tempfile.gettempdir(), "openjd-" + job + ".prepared"), "w") as f:
+              f.write("prepared-by-" + job)
+  - name: Use
+    dependencies:
+    - dependsOn: Prepare
+    - service: Indexer
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import socket,sys; c=socket.create_connection((sys.argv[1], int(sys.argv[2])), timeout=10); print('USE_GOT', c.recv(128).decode(), flush=True)", "{{ Service.Indexer.main.connectAddress }}", "{{ Service.Indexer.main.port }}"]
+
+expected:
+  output:
+  - INDEXER_UP_DURING_PREPARE False
+  - INDEXER_READ prepared-by-DependenciesStartAfterStep
+  - USE_GOT prepared-by-DependenciesStartAfterStep
+  - INDEXER_EXIT
+  forbidden:
+  - INDEXER_UP_DURING_PREPARE True

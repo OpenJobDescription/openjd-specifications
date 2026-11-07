@@ -1,0 +1,33 @@
+# Section 9 scope rule 4 / Section 9.9 item 1 (RFC 0009): a Job Environment
+# may reference Service.X.* only if it lists `service: X` in its
+# `dependencies`, the same rule as for a Step or a Service. Client references
+# Service.Store.main.port without listing the Service, so the template is
+# rejected; Use depends on Store, so Store is not unused.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Client
+  variables:
+    STORE_PORT: "{{ Service.Store.main.port }}"
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port }}"]
+steps:
+- name: Use
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

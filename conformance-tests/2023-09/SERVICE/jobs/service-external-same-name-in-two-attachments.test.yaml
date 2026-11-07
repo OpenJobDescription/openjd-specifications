@@ -1,0 +1,78 @@
+# Template Schemas §1.2.2 item 3: two attached Environment Templates may each
+# define an external Service named `Cache`; neither document is invalid on
+# its own, and because no `externalServices` entry names `Cache` the
+# submission is not rejected for the shared name. Each document's Environment
+# lists its own Cache, so both Services start, each resolving its own
+# Service.Cache.main.port, and the Job Template — which declares no Service —
+# runs its Task once both are READY.
+#
+# Both client Environments are ON_REQUEST and requested by the Step. Were
+# they ALWAYS, each Cache's Sessions would enter the other document's client
+# Environment, which lists the other Cache, and the two Services would form
+# the cycle Cache -> Cache -> Cache (`<StepDependency>` constraint 3).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: TwoAttachmentsSameName
+  steps:
+  - name: Use
+    dependencies:
+    - environment: FirstCacheClient
+    - environment: SecondCacheClient
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_RAN')"]
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  services:
+  - name: Cache
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import time; print('FIRST_CACHE_UP', {{ Service.Cache.main.port }}, flush=True); print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  environment:
+    name: FirstCacheClient
+    activation: ON_REQUEST
+    dependencies:
+    - service: Cache
+    variables:
+      FIRST_CACHE_PORT: "{{ Service.Cache.main.port }}"
+- specificationVersion: environment-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  services:
+  - name: Cache
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import time; print('SECOND_CACHE_UP', {{ Service.Cache.main.port }}, flush=True); print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  environment:
+    name: SecondCacheClient
+    activation: ON_REQUEST
+    dependencies:
+    - service: Cache
+    variables:
+      SECOND_CACHE_PORT: "{{ Service.Cache.main.port }}"
+
+expected:
+  output:
+  - FIRST_CACHE_UP
+  - SECOND_CACHE_UP
+  - TASK_RAN

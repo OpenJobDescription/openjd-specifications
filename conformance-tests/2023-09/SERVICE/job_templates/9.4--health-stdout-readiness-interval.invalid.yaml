@@ -1,0 +1,29 @@
+# Section 9.4 item 3: `readinessIntervalSeconds` is not permitted on a STDOUT
+# check; the ready line arrives when it arrives, so there is no probe to space.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  healthCheck:
+    type: STDOUT
+    readinessIntervalSeconds: 1
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

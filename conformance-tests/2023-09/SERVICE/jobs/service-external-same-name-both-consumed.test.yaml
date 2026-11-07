@@ -1,0 +1,136 @@
+# Template Schemas §1.2.2 item 3, both Services consumed: the RFC's shared
+# Valkey Job Template (inline Service `Cache`) is submitted alongside the RFC's
+# queue-cache Environment Template (external Service `Cache`, published to
+# Tasks by a client Environment that lists `service: Cache` and sets
+# VALKEY_HOST / VALKEY_PORT). A scheduler must keep the two distinct: the
+# Task's Service.Cache.* resolves to the Job Template's Cache (which answers
+# JOB_CACHE), the client Environment's variables to the queue's (which
+# answers QUEUE_CACHE), and the two listen on different ports. Each listener
+# stands in for valkey-server: it replies with its payload to any connection
+# that sends data. The client Environment lists only the queue's Cache, so the
+# Job Template's Cache enters it and starts after the queue's Cache is READY.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: SameNameBothConsumed
+  services:
+  - name: Cache
+    ports:
+    - name: main
+    healthCheck:
+      type: TCP_CONNECT
+    restartPolicy:
+      maxRestarts: 3
+      completedTasks: KEEP
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Cache.main.bindAddress }}", "{{ Service.Cache.main.port }}", "JOB_CACHE"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port, payload = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("JOB_CACHE_LISTENING", flush=True)
+          while True:
+              c, _ = s.accept()
+              if c.recv(64):  # a TCP_CONNECT health-check probe sends nothing
+                  c.sendall(payload.encode())
+              c.close()
+  steps:
+  - name: Process
+    dependencies:
+    - service: Cache
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range: "1-2"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Task.Param.Frame }}", "{{ Service.Cache.main.connectAddress }}", "{{ Service.Cache.main.port }}"]
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import os, socket, sys
+          frame, job_host, job_port = sys.argv[1], sys.argv[2], int(sys.argv[3])
+          env_host, env_port = os.environ["VALKEY_HOST"], int(os.environ["VALKEY_PORT"])
+          def ask(host, port):
+              c = socket.create_connection((host, port), timeout=10)
+              c.sendall(b"GET x")
+              reply = c.recv(64).decode()
+              c.close()
+              return reply
+          print("FRAME", frame, "JOB_TEMPLATE_CACHE_SAYS", ask(job_host, job_port), flush=True)
+          print("FRAME", frame, "QUEUE_CACHE_SAYS", ask(env_host, env_port), flush=True)
+          print("FRAME", frame, "PORTS_DIFFER", job_port != env_port, flush=True)
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  parameterDefinitions:
+  - name: CachePayload
+    type: STRING
+    default: QUEUE_CACHE
+  services:
+  - name: Cache
+    ports:
+    - name: main
+    restartPolicy:
+      maxRestarts: 3
+      completedTasks: KEEP
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Cache.main.bindAddress }}", "{{ Service.Cache.main.port }}", "{{ Param.CachePayload }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port, payload = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("QUEUE_CACHE_LISTENING", flush=True)
+          while True:
+              c, _ = s.accept()
+              if c.recv(64):
+                  c.sendall(payload.encode())
+              c.close()
+  environment:
+    name: CacheClient
+    dependencies:
+    - service: Cache
+    variables:
+      VALKEY_HOST: "{{ Service.Cache.main.connectAddress }}"
+      VALKEY_PORT: "{{ Service.Cache.main.port }}"
+
+expected:
+  output:
+  - JOB_CACHE_LISTENING
+  - QUEUE_CACHE_LISTENING
+  - FRAME 1 JOB_TEMPLATE_CACHE_SAYS JOB_CACHE
+  - FRAME 1 QUEUE_CACHE_SAYS QUEUE_CACHE
+  - FRAME 1 PORTS_DIFFER True
+  - FRAME 2 JOB_TEMPLATE_CACHE_SAYS JOB_CACHE
+  - FRAME 2 QUEUE_CACHE_SAYS QUEUE_CACHE
+  - FRAME 2 PORTS_DIFFER True
+  forbidden:
+  - JOB_TEMPLATE_CACHE_SAYS QUEUE_CACHE
+  - QUEUE_CACHE_SAYS JOB_CACHE

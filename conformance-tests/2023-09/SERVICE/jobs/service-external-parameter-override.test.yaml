@@ -1,0 +1,62 @@
+# Template Schemas §1.2 item 4 / §1.2.2: a parameter defined by the attached
+# Environment Template is a Job Parameter of the submission, so a value
+# supplied at submission reaches the external Service through Param.*.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: ExternalCacheOverride
+  steps:
+  - name: Process
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os,socket; c=socket.create_connection((os.environ['CACHE_HOST'], int(os.environ['CACHE_PORT'])), timeout=10); print('CACHE_SAYS', c.recv(64).decode(), flush=True)"]
+
+parameters:
+  CachePayload: overridden-value
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  parameterDefinitions:
+  - name: CachePayload
+    type: STRING
+    default: cached-value
+  services:
+  - name: Cache
+    ports:
+    - name: main
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Cache.main.bindAddress }}", "{{ Service.Cache.main.port }}", "{{ Param.CachePayload }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port, payload = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          while True:
+              c, _ = s.accept()
+              c.sendall(payload.encode())
+              c.close()
+  environment:
+    name: CacheClient
+    dependencies:
+    - service: Cache
+    variables:
+      CACHE_HOST: "{{ Service.Cache.main.connectAddress }}"
+      CACHE_PORT: "{{ Service.Cache.main.port }}"
+
+expected:
+  output:
+  - CACHE_SAYS overridden-value
+  forbidden:
+  - CACHE_SAYS cached-value

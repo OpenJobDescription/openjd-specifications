@@ -1,0 +1,44 @@
+# Section 4 item 3 (RFC 0009): a Job Environment may list the Services it
+# depends on in `dependencies`, each entry a `service: <name>`, and may then
+# reference the listed Service's `port` and `connectAddress` in its variables,
+# actions, and embedded files. The dependency puts every Step in Store's scope
+# (Section 9.1 rule 3), so no Step needs to list it.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Client
+  dependencies:
+  - service: Store
+  variables:
+    STORE_HOST: "{{ Service.Store.main.connectAddress }}"
+    STORE_PORT: "{{ Service.Store.main.port }}"
+  script:
+    actions:
+      onEnter:
+        command: python
+        args: ["{{ Env.File.Setup }}"]
+    embeddedFiles:
+    - name: Setup
+      type: TEXT
+      data: |
+        print("{{ join_host_port(Service.Store.main.connectAddress, Service.Store.main.port) }}")
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port }}"]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

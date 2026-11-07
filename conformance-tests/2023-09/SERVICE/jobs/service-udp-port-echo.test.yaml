@@ -1,0 +1,68 @@
+# RFC 0009 / Template Schemas §9.3 item 3, §9 item 7: a Service whose only
+# port is `protocol: UDP` (a python datagram echo listener). It cannot be
+# probed by TCP_CONNECT, so it declares a STDOUT health check and prints
+# `openjd_service_ready` once bound. The UDP port carries the same `port`,
+# `bindAddress`, and `connectAddress` values as a TCP port; the Task sends a
+# datagram to connectAddress:port and prints the echo.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: UdpPortEcho
+  services:
+  - name: Udp
+    ports:
+    - name: dgram
+      protocol: UDP
+    healthCheck:
+      type: STDOUT
+      readinessTimeoutSeconds: 60
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Udp.dgram.bindAddress }}", "{{ Service.Udp.dgram.port }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port = sys.argv[1], int(sys.argv[2])
+          s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+          s.bind((host, port))
+          print("openjd_service_ready: udp bound", flush=True)
+          print("UDP_BOUND", flush=True)
+          while True:
+              data, addr = s.recvfrom(1024)
+              s.sendto(b"udp-echo:" + data, addr)
+  steps:
+  - name: Ping
+    dependencies:
+    - service: Udp
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: N
+        type: INT
+        range: "1-2"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Service.Udp.dgram.connectAddress }}", "{{ Service.Udp.dgram.port }}", "Ping-{{ Task.Param.N }}"]
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port, tag = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+          s.settimeout(10)
+          s.sendto(tag.encode(), (host, port))
+          print("TASK_REPLY", s.recv(1024).decode(), flush=True)
+
+expected:
+  output:
+  - UDP_BOUND
+  - TASK_REPLY udp-echo:Ping-1
+  - TASK_REPLY udp-echo:Ping-2

@@ -1,0 +1,23 @@
+# Section 1.2 item 5 / Section 7.3.1: an Environment that lists a Service in
+# `dependencies` may reference its `port` and `connectAddress`, never its
+# `bindAddress`.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+services:
+- name: Cache
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]
+environment:
+  name: CacheClient
+  dependencies:
+  - service: Cache
+  variables:
+    CACHE_BIND: "{{ Service.Cache.main.bindAddress }}"

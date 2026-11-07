@@ -1,0 +1,24 @@
+# Section 4 item 3 constraint 2 / Section 9.9 item 14: every entry of an
+# Environment's `dependencies` must use the `service` key; an Environment
+# Template has no Steps and an Environment is never scheduled, so `dependsOn:
+# Prepare` is rejected.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+services:
+- name: Cache
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Cache.main.port }}"]
+environment:
+  name: CacheClient
+  dependencies:
+  - dependsOn: Prepare
+  variables:
+    GREETING: hello

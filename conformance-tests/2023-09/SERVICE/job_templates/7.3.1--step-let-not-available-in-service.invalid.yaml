@@ -1,0 +1,29 @@
+# Section 3 item 3 / Section 9 item 3 (RFC 0009): a <StepTemplate>'s `let`
+# bindings are available in the Step's own fields only. A Service is not a
+# field of any Step, so a Step's binding is an unknown name within it.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Coordinator
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ threads }}"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Coordinator
+  let:
+  - threads = 4
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Coordinator.main.port }}", "{{ threads }}"]

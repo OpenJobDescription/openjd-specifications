@@ -1,0 +1,28 @@
+# 7.3.1 / 7.4: Service.*.port is typed int at validation even though its value is unresolved; a string method on it is a static type error.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Store
+  let:
+  - big = 70000
+  ports:
+  - name: main
+    port: 8080
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port.upper() }}"]

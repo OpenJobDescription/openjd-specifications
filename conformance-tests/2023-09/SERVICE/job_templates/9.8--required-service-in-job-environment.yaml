@@ -1,0 +1,34 @@
+# Section 9.8 item 2 / Section 4 item 3 (RFC 0009): a required Service's
+# `port` and `connectAddress` are in scope in a Job Environment that lists
+# `service: Ext` in its `dependencies`, and in a Step Environment, which
+# follows its Step's `service: Ext`.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Client
+  dependencies:
+  - service: Ext
+  variables:
+    EXT_HOST: "{{ Service.Ext.main.connectAddress }}"
+    EXT_PORT: "{{ Service.Ext.main.port }}"
+externalServices:
+- name: Ext
+  ports:
+  - name: main
+steps:
+- name: Use
+  dependencies:
+  - service: Ext
+  stepEnvironments:
+  - name: StepClient
+    variables:
+      EXT_URL: "http://{{ join_host_port(Service.Ext.main.connectAddress, Service.Ext.main.port) }}"
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

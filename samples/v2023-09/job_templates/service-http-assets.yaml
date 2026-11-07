@@ -1,0 +1,162 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# ----
+# Demonstrates
+# ----
+# The SERVICE extension (RFC 0009): a long-lived process that the scheduler
+# starts before any Task of its scope runs, keeps READY for the lifetime of
+# the scope, and stops once no Task remains.
+#
+# This Job declares one Service, "AssetServer": a Python http.server that
+# serves a small asset directory. The Service:
+#   - publishes one named port ("http") whose number the runtime allocates;
+#   - binds Service.AssetServer.http.bindAddress (only the Service itself may
+#     read bindAddress);
+#   - uses a TCP_CONNECT health check (the default type), so it is READY once
+#     the runtime can connect to the port;
+#   - prepares its asset directory once in onEnter, hands the directory name to
+#     onRun with openjd_env, and cleans up in onExit;
+#   - may be relaunched once if it exits (restartPolicy.maxRestarts: 1); the
+#     assets are static, so completed Tasks are kept (completedTasks: KEEP).
+#
+# The "Fetch" Step declares that it depends on the Service with
+# `service: AssetServer` in its `dependencies`, beside where it would list the
+# Steps it depends on. That dependency puts Fetch in the Service's scope, so the
+# Service is READY before any Fetch Task runs and stopped once the last one
+# completes, and it is what lets Fetch's script read
+# Service.AssetServer.http.connectAddress and .port. The Tasks build the URL
+# with join_host_port(), which brackets an IPv6 address correctly, download
+# one asset each with urllib, and print its contents.
+#
+# Run it locally with the openjd CLI:
+#
+#   openjd run service-http-assets.yaml
+#
+# Reference:
+#   https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0009-service.md
+#   https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#9-service-extension-service
+#   https://github.com/OpenJobDescription/openjd-specifications/wiki/How-Jobs-Are-Run#services
+#
+# ----
+# Requirements
+# ----
+# - python3 (available as `python3` on the host)
+# - An implementation supporting the SERVICE and EXPR extensions
+#
+# -----
+# Contributors to this template:
+#   Open Job Description contributors
+
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: ServiceHttpAssets
+
+parameterDefinitions:
+- name: AssetCount
+  type: INT
+  description: How many assets the Service generates and the Tasks fetch.
+  default: 3
+  minValue: 1
+  maxValue: 50
+
+services:
+- name: AssetServer
+  description: Serves generated assets over HTTP to every Task of the Job.
+  ports:
+  - name: http
+  # The default health check: READY once a TCP connection to every TCP port
+  # succeeds, then probed the same way to stay READY. Use STDOUT or COMMAND
+  # when connecting is not enough to know the service can do useful work.
+  healthCheck:
+    type: TCP_CONNECT
+    readinessTimeoutSeconds: 60
+  restartPolicy:
+    maxRestarts: 1
+    completedTasks: KEEP
+  script:
+    actions:
+      # onEnter runs once per Service Session, before the first onRun. It
+      # generates the assets and publishes their directory to the later
+      # actions of this Service with openjd_env.
+      onEnter:
+        command: python3
+        args: ["{{ Service.File.Prepare }}", "{{ Param.AssetCount }}"]
+      # onRun *is* the service: it runs until the scheduler cancels it. Exiting
+      # on its own is an instance failure governed by restartPolicy.
+      onRun:
+        command: python3
+        args:
+        - "{{ Service.File.Serve }}"
+        - "{{ Service.AssetServer.http.bindAddress }}"
+        - "{{ Service.AssetServer.http.port }}"
+        cancelation:
+          mode: TERMINATE
+      onExit:
+        command: python3
+        args: ["{{ Service.File.Cleanup }}"]
+    embeddedFiles:
+    - name: Prepare
+      type: TEXT
+      data: |
+        import os, sys
+        count = int(sys.argv[1])
+        assets = os.path.join(os.environ["OPENJD_SESSION_WORKING_DIR"], "assets")
+        os.makedirs(assets, exist_ok=True)
+        for i in range(1, count + 1):
+            with open(os.path.join(assets, f"asset-{i}.txt"), "w") as f:
+                f.write(f"asset {i} of {count}, served by {os.path.basename(assets)}\n")
+        print(f"openjd_status: generated {count} assets")
+        # Reaches onRun and onExit of this Service Session; never the Tasks.
+        print(f"openjd_env: ASSET_DIR={assets}")
+    - name: Serve
+      type: TEXT
+      data: |
+        import os, sys
+        from functools import partial
+        from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+
+        host, port = sys.argv[1], int(sys.argv[2])
+        handler = partial(SimpleHTTPRequestHandler, directory=os.environ["ASSET_DIR"])
+        with ThreadingHTTPServer((host, port), handler) as server:
+            print(f"openjd_status: serving {os.environ['ASSET_DIR']} on {host}:{port}", flush=True)
+            server.serve_forever()
+    - name: Cleanup
+      type: TEXT
+      data: |
+        import os, shutil
+        shutil.rmtree(os.environ.get("ASSET_DIR", ""), ignore_errors=True)
+        print("openjd_status: assets removed")
+
+steps:
+- name: Fetch
+  # A Step depends on a Service as it depends on a Step; `service` names a
+  # Service as `step` names a Step. Fetch's Tasks are scheduled only once
+  # AssetServer is READY.
+  dependencies:
+  - service: AssetServer
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Index
+      type: INT
+      range: "1-{{ Param.AssetCount }}"
+  script:
+    actions:
+      onRun:
+        command: python3
+        args:
+        - "{{ Task.File.Fetch }}"
+        # join_host_port encloses an IPv6 connectAddress in brackets; never
+        # write "{{ addr }}:{{ port }}" by hand.
+        - "http://{{ join_host_port(Service.AssetServer.http.connectAddress, Service.AssetServer.http.port) }}/asset-{{ Task.Param.Index }}.txt"
+    embeddedFiles:
+    - name: Fetch
+      type: TEXT
+      data: |
+        import sys, urllib.request
+        url = sys.argv[1]
+        with urllib.request.urlopen(url, timeout=30) as response:
+            print(f"GET {url} -> {response.status}")
+            print(response.read().decode().rstrip())

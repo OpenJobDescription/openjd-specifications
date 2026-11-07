@@ -1,0 +1,31 @@
+# Section 9 / Section 9.9 item 2: `Service.*` is never in scope in a
+# hostRequirements object. A Step's host requirements are resolved at job
+# creation, before any Service endpoint is known.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  hostRequirements:
+    attributes:
+    - name: attr.worker.os.family
+      anyOf: ["{{ Service.Store.main.connectAddress }}"]
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

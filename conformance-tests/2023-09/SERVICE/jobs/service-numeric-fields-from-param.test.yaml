@@ -1,0 +1,55 @@
+# Template Schemas §9.3 (RFC 0009): the numeric @fmtstring fields are
+# resolved at job creation from Param.* and <Service>.let bindings. A
+# whole-field expression resolving to null leaves the field unset, so the
+# runtime allocates the port. The COMMAND check's readinessIntervalSeconds and
+# readinessTimeoutSeconds come from a parameter; maxRestarts from a `let`.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: NumericFieldsFromParam
+  parameterDefinitions:
+  - name: Port
+    type: INT
+    default: 0
+  - name: Patience
+    type: INT
+    default: 60
+  services:
+  - name: Store
+    let:
+    - restarts = 1 if Param.Patience > 30 else 0
+    ports:
+    - name: main
+      port: "{{ null if Param.Port == 0 else Param.Port }}"
+    healthCheck:
+      type: COMMAND
+      readinessIntervalSeconds: "{{ Param.Patience // 60 }}"
+      readinessTimeoutSeconds: "{{ Param.Patience }}"
+    restartPolicy:
+      maxRestarts: "{{ restarts }}"
+      completedTasks: KEEP
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import time; print('STORE_RUNNING', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+        onHealthCheck:
+          command: python
+          args: ["-c", "print('CHECK_RAN')"]
+  steps:
+  - name: Use
+    dependencies:
+    - service: Store
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_PORT_ALLOCATED', {{ Service.Store.main.port }} > 0)"]
+
+expected:
+  output:
+  - STORE_RUNNING
+  - CHECK_RAN
+  - TASK_PORT_ALLOCATED True
