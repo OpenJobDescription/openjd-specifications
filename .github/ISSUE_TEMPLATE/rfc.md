@@ -28,14 +28,12 @@ A short description of the proposal.
 ## Workflow
 
 - [x] Tracking issue created (label: `rfc/proposed`)
-- [ ] RFC pull request submitted and ready for discussion (label: `rfc/exploring`)
+- [ ] RFC pull request, with its wiki edits, submitted and ready for discussion (label: `rfc/exploring`)
+- [ ] Prototype in openjd-rs linked from the RFC
 - [ ] Last call for comments (labels: `rfc/exploring` and `rfc/final-comments`)
-- [ ] Accepted and merged RFC pull request (label: `rfc/accepted-future`)
-- [ ] Green-light for inclusion in a draft specification, and the author is creating and iterating on pull requests (label: `rfc/accepted-draft`)
-- [ ] Pull requests are merged in to a draft specification (label: `rfc/accepted-staged`)
-- [ ] Officially published in a non-draft revision of the specification (label: `rfc/released`)
+- [ ] RFC pull request, with its wiki edits, merged (label: `rfc/released`)
 
-Please close this tracking issue when the proposal enters the `Released` stage of the process.
+Please close this tracking issue when the RFC pull request is merged.
 
 ## Open Points
 
