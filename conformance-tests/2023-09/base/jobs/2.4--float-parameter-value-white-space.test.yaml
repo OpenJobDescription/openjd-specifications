@@ -1,5 +1,6 @@
 # Template Schemas §2.4 and §7.5: a FLOAT Job Parameter's value given as a string is a <floatstring>, so white space
-# around the number is ignored, in the submitted value and in the default. U+00A0 (no-break space) is white space.
+# around the number is ignored, in the submitted value and in the default and maxValue. U+00A0 (no-break space) is
+# white space.
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob
