@@ -1,6 +1,6 @@
 # Expression Language §1.2.3 and §1.3.2: with EXPR, a whole-field expression in chunks.defaultTaskCount has the
 # target type int, and chunks.targetRuntimeSeconds int?. A string coerces to int ignoring white space around the
-# integer, so the STRING value " 2 " is 2. targetRuntimeSeconds is 0, so the chunks must use defaultTaskCount.
+# integer, so the STRING value " 2 " is 2. targetRuntimeSeconds is 0, so the chunks should use defaultTaskCount.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
