@@ -22,11 +22,11 @@
 # for the Step, and the Job Template does not choose between them.
 #
 # `required: false` covers a Job with no Environment of that name attached.
-# It also covers an attached Conda (or Docker) Environment that declares no
-# ENV_PARAMS parameters, such as the Deadline Cloud console Conda queue
-# environment: it ignores these entries' parameters, and implementations
-# should warn. Its Sessions then install what CondaPackages says, for the whole
-# Job. For each Step to get its own packages, its author updates it to declare
+# It also covers an attached Conda Environment that declares no ENV_PARAMS
+# parameters, such as the Deadline Cloud console Conda queue environment: it
+# ignores these entries' parameters, and implementations should warn. Its
+# Sessions then install what the submission's CondaPackages says, for the whole
+# Job; this Job Template sets none. For each Step to get its own packages, its author updates it to declare
 # Packages and Channels with defaults that read CondaPackages and
 # CondaChannels, as environment_templates/conda-env-params.yaml does.
 #

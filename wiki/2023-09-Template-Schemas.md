@@ -1023,7 +1023,7 @@ Where:
    extension. The other fields of this form are:
     1. *required* — Whether the Environment must be present. Default `true`. When `false` and the name resolves to no
        Environment when the Job is created, the entry has no effect, and the Step's Sessions run without that
-       Environment. When `false` and the name resolves to an attached Environment that declares no
+       Environment. When `false` and the name of an enabled entry resolves to an attached Environment that declares no
        *envParameterDefinitions*, the entry's *parameters* are ignored (see
        [§3.2.1](#321-resolving-external-environments) item 1).
     2. *enableIf* — Whether this entry is in effect. An [expression field](#75-expression-fields) of type `bool`. The
@@ -1115,12 +1115,12 @@ are resolved too (see *enableIf* in [&lt;StepDependency&gt;](#32-stepdependency)
 1. If exactly one attached Environment Template's `environment` has the entry's name, the entry refers to it. For an
    enabled entry, constraints 5 and 6 are checked against that Environment's *envParameterDefinitions*, with one
    exception. If the Environment declares no *envParameterDefinitions*, such as one from an Environment Template that
-   does not list `ENV_PARAMS`, and the entry has `required: false`, the entry's *parameters* are ignored: the entry
-   supplies no values, its values are not resolved, and constraints 5 and 6 do not apply to them. Each value must still
-   be one of the forms of an `<EnvironmentParameterValue>`, as for any entry. Implementations should warn when they
-   ignore an entry's *parameters*, naming the entry, the Environment, and the ignored keys. The entry still refers to
-   the Environment, and has every other effect of an entry, so it requests an `ON_REQUEST` Environment. Otherwise
-   constraints 5 and 6 apply as usual, whatever *required* says. In particular:
+   does not list `ENV_PARAMS`, and the enabled entry has `required: false`, the entry's *parameters* are ignored: the
+   entry supplies no values, its values are not resolved, and constraints 5 and 6 do not apply to them. Each value must
+   still have one of the forms of an `<EnvironmentParameterValue>`, as for any entry, so a `null` or an object is an
+   error. Implementations should warn when they ignore an entry's *parameters*, naming the entry, the Environment, and
+   the ignored keys. The entry still refers to the Environment, and has every other effect of an entry, so it requests
+   an `ON_REQUEST` Environment. Otherwise constraints 5 and 6 apply as usual, whatever *required* says. In particular:
     * If an enabled entry with `required: true` supplies parameters to an attached Environment that declares none, the
       submission must be rejected, naming the entry and the parameter.
     * If an enabled entry supplies a key that an attached Environment with *envParameterDefinitions* does not declare,
