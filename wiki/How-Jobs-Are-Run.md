@@ -109,7 +109,10 @@ steps:
 Any parameter the Step leaves out takes its default, which can come from a Job Parameter. The entry can name one of
 the Job's own Job Environments, or an **Environment** that the render management system attaches from an Environment
 Template. An entry with `required: false` lets the Job run where that **Environment** is not attached, so one Job can
-work with a Conda **Environment**, a Docker **Environment**, or neither.
+work with a Conda **Environment**, a Docker **Environment**, or neither. It also lets the Job run where the
+**Environment** is attached but declares no parameters, as a Conda **Environment** written before ENV_PARAMS does. The
+entry's values are then ignored, with a warning, and the **Environment** is configured by the Job Parameters for the
+whole Job, as before.
 
 With this extension, a **Session** need not enter every **Environment** of the Job. An **Environment**'s `activation`
 decides which **Sessions** enter it:

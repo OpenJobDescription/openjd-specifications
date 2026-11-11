@@ -27,7 +27,8 @@ Three kinds of names connect a Job Template to an attached **Environment**:
   doesn't find an **Environment** named `CondaQueueEnv`.
 * **Environment parameter names.** With ENV_PARAMS, the entry gives values for the **Environment**'s parameters by
   name, such as `Packages`. A name that the **Environment** doesn't declare is an error, so both sides have to agree on
-  it.
+  it. The one exception is an **Environment** that declares no parameters at all, such as one written before
+  ENV_PARAMS: it ignores the values of an entry with `required: false`, and the Job Parameters configure it as before.
 
 An **Environment** that follows these conventions serves both kinds of Job Template at once. Each of its Environment
 parameters defaults to the matching Job Parameter, so a Job Template written before ENV_PARAMS configures it for the

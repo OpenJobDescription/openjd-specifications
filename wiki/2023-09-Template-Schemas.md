@@ -1023,7 +1023,9 @@ Where:
    extension. The other fields of this form are:
     1. *required* — Whether the Environment must be present. Default `true`. When `false` and the name resolves to no
        Environment when the Job is created, the entry has no effect, and the Step's Sessions run without that
-       Environment.
+       Environment. When `false` and the name resolves to an attached Environment that declares no
+       *envParameterDefinitions*, the entry's *parameters* are ignored (see
+       [§3.2.1](#321-resolving-external-environments) item 1).
     2. *enableIf* — Whether this entry is in effect. An [expression field](#75-expression-fields) of type `bool`. The
        values it may reference are given in the [`ENV_PARAMS` Scope Summary](#732-env_params-scope-summary). It is
        evaluated when the Job is created, before the entry's name is resolved. A `null` result is an error. If omitted,
@@ -1071,7 +1073,8 @@ Constraints:
 4. *parameters*, if provided, must contain at least one entry and at most 50 entries.
 5. Every key of *parameters* must name a parameter declared in the named Environment's *envParameterDefinitions*. An
    Environment that declares none, including one from a document that does not list `ENV_PARAMS`, accepts an entry with
-   no *parameters* and rejects one with any.
+   no *parameters* and rejects one with any, except that it ignores the *parameters* of an entry with `required: false`
+   (see [§3.2.1](#321-resolving-external-environments) item 1).
 6. Every value must be valid for the parameter it supplies: of its type, and within its `allowedValues`, `minLength`,
    `maxLength`, `minValue`, `maxValue`, and `item` constraints.
 7. For every Environment that a Step's Sessions would enter, by its *activation* and the Step's entries, and that is not
@@ -1110,11 +1113,17 @@ When a Job is created from a Job Template and zero or more Environment Templates
 are resolved too (see *enableIf* in [&lt;StepDependency&gt;](#32-stepdependency)). The rules are:
 
 1. If exactly one attached Environment Template's `environment` has the entry's name, the entry refers to it. For an
-   enabled entry, constraints 5 and 6 are checked against that Environment's *envParameterDefinitions*. This applies
-   whatever *required* says: `required: false` tolerates a missing Environment, not one that lacks a parameter the
-   entry supplies. If an enabled entry supplies parameters to an attached Environment that declares none, such as one
-   from an Environment Template that does not list `ENV_PARAMS`, the submission must be rejected, naming the entry and
-   the parameter.
+   enabled entry, constraints 5 and 6 are checked against that Environment's *envParameterDefinitions*, with one
+   exception. If the Environment declares no *envParameterDefinitions*, such as one from an Environment Template that
+   does not list `ENV_PARAMS`, and the entry has `required: false`, the entry's *parameters* are ignored: the entry
+   supplies no values, its values are not resolved, and constraints 5 and 6 do not apply to them. Implementations
+   should warn when they ignore an entry's *parameters*, naming the entry, the Environment, and the ignored keys. The
+   entry still refers to the Environment, and has every other effect of an entry, so it requests an `ON_REQUEST`
+   Environment. Otherwise these checks apply whatever *required* says:
+    * If an enabled entry with `required: true` supplies parameters to an attached Environment that declares none, the
+      submission must be rejected, naming the entry and the parameter.
+    * If an enabled entry supplies a key that an attached Environment with *envParameterDefinitions* does not declare,
+      the submission must be rejected, naming the entry and the key, even with `required: false`.
 2. If none does, then for an enabled entry with `required: true`, the submission must be rejected, naming the entry and
    the missing Environment. Any other entry is ignored.
 3. If two or more do, the submission must be rejected, naming the entry and the ambiguous name.
@@ -2668,7 +2677,8 @@ With the `ENV_PARAMS` extension, Job creation takes these steps in order:
    Step's entries. An enabled entry requests an `ON_REQUEST` Environment. A disabled entry declines a `BY_DEFAULT` one,
    or, for an `ALWAYS` one, causes the Job to be rejected, naming the Step and the Environment (see
    [&lt;StepDependency&gt;](#32-stepdependency) *enableIf*).
-5. Environment parameter defaults and *environment* entry values are resolved into each Step's effective values.
+5. Environment parameter defaults and *environment* entry values are resolved into each Step's effective values. The
+   *parameters* of an entry that [§3.2.1](#321-resolving-external-environments) item 1 ignores are not resolved.
 6. Each Environment's *enableIf* is evaluated for each such Step, with the effective values that are known (see
    [§3.2.2](#322-effective-environment-parameter-values)), in the Job's Environment order. Where it is `false`, it
    removes the Environment from the Step's set, or, for an Environment whose *activation* is `ALWAYS`, causes the Job to

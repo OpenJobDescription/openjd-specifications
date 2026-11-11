@@ -112,7 +112,9 @@ an `ALWAYS` Environment, an `enableIf` that is false for a Step is an error inst
   names; a Step's own script cannot read them; a wrapping Environment's hooks read its own parameters.
 - **External resolution** (§3.2.1): a name resolves to the Job Template's `jobEnvironments` first, else to exactly
   one attached Environment; missing with `required: true` and ambiguous names are rejected; `required: false`
-  tolerates a missing Environment but not one that lacks a supplied parameter; each resolved entry applies
+  tolerates a missing Environment, and an attached Environment that declares no parameters ignores its
+  `parameters`, while the entry still requests it; a `required: true` entry's parameters to such an Environment, and
+  a key that an Environment with parameters does not declare, are rejected; each resolved entry applies
   independently.
 - **Effective values** (§3.2.2, §1.2.1): supplied value or `default`; a `default` reads the merged Job Parameter
   value; format strings convert to the parameter's type; Environment parameters are never merged with Job
@@ -522,8 +524,11 @@ Attached Environment Templates are given in the test's `environments` list.
 | JB-15 | `3.2.1--external-environment-receives-values.test.yaml` | EP | An entry naming an attached Environment supplies its value to that Environment's `onEnter`. |
 | JB-16 | `3.2.1--external-required-missing.invalid.test.yaml` | EP | An entry (default `required: true`) naming an Environment nothing attaches is rejected. |
 | JB-17 | `3.2.1--external-required-false-missing-ignored.test.yaml` | EP, EX | The same entry with `required: false` is ignored; the Step's Task runs, and `Job.EnvNames` lists only the Job Environment `J`. |
-| JB-18 | `3.2.1--external-lacks-parameter.invalid.test.yaml` | EP | A `required: false` entry supplying a parameter the attached Environment does not declare is rejected. |
-| JB-19 | `3.2.1--external-without-env-params-supplied.invalid.test.yaml` | EP | Attached Environment Template without `ENV_PARAMS` (the pre-extension `Conda` case); a `required: false` entry with `parameters` is rejected. |
+| JB-18 | `3.2.1--external-lacks-parameter.invalid.test.yaml` | EP | A `required: false` entry supplying a parameter the attached Environment, which declares others, does not declare is rejected. |
+| JB-19 | `3.2.1--external-without-env-params-supplied.test.yaml` | EP | Attached Environment Template without `ENV_PARAMS` (the pre-extension `Conda` case); a `required: false` entry's `parameters` are ignored, and the Environment is entered with its Job Parameter's value. |
+| JB-165 | `3.2.1--external-without-env-params-supplied-required.invalid.test.yaml` | EP | The same Environment with a `required: true` entry that supplies a parameter is rejected. |
+| JB-166 | `3.2.1--external-only-undeclared-key.invalid.test.yaml` | EP | A `required: false` entry whose only key the attached Environment, which declares parameters, does not declare is rejected. |
+| JB-167 | `3.2.1--external-on-request-without-definitions-supplied.test.yaml` | EP; env EP, EX | An attached `ON_REQUEST` Environment that lists `ENV_PARAMS` and declares no parameters ignores a `required: false` entry's `parameters`, and the entry still requests it, so the Step's Session enters it. |
 | JB-20 | `3.2.1--external-without-env-params-no-parameters.test.yaml` | EP | Attached Environment Template without `ENV_PARAMS`; an entry without `parameters` is valid, and the Environment is entered. |
 | JB-21 | `3.2.1--external-ambiguous-name.invalid.test.yaml` | EP | Two attached Environments with the entry's name are rejected. |
 | JB-22 | `3.2.1--job-environment-shadows-attached.test.yaml` | EP | A Job Environment and an attached Environment share name `X`; the entry's value reaches the Job Environment, and the attached one (which declares no parameter) does not cause a rejection. |
@@ -750,7 +755,7 @@ here (the constraints 5 and 6 row is V19 and V45).
 | V19 | Keys and literal values of `parameters` for a Job Environment (constraints 5, 6) | Template validation | JT-81–JT-91; resolved format strings at job creation: JB-13; constraint 6 and the value's type skipped for an Environment whose `enableIf` is `false`: JT-156, JT-157, JT-165; constraint 5 and the value's form still checked: JT-163, JT-164 |
 | V20 | Required parameters of `ALWAYS` Environments supplied by every Step, of `BY_DEFAULT` ones by every Step that does not decline them, of `ON_REQUEST` ones by every requester, except Steps for which the Environment is disabled; Job Environments and, after resolution, attached Environments (constraint 7, §3.2.1, §3.2.2) | Job creation; for a Job Environment, also template validation when the failure holds however every undetermined entry or Environment `enableIf` resolves (§7.5 rule 5) | JT-99–JT-102, JT-104, JT-152, JB-31–JB-34, JB-102, JB-107; declined by a disabled entry: JT-103, JB-35, JB-115; disabled Environments: JT-148, JT-158, JT-162, JB-113, JB-115, JB-116 |
 | V21 | External resolution: missing with `required: true`, or ambiguous (§3.2.1) | Job creation | JB-16, JB-21; accepted forms: JB-15, JB-17, JB-22, JB-23, JB-30, JB-45, JB-87 |
-| V22 | Keys and values for an external Environment; a key the resolved Environment lacks is an error even with `required: false` | Job creation | JB-18, JB-19, JB-24–JB-26; accepted: JB-20 |
+| V22 | Keys and values for an external Environment; a key the resolved Environment lacks is an error even with `required: false`, unless the Environment declares no parameters: then a `required: false` entry's `parameters` are ignored, and a `required: true` entry's are an error | Job creation | JB-18, JB-24–JB-26, JB-165, JB-166; accepted: JB-20; ignored: JB-19, JB-167 |
 | V23 | Removed: `ENV_PARAMS` requires `EXPR`, so no requesting document lacks `EXPR`; see V36 | — | — |
 | V24 | A format-string value or `default` for a list-typed parameter is one `{{ }}` expression | Template validation for `default`s and Job Environment entries; job creation for external | JT-37, JT-38, JT-91, ET-24, JB-29 |
 | V25 | A resolved, non-literal `default` satisfies its type and constraints for each Step that takes it | Job creation | JB-11, JB-12 |
@@ -789,7 +794,7 @@ Runtime behaviors in the suite's scope that are not Validation rows are covered 
 (JB-36–JB-41); entry `enableIf` true, false, and `null` (JB-42–JB-46), and a disabled entry declining a `BY_DEFAULT` Environment (JB-139, JB-140); every `enableIf` evaluated in template scope (JB-104); `Job.EnvNames` contents and order (JB-47–JB-53, JB-86);
 path mapping in `Env.Param.*` and not `Env.RawParam.*` (JB-54–JB-59); INT `1` vs `"1"` (JB-10); per-document
 extensions (JB-74, JB-75); wrap hooks (JB-76, JB-77); host requirements of a disabled entry and case-insensitive combination (JB-88–JB-90). The Basic Examples are JB-78–JB-81, JB-84, JB-85, and JB-148–JB-150, and the pre-extension
-`Conda` rejection in the second example is JB-19.
+`Conda` case of the second example, whose `required: false` entries' `parameters` are ignored, is JB-19.
 
 ## Running the tests
 
@@ -837,8 +842,9 @@ These rules, or parts of rules, have no planned test with a definite expected ou
    scheduler behaviors with no output in `openjd run`. Only conflict and resolution rejection (JB-65–JB-69, JB-73,
    JB-89, JB-91) and acceptance of non-conflicts (JB-64, JB-70–JB-72, JB-88, JB-90) are tested.
 5. **Warnings.** §3.2.1 item 4 says implementations should warn when an attached Environment shares a name with a Job
-   Environment, and the rationale says a validator should warn when a `required: false` entry resolves to nothing.
-   The test format has no way to assert a warning, and both are "should". JB-22 tests the resolution itself.
+   Environment, §3.2.1 item 1 that they should warn when they ignore a `required: false` entry's `parameters`, and the
+   rationale that a validator should warn when a `required: false` entry resolves to nothing. The test format has no
+   way to assert a warning, and all three are "should". JB-22, JB-19, and JB-167 test the behavior itself.
 6. **The external-entry literal type check at template validation.** §3.2 says that for an entry naming no Job
    Environment, template validation can check "the type of a literal value where its form fixes one (a list is not a
    STRING)". Without the attached Environment, a validator does not know that the parameter is a STRING, so it is
