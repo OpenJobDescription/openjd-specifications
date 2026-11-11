@@ -1,0 +1,29 @@
+# Template Schemas §2.13 and §7.5: an item of a LIST[INT] value given as a string is an <intstring>, so white space
+# around the number is ignored. U+00A0 (no-break space) is white space. item.maxValue applies to the parsed integers.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Values
+    type: LIST[INT]
+    item:
+      maxValue: 10
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'VALUES:{{ Param.Values }}')
+            print(r'SUM:{{ sum(Param.Values) }}')
+parameters:
+  Values: [1, " 2 ", "\t3\n", "\u00a04"]
+expected:
+  output:
+  - "VALUES:[1, 2, 3, 4]"
+  - SUM:10

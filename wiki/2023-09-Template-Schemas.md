@@ -721,6 +721,9 @@ Where:
     3. *groupLabel* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
     4. *singleStepDelta* — How much the value changes for a single step modification.
 
+Each item of a value given for this parameter when a Job is created may be an integer or an `<intstring>` (see
+[Numeric strings](#75-numeric-strings)). For example, `[1, " 2 "]` is the list `[1, 2]`.
+
 The value of a Job Parameter of this type is referenced in format strings as:
 
 1. `Param.<name>` — Returns a `list[int]` type value.
@@ -768,6 +771,11 @@ Where:
     3. *groupLabel* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
     4. *decimals* — The number of places editable after the decimal point.
     5. *singleStepDelta* — How much the value changes for a single step modification.
+
+Each item of a value given for this parameter when a Job is created may be a number or a `<floatstring>` (see
+[Numeric strings](#75-numeric-strings)). An item given as a `<floatstring>` keeps the text it was written with, without
+the white space around it, as in [Float Value Pass-Through](2026-02-Expression-Language#134-float-value-pass-through).
+For example, given `[" 1.00 ", "2.50"]`, `{{Param.<name>[0]}}` resolves to `1.00`.
 
 The value of a Job Parameter of this type is referenced in format strings as:
 
@@ -859,6 +867,9 @@ Where:
     1. *control* — The only supported control is "HIDDEN", which hides the parameter from the user interface.
     2. *label* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
     3. *groupLabel* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
+
+Each integer in an inner list of a value given for this parameter when a Job is created may be an integer or an
+`<intstring>` (see [Numeric strings](#75-numeric-strings)). For example, `[[1, " 2 "], ["3"]]` is `[[1, 2], [3]]`.
 
 The value of a Job Parameter of this type is referenced in format strings as:
 
@@ -2152,7 +2163,11 @@ This applies wherever this specification reads a string as one of these forms:
 1. a value written in a template, such as a *default* or an element of a *range* list;
 2. the string a [Format String](#73-format-strings) resolves to where one of these forms is expected, such as a
    `<TaskParameterStringValue>` element of an `<IntRangeList>` or a `chunks.defaultTaskCount`; and
-3. a value given as a string for an INT or FLOAT Job Parameter when a Job is created.
+3. a value given as a string for an INT or FLOAT Job Parameter when a Job is created, and a number given as a string
+   inside a value for a LIST[INT], LIST[FLOAT] or LIST[LIST[INT]] Job Parameter
+   (see [§2.13](#213-joblistintparameterdefinition-extension-expr),
+   [§2.14](#214-joblistfloatparameterdefinition-extension-expr) and
+   [§2.16](#216-joblistlistintparameterdefinition-extension-expr)).
 
 The white space is not part of the value. Where the text a number was written with is kept, as the
 [Expression Language](2026-02-Expression-Language#134-float-value-pass-through) does for a float value, the white space
