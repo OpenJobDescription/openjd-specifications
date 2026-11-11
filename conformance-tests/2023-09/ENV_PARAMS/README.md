@@ -797,8 +797,8 @@ Runtime behaviors in the suite's scope that are not Validation rows are covered 
 (JB-36–JB-41); entry `enableIf` true, false, and `null` (JB-42–JB-46), and a disabled entry declining a `BY_DEFAULT` Environment (JB-139, JB-140); every `enableIf` evaluated in template scope (JB-104); `Job.EnvNames` contents and order (JB-47–JB-53, JB-86);
 path mapping in `Env.Param.*` and not `Env.RawParam.*` (JB-54–JB-59); INT `1` vs `"1"` (JB-10); per-document
 extensions (JB-74, JB-75); wrap hooks (JB-76, JB-77); host requirements of a disabled entry and case-insensitive combination (JB-88–JB-90). The Basic Examples are JB-78–JB-81, JB-84, JB-85, and JB-148–JB-150, and the pre-extension
-`Conda` case of the second example (simplified to one Step), whose `required: false` entries' `parameters` are
-ignored, is JB-19.
+`Conda` case of the second example (reduced to one Step with only a `Conda` entry), whose `required: false` entry's
+`parameters` are ignored, is JB-19.
 
 ## Running the tests
 

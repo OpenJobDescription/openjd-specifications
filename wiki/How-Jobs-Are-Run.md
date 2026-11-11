@@ -111,8 +111,8 @@ the Job's own Job Environments, or an **Environment** that the render management
 Template. An entry with `required: false` lets the Job run where that **Environment** is not attached, so one Job can
 work with a Conda **Environment**, a Docker **Environment**, or neither. It also lets the Job run where the
 **Environment** is attached but declares no parameters, as a Conda **Environment** written before ENV_PARAMS does. The
-entry's values are then ignored, with a warning, and such a Conda **Environment** installs what the Job Parameters
-say, for the whole Job, as before.
+entry's values are then ignored, and implementations should warn. Such a Conda **Environment** installs what the Job
+Parameters say, for the whole Job, as before.
 
 With this extension, a **Session** need not enter every **Environment** of the Job. An **Environment**'s `activation`
 decides which **Sessions** enter it:

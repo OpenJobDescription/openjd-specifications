@@ -22,12 +22,13 @@
 # for the Step, and the Job Template does not choose between them.
 #
 # `required: false` covers a Job with no Environment of that name attached.
-# An attached Conda (or Docker) Environment that declares no ENV_PARAMS
-# parameters, such as the Deadline Cloud console Conda queue environment, has
-# the name but not the parameters, so it rejects this Job at submission,
-# naming the entry. Its author updates it to declare Packages and
-# Channels with defaults that read CondaPackages and CondaChannels, as
-# environment_templates/conda-env-params.yaml does.
+# It also covers an attached Conda (or Docker) Environment that declares no
+# ENV_PARAMS parameters, such as the Deadline Cloud console Conda queue
+# environment: it ignores these entries' parameters, and implementations
+# should warn. Its Sessions then install what CondaPackages says, for the whole
+# Job. For each Step to get its own packages, its author updates it to declare
+# Packages and Channels with defaults that read CondaPackages and
+# CondaChannels, as environment_templates/conda-env-params.yaml does.
 #
 # The Step scripts receive Job Parameter values as argv rather than having
 # them substituted into the script text, as the RFC recommends.

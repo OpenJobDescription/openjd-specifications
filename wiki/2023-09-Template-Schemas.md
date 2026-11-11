@@ -1117,10 +1117,10 @@ are resolved too (see *enableIf* in [&lt;StepDependency&gt;](#32-stepdependency)
    exception. If the Environment declares no *envParameterDefinitions*, such as one from an Environment Template that
    does not list `ENV_PARAMS`, and the entry has `required: false`, the entry's *parameters* are ignored: the entry
    supplies no values, its values are not resolved, and constraints 5 and 6 do not apply to them. Each value must still
-   be one of the forms of an `<EnvironmentParameterValue>`. Implementations should warn when they ignore an entry's
-   *parameters*, naming the entry, the Environment, and the ignored keys. The entry still refers to the Environment,
-   and has every other effect of an entry, so it requests an `ON_REQUEST` Environment. Otherwise constraints 5 and 6
-   apply as usual, whatever *required* says. In particular:
+   be one of the forms of an `<EnvironmentParameterValue>`, as for any entry. Implementations should warn when they
+   ignore an entry's *parameters*, naming the entry, the Environment, and the ignored keys. The entry still refers to
+   the Environment, and has every other effect of an entry, so it requests an `ON_REQUEST` Environment. Otherwise
+   constraints 5 and 6 apply as usual, whatever *required* says. In particular:
     * If an enabled entry with `required: true` supplies parameters to an attached Environment that declares none, the
       submission must be rejected, naming the entry and the parameter.
     * If an enabled entry supplies a key that an attached Environment with *envParameterDefinitions* does not declare,

@@ -1,6 +1,7 @@
 # RFC 0010 / Template Schemas §3.2.1 item 1, §3.2 constraint 5: a required:
-# false entry that resolves to an attached Environment is checked against it, so
-# supplying a parameter (Flavor) the Environment does not declare is rejected.
+# false entry that resolves to an attached Environment that declares parameters
+# is checked against it, so supplying a parameter (Flavor) the Environment does
+# not declare is rejected.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [ENV_PARAMS, EXPR]
