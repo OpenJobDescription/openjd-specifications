@@ -1,0 +1,42 @@
+# RFC 0010 / Template Schemas §3.2 item 3.2, §3.2.1 item 1: a disabled
+# required: false entry for an attached BY_DEFAULT Environment that declares no
+# parameters still declines it, as any disabled entry does, so the Step's
+# Session does not enter it.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalWithoutEnvParamsDisabledDeclines
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      required: false
+      enableIf: false
+      parameters:
+        Packages: ffmpeg=7
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: CondaPackages
+    type: STRING
+    default: ""
+  environment:
+    name: Conda
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "CondaPackages={{Param.CondaPackages}}"]
+parameters:
+  CondaPackages: ffmpeg=6
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A
+  forbidden:
+  - ENTER Conda

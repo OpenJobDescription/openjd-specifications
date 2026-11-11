@@ -282,10 +282,10 @@ This RFC is additive and gated by the `ENV_PARAMS` extension name declared under
   anything, so its Sessions never enter an attached `ON_REQUEST` Environment. An author who wants existing Job Templates
   to keep getting an Environment leaves its `activation` at the default, `BY_DEFAULT`, or sets `ALWAYS`.
 - An Environment Template that does not list `ENV_PARAMS` runs with a Job Template that does. Its Environment has the
-  default `activation: BY_DEFAULT` and no parameters, so an `environment:` entry that names it is an error only if the
-  entry supplies parameters and has `required: true`. A `required: false` entry's parameters are ignored, with a
-  warning (see [`<StepDependency>`](../wiki/2023-09-Template-Schemas.md#32-stepdependency) constraint 5 and
-  [§3.2.1](../wiki/2023-09-Template-Schemas.md#321-resolving-external-environments) item 1).
+  default `activation: BY_DEFAULT` and no parameters, so an enabled `environment:` entry that names it and supplies
+  parameters is an error only if it has `required: true`. A `required: false` entry's parameters are ignored, and
+  implementations should warn (see [`<StepDependency>`](../wiki/2023-09-Template-Schemas.md#32-stepdependency)
+  constraint 5 and [§3.2.1](../wiki/2023-09-Template-Schemas.md#321-resolving-external-environments) item 1).
 - An Environment Template written before this extension under a [recommended name](#recommended-names-non-normative)
   accepts Job Templates that supply its recommended parameters with `required: false`, and ignores those parameters.
   Deadline Cloud's console Conda queue environment (`Conda`) is such a case today. Its Sessions then install what the
@@ -383,7 +383,8 @@ nothing, declines a `BY_DEFAULT` Environment, and is an error for an `ALWAYS` on
 literal or a format string resolved when the Job is created.
 
 The constraints keep an entry to one form and one Environment to one entry, require each key to be declared and each
-value to be valid, require every Step whose Sessions enter an Environment to supply each parameter without a `default`
+value to be valid (except that an attached Environment that declares no parameters ignores a `required: false`
+entry's values), require every Step whose Sessions enter an Environment to supply each parameter without a `default`
 (constraint 7), and forbid `required: false` on an entry that names a Job Environment. The section says at which stage
 each constraint is checked.
 
@@ -532,7 +533,7 @@ the section governs. Constraint numbers refer to
 | Keys and literal values of *parameters* for a *jobEnvironments* entry (constraints 5, 6), only for an enabled entry; a disabled entry's *parameters* are not checked (§3.2 item 3.2) | Template validation for an entry whose *enableIf* is absent or `true`; Job creation for one whose *enableIf* is an expression that resolves to `true` |
 | Each parameter without a `default` is supplied by every Step whose Sessions enter the Environment: every Step for `ALWAYS`, every Step that does not decline it for `BY_DEFAULT`, every requesting Step for `ON_REQUEST`, except Steps for which the Environment is disabled. This covers *jobEnvironments* entries and, after resolution, attached Environments (constraint 7, §3.2.1) | Job creation. For a *jobEnvironments* entry, also template validation when constraint 7 fails whatever every undetermined entry or Environment *enableIf* resolves to (§7.5 rule 5) |
 | External name resolution: missing with `required: true`, or ambiguous (§3.2.1) | Job creation |
-| Keys and values for an external Environment; resolved format-string values (constraints 5, 6). A key the resolved Environment does not declare is an error even with `required: false`, unless the Environment declares no parameters: then a `required: false` entry's *parameters* are ignored, with a warning, and a `required: true` entry's are an error (§3.2.1 item 1) | Job creation |
+| Keys and values for an external Environment; resolved format-string values (constraints 5, 6). A key the resolved Environment does not declare is an error even with `required: false`, unless the Environment declares no parameters: then a `required: false` entry's *parameters* are ignored, and implementations should warn, and a `required: true` entry's are an error (§3.2.1 item 1) | Job creation |
 | An attached `ALWAYS` Environment with the name of a *jobEnvironments* entry, which no entry can reach, has every parameter supplied by a `default` (§3.2.1 item 4) | Job creation |
 | A format-string value or `default` for a list-typed parameter is a single `{{ }}` expression (§3.2, §4.5) | Template validation for `default`s and *jobEnvironments* entries; Job creation for external Environments |
 | A resolved, non-literal `default` satisfies its parameter's type and constraints, for each Step that takes it (§4.5) | Job creation |
@@ -662,11 +663,12 @@ installs what the Job Parameters say for the whole Job, so a Job Template that s
 a second Job Template until every queue is upgraded, and no expression can tell the two apart, because `Job.EnvNames`
 lists names, not parameters.
 
-Only the entry's *parameters* are ignored. The entry still names the Environment, so it is not reported as matching
-nothing, and it keeps its other effects: it requests an `ON_REQUEST` Environment, and a disabled entry declines a
-`BY_DEFAULT` one. Ignoring the whole entry would differ only for an `ON_REQUEST` Environment that lists `ENV_PARAMS`
-but declares no parameters: the Step asked for it, and its Sessions would not enter it. Implementations warn, because
-the Step does not get the values it asked for.
+Only the entry's *parameters* are ignored. The entry still names the Environment, so it is not treated as matching
+nothing, and it still requests an `ON_REQUEST` Environment. The same entry, when disabled, still declines a
+`BY_DEFAULT` one, as any disabled entry does. Ignoring the whole entry would differ only for an `ON_REQUEST`
+Environment from an Environment Template that lists `ENV_PARAMS` but declares no parameters: the Step asked for it,
+and its Sessions would not enter it. Implementations should warn, because the Step does not get the values it asked
+for.
 
 The rule is narrow on purpose. An Environment that declares parameters has adopted this extension, so a key it does not
 declare is a typo, or a parameter of a later version of the Environment. Either is a mistake that the Job Template's
