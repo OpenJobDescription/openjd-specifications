@@ -1,6 +1,6 @@
 # Expression Language §1.2.3 and Template Schemas §7.5: coercion from string ignores only white space, the characters
 # with the Unicode White_Space property. U+200B (zero width space) is not white space, so the STRING value
-# "\u200b7" does not coerce to int and the job cannot be created.
+# "\u200b7" does not coerce to int, and the range element is an error.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:

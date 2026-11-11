@@ -1,5 +1,6 @@
 # Template Schemas §3.4.1.5 and §7.5: chunks.defaultTaskCount and chunks.targetRuntimeSeconds are <intstring>s when
-# written as Format Strings, so white space around the integer they resolve to is ignored.
+# written as Format Strings, so white space around the integer they resolve to is ignored. targetRuntimeSeconds is 0,
+# so the chunks must use defaultTaskCount.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
@@ -30,7 +31,7 @@ template:
           - print(r'CHUNK:{{Task.Param.Frame}}')
 parameters:
   Count: " 2 "
-  Runtime: "\t60\n"
+  Runtime: "\t0\n"
 expected:
   output:
   - 'CHUNK:1-2'

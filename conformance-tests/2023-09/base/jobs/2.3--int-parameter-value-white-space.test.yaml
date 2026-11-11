@@ -1,5 +1,5 @@
 # Template Schemas §2.3 and §7.5: an INT Job Parameter's value given as a string is an <intstring>, so white space
-# around the integer is ignored, in the submitted value and in the default.
+# around the integer is ignored, in the submitted value and in the default and minValue.
 template:
   specificationVersion: jobtemplate-2023-09
   name: TestJob
