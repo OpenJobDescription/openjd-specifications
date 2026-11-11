@@ -337,7 +337,8 @@ userInterface:  # @optional
 
 ```
 
-Where `<intstring>` is a string whose value is the string representation of an integer value in base-10, and:
+Where `<intstring>` is a string whose value is the string representation of an integer value in base-10, with optional
+white space around it (see [Numeric strings](#75-numeric-strings)), and:
 
 1. *name* — The name by which the parameter is referenced. See: [&lt;Identifier&gt;](#71-identifier).
 2. *description* — A description to apply to the parameter. It has no functional purpose, but may appear in UI elements.
@@ -395,7 +396,7 @@ userInterface: # @optional
 ```
 
 Where `<floatstring>` is a string whose value is the string representation of a floating point or integer value in
-base-10, and:
+base-10, with optional white space around it (see [Numeric strings](#75-numeric-strings)), and:
 
 1. *name* — The name by which the parameter is referenced. See: [&lt;Identifier&gt;](#71-identifier).
 2. *description* — A description to apply to the parameter. It has no functional purpose, but may appear in UI elements.
@@ -1002,7 +1003,8 @@ max: <positivefloat> | <positivefloatstring> # @optional @fmtstring @extension F
 Where:`<nonnegativefloatstring>` is a string whose value is the string
 representation of a non-zero and positive floating point or integer value in
 base-10, `<positivefloatstring>` is a string whose value is the string
-representation of a positive floating point or integer value in base-10, and:
+representation of a positive floating point or integer value in base-10, each with optional white space around it
+(see [Numeric strings](#75-numeric-strings)), and:
 
 1. *name* — Is a dotted name that identifies the specific host capability that is being required.
 2. *min* — If provided, then the host must have at least the given amount of the named capability available and reserved
@@ -1151,7 +1153,8 @@ With:
 
 Where `<intstring>` is a string whose value is the string representation of an integer value in base-10,
 `<TaskParameterStringValue>` (See [&lt;TaskParameterStringValue&gt;](#342-taskparameterstringvalue)) must resolve to the
-string representation of an integer value in base-10, and:
+string representation of an integer value in base-10, each with optional white space around it
+(see [Numeric strings](#75-numeric-strings)), and:
 
 1. *name* — The name of the parameter.
 2. *type* — The literal "INT", defining this parameter as integer valued.
@@ -1286,7 +1289,8 @@ With:
 
 Where `<floatstring>` is a string whose value is the string representation of a floating point value in base-10,
 `<TaskParameterStringValue>` (See [&lt;TaskParameterStringValue&gt;](#342-taskparameterstringvalue)) must resolve to the
-string representation of a floating point value in base-10, and:
+string representation of a floating point value in base-10, each with optional white space around it
+(see [Numeric strings](#75-numeric-strings)), and:
 
 1. *name* — The name of the parameter.
 2. *type* — The literal "FLOAT", defining this parameter as floating point valued.
@@ -1806,7 +1810,8 @@ cancelation: <CancelationMethod> # @optional
 ```
 
 Where `<posintstring>` is a string whose value is the string representation of a
-positive integer value in base-10, and:
+positive integer value in base-10, with optional white space around it
+(see [Numeric strings](#75-numeric-strings)), and:
 
 1. *command* — A [Format String](#73-format-strings) containing the name of a runnable command that is run on a Worker
    host.
@@ -1944,7 +1949,8 @@ notifyPeriodInSeconds: <posinteger> | <posintstring> # @optional @fmtstring @ext
 ```
 
 Where `<posintstring>` is a string whose value is the string representation of a
-positive integer value in base-10, and:
+positive integer value in base-10, with optional white space around it
+(see [Numeric strings](#75-numeric-strings)), and:
 
 1. *notifyPeriodInSeconds* — Defines the maximum number of seconds between the two signals. It is possible that the actual
    duration allowed in a particular cancel event will be less than this amount
@@ -2134,6 +2140,28 @@ With the `EXPR` extension enabled, expressions that reference values not yet kno
 stage are type-checked using the declared types of those values, catching type errors as early
 as possible. See the [Expression Language](2026-02-Expression-Language) specification for details.
 
+### 7.5. Numeric strings
+
+`<intstring>`, `<posintstring>`, `<floatstring>`, `<nonnegativefloatstring>` and `<positivefloatstring>` are the string
+forms of a number. Each may have white space before and after the number, and that white space is ignored:
+`" 7 "` is the `<intstring>` 7, and `"2.5\n"` is the `<floatstring>` 2.5. White space inside the number is not allowed,
+so `"1 000"` is not an `<intstring>`, and a string that is empty or holds only white space is not a number.
+
+This applies wherever this specification reads a string as one of these forms:
+
+1. a value written in a template, such as a *default* or an element of a *range* list;
+2. the string a [Format String](#73-format-strings) resolves to where one of these forms is expected, such as a
+   `<TaskParameterStringValue>` element of an `<IntRangeList>` or a `chunks.defaultTaskCount`; and
+3. a value given as a string for an INT or FLOAT Job Parameter when a Job is created.
+
+The white space is not part of the value. Where the text a number was written with is kept, as the
+[Expression Language](2026-02-Expression-Language#134-float-value-pass-through) does for a float value, the white space
+is not part of that text.
+
+*White space* is any character with the Unicode `White_Space` property: U+0009 to U+000D, U+0020, U+0085, U+00A0,
+U+1680, U+2000 to U+200A, U+2028, U+2029, U+202F, U+205F and U+3000. No other character is white space here. In
+particular U+001C to U+001F, U+200B (zero width space) and U+FEFF (zero width no-break space) are not.
+
 ## 8. `<SimpleAction>`
 
 This object is only available in the extension `FEATURE_BUNDLE_1`
@@ -2309,7 +2337,8 @@ cancelation: <CancelationMethod> # @optional
 ```
 
 Where `<posintstring>` is a string whose value is the string representation of a
-positive integer value in base-10, and:
+positive integer value in base-10, with optional white space around it
+(see [Numeric strings](#75-numeric-strings)), and:
 
 1. *let* — An ordered list of expression bindings evaluated once per task. Bound names are available in *script*
    and *args* fields, and can reference `Task.Param.*` values. See: [&lt;LetBindings&gt;](#36-letbindings).

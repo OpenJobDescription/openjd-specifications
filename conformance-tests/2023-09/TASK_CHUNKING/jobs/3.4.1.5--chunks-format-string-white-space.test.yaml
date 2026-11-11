@@ -1,0 +1,39 @@
+# Template Schemas §3.4.1.5 and §7.5: chunks.defaultTaskCount and chunks.targetRuntimeSeconds are <intstring>s when
+# written as Format Strings, so white space around the integer they resolve to is ignored.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - TASK_CHUNKING
+  name: ChunkTest
+  parameterDefinitions:
+  - name: Count
+    type: STRING
+  - name: Runtime
+    type: STRING
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: CHUNK[INT]
+        range: 1-4
+        chunks:
+          defaultTaskCount: "{{Param.Count}}"
+          targetRuntimeSeconds: "{{Param.Runtime}}"
+          rangeConstraint: CONTIGUOUS
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'CHUNK:{{Task.Param.Frame}}')
+parameters:
+  Count: " 2 "
+  Runtime: "\t60\n"
+expected:
+  output:
+  - 'CHUNK:1-2'
+  - 'CHUNK:3-4'
+  forbidden:
+  - 'CHUNK:1-4'
