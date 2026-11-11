@@ -976,10 +976,6 @@ The conversions are:
 - `string` → `path`
 - `float`/`string` → `int` (error if value cannot be represented exactly, e.g. `3.75`, `""`, `"3.1"`)
 - `int`/`string` → `float` (error if string cannot be parsed, e.g. `""`, `"nothing"`)
-- A `string` converted to `int` or `float` may have white space before and after the number, which is ignored, as
-  for the [numeric strings](2023-09-Template-Schemas#75-numeric-strings) of Template Schemas §7.5, which also defines
-  white space: `" 7 "` becomes `7` and `"2.5\n"` becomes `2.5`. White space inside the number is still an error, as
-  in `"1 000"`.
 - `string` → `bool`, accepting the same case-insensitive spellings as the explicit `bool()`
   conversion: `"true"`/`"yes"`/`"on"`/`"1"` become `true` and `"false"`/`"no"`/`"off"`/`"0"`
   become `false` (error otherwise)
@@ -993,6 +989,11 @@ The conversions are:
 - `list[T]` → `list[U]` when each element `T` can be coerced to `U` (e.g., `list[path]` → `list[string]`).
   This applies recursively for nested lists.
 - `list[nulltype]` → `list[T]` for any `T` (empty list literal is compatible with any list type)
+
+A `string` converted to `int` or `float` may have white space before and after the number, which is ignored, as for
+the [numeric strings](2023-09-Template-Schemas#75-numeric-strings) of Template Schemas §7.5, which also defines white
+space: `" 7 "` becomes `7` and `"2.5\n"` becomes `2.5`. White space inside the number is still an error, as in
+`"1 000"`.
 
 #### 1.2.4. Method Call Coercion Restriction
 
@@ -1146,6 +1147,9 @@ For example, if a job submission provides the value `"3.500"` to a float paramet
 - `{{Param.V}}` outputs `"3.500"` (original form preserved)
 - `{{Param.V + 1}}` outputs `"4.5"` (shortest representation after computation)
 
+White space around the number is not part of its original form: if the submission provides `" 3.500 "`,
+`{{Param.V}}` also outputs `"3.500"`.
+
 Note: Float values use 64-bit IEEE 754 representation and are subject to standard floating-point
 precision (e.g., `0.1 + 0.2` produces `0.30000000000000004`, not `0.3`). The expression language
 does not produce negative zero, infinity, or NaN:
@@ -1154,9 +1158,6 @@ does not produce negative zero, infinity, or NaN:
 - Operations that would produce infinity (e.g., `1e300 * 1e300`) are errors.
 - Operations that would produce NaN (e.g., `0.0 / 0.0`) are errors.
 - `float('inf')`, `float('nan')`, and `float('-inf')` are errors.
-
-White space around a number given as a string is not part of its original form: a value `" 3.500 "` outputs
-`"3.500"`.
 
 #### 1.3.5. Conditional Expression Semantics
 
