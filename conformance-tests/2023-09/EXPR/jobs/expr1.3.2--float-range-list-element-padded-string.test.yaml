@@ -1,0 +1,33 @@
+# Expression Language §1.3.2, §1.3.12 and §1.2.3: with EXPR, an element that is exactly "{{<expr>}}" is coerced to
+# its target type, and coercion from string ignores white space around the number. The STRING value " 2.5\t" is
+# 2.5, and the white space is not part of the value the Task sees.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Text
+    type: STRING
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: X
+        type: FLOAT
+        range:
+        - 0.5
+        - "{{ Param.Text }}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'TASK:X=[{{Task.Param.X}}]')
+parameters:
+  Text: " 2.5\t"
+expected:
+  output:
+  - 'TASK:X=[0.5]'
+  - 'TASK:X=[2.5]'

@@ -976,6 +976,10 @@ The conversions are:
 - `string` → `path`
 - `float`/`string` → `int` (error if value cannot be represented exactly, e.g. `3.75`, `""`, `"3.1"`)
 - `int`/`string` → `float` (error if string cannot be parsed, e.g. `""`, `"nothing"`)
+- A `string` converted to `int` or `float` may have white space before and after the number, which is ignored, as
+  for the [numeric strings](2023-09-Template-Schemas#75-numeric-strings) of Template Schemas §7.5, which also defines
+  white space: `" 7 "` becomes `7` and `"2.5\n"` becomes `2.5`. White space inside the number is still an error, as
+  in `"1 000"`.
 - `string` → `bool`, accepting the same case-insensitive spellings as the explicit `bool()`
   conversion: `"true"`/`"yes"`/`"on"`/`"1"` become `true` and `"false"`/`"no"`/`"off"`/`"0"`
   become `false` (error otherwise)
@@ -1150,6 +1154,9 @@ does not produce negative zero, infinity, or NaN:
 - Operations that would produce infinity (e.g., `1e300 * 1e300`) are errors.
 - Operations that would produce NaN (e.g., `0.0 / 0.0`) are errors.
 - `float('inf')`, `float('nan')`, and `float('-inf')` are errors.
+
+White space around a number given as a string is not part of its original form: a value `" 3.500 "` outputs
+`"3.500"`.
 
 #### 1.3.5. Conditional Expression Semantics
 
@@ -1355,6 +1362,10 @@ this resolution, since dropped and flattened elements change its length.
 
 An element with text around its expressions, or with more than one expression, resolves to a string, as every
 element does in a template without EXPR, where each element is a `<TaskParameterStringValue>`.
+
+Coercion from `string` ignores white space around the number ([section 1.2.3](#123-implicit-type-coercion)), so a
+STRING value `" 7 "` as the whole element `"{{ Param.Value }}"` in an INT range is `7`, the same value the element
+resolves to without EXPR.
 
 ```yaml
 - name: Frame
@@ -1575,8 +1586,8 @@ sequences.
 | `bool(value: string) -> bool` | See string-to-bool conversion below |
 | `string(value: bool \| int \| float \| string \| path \| range_expr \| nulltype) -> string` | Convert to string (`nulltype` returns `"null"`) |
 | `string(value: list[T]) -> string` | Convert list to JSON string representation |
-| `int(value: int \| float \| string) -> int` | Convert to integer (error if not exact) |
-| `float(value: int \| float \| string) -> float` | Convert to float |
+| `int(value: int \| float \| string) -> int` | Convert to integer (error if not exact). A string may have white space around the number, as for [coercion](#123-implicit-type-coercion) |
+| `float(value: int \| float \| string) -> float` | Convert to float. A string may have white space around the number, as for [coercion](#123-implicit-type-coercion) |
 | `list(value: range_expr) -> list[int]` | Convert range expression to list |
 | `range_expr(s: string) -> range_expr` | Parse string as range expression (e.g., `"1-10"`, `"1,3,5-7"`); the result keeps only the list of values, so `string(range_expr("1,5-7"))` is `"1,5-7"` and `string(range_expr("1,3,5,7"))` is `"1-7:2"` |
 | `range_expr(l: list[int]) -> range_expr` | Convert integer list to range expression |

@@ -1,0 +1,25 @@
+# Template Schemas §5 and §7.5: an action's timeout written as a Format String is a <posintstring>, so white space
+# around the integer it resolves to is ignored.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - FEATURE_BUNDLE_1
+  name: TestJob
+  parameterDefinitions:
+  - name: TimeoutSeconds
+    type: STRING
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          timeout: "{{Param.TimeoutSeconds}}"
+          command: python
+          args:
+          - -c
+          - "print('TIMEOUT_OK')"
+parameters:
+  TimeoutSeconds: " 60 "
+expected:
+  output:
+  - TIMEOUT_OK

@@ -1,0 +1,41 @@
+# Expression Language §1.2.3 and §1.3.2: with EXPR, a whole-field expression in chunks.defaultTaskCount has the
+# target type int, and chunks.targetRuntimeSeconds int?. A string coerces to int ignoring white space around the
+# integer, so the STRING value " 2 " is 2.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  - TASK_CHUNKING
+  name: ChunkTest
+  parameterDefinitions:
+  - name: Count
+    type: STRING
+  - name: Runtime
+    type: STRING
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: CHUNK[INT]
+        range: 1-4
+        chunks:
+          defaultTaskCount: "{{ Param.Count }}"
+          targetRuntimeSeconds: "{{ Param.Runtime }}"
+          rangeConstraint: CONTIGUOUS
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'CHUNK:{{Task.Param.Frame}}')
+parameters:
+  Count: " 2 "
+  Runtime: " 60 "
+expected:
+  output:
+  - 'CHUNK:1-2'
+  - 'CHUNK:3-4'
+  forbidden:
+  - 'CHUNK:1-4'

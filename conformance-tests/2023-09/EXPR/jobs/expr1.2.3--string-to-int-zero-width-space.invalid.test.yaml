@@ -1,0 +1,29 @@
+# Expression Language §1.2.3 and Template Schemas §7.5: coercion from string ignores only white space, the characters
+# with the Unicode White_Space property. U+200B (zero width space) is not white space, so the STRING value
+# "\u200b7" does not coerce to int and the job cannot be created.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Text
+    type: STRING
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: X
+        type: INT
+        range:
+        - 1
+        - "{{ Param.Text }}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'TASK:X=[{{Task.Param.X}}]')
+parameters:
+  Text: "\u200b7"
