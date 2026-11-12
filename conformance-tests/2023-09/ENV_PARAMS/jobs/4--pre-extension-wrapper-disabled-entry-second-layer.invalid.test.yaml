@@ -1,0 +1,65 @@
+# RFC 0010 / Template Schemas §4 item 4 (activation), §3.2 item 3.2, with RFC 0008 (single-layer rule, §4.3
+# constraint 2): the attached Environment AttachedWrap wraps, and its Environment Template lists WRAP_ACTIONS but not
+# ENV_PARAMS, so it behaves as ALWAYS. Step A's entry for it with enableIf: false has no effect, so A's Sessions enter
+# both AttachedWrap and the Job Environment JobWrap. Two wrapping Environments in one Session violate the
+# single-layer rule, and the submission is rejected. Were AttachedWrap BY_DEFAULT, the entry would decline it and the
+# Job would run.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, WRAP_ACTIONS, EXPR]
+  name: PreExtensionWrapperDisabledEntry
+  jobEnvironments:
+  - name: JobWrap
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, JobWrap]
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: echo
+          args: [WRAP, JobWrap]
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+  steps:
+  - name: A
+    dependencies:
+    - environment: AttachedWrap
+      required: false
+      enableIf: false
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [WRAP_ACTIONS, EXPR]
+  environment:
+    name: AttachedWrap
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, AttachedWrap]
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: echo
+          args: [WRAP, AttachedWrap]
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+runOn: [posix]

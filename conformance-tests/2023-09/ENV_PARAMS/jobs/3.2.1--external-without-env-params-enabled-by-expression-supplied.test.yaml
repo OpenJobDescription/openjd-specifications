@@ -1,0 +1,41 @@
+# RFC 0010 / Template Schemas §3.2.1 item 1, §4 item 4 (activation): the JB-19 entry with an enableIf expression
+# that is true when the Job is created. The entry is enabled and has required: false, and the attached Environment
+# declares no parameters, so its parameters are ignored (implementations should warn); the Environment is entered,
+# configured by its Job Parameter.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalWithoutEnvParamsEnabledByExpression
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      required: false
+      enableIf: "'Conda' in Job.EnvNames"
+      parameters:
+        Packages: ffmpeg=7
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: CondaPackages
+    type: STRING
+    default: ""
+  environment:
+    name: Conda
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "CondaPackages={{Param.CondaPackages}}"]
+parameters:
+  CondaPackages: ffmpeg=6
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda CondaPackages=ffmpeg=6
+  - TASK A

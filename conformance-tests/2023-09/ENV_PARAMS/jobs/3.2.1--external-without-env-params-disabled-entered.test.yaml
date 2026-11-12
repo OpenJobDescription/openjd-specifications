@@ -1,0 +1,40 @@
+# RFC 0010 / Template Schemas §4 item 4 (activation), §3.2 item 3.2: an attached Environment from a document that
+# does not list ENV_PARAMS behaves as ALWAYS, so the JB-19 entry with enableIf: false has no effect. It does not
+# decline the Environment and is not an error: the Step's Session enters Conda, configured by its Job Parameter.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalWithoutEnvParamsDisabledEntered
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      required: false
+      enableIf: false
+      parameters:
+        Packages: ffmpeg=7
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: CondaPackages
+    type: STRING
+    default: ""
+  environment:
+    name: Conda
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "CondaPackages={{Param.CondaPackages}}"]
+parameters:
+  CondaPackages: ffmpeg=6
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda CondaPackages=ffmpeg=6
+  - TASK A

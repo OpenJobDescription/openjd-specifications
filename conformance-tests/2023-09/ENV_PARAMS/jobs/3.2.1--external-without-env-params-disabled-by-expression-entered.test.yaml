@@ -1,19 +1,17 @@
-# RFC 0010 / Template Schemas §3.2 item 3.2, §3.2.1 item 1: a disabled
-# required: false entry for an attached BY_DEFAULT Environment that declares no
-# parameters still declines it, as any disabled entry does, so the Step's
-# Session does not enter it.
+# RFC 0010 / Template Schemas §4 item 4 (activation), §3.2 item 3.2, §7.4.1 step 4: as JB-140, whose disabled entry
+# declines an attached BY_DEFAULT Environment, but Conda's Environment Template does not list ENV_PARAMS. The entry's
+# enableIf "'Docker' in Job.EnvNames" is false when the Job is created, and the disabled entry has no effect on an
+# Environment that behaves as ALWAYS, so Step A's Session still enters Conda.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [ENV_PARAMS, EXPR]
-  name: ExternalWithoutEnvParamsDisabledDeclines
+  name: ExternalWithoutEnvParamsDisabledByExpression
   steps:
   - name: A
     dependencies:
     - environment: Conda
       required: false
-      enableIf: false
-      parameters:
-        Packages: ffmpeg=7
+      enableIf: "'Docker' in Job.EnvNames"
     script:
       actions:
         onRun:
@@ -37,6 +35,5 @@ parameters:
 runOn: [posix, windows]
 expected:
   output:
+  - ENTER Conda CondaPackages=ffmpeg=6
   - TASK A
-  forbidden:
-  - ENTER Conda

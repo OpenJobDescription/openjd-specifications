@@ -1,0 +1,70 @@
+# RFC 0010 / Template Schemas §3.2 item 3.2, with RFC 0008 (single-layer rule, §4.3 constraint 2): the companion of
+# JB-173, which shows that the single-layer rule is what rejects it. Here AttachedWrap's Environment Template lists
+# ENV_PARAMS and omits activation, so AttachedWrap is BY_DEFAULT, and Step A's entry with enableIf: false declines it.
+# A's Sessions enter only JobWrap, which wraps the Task, and the Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, WRAP_ACTIONS, EXPR]
+  name: ByDefaultWrapperDisabledEntry
+  jobEnvironments:
+  - name: JobWrap
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, JobWrap]
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: echo
+          args: [WRAP, JobWrap]
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+  steps:
+  - name: A
+    dependencies:
+    - environment: AttachedWrap
+      required: false
+      enableIf: false
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, WRAP_ACTIONS, EXPR]
+  environment:
+    name: AttachedWrap
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, AttachedWrap]
+        onWrapEnvEnter:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+        onWrapTaskRun:
+          command: echo
+          args: [WRAP, AttachedWrap]
+        onWrapEnvExit:
+          command: bash
+          args:
+          - "-c"
+          - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+runOn: [posix]
+expected:
+  output:
+  - ENTER JobWrap
+  - WRAP JobWrap
+  forbidden:
+  - ENTER AttachedWrap
+  - WRAP AttachedWrap

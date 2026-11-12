@@ -1,0 +1,33 @@
+# RFC 0010 / Template Schemas §4 item 4 (activation), §3.2 item 3.2: as JB-169 with required: true and no
+# parameters. A disabled entry naming an Environment from a document that does not list ENV_PARAMS has no effect,
+# whatever required says, so it is not the error it would be for an attached ALWAYS Environment (JB-141), and the
+# Step's Session enters Lic.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalWithoutEnvParamsDisabledRequired
+  steps:
+  - name: A
+    dependencies:
+    - environment: Lic
+      required: true
+      enableIf: false
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  environment:
+    name: Lic
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Lic]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Lic
+  - TASK A

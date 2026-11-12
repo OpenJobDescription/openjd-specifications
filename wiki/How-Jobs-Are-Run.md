@@ -117,13 +117,19 @@ Parameters say, for the whole Job, as before.
 With this extension, a **Session** need not enter every **Environment** of the Job. An **Environment**'s `activation`
 decides which **Sessions** enter it:
 
-* `BY_DEFAULT`, the default: every **Session**, except those of a Step that declines the **Environment** with an entry
-  whose `enableIf` is false, and those of a Step for which the **Environment**'s own `enableIf` is false. A Conda
-  **Environment** can use its `enableIf` to skip the Steps that have no packages to install.
+* `BY_DEFAULT`, the default in a template that lists ENV_PARAMS: every **Session**, except those of a Step that declines
+  the **Environment** with an entry whose `enableIf` is false, and those of a Step for which the **Environment**'s own
+  `enableIf` is false. A Conda **Environment** can use its `enableIf` to skip the Steps that have no packages to
+  install.
 * `ALWAYS`: every **Session**. Use it for an **Environment** that every **Session** must enter, such as one that sets up
   licensing or auditing. A Job in which some Step declines it, or its `enableIf` is false for some Step, is rejected.
 * `ON_REQUEST`: only the **Sessions** of the Steps that ask for it, less any for which its `enableIf` is false. Other
   **Sessions** never enter it.
+
+An **Environment** from a template that does not list ENV_PARAMS, such as one written before the extension, is entered
+by every **Session**, as an `ALWAYS` one is. A Step's entry for it whose `enableIf` is false has no effect, so a Job
+cannot leave out an **Environment** that a render management system attached for licensing or auditing before it
+adopted ENV_PARAMS.
 
 The **Environments** a **Session** does enter keep the order they have in the Job.
 
