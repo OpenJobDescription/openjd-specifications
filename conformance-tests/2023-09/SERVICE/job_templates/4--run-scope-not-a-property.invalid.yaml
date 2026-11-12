@@ -1,7 +1,8 @@
 # Section 4 (RFC 0009): earlier drafts of RFC 0009 gave <Environment> a
 # `runScope` list of Session kinds. It is not a property of <Environment>;
 # RFC 0010's `activation` replaces it, and `runScope` is an unknown property
-# even in a template that lists SERVICE and ENV_PARAMS.
+# even in a template that lists SERVICE and ENV_PARAMS. Client is ON_REQUEST
+# and requested by Step1, so runScope is the only error.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
@@ -10,6 +11,7 @@ extensions:
 name: TestJob
 jobEnvironments:
 - name: Client
+  activation: ON_REQUEST
   dependencies:
   - service: Store
   runScope: [TASK]
@@ -26,6 +28,8 @@ services:
         args: ["-c", "print()"]
 steps:
 - name: Step1
+  dependencies:
+  - environment: Client
   script:
     actions:
       onRun:

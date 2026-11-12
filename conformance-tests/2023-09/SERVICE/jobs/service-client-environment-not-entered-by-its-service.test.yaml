@@ -1,9 +1,12 @@
-# Template Schemas §4 item 3 / How Jobs Are Run § Services: an Environment
-# that lists a Service in `dependencies` is entered in Task Sessions but not in
-# the listed Service's Session, while an Environment that lists nothing is
-# entered in every Session, including the Service's. Each Environment's onEnter
-# prints which Session it is in; the Service's onRun and the Task report which
-# variables they see.
+# Template Schemas §4 item 3 / How Jobs Are Run § Services: a Service declines
+# its BY_DEFAULT client Environment, which lists it, with a disabled
+# `environment:` entry, as a Step declines one. The client Environment is then
+# entered in Task Sessions but not in the Service's Session, while an
+# Environment that lists nothing is entered in every Session, including the
+# Service's. The client Environment's onEnter reports what it sees; the
+# Service's onRun and the Task report which variables they see. Without the
+# entry the template is a cycle (job_templates/
+# 4--service-enters-by-default-environment-that-lists-it.invalid).
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [SERVICE, ENV_PARAMS, EXPR]
@@ -24,6 +27,9 @@ template:
           args: ["-c", "import os; print('CLIENT_ENTER_SEES_STORE_PORT', os.environ['STORE_PORT'].isdigit())"]
   services:
   - name: Store
+    dependencies:
+    - environment: ClientByDefault
+      enableIf: false
     ports:
     - name: main
     healthCheck:

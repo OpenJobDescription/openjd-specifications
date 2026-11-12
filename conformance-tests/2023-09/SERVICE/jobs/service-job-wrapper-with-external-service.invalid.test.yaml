@@ -39,6 +39,10 @@ environments:
   extensions: [SERVICE, ENV_PARAMS, EXPR]
   services:
   - name: Cache
+    dependencies:
+    # CacheClient lists this Service, so its Sessions decline it.
+    - environment: CacheClient
+      enableIf: false
     ports:
     - name: main
     healthCheck:

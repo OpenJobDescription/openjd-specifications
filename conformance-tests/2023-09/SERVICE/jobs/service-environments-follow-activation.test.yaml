@@ -1,11 +1,11 @@
-# RFC 0009 "Services run inside Environments": a Service Session enters the
-# Job Environments a Task Session would, by `activation`, with one exception.
-# The ALWAYS Environment `Everywhere` is entered for both the Service and the
-# Task; `TaskOnly`, also ALWAYS, lists the Service in `dependencies` and reads
-# its endpoint, so the Service's own Session does not enter it; `ServiceOnly`
-# is ON_REQUEST and requested only by the Service. An Environment's
-# `variables` reach the Service's actions, with the Service's own `variables`
-# taking precedence.
+# RFC 0009 "Services run inside Environments": a Service Session chooses its
+# Job Environments by RFC 0010's rules, as a Task Session does. The
+# BY_DEFAULT Environment `Everywhere` is entered for both the Service and the
+# Task; `TaskOnly` is ON_REQUEST and requested only by the Step (it lists the
+# Service and reads its endpoint, so the Service's own Session must not enter
+# it); `ServiceOnly` is ON_REQUEST and requested only by the Service. An
+# Environment's `variables` reach the Service's actions, with the Service's
+# own `variables` taking precedence.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [SERVICE, ENV_PARAMS, EXPR]
@@ -21,6 +21,7 @@ template:
           command: python
           args: ["-c", "print('EVERYWHERE_ENTER')"]
   - name: TaskOnly
+    activation: ON_REQUEST
     dependencies:
     - service: Store
     variables:
@@ -61,6 +62,7 @@ template:
   - name: Use
     dependencies:
     - service: Store
+    - environment: TaskOnly
     script:
       actions:
         onRun:

@@ -1,0 +1,32 @@
+# Section 1.2 item 6 constraint 5 (RFC 0009): a Service in an Environment
+# Template may have a disabled `environment:` entry, but one with
+# *parameters* is rejected: the entry may only decline the Environment.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+services:
+- name: Cache
+  dependencies:
+  - environment: CacheClient
+    enableIf: false
+    parameters:
+      Packages: valkey
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Cache.main.port }}"]
+environment:
+  name: CacheClient
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: ""
+  dependencies:
+  - service: Cache
+  variables:
+    CACHE_PORT: "{{ Service.Cache.main.port }}"
