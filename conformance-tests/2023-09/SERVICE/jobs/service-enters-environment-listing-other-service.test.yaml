@@ -1,7 +1,7 @@
 # RFC 0009 §4 item 3 / How Jobs Are Run § Services: Back's Session enters the
-# ALWAYS Environment FrontClient, which lists Front, so Back depends on Front
-# and starts once Front is READY, with FRONT_PORT set from Front's endpoint.
-# Front's own Session does not enter FrontClient.
+# BY_DEFAULT Environment FrontClient, which lists Front, so Back depends on
+# Front and starts once Front is READY, with FRONT_PORT set from Front's
+# endpoint. Front declines FrontClient, so its own Session does not enter it.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [SERVICE, ENV_PARAMS, EXPR]
@@ -14,6 +14,9 @@ template:
       FRONT_PORT: "{{ Service.Front.main.port }}"
   services:
   - name: Front
+    dependencies:
+    - environment: FrontClient
+      enableIf: false
     ports:
     - name: main
     healthCheck:

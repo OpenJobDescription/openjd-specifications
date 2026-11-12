@@ -1,7 +1,8 @@
 # Section 3.2 constraint 3 (RFC 0009): Front lists Back (Front -> Back), and
-# Back's Session enters the ALWAYS Environment FrontClient, which lists Front
-# (Back -> Front). The two edges form a cycle, which is rejected at template
-# validation, naming it.
+# Back's Session enters the BY_DEFAULT Environment FrontClient, which lists
+# Front (Back -> Front). The two edges form a cycle, which is rejected at
+# template validation, naming it. Front declines FrontClient, so the cycle
+# Front -> Front is not also present.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
@@ -18,6 +19,8 @@ services:
 - name: Front
   dependencies:
   - service: Back
+  - environment: FrontClient
+    enableIf: false
   ports:
   - name: main
   script:

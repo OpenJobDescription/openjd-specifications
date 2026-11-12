@@ -1,6 +1,6 @@
 # Section 3.2 item 3 (RFC 0009) / RFC 0010 <StepDependency> constraint 7: the
 # valid counterpart of 9--service-must-supply-required-environment-parameter:
-# the Service supplies the required parameter of the ALWAYS Environment its
+# the Service supplies the required parameter of the BY_DEFAULT Environment its
 # Session enters, with a value of its own.
 specificationVersion: jobtemplate-2023-09
 extensions:

@@ -155,7 +155,12 @@ services: [ <Service>, ... ] # @optional @extension SERVICE
          edge from each of these Services whose Sessions enter the document's *environment* to each Service that
          Environment lists (see [&lt;StepDependency&gt;](#32-stepdependency) constraint 3).
       5. Every entry of a Service's `dependencies` in this list uses the `service` key and names a Service in this
-         list, since the document has no Steps.
+         list, or is a disabled *environment* entry
+         ([RFC 0010](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md),
+         `ENV_PARAMS`) that names the document's own *environment*: one whose *enableIf* is the literal `false` and
+         that has no *parameters*. The document has no Steps, and its author can give its *environment* values
+         directly. A disabled entry can only keep the Service's Sessions out of that Environment, which they would
+         otherwise enter in a cycle when it lists the Service (see [&lt;Environment&gt;](#4-environment) item 3).
 
 Subject to the constraint that at least one of *environment* or *services* must be provided.
 
@@ -188,8 +193,9 @@ An Environment Template that defines *services* defines Services that the schedu
 submitted through it, just as its *environment* defines an Environment applied to every submission. From the Job
 Template's point of view these are **external Services**. Each Job that uses an external Service gets its own instance
 of it. An external Service's scope is computed over the combined Job by the same rules as an inline Service's (see
-[Service scope](#91-service-scope)): typically the Environment defined alongside it lists it, which puts every Step in
-its scope, or a Step of the Job Template lists it through `externalServices`. An attached Service that nothing in the
+[Service scope](#91-service-scope)): typically the Environment defined alongside it lists it, which puts in its scope
+every Step whose Sessions enter that Environment, and the Service declines that Environment for its own Sessions; or a
+Step of the Job Template lists it through `externalServices`. An attached Service that nothing in the
 combined Job lists has an empty scope and is never started; this is not an error.
 
 A `Service.*` reference resolves within its own document: in an Environment Template to the document's *services*, in a
@@ -221,11 +227,13 @@ When a submission combines a Job Template with one or more Environment Templates
    combined Job's `jobEnvironments` that does not define all four `onWrapService*` hooks, the submission must be rejected, identifying
    the Environment, the document that defines it, and the Service. A document that does not declare `SERVICE` cannot
    define those hooks, so a wrapping Environment from such a document is rejected in any Job that has a Service whose
-   Sessions enter it. The remedy is for that document to declare `SERVICE` and define the hooks. A wrapping Environment
-   in a Step's `stepEnvironments` is never entered by a Service Session and is not subject to this check.
+   Sessions enter it. The remedies are for that document to declare `SERVICE` and define the hooks, or to declare
+   `ENV_PARAMS` and make the wrapper `ON_REQUEST` for the Steps that request it. A Job Template's Service may also
+   decline a `BY_DEFAULT` wrapper. A wrapping Environment in a Step's `stepEnvironments` is never entered by a Service
+   Session and is not subject to this check.
 
-Items 2 and 4, and the cycles of [&lt;StepDependency&gt;](#32-stepdependency) constraint 3 that involve an attached
-Environment or Service, are the only checks that require the combined Job; everything else is checked when each
+Items 2 and 4, and the cycles of [&lt;StepDependency&gt;](#32-stepdependency) constraint 3 whose edges depend on the
+attached Environments, are the only checks that require the combined Job; everything else is checked when each
 document is validated on its own.
 
 ## 2. `<JobParameterDefinition>`
@@ -1080,9 +1088,15 @@ Constraints (with the `SERVICE` extension):
    the Steps and Services. Its edges run from each entity to each entry in its list (Step to Step, Step to Service,
    Service to Step, and Service to Service), and from each Step and each Service whose Sessions enter a Job
    Environment to each Service that Environment lists (see [&lt;Environment&gt;](#4-environment) item 3 and
-   [Service scope](#91-service-scope) rule 3). That graph must be acyclic. A cycle is rejected naming it: at template
-   validation when every edge in it comes from one Job Template, and when the Job is created for a cycle through an
-   attached Environment or Service.
+   [Service scope](#91-service-scope) rule 3). That graph must be acyclic, with no exception: a Service whose Sessions
+   enter an Environment that lists it is a cycle, and so are two Services whose Sessions each enter a client
+   Environment of the other. Keeping the graph acyclic is the template author's responsibility. A cycle is rejected
+   naming it, and naming the Environment for an edge that comes from entering one: at template validation when every
+   edge in it is known then by RFC 0010's rules for which Sessions enter an Environment before the Job is created
+   (see [RFC 0010](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#which-sessions-enter-an-environment)), under
+   which a Job Environment with an `exclusiveGroup` is not known to be entered without the Environment Templates, and
+   otherwise when the Job is created. A Service enters only the Environments of its own document and of earlier ones,
+   so no edge points from a document to a later one and a cycle never spans documents.
 4. Exactly one of the two keys must be present; an entry that gives both, or neither, is a validation error.
 
 ### 3.3. `<HostRequirements>`
@@ -1764,10 +1778,15 @@ Where:
    clients it configures, and listing one makes its endpoint visible to the Environment. Every entity whose Sessions
    enter the Environment depends on each Service it lists: a Step is in the Service's scope
    ([Service scope](#91-service-scope) rule 3), and a Service gains an edge to it in the dependency graph
-   ([&lt;StepDependency&gt;](#32-stepdependency) constraint 3), so it starts only once the listed Service is READY. One
-   exception keeps the common case acyclic: a Service's Sessions do not enter a Job Environment that lists that
-   Service. Without it, an Environment that configures a Service's clients for every Step would put the Service in a
-   cycle with itself (see [How Jobs Are Run](How-Jobs-Are-Run#services)). Constraints:
+   ([&lt;StepDependency&gt;](#32-stepdependency) constraint 3), so it starts only once the listed Service is READY.
+   A Service's Sessions choose the Environments they enter exactly as a Step's do under
+   [RFC 0010](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md)
+   (`ENV_PARAMS`), among the Environments of the Service's own document and of the Environment Templates attached
+   before it (see
+   [How Jobs Are Run](How-Jobs-Are-Run#services)). There is no exception for an Environment that lists the Service: a
+   Service whose Sessions would enter such an Environment is a cycle and is rejected. The template author keeps the
+   Service out, for example with an `activation: ON_REQUEST` client Environment that the Steps request, or with a
+   disabled *environment* entry on the Service that declines a `BY_DEFAULT` one. Constraints:
       1. Minimum number of elements: If provided, then this list must contain at least one element.
       2. Every entry must use the `service` key and name a Service of the same document's `services` or, in a Job
          Template, of its `externalServices`.
@@ -2365,7 +2384,7 @@ specification for the extended grammar, type system, and evaluation semantics.
 |`Task.File.<name>`|The filesystem location to which the Task Embedded File with key `<name>` has been written.| Available within the Step Script Actions and Embedded Files.|
 |`Env.File.<name>`|The filesystem location to which the Environment Attachment with key `<name>` has been written.|Available within the Environment Script Actions and Embedded Files.|
 |`Service.File.<name>`|The filesystem location to which the Service Embedded File with key `<name>` has been written. Requires the `SERVICE` extension.|Available within the Service Script Actions and Embedded Files of the declaring Service.|
-|`Service.<name>.<port>.port`|The port number allocated (or requested) for port `<port>` of Service `<name>`, in the space of that port's `protocol`. This is an `int` type. Requires the `SERVICE` extension.|Available within the declaring Service, and within every Service, Step (its Script and its Step Environments), and Job Environment whose `dependencies` list `service: <name>`; a Job Environment that lists an inline Service puts every Step in its scope. A Service a Job Template requires follows the same rule, minus the declaring Service. See [&lt;Service&gt;](#9-service-extension-service) for the scoping rules.|
+|`Service.<name>.<port>.port`|The port number allocated (or requested) for port `<port>` of Service `<name>`, in the space of that port's `protocol`. This is an `int` type. Requires the `SERVICE` extension.|Available within the declaring Service, and within every Service, Step (its Script and its Step Environments), and Job Environment whose `dependencies` list `service: <name>`; a Job Environment that lists an inline Service puts in its scope every Step whose Sessions enter it. A Service a Job Template requires follows the same rule, minus the declaring Service. See [&lt;Service&gt;](#9-service-extension-service) for the scoping rules.|
 |`Service.<name>.<port>.bindAddress`|The interface address that the service process must bind to so that entities in the Service's scope can reach it: a hostname, an IPv4 literal, or an unbracketed IPv6 literal. This is a `string` type. Requires the `SERVICE` extension.|Available within the declaring Service only; never for a required external Service.|
 |`Service.<name>.<port>.connectAddress`|The hostname or IP address that entities in the Service's scope use to reach port `<port>` of Service `<name>`: a hostname, an IPv4 literal, or an unbracketed IPv6 literal. Join it with a port using `join_host_port` (see [Expression Language](2026-02-Expression-Language#224-string-functions)), which adds the brackets an IPv6 literal needs in a URL. This is a `string` type. Requires the `SERVICE` extension.|As `Service.<name>.<port>.port`.|
 |`Session.WorkingDirectory`|The agent is expected to create a local temporary scratch directory for the duration of a Session. This builtin provides the location of that temporary directory. This is the working directory that the Worker Agent uses when running the task.|This is available within all Environment Script Actions & Embedded Files, all Step Script Actions and Embedded Files, and, with the `SERVICE` extension, all Service Script Actions and Embedded Files.|
@@ -2695,7 +2714,8 @@ Where:
     2. Each entry satisfies [&lt;StepDependency&gt;](#32-stepdependency) constraints 1 and 2.
     3. In the graph of [&lt;StepDependency&gt;](#32-stepdependency) constraint 3, a Service that lists a Step in its own
        scope, directly or through other Services, is a cycle; a Service that a Job Environment lists, directly or
-       through other Services, has every Step in its scope and so can list no Step.
+       through other Services, has in its scope every Step whose Sessions enter that Environment, and so can list none
+       of them.
 5. *hostRequirements* — Describes the requirements on the Worker Host's capabilities that must be satisfied for the
    Service to be placed on the host. Amount capabilities are allocated to the Service for its lifetime. This is
    independent of the *hostRequirements* of any Step whose Tasks use the Service.
@@ -2776,7 +2796,7 @@ meaning:
    `X`, and when `Y`'s Sessions enter a Job Environment that lists `X` (see [&lt;Environment&gt;](#4-environment) item
    3). This applies transitively: a Step is in `X`'s scope when it depends on `X` through any chain of Services.
 3. When a `jobEnvironments` entry lists Service `X` in its `dependencies`, every Step whose Sessions enter that
-   Environment, which is every Step, is in `X`'s scope. A Step Environment has no `dependencies` of its own; it follows
+   Environment is in `X`'s scope. A Step Environment has no `dependencies` of its own; it follows
    its Step's.
 4. A Service in whose scope no Step falls is unused, and the template must be rejected at template validation, naming
    the Service. A Service listed only by Services that are themselves unused is unused.
@@ -3111,7 +3131,8 @@ Where:
 This section indexes the rules the `SERVICE` extension adds; each is stated in full where the pointer leads. Every rule
 is checked at template validation, except that the [numeric `@fmtstring` fields](#951-numeric-fmtstring-fields) are
 checked when resolved at job creation, the rules marked *(submission)* need the combined Job and are checked at
-submission, and a cycle through an attached Environment or Service is checked at submission.
+submission, and a cycle with an edge not known at template validation (see [&lt;StepDependency&gt;](#32-stepdependency)
+constraint 3) is checked when the Job is created.
 
 | Rule | Stated in |
 |---|---|
@@ -3120,7 +3141,7 @@ submission, and a cycle through an attached Environment or Service is checked at
 | An Environment's `dependencies` is well formed and absent from `stepEnvironments` | [&lt;Environment&gt;](#4-environment) item 3 constraints 2–4 |
 | A wrapping Environment defines the hook for every kind of action that a kind of Session entering it may run | [&lt;EnvironmentActions&gt;](#43-environmentactions) `WRAP_ACTIONS` constraint 6 |
 | Every `dependencies` entry is well formed | [&lt;StepDependency&gt;](#32-stepdependency) constraints 1, 2, and 4; [Environment Template](#12-environment-template) item 6 constraint 5 |
-| The `dependencies` graph, including the edges from entering an Environment that lists a Service, is acyclic | [&lt;StepDependency&gt;](#32-stepdependency) constraint 3; [Environment Template](#12-environment-template) item 6 constraint 4 |
+| The `dependencies` graph, including the edges from entering an Environment that lists a Service, is acyclic, with no exception for a Service's own client Environment | [&lt;StepDependency&gt;](#32-stepdependency) constraint 3; [Environment Template](#12-environment-template) item 6 constraint 4 |
 | Every inline Service, and every `externalServices` entry, is listed by some Step, Service, or Job Environment | [Service scope](#91-service-scope) rule 4 |
 | Service, requirement, and port names are identifiers other than `File`, unique within their lists, and no requirement shares a `name` with an inline Service | [&lt;ServiceName&gt;](#92-servicename); [Job Template](#11-job-template) *externalServices* constraint 4 |
 | `externalServices` appears only in a Job Template | [Job Template](#11-job-template) *externalServices* constraint 5 |

@@ -1,8 +1,9 @@
 # Section 4 item 3 (RFC 0009): a Job Environment may list the Services it
 # depends on in `dependencies`, each entry a `service: <name>`, and may then
 # reference the listed Service's `port` and `connectAddress` in its variables,
-# actions, and embedded files. The dependency puts every Step in Store's scope
-# (Section 9.1 rule 3), so no Step needs to list it.
+# actions, and embedded files. Client is ON_REQUEST and Step1 requests it, so
+# Step1 is in Store's scope (Section 9.1 rule 3) without listing Store, and
+# Store's own Sessions do not enter Client.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
@@ -11,6 +12,7 @@ extensions:
 name: TestJob
 jobEnvironments:
 - name: Client
+  activation: ON_REQUEST
   dependencies:
   - service: Store
   variables:
@@ -37,6 +39,8 @@ services:
         args: ["-c", "print()", "{{ Service.Store.main.port }}"]
 steps:
 - name: Step1
+  dependencies:
+  - environment: Client
   script:
     actions:
       onRun:

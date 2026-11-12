@@ -1,7 +1,8 @@
 # Section 1.2 item 5 / Section 4 item 3 (RFC 0009): an Environment Template's
 # Environment may list the document's Services in `dependencies`, in the
 # `service: <name>` form, and may then reference the listed Service's `port` and
-# `connectAddress`. The listed Service's own Session does not enter it.
+# `connectAddress`. The listed Service declines it with a disabled entry, so
+# its own Session does not enter it.
 specificationVersion: environment-2023-09
 extensions:
 - SERVICE
@@ -9,6 +10,9 @@ extensions:
 - EXPR
 services:
 - name: Cache
+  dependencies:
+  - environment: CacheClient
+    enableIf: false
   ports:
   - name: main
   script:

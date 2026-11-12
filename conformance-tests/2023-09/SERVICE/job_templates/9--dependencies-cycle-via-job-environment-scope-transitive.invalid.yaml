@@ -4,7 +4,8 @@
 # is in Front's scope through the Job Environment, and so in Indexer's scope
 # through Front (Section 9.1 rule 2), so Indexer cannot depend on any Step:
 # Prepare -> Front -> Indexer -> Prepare is a cycle, and the template is
-# rejected.
+# rejected. Front and Indexer decline Client, so the cycles Front -> Front and
+# Indexer -> Front -> Indexer are not also present.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
@@ -21,6 +22,8 @@ services:
 - name: Front
   dependencies:
   - service: Indexer
+  - environment: Client
+    enableIf: false
   ports:
   - name: main
   script:
@@ -31,6 +34,8 @@ services:
 - name: Indexer
   dependencies:
   - dependsOn: Prepare
+  - environment: Client
+    enableIf: false
   ports:
   - name: main
   script:

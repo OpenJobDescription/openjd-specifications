@@ -24,6 +24,10 @@ environments:
     default: cached-value
   services:
   - name: Cache
+    dependencies:
+    # CacheClient lists this Service, so its Sessions decline it.
+    - environment: CacheClient
+      enableIf: false
     ports:
     - name: main
     script:

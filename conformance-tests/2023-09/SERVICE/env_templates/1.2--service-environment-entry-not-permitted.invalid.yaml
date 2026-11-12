@@ -1,7 +1,9 @@
 # Section 1.2 item 6 constraint 5 / Section 3.2 item 3 (RFC 0009): a Service
-# in an Environment Template's `services` has only `service` entries in its
-# `dependencies`. The document's author writes its `environment` too and can
-# give it the values directly, so an `environment:` entry is rejected.
+# in an Environment Template's `services` has only `service` entries and
+# disabled `environment:` entries in its `dependencies`. The document's author
+# writes its `environment` too and can give it the values directly, so an
+# enabled `environment:` entry that supplies values is rejected. CacheClient
+# does not list Cache, so the entry is not also a cycle.
 specificationVersion: environment-2023-09
 extensions: [SERVICE, ENV_PARAMS, EXPR]
 environment:
@@ -10,10 +12,8 @@ environment:
   - name: Packages
     type: STRING
     default: ""
-  dependencies:
-  - service: Cache
   variables:
-    CACHE_PORT: "{{ Service.Cache.main.port }}"
+    CACHE_MODE: client
 services:
 - name: Cache
   dependencies:

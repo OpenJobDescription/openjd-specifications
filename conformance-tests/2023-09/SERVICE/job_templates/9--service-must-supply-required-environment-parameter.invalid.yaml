@@ -1,5 +1,5 @@
 # Section 3.2 item 3 (RFC 0009) / RFC 0010 <StepDependency> constraint 7: a
-# Service is held to constraint 7 as a Step is. The ALWAYS Environment Conda
+# Service is held to constraint 7 as a Step is. The BY_DEFAULT Environment Conda
 # has a parameter with no default; the Step supplies it, but the Service,
 # whose Session also enters Conda, does not.
 specificationVersion: jobtemplate-2023-09

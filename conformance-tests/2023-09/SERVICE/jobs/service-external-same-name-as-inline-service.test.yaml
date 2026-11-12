@@ -36,6 +36,10 @@ environments:
   extensions: [SERVICE, ENV_PARAMS, EXPR]
   services:
   - name: Store
+    dependencies:
+    # QueueStoreClient lists this Service, so its Sessions decline it.
+    - environment: QueueStoreClient
+      enableIf: false
     ports:
     - name: main
     healthCheck:

@@ -1,5 +1,5 @@
 # Section 4.3 WRAP_ACTIONS constraint 6 (RFC 0009 rule 1): a wrapping
-# Environment with the default `activation: ALWAYS`, entered by Task Sessions
+# Environment with the default `activation: BY_DEFAULT`, entered by Task Sessions
 # and Service Sessions, defines onWrapEnvEnter, onWrapEnvExit, onWrapTaskRun,
 # and all four onWrapService* hooks.
 specificationVersion: jobtemplate-2023-09

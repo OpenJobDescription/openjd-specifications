@@ -1,6 +1,6 @@
 # Template Schemas §1.2.2 item 4 (submission-time check): the attached queue
 # wrapper declares SERVICE and ENV_PARAMS but defines only RFC 0008's three
-# hooks, with the default `activation: ALWAYS`. It is valid on its own
+# hooks, with the default `activation: BY_DEFAULT`. It is valid on its own
 # (env_templates/4.3--wrap-three-hooks-with-service-extension), but in this
 # Job the Service's Session enters it, and the wrapper cannot wrap the
 # Service's actions, so the submission must be rejected.

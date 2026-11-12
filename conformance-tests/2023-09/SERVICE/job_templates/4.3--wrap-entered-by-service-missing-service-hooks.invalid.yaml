@@ -1,5 +1,5 @@
 # Section 4.3 WRAP_ACTIONS constraint 6: a wrapping Environment with the
-# default `activation: ALWAYS` that lists no Service is entered by every
+# default `activation: BY_DEFAULT` that lists no Service is entered by every
 # Service Session, so it must define the four onWrapService* hooks. RFC
 # 0008's three hooks alone are rejected at template validation.
 specificationVersion: jobtemplate-2023-09

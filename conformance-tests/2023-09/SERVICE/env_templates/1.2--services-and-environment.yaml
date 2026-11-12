@@ -1,8 +1,9 @@
 # Section 1.2.2 (RFC 0009 example 3): one document defines a Service and an
 # Environment that publishes its endpoint to Tasks through environment
 # variables; the Environment lists the Service in `dependencies`, which is what
-# lets it reference the Service's `port` and `connectAddress`, and keeps the
-# Service's own Session out of it.
+# lets it reference the Service's `port` and `connectAddress`. The Service
+# declines the Environment with a disabled `environment:` entry (Section 1.2
+# item 6 constraint 5), since its own Session cannot wait for itself.
 specificationVersion: environment-2023-09
 extensions:
 - SERVICE
@@ -14,6 +15,9 @@ parameterDefinitions:
   default: 64
 services:
 - name: Cache
+  dependencies:
+  - environment: CacheClient
+    enableIf: false
   ports:
   - name: main
   script:

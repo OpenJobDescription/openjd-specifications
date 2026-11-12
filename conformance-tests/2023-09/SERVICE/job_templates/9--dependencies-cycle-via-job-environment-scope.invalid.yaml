@@ -5,7 +5,8 @@
 # Prepare, like every Step, could not run until Indexer was READY, and Indexer
 # could not start until Prepare completed. The cycle is Prepare -> Indexer ->
 # Prepare, closed through the Job Environment's scope, and the template is
-# rejected even though no Step lists Indexer directly.
+# rejected even though no Step lists Indexer directly. Indexer declines
+# Client, so the cycle Indexer -> Indexer is not also present.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
@@ -22,6 +23,8 @@ services:
 - name: Indexer
   dependencies:
   - dependsOn: Prepare
+  - environment: Client
+    enableIf: false
   ports:
   - name: main
   script:

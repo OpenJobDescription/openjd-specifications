@@ -1,6 +1,6 @@
 # RFC 0009 "Services run inside Environments" / §3.2 item 3: a Service supplies
 # values to a parameterized Environment with an `environment:` entry, as a
-# Step does. The ALWAYS Environment Conda is entered by the Service Session and
+# Step does. The BY_DEFAULT Environment Conda is entered by the Service Session and
 # the Task Session, each with its own entity's values, so the Service and the
 # Task see different packages.
 template:
