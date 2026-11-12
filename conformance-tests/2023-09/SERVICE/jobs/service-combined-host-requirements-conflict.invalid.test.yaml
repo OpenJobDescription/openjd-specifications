@@ -1,6 +1,6 @@
 # RFC 0009 <Service> item 5 / RFC 0010 §3.3.3: a Service's combined host
 # requirements are its own hostRequirements together with those of the
-# Environments its Sessions enter. The ALWAYS Environment requires linux and
+# Environments its Sessions enter. The BY_DEFAULT Environment requires linux and
 # the Service requires windows; no host satisfies both, so the submission is
 # rejected, naming the Service.
 template:

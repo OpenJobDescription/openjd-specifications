@@ -1,6 +1,6 @@
 # Section 1.2 item 5 / Section 4 item 3 (RFC 0009): the Environment may list
 # the document's Services in `dependencies` and reference their endpoints.
-# The listed Service's own Session does not enter it, since the Environment
+# The listed Service declines it with a disabled entry, since the Environment
 # waits for that Service to be READY.
 specificationVersion: environment-2023-09
 extensions:
@@ -9,6 +9,9 @@ extensions:
 - EXPR
 services:
 - name: Cache
+  dependencies:
+  - environment: CacheClient
+    enableIf: false
   ports:
   - name: main
   script:

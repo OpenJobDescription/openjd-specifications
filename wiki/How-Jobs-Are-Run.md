@@ -95,16 +95,21 @@ address and port on the **Service**'s host and makes them available to every ent
 
 Unlike an **Environment**, a **Service** is not tied to the host that runs Tasks. It runs in a **Session** of its own,
 the **Service Session**, on a **Service host** chosen by the scheduler subject to the **Service**'s host requirements,
-and it outlives every **Session** that runs Tasks against it. A **Service Session** enters the Job's **Environments**,
-in the same order a **Session** for a Task would, around the **Service**'s own actions, so a **Service** is provisioned
-by the same Conda, Rez, or container **Environments** as the Tasks; a **Service** belongs to no Step and enters no
-Step's **Environments**. Later **Environments** take precedence over earlier ones for environment variables, the
-**Service**'s own `variables` over all of them, and variables the **Service**'s `onEnter` sets with `openjd_env` over
-its `variables`. An **Environment** that configures clients of a **Service** lists `service: <name>` in its
-`dependencies`, which is what lets it reference `Service.*`. Every **Session** that enters it, whether for Tasks or for
+and it outlives every **Session** that runs Tasks against it. A **Service Session** enters the Job's **Environments**
+around the **Service**'s own actions, chosen exactly as a **Session** for a Step's Tasks chooses them and in the same
+order, so a **Service** is provisioned by the same Conda, Rez, or container **Environments** as the Tasks. It chooses
+among the **Environments** of its own document and of the Environment Templates attached before it: a Job Template's
+**Service** among all of the Job's **Environments**, while a **Service** from an Environment Template enters none of
+the Job Template's or a later attachment's. A **Service** belongs to no Step and enters no Step's **Environments**.
+Later **Environments** take precedence over earlier ones for environment variables, the **Service**'s own `variables`
+over all of them, and variables the **Service**'s `onEnter` sets with `openjd_env` over its `variables`. An
+**Environment** that configures clients of a **Service** lists `service: <name>` in its `dependencies`, which is what
+lets it reference `Service.*`. Every **Session** that enters it, whether for Tasks or for
 another **Service**, therefore waits for the listed **Service** to be **READY**, and a **Service** whose **Sessions**
-enter it starts after the listed one. The listed **Service**'s own **Session** does not enter it, since that **Service**
-cannot wait for itself. Under the WRAP_ACTIONS extension, a wrapping **Environment** that a **Service Session** enters
+enter it starts after the listed one. The listed **Service**'s own **Session** must not enter it, since that
+**Service** cannot wait for itself: a template in which it would is rejected as a dependency cycle. The template author
+keeps it out, for example by making the client **Environment** opt-in for the Steps that need it, or by having the
+**Service** decline it. Under the WRAP_ACTIONS extension, a wrapping **Environment** that a **Service Session** enters
 wraps the **Service**'s `onEnter`, `onRun`, `onHealthCheck`, and `onExit` with its `onWrapServiceEnter`,
 `onWrapServiceRun`, `onWrapServiceHealthCheck`, and `onWrapServiceExit` hooks, exactly as `onWrapTaskRun` wraps a Task's
 `onRun`, and wraps the inner **Environments** of the **Service Session** with `onWrapEnvEnter` and `onWrapEnvExit` as in
@@ -125,8 +130,7 @@ has not exited), **UNHEALTHY** (the current instance has failed `failureThreshol
 is being stopped; a transient state in which, for every other purpose including Task scheduling, the **Service** is not
 **READY**), or **FAILED** (the **Service** will not be relaunched and its scope has failed). A **Service** is
 **UNREADY** from Job creation. Starting a **Service** means opening a **Service Session** on a host that satisfies the
-**Service**'s host requirements and, within it, entering the Job's **Environments** other than those that list the
-**Service**, running
+**Service**'s host requirements and, within it, entering the **Environments** its **Sessions** enter, running
 `onEnter` if defined, launching `onRun`, and probing it with its health check. When a probe succeeds, the **Service** is
 **READY**, and the health check keeps probing it for as long as `onRun` runs: `failureThreshold` consecutive failed
 probes after **READY** make the instance **UNHEALTHY**, which is an instance failure (see
@@ -244,9 +248,11 @@ A scheduler may supply **Services** to every Job submitted through it by attachi
 computed over the combined Job by the same rules as one the Job Template declares, and is otherwise indistinguishable
 from it: each Job that uses it gets its own instance, the Tasks in its scope are gated on its being **READY**, and its
 restart policy governs them. An Environment Template may define both `services:` and an `environment:`; the
-**Environment** lists the **Services** whose endpoints it reads, which puts every Step of the Job in their scope, and
-may for example set environment variables that point Tasks at them. A Job Template that reads the endpoint itself
-declares the **Service** and the ports it uses in `externalServices` (see
+**Environment** lists the **Services** whose endpoints it reads, which puts every Step whose **Sessions** enter it in
+their scope, and may for example set environment variables that point Tasks at them. Those **Services** typically
+decline the **Environment** for their own **Sessions** with a disabled `environment:` entry, since they cannot wait
+for themselves.
+A Job Template that reads the endpoint itself declares the **Service** and the ports it uses in `externalServices` (see
 [Section 9.8](2023-09-Template-Schemas#98-servicerequirement)) and lists it in `dependencies` as it would an inline
 **Service**; at submission the scheduler matches each requirement to exactly one attached **Service** of that name
 declaring those ports with the same protocols, and rejects the submission otherwise. An attached **Service** that

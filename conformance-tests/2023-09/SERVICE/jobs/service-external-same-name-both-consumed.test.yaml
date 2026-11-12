@@ -85,6 +85,10 @@ environments:
     default: QUEUE_CACHE
   services:
   - name: Cache
+    dependencies:
+    # CacheClient lists this Service, so its Sessions decline it.
+    - environment: CacheClient
+      enableIf: false
     ports:
     - name: main
     restartPolicy:

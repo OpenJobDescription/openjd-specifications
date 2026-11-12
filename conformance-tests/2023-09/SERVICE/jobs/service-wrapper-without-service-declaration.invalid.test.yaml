@@ -1,10 +1,11 @@
 # Template Schemas §1.2.2 item 4 (submission-time check): a wrapping
 # Environment in a document that does not declare SERVICE cannot define the
-# onWrapService* hooks, and without ENV_PARAMS it is `activation: ALWAYS`, so
-# every Session enters it. The attached queue wrapper is valid on its own
-# (RFC 0008's three hooks), but the Job it is attached to declares a Service
-# whose Session would enter the wrapper, which cannot wrap the Service's
-# actions, so the submission must be rejected.
+# onWrapService* hooks, and without ENV_PARAMS it has the default
+# `activation: BY_DEFAULT`, so every Session that does not decline it enters
+# it, and the Service here does not decline it. The attached queue wrapper is
+# valid on its own (RFC 0008's three hooks), but the Job it is attached to
+# declares a Service whose Session would enter the wrapper, which cannot wrap
+# the Service's actions, so the submission must be rejected.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [SERVICE, ENV_PARAMS, EXPR]

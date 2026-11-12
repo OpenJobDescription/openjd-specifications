@@ -4,7 +4,8 @@
 # Environment's dependency alone: neither Step's script mentions the Service;
 # both Tasks read the variables the Environment set from Service.Store.*, and
 # the second, which depends on the first, still finds it up. onExit runs
-# once, after both.
+# once, after both. Store declines Client, since its own Session cannot wait
+# for it to be READY.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [SERVICE, ENV_PARAMS, EXPR]
@@ -18,6 +19,9 @@ template:
       STORE_PORT: "{{ Service.Store.main.port }}"
   services:
   - name: Store
+    dependencies:
+    - environment: Client
+      enableIf: false
     ports:
     - name: main
     healthCheck:

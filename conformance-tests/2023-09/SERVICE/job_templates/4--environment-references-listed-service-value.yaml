@@ -1,8 +1,8 @@
 # Section 4 item 3 / Section 9 scope rule 4 (RFC 0009): a Job Environment
 # may reference the `port` and `connectAddress` of a Service it lists in
-# `dependencies`, in its variables, actions, and embedded files. The listed
-# Service's own Session does not enter it, and the listing puts every Step in
-# the Service's scope (Section 9.1 rule 3).
+# `dependencies`, in its variables, actions, and embedded files. Client is
+# ON_REQUEST and requested by Step1, so the listed Service's own Sessions do
+# not enter it, and Step1 is in the Service's scope (Section 9.1 rule 3).
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
@@ -11,6 +11,7 @@ extensions:
 name: TestJob
 jobEnvironments:
 - name: Client
+  activation: ON_REQUEST
   dependencies:
   - service: Store
   variables:
@@ -37,6 +38,8 @@ services:
         args: ["-c", "print()"]
 steps:
 - name: Step1
+  dependencies:
+  - environment: Client
   script:
     actions:
       onRun:

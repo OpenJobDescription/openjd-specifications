@@ -12,9 +12,11 @@ it. A Step depends on a Service by listing `service: <name>` in its
 `dependencies` (§3.2), beside the Steps it lists with `step` (or `dependsOn`),
 and a Service depends on Steps and other Services the same way. `SERVICE`
 requires `ENV_PARAMS` (RFC 0010) and `EXPR`, so a Service may also request
-Environments and supply their parameters with `environment:` entries, and a
-Service Session enters the Job Environments a Task Session would, by RFC 0010's
-`activation`, except an `ALWAYS` Environment that lists that Service. A Service publishes
+Environments and supply their parameters with `environment:` entries. A Service
+Session chooses its Environments exactly as a Task Session does under RFC 0010,
+among those of its own document and of the Environment Templates attached
+before it, with no exception for an Environment that lists the Service: a
+Service whose Sessions would enter such an Environment is a cycle. A Service publishes
 one or more named ports, each TCP (the default) or UDP, whose endpoint the
 entities that depend on it read through the `Service.*` format-string scope.
 
@@ -32,9 +34,9 @@ dependencies: [ <StepDependency>, ... ]        # NEW — `service` entries only;
                                                #       Environment Template's environment,
                                                #       never on stepEnvironments. Every
                                                #       entity whose Sessions enter it
-                                               #       depends on each listed Service; the
-                                               #       listed Service's own Sessions do not
-                                               #       enter an ALWAYS Environment
+                                               #       depends on each listed Service, so the
+                                               #       listed Service's own Sessions must
+                                               #       not enter it (a cycle otherwise)
 # <EnvironmentActions> (§4.3), with WRAP_ACTIONS
 onWrapServiceEnter / onWrapServiceRun / onWrapServiceHealthCheck / onWrapServiceExit
 ```
@@ -45,7 +47,8 @@ onWrapServiceEnter / onWrapServiceRun / onWrapServiceHealthCheck / onWrapService
   description: <Description>                  # optional
   let: <LetBindings>                          # optional (job creation)
   dependencies: [ <StepDependency>, ... ]     # optional; Steps (complete) and Services (READY) first;
-                                              #   `environment:` entries in a Job Template only
+                                              #   `environment:` entries; in an Environment
+                                              #   Template only disabled ones (`enableIf: false`)
   hostRequirements: <HostRequirements>        # optional
   ports: [ <ServicePort>, ... ]               # 1–10, unique names; { name, port?, protocol?: TCP | UDP }
   healthCheck: <ServiceHealthCheck>           # TCP_CONNECT (default, TCP ports only) | COMMAND | STDOUT
@@ -70,17 +73,20 @@ The **scope** of a Service declared in a Job Template is the set of Steps whose
 Tasks depend on it, declared in the template's `dependencies` lists (§9.1): a
 Step that lists `service: X` is in X's scope; a Service that lists `service: X`
 contributes its own scope, transitively; a Job Environment that lists
-`service: X` puts in its scope every Step whose Sessions enter it (every Step,
-for an `ALWAYS` Environment; the Steps that request it, for `ON_REQUEST`); a
+`service: X` puts in its scope every Step whose Sessions enter it, as RFC 0010
+decides for each Step; a
 Service that no Step, Service, or Job Environment lists is unused and
 rejected. External Services are scoped by the same rules over the combined Job;
 one that nothing lists is never started. The `dependencies`
 of a template's Steps, Services, and Job Environments form one graph
 (Step→Step, Step→Service, Service→Step, Service→Service), which must be
 acyclic; a Job Environment that lists X adds an edge to X from every Step and
-every Service whose Sessions enter it, so a Service an `ALWAYS` Job Environment
-lists, directly or transitively, cannot depend on a Step, and a Service's own
-`environment:` entry for an Environment that lists it is the cycle X → X.
+every Service whose Sessions enter it, so a Service a Job Environment lists,
+directly or transitively, cannot depend on a Step whose Sessions enter that
+Environment, and a Service whose Sessions enter an Environment that lists it,
+with or without an `environment:` entry, is the cycle X → X. There is no
+exception: the author keeps the Service out with an `ON_REQUEST` client
+Environment or a disabled entry on the Service.
 
 A Step, Service, or Job Environment may reference `Service.X.<port>.port` and
 `.connectAddress` if and only if it lists `service: X` in its `dependencies`; a
@@ -136,27 +142,36 @@ values. The rule has no exceptions.
   the same document's `services` or the Job Template's
   `externalServices`, with no duplicates; a Step name, an unknown Service, a
   duplicate, an `environment:` entry, and a list on a `stepEnvironments` entry
-  (which follows its Step's list) are each rejected. An Environment that lists
-  a Service is not entered by that Service's Sessions when it is `ALWAYS`,
-  whether or not it references the Service.
+  (which follows its Step's list) are each rejected. The fixtures keep the
+  listed Service's own Sessions out of the Environment with an `ON_REQUEST`
+  client Environment that the Step requests, or with a disabled entry on the
+  Service.
 - **One acyclic graph** (§3.2 constraint 3, §9.9 item 10): cycles through
   Services only (two and three), through a Step and a Service (Step → Service
   X → Step), through a Step and two Services, and a Service that lists itself
   are rejected; so is a Service that a Job Environment lists, directly or
   through a Service that depends on it, and that depends on a Step, since the
-  Job Environment puts every Step in its scope. Entering an Environment adds
-  edges too: a Service whose Session enters an `ALWAYS` Environment that lists
-  another Service depends on it (valid when acyclic, rejected when the other
-  Service depends back on it, and fixed by making the Environment
-  `ON_REQUEST`), in a Job Template and within an Environment Template; and a
-  Service's own `environment:` entry for an Environment that lists it is a
-  cycle, whether that Environment is `ALWAYS` or `ON_REQUEST`.
+  Job Environment puts every Step whose Sessions enter it in its scope.
+  Entering an Environment adds
+  edges too: a Service whose Session enters a `BY_DEFAULT` Environment that
+  lists another Service depends on it (valid when acyclic, rejected when the
+  other Service depends back on it, and fixed by making the Environment
+  `ON_REQUEST`), in a Job Template and within an Environment Template; two
+  Services whose Sessions each enter the other's client Environment are a
+  cycle; and a Service whose Sessions enter an Environment that lists it is the
+  cycle X → X, whether through the Environment's `activation`, in a Job
+  Template or an Environment Template, or through the Service's own
+  `environment:` entry, whether that Environment is `BY_DEFAULT` or
+  `ON_REQUEST`. There is no exception for a Service's own client Environment.
 - **Service `dependencies`** (§9 item 4): same shape as a Step's; a Service
   may depend on Steps (complete first) and on Services (READY first, with or
   without referencing their endpoints); an entry must name a Step of the
   template or a Service other than itself; in an Environment Template every
-  entry uses the `service` key and names a Service of the same document (a
-  Step name and an `environment:` entry are rejected); not empty. A Service's
+  entry uses the `service` key and names a Service of the same document, or is
+  a disabled `environment:` entry for the document's own `environment`, with
+  the literal `enableIf: false` and no `parameters` (a Step name, an enabled
+  entry, one with an `enableIf` expression, and a disabled one with
+  `parameters` are rejected); not empty. A Service's
   `environment:` entry may read `RawParam.*`, `Param.*`, `Job.Name`,
   `Job.EnvNames`, and the Service's `let`, not `Step.Name`; a Service supplies
   every required parameter of each Environment its Session enters, as a Step
@@ -177,8 +192,8 @@ values. The rule has no exceptions.
   `onWrapEnvEnter`, `onWrapTaskRun`, and `onWrapEnvExit`; one that a Service
   Session enters defines `onWrapEnvEnter`, `onWrapEnvExit`, and all four
   `onWrapService*` hooks, whether or not the Service's actions would use them.
-  Which kinds of Session enter it follow from `activation` and the entities
-  that request it. A hook for a kind of action that never runs inside the
+  Which kinds of Session enter it follow from RFC 0010's rules, applied to
+  Steps and Services alike. A hook for a kind of action that never runs inside the
   wrapper is permitted, so a wrapper only Steps enter may define the Service
   hooks, and a Step Environment wrapper may too. An Environment Template's
   wrapper is checked on its own only for what it defines; whether a Service
@@ -242,9 +257,9 @@ values. The rule has no exceptions.
   completes, a Service that lists another is stopped and started again in a
   new Service Session when that Service begins a new Service Session, Service
   Sessions
-  enter the Job Environments a Task Session would (by `activation`, the
-  Service's own `environment:` requests and values, and each Environment's
-  `enableIf`), except an `ALWAYS` Environment that lists the Service, and a
+  enter the Job Environments a Task Session would (by RFC 0010's rules, with
+  the Service's own `environment:` requests, declines, and values), among
+  those of the Service's own document and earlier attachments, and a
   Service whose Session enters an Environment that lists another Service
   starts after it, `onEnter` once
   per Session, `openjd_env` and `openjd_redacted_env` from `onEnter` reach
@@ -329,7 +344,7 @@ SERVICE/
 │   ├── 3.2--step-dependency-service-and-environment-keys.invalid.yaml
 │   ├── 3.2--step-depends-on-same-service-twice.invalid.yaml
 │   ├── 3.2--step-depends-on-unknown-service.invalid.yaml
-│   │  # §4 Environment dependencies, the exception for the listed Service, graph edges
+│   │  # §4 Environment dependencies, keeping the listed Service out, graph edges
 │   ├── 4--environment-dependencies-service-form.yaml
 │   ├── 4--environment-dependency-without-reference.yaml
 │   ├── 4--environment-without-dependencies-alongside-service.yaml
@@ -343,10 +358,12 @@ SERVICE/
 │   ├── 4--environment-dependencies-unknown-service.invalid.yaml
 │   ├── 4--environment-edge-cycle.invalid.yaml
 │   ├── 4--run-scope-not-a-property.invalid.yaml
-│   ├── 4--service-requests-always-environment-that-lists-it.invalid.yaml
+│   ├── 4--service-enters-by-default-environment-that-lists-it.invalid.yaml
+│   ├── 4--service-requests-by-default-environment-that-lists-it.invalid.yaml
 │   ├── 4--environment-references-service-without-dependency.invalid.yaml
 │   ├── 4--service-requests-on-request-environment-that-lists-it.invalid.yaml
 │   ├── 4--step-environment-dependencies.invalid.yaml
+│   ├── 4--two-services-enter-each-others-client-environment.invalid.yaml
 │   │  # §4.3 every action inside a wrapper is wrapped; §4.3.1 WrappedService.*
 │   ├── 4.3--non-wrapping-environment-not-subject-to-rule.yaml
 │   ├── 4.3--wrap-entered-by-steps-seven-hooks-permitted.yaml
@@ -569,6 +586,9 @@ SERVICE/
 │   ├── 1.2--service-dependency-cycle.invalid.yaml
 │   ├── 1.2--service-dependency-on-step-not-permitted.invalid.yaml
 │   ├── 1.2--service-depends-on-unknown-service.invalid.yaml
+│   ├── 1.2--service-disabled-environment-entry-with-parameters.invalid.yaml
+│   ├── 1.2--service-enters-own-environment-that-lists-it.invalid.yaml
+│   ├── 1.2--service-environment-entry-expression-enable-if.invalid.yaml
 │   ├── 1.2--service-environment-entry-not-permitted.invalid.yaml
 │   ├── 1.2--service-in-environment-template-missing-on-run.invalid.yaml
 │   ├── 1.2--service-references-service-without-dependency.invalid.yaml
@@ -633,6 +653,7 @@ SERVICE/
     ├── service-stop-order-dependent-service-stopped-first.test.yaml
     │  # External Services (§1.2.2) and externalServices (§9.8)
     ├── service-external-client-environment-uses-service-functions.test.yaml
+    ├── service-external-enters-only-earlier-documents-environments.test.yaml
     ├── service-external-parameter-override.test.yaml
     ├── service-external-same-name-as-inline-service.test.yaml
     ├── service-external-same-name-both-consumed.test.yaml
@@ -722,12 +743,13 @@ SERVICE/
   on a Step is not started until the Step has completed, and then serves the
   Step's output to the Step that depends on it
   (`service-dependencies-starts-after-step`).
-- **The listed Service stays out** (§4 item 3): an `ALWAYS` Environment that
-  lists a Service in `dependencies` is entered in Task Sessions but not in that
-  Service's Session, while one that lists nothing is entered in the Service
-  Session too (`service-client-environment-not-entered-by-its-service`). A
-  Service whose Session enters an Environment that lists another Service
-  starts after it, with the Environment's variables set from its endpoint
+- **The listed Service stays out** (§4 item 3): a Service that declines its
+  `BY_DEFAULT` client Environment with a disabled entry runs without it, while
+  Task Sessions enter it and an Environment that lists nothing is entered in
+  the Service Session too
+  (`service-client-environment-not-entered-by-its-service`). A Service whose
+  Session enters an Environment that lists another Service starts after it,
+  with the Environment's variables set from its endpoint
   (`service-enters-environment-listing-other-service`).
 - **`Service.File.*` and `let`**: embedded files materialize into the Service
   Session and resolve through `<ServiceScript>.let`; `<Service>.let` resolves
@@ -748,9 +770,10 @@ SERVICE/
 - **A Session of its own**: `Session.WorkingDirectory` is the Service
   Session's, distinct from the Task's; `OPENJD_SESSION_WORKING_DIR` is set
   (`service-session-is-its-own-session`).
-- **Environments by `activation`** ("Services run inside Environments"): the
-  Service Session enters every `ALWAYS` Job Environment except one that lists
-  it, and the `ON_REQUEST` ones it requests; Environment `variables` reach the
+- **Environments by RFC 0010's rules** ("Services run inside Environments"):
+  the Service Session enters the `BY_DEFAULT` Job Environments and the
+  `ON_REQUEST` ones it requests, and not an `ON_REQUEST` one only the Step
+  requests; Environment `variables` reach the
   Service's actions with the Service's own `variables` taking precedence
   (`service-environments-follow-activation`). A Service supplies its own
   values to a parameterized Environment, so its Session and a Task Session see
@@ -784,7 +807,12 @@ SERVICE/
   `service-external-services-only-attachment`); the attachment's `extensions`
   gate the §2.2.4 host/port functions for its own `variables` while the Job
   Template declares none
-  (`service-external-client-environment-uses-service-functions`).
+  (`service-external-client-environment-uses-service-functions`). An attached
+  Service's Session enters the Environments of its own document and of earlier
+  attachments only, never a later attachment's or the Job Template's, while
+  the Task Session enters all of them
+  (`service-external-enters-only-earlier-documents-environments`). Each
+  attached Service declines its own document's client Environment.
 - **Service names are per document** (§1.2.2 item 3): an attached
   Service named like an inline Service, or like another attachment's Service
   when nothing requires the name, is accepted; each document's Environment
@@ -898,8 +926,8 @@ runner contract. The behavior specific to `SERVICE`:
 1. When a template declares `extensions: [SERVICE, ENV_PARAMS, EXPR]`, the
    runner must accept `services`, `externalServices`, `dependencies` on a Job
    Environment (`service` entries only), the `service: <name>` entry in every
-   `dependencies` list, and `environment:` entries on Steps and on a Job
-   Template's Services, each entry giving exactly one of `dependsOn`, `step`,
+   `dependencies` list, and `environment:` entries on Steps and Services (only
+   disabled ones on an Environment Template's), each entry giving exactly one of `dependsOn`, `step`,
    `service`, and `environment`; compute each Service's scope from those lists
    (§9.1: the Steps that list it, directly or through other Services, plus
    every Step whose Sessions enter a Job Environment that lists it); reject an
@@ -908,7 +936,8 @@ runner contract. The behavior specific to `SERVICE`:
    `dependencies` list on a Step Environment, a `dependencies` entry on an
    Environment naming a Step or an Environment, and a cycle in the combined
    Step/Service graph, in which a Job Environment that lists a Service adds an
-   edge to it from every Step and Service whose Sessions enter it; and validate
+   edge to it from every Step and Service whose Sessions enter it, with no
+   exception for the listed Service's own Sessions; and validate
    every `<Service>` and `<ServiceRequirement>` per Template Schemas §9.9.
    Without `SERVICE` it must reject those fields, the `service` key included;
    with `SERVICE` but without `ENV_PARAMS` or `EXPR` it must reject the
@@ -928,9 +957,9 @@ runner contract. The behavior specific to `SERVICE`:
 3. Before any Task of a Step runs, every Service whose scope includes the Step
    must be started in a Service Session of its own — after the Steps in its
    `dependencies` have completed and the Services in it are READY,
-   entering the Job Environments its Sessions enter (every `ALWAYS` one that
-   does not list it and is not disabled for it by `enableIf`, and every
-   `ON_REQUEST` one it requests), with its own effective values,
+   entering the Job Environments its Sessions enter (chosen by RFC 0010's
+   rules as for a Step, among those of its own document and of earlier
+   attachments), with its own effective values,
    allocating its ports in each port's own `protocol` space,
    running `onEnter`, launching `onRun`, and probing it with its health check
    every `readinessIntervalSeconds` — and be READY.

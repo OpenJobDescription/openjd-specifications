@@ -7,9 +7,10 @@
 # runs its Task once both are READY.
 #
 # Both client Environments are ON_REQUEST and requested by the Step. Were
-# they ALWAYS, each Cache's Sessions would enter the other document's client
-# Environment, which lists the other Cache, and the two Services would form
-# the cycle Cache -> Cache -> Cache (`<StepDependency>` constraint 3).
+# they BY_DEFAULT with no decline, each Cache's Sessions would enter its own
+# document's client Environment, which lists it, a cycle (`<StepDependency>`
+# constraint 3). The second Cache's would also enter the first document's,
+# an acyclic edge to the first Cache.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [ENV_PARAMS, EXPR]
