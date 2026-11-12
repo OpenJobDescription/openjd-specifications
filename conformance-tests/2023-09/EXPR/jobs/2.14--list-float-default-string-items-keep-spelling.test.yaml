@@ -14,6 +14,7 @@ template:
     item:
       minValue: " 0.5"
       maxValue: "9.5 "
+      allowedValues: [1.5, " 2.5", "3.25\n", 4]
   steps:
   - name: Step1
     script:
