@@ -899,6 +899,54 @@ cannot change between the two.
   software a step needs without parsing shell, which the [Tooling parseable](../wiki/Design-Tenets.md) tenet asks OpenJD
   to avoid.
 
+## Prototype
+
+The prototype is the `env-params-prototype` branch of
+[mwiebe/openjd-rs](https://github.com/mwiebe/openjd-rs/tree/env-params-prototype), developed alongside this RFC. It
+implements the extension in `openjd-model`, `openjd-sessions`, `openjd-cli`, and `openjd-for-js`, and its `openjd
+check`, `openjd summary`, and `openjd run` pass every 2023-09 conformance test at this RFC's head, including the 390
+under `conformance-tests/2023-09/ENV_PARAMS`. The `env-params` branch of
+[mwiebe/openjd-model-for-python](https://github.com/mwiebe/openjd-model-for-python/tree/env-params) exposes it to Python
+through the Rust-backed bindings.
+
+These parts of the proposal changed because of the prototype:
+
+1. **Exclusive groups are decided across documents.** The first implementation of `exclusiveGroup` decided each
+   document's Environments separately, which gave the wrong result when a group spans the Job Template and an attached
+   Environment Template. [§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params)
+   now decides every Environment of a Step in the Job's Environment order, and its step 6 says that a superseded
+   Environment's *enableIf* is not evaluated for the Step, so an expression that would be unresolved there is not an
+   error.
+2. **What a validator knows before Job creation.** Without the Environment Templates, a validator cannot know whether a
+   grouped Job Environment is entered, because an attached member of its group may come first.
+   [§4](../wiki/2023-09-Template-Schemas.md#4-environment) now says when an Environment is known to be entered or not
+   entered. Differential tests of the prototype found no submission that `openjd check` rejects and Job creation
+   accepts.
+3. **PATH values are used as given.** An earlier draft checked a PATH value against the submission's path format. The
+   prototype showed that the result could still depend on that format for a value written as a single expression,
+   while the Expression Language already gives template-scope expressions POSIX semantics.
+   [§4.5](../wiki/2023-09-Template-Schemas.md#45-environmentparameterdefinition-extension-env_params) item 3 now uses
+   PATH and LIST[PATH] values as given (see [Path values are used as given](#path-values-are-used-as-given)).
+4. **Joining onto an empty path.** Joining onto an empty PATH value gave a root path. The Expression Language now
+   follows `pathlib`, where an empty path joined with another gives the other.
+5. **Job-creation errors in step order.** With several failures, deciding one document at a time reported errors in an
+   order unrelated to §7.4.1. The prototype reports them in one pass, ordered by the §7.4.1 step, then the Step, then
+   the Job's Environment order. This also changes the order in which `openjd-rs` reports errors for a Job Template
+   without `ENV_PARAMS` that has Environment Templates attached, a change to review on its own.
+
+These were unclear or hard to implement:
+
+1. **Comparing effective values.** A scheduler that shares Sessions compares the effective values of Steps. The
+   prototype compares typed values, but its serialized form keeps the spelling of a FLOAT, so `1.5` and `"1.50"` are
+   equal and serialize differently. A scheduler that keys Sessions on serialized values needs a canonical encoding.
+2. **The number of `environment:` entries.** An entry with `required: false` may name nothing, so a Step's
+   `dependencies` are not bounded by the number of Environments. The specification leaves the maximum to
+   implementations, and the prototype adds a caller limit, `CallerLimits::max_step_environment_entries`.
+3. **Why an Environment is not entered.** An implementation that shows a Step's Environments to users needs the reason
+   one was not entered: declined, disabled, superseded, or named by an optional entry that resolved to nothing. Job
+   creation knows it, but a Job's Steps do not carry it, so the prototype adds per-Step Environment statuses to the
+   result of Job creation.
+
 ## Implementation Impact
 
 - **Rust (openjd-rs)**: `openjd-model` gains the new `<Environment>` fields, including `exclusiveGroup`, the
