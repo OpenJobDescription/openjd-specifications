@@ -1,0 +1,29 @@
+# Template Schemas §2.16 and §7.5: an integer in an inner list of a LIST[LIST[INT]] default, and an inner item
+# constraint, may be an <intstring>. White space around the number is ignored.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Matrix
+    type: LIST[LIST[INT]]
+    default: [[1, " 2 "], ["\t3"]]
+    item:
+      item:
+        maxValue: " 3 "
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'MATRIX:{{ Param.Matrix }}')
+            print(r'ELEM:{{ Param.Matrix[0][1] + 1 }}')
+expected:
+  output:
+  - "MATRIX:[[1, 2], [3]]"
+  - ELEM:3

@@ -1,0 +1,21 @@
+# Template Schemas §2.14 and §7.5: an item constraint given as a <floatstring> constrains the default as the number
+# does. The default item 9.75 is above item.maxValue "9.5 ", so the template is invalid.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Weights
+  type: LIST[FLOAT]
+  default: [1.5, " 9.75"]
+  item:
+    maxValue: "9.5 "
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"

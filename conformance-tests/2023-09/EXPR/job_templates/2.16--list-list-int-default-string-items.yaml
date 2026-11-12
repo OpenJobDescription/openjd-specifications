@@ -1,0 +1,24 @@
+# Template Schemas §2.16 and §7.5: integers in a LIST[LIST[INT]] default and its inner item constraints may be given as
+# <intstring>s, with white space around the number.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: AdjList
+  type: LIST[LIST[INT]]
+  default: [[" 1", 2], ["3 "]]
+  item:
+    item:
+      minValue: "\t0"
+      maxValue: " 9"
+      allowedValues: [" 1", 2, "3", 4]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"
