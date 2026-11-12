@@ -2,7 +2,8 @@
 # a required Service follows the same dependency rule as an inline one. Use
 # references Service.Ext.main.port without listing `service: Ext` in its
 # `dependencies` and is rejected, the message naming the missing entry; the
-# requirement alone does not put the Service in scope for the Step.
+# requirement alone does not put the Service in scope for the Step. Other
+# lists Ext, so Ext is not unused.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
@@ -14,6 +15,14 @@ externalServices:
   ports:
   - name: main
 steps:
+- name: Other
+  dependencies:
+  - service: Ext
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
 - name: Use
   script:
     actions:

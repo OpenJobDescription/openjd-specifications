@@ -41,7 +41,7 @@
 # Requirements
 # ----
 # - python3 (available as `python3` on the host)
-# - An implementation supporting the SERVICE and EXPR extensions
+# - An implementation supporting the SERVICE, ENV_PARAMS, and EXPR extensions
 #
 # -----
 # Contributors to this template:
@@ -114,14 +114,20 @@ services:
     - name: Serve
       type: TEXT
       data: |
-        import os, sys
+        import os, socket, sys
         from functools import partial
         from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
         host, port = sys.argv[1], int(sys.argv[2])
+
+        class Server(ThreadingHTTPServer):
+            # bindAddress may be IPv4 or IPv6 (for example "::").
+            address_family = socket.AF_INET6 if ":" in host else socket.AF_INET
+
         handler = partial(SimpleHTTPRequestHandler, directory=os.environ["ASSET_DIR"])
-        with ThreadingHTTPServer((host, port), handler) as server:
-            print(f"openjd_status: serving {os.environ['ASSET_DIR']} on {host}:{port}", flush=True)
+        shown = f"[{host}]" if ":" in host else host
+        with Server((host, port), handler) as server:
+            print(f"openjd_status: serving {os.environ['ASSET_DIR']} on {shown}:{port}", flush=True)
             server.serve_forever()
     - name: Cleanup
       type: TEXT

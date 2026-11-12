@@ -12,8 +12,8 @@ services:
   - name: main
   script:
     let:
-    - X = 1
-    - X = 2
+    - x = 1
+    - x = 2
     actions:
       onRun:
         command: python

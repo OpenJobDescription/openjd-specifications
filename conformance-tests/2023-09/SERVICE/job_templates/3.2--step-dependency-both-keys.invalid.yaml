@@ -1,6 +1,7 @@
 # Section 3.2 (RFC 0009): a <StepDependency> is exactly one of `dependsOn` (a
 # Step) or `service` (a Service). An entry that gives both keys is rejected,
-# even though each key alone would name a valid target.
+# even though each key alone would name a valid target. Prepare lists Store,
+# so Store is not unused.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
@@ -18,6 +19,8 @@ services:
         args: ["-c", "print()", "{{ Service.Store.main.port }}"]
 steps:
 - name: Prepare
+  dependencies:
+  - service: Store
   script:
     actions:
       onRun:
@@ -31,4 +34,4 @@ steps:
     actions:
       onRun:
         command: python
-        args: ["-c", "print()", "{{ Service.Store.main.port }}"]
+        args: ["-c", "print()"]

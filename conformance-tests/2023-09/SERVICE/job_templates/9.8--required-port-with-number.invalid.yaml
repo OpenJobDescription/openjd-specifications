@@ -13,6 +13,8 @@ externalServices:
     port: 6379
 steps:
 - name: Use
+  dependencies:
+  - service: Ext
   script:
     actions:
       onRun:
