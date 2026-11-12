@@ -149,9 +149,12 @@ When a **Session** enters an **Environment**, it keeps the same parameter values
 The **Environment**'s `onEnter`, every Task run while it is entered, and its `onExit` all see the same values. This
 adds a condition to sharing a **Session** between Steps. A **Session** can run Tasks of a Step only when the
 **Environments** it has entered, and not yet exited, are exactly the ones that Step's **Sessions** enter, and the Step's
-values for each of them are equal to the values the **Session** entered it with. Values are compared as typed values
-before path mapping, so an INT parameter given as `1` by one Step and as `"1"` by another has equal values
-([Template Schemas §3.2.2](2023-09-Template-Schemas#322-effective-environment-parameter-values) defines equality).
+values for each of them are equal to the values the **Session** entered it with
+([Template Schemas §3.2.2](2023-09-Template-Schemas#322-effective-environment-parameter-values) states this rule and
+defines equality). Two values are equal when they have the same type and the same text as `{{Env.RawParam.<name>}}`
+gives it, which is before path mapping. So an INT parameter given as `1` by one Step and as `"1"` by another has equal
+values, while a FLOAT given as `"3.10"` by one Step and as `"3.1"` by another does not, because a FLOAT keeps the text
+it was written with.
 
 The render management system does not need to know in advance which Steps a **Session** will serve. It can add a
 Step's Tasks to a **Session** that is already running whenever these conditions hold. To move on to a Step that needs

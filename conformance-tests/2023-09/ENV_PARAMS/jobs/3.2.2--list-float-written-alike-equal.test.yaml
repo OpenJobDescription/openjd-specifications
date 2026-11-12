@@ -1,0 +1,55 @@
+# RFC 0010 / Template Schemas §3.2.2 (equal values): Step A's ["1.50", "2.5"] and Step B's [" 1.50 ", "2.5"] have equal
+# elements, since white space around a FLOAT is not part of its text (§7.5), so the lists are equal and both Steps'
+# Tasks see 1.50. Sharing the entered Environment is permitted but not required, so only what every conforming run
+# prints is checked.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ListFloatWrittenAlike
+  jobEnvironments:
+  - name: Scale
+    envParameterDefinitions:
+    - name: Factors
+      type: LIST[FLOAT]
+    variables:
+      SCALE_FACTORS: "{{Env.Param.Factors[0]}} {{Env.Param.Factors[1]}}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Scale, "First=[{{Env.Param.Factors[0]}}]", "Second=[{{Env.Param.Factors[1]}}]"]
+        onExit:
+          command: echo
+          args: [EXIT, Scale, "First=[{{Env.Param.Factors[0]}}]"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Scale
+      parameters:
+        Factors: ["1.50", "2.5"]
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_A_FACTORS=['+os.environ['SCALE_FACTORS']+']')"]
+  - name: B
+    dependencies:
+    - dependsOn: A
+    - environment: Scale
+      parameters:
+        Factors: [" 1.50 ", "2.5"]
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_B_FACTORS=['+os.environ['SCALE_FACTORS']+']')"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Scale First=[1.50] Second=[2.5]
+  - TASK_A_FACTORS=[1.50 2.5]
+  - TASK_B_FACTORS=[1.50 2.5]
+  forbidden:
+  - ENTER Scale First=[1.5] Second=[2.5]
+  - TASK_B_FACTORS=[1.5 2.5]
+  - TASK_B_FACTORS=[ 1.50  2.5]

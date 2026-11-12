@@ -1198,17 +1198,37 @@ rules apply:
 6. An Environment whose *activation* is `ALWAYS` cannot be disabled (see [&lt;Environment&gt;](#4-environment)
    *activation*).
 
-Two effective values are *equal* when they have the same type and the same value as resolved when the Job is created,
-before any path mapping. In particular:
+Two effective values are *equal* when they have the same type and the same string form. A value's *string form* is
+the text that `{{Env.RawParam.<name>}}` gives it in the Environment, so two values are equal exactly when the
+Environment cannot tell them apart. Values are compared as resolved when the Job is created, before any path mapping:
 
-* An INT parameter supplied as `1` by one Step and as `"1"` by another resolves to the INT 1 for both, so the values are
-  equal.
-* Two PATH values are equal when their unmapped strings are equal.
-* Two lists are equal when they have equal elements in the same order.
-* Two RANGE_EXPR values are equal when they have the same canonical form ([§3.4.1.1.1](#34111-intrangeexpr)), which is
+* An INT or a BOOL has one string form for each value, so how it was written does not matter. An INT supplied as `1`
+  by one Step and as `"1"`, `" 1 "`, or `"01"` by another resolves to the INT 1 for both, so the values are equal. A
+  BOOL supplied as `true` and as `"yes"` is `true` for both. This applies to each integer of a LIST[INT] or
+  LIST[LIST[INT]] and each element of a LIST[BOOL].
+* A FLOAT keeps the text it was written with, without the white space around it
+  ([Expression Language §1.3.4](2026-02-Expression-Language#134-float-value-pass-through), [§7.5](#75-numeric-strings)).
+  So `"3.10"` and `"3.1"` are not equal, although they are the same number and the Expression Language's
+  `3.10 == 3.1` is `true`, while `"3.10"` and `" 3.10 "` are equal. A FLOAT computed by an expression is written in the
+  shortest form that gives back its number. This applies to each element of a LIST[FLOAT].
+* A STRING is compared by its sequence of Unicode code points, with no normalization. `"é"` written as the one code
+  point U+00E9 and as `e` followed by U+0301 are not equal.
+* A PATH value is compared by its unmapped string, as given
+  ([§4.5](#45-environmentparameterdefinition-extension-env_params) item 3). `/data/x` and `/data/./x` are not equal.
+* A RANGE_EXPR value's string form is its canonical form ([§3.4.1.1.1](#34111-intrangeexpr)), so two values are equal
   when they denote the same integers. `1-3` and `1,2,3` are equal.
+* Two lists are equal when they have the same number of elements and equal elements in the same order.
 
-Equal effective values decide which Steps may share a Session (see
+A render management system can therefore compare values, or key Sessions on them, by each value's type together with
+its string form, and for a list the string forms of its elements in order. It needs no numeric comparison and no
+canonical form of a number.
+
+A **Session** must not run a Task of a Step unless the Environments it has entered, and not yet exited, are exactly the
+Environments that Step's Sessions enter, and each of the Step's effective values for each of them is equal to the value
+the Session entered it with. The Environment's `onEnter`, every Task run while it is entered, and its `onExit` then all
+see the same values. To run Tasks of a Step whose Environments or values differ, a Session exits Environments, in the
+reverse of the order it entered them, and enters others, or enters the same Environment again with that Step's values;
+or the render management system runs the Step in another Session (see
 [How Jobs Are Run](How-Jobs-Are-Run#environment-parameters)).
 
 ### 3.3. `<HostRequirements>`

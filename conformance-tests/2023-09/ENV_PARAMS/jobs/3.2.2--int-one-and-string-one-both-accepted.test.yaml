@@ -1,8 +1,9 @@
 # RFC 0010 / Template Schemas §3.2.2 (equal values): an INT parameter supplied
-# as 1 by one Step and as "1" by another resolves to the INT 1 for both. openjd
-# run runs each Step in its own Session, so only "both accepted, both print 1"
-# is observable, not Session sharing. Tag identifies which Step's Session
-# printed each line.
+# as 1 by one Step and as "1" by another resolves to the INT 1 for both. Whether
+# the Steps share a Session is not observable as a requirement, so only "both
+# accepted, both print 1" is checked. The Steps' Tag values differ, so each
+# Step enters Lic with its own values, and Tag identifies which entry printed
+# each line.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [ENV_PARAMS, EXPR]

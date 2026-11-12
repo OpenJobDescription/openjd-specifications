@@ -428,9 +428,12 @@ on Step Environments](#not-on-step-environments)).
 ### Effective values and Session sharing
 
 §3.2.2 defines a Step's effective value for each parameter: the value its enabled entry supplies, or else the resolved
-`default`. Two values are equal when they have the same type and resolved value before path mapping, and RANGE_EXPR
-values compare by canonical form. [How Jobs Are Run](../wiki/How-Jobs-Are-Run.md#environment-parameters) lets a Session
-run a Step's Tasks only when it entered the Step's Environments with the Step's values.
+`default`. Two values are equal when they have the same type and the same string form, the text
+`{{Env.RawParam.<name>}}` gives the value before path mapping. A FLOAT keeps the text it was written with, so `"3.10"`
+and `"3.1"` are not equal; an INT `1` and `"1"` are; a STRING compares by code points, with no normalization; a
+RANGE_EXPR's string form is its canonical form; and lists compare element by element. §3.2.2 also states that a
+Session runs a Step's Tasks only when it entered the Step's Environments with the Step's values, and
+[How Jobs Are Run](../wiki/How-Jobs-Are-Run.md#environment-parameters) explains it.
 
 ### Host requirements
 
@@ -550,6 +553,7 @@ the section governs. Constraint numbers refer to
 | An Environment disabled for a Step (its *enableIf* is `false` with the values that are known, or it is superseded) is not held to constraint 7, and the Step's effective values for it are not checked; the entry's keys (constraint 5) and value forms still are (§3.2.2 items 3, 4) | Template validation for a literal `false`; Job creation otherwise |
 | An Environment *enableIf* whose result depends on a missing, unresolvable, or unconvertible value is an error (§3.2.2) | The earliest stage at which it is known: template validation for a value known then to be missing, whatever every value still unknown resolves to; Job creation otherwise |
 | PATH and LIST[PATH] string constraints are checked against the unmapped value, including for a literal `default` that no Step uses (§4.5) | Job creation |
+| Two effective values are equal only when they have the same type and string form (a FLOAT as written, a STRING by code points, a RANGE_EXPR in canonical form, lists element by element), and a Session runs a Step's Tasks only when it entered each of the Step's Environments with values equal to the Step's (§3.2.2) | Run time, as a Session takes a Step's Tasks |
 
 ## Design Choice Rationale
 
@@ -733,8 +737,13 @@ Sessions may already run Tasks of several Steps whose Environments are identical
 too is all that keeps `Env.Param.*` to one meaning for as long as an Environment is entered. The rule is checked as a
 Step's Tasks are added, so a scheduler that adds Tasks of a newly ready Step to a running Session can keep doing so.
 
-Values compare as typed and before path mapping, so that hosts with different mapping rules agree, and so that an INT
-written `1` equals one written `"1"`.
+Values compare by type and string form, the text the Environment sees, before path mapping. What is compared is then
+exactly what `onEnter`, the Tasks, and `onExit` see, so two Steps share an entered Environment only when it could not
+tell them apart. A FLOAT keeps the text it was written with, so comparing FLOATs as numbers would let a Step written
+`"3.1"` run in an Environment entered with `"3.10"`, and version numbers are a realistic way to write both. A scheduler
+needs no numeric comparison or canonical form of a number: it can key Sessions on each value's type and text. Hosts
+with different mapping rules agree because the comparison is before path mapping, and an INT written `1` still equals
+one written `"1"` because an INT has one string form.
 
 ### `Step.Name` in values
 
@@ -943,7 +952,7 @@ cannot change between the two.
 The prototype is the `env-params-prototype` branch of
 [mwiebe/openjd-rs](https://github.com/mwiebe/openjd-rs/tree/env-params-prototype), developed alongside this RFC. It
 implements the extension in `openjd-model`, `openjd-sessions`, `openjd-cli`, and `openjd-for-js`, and its `openjd
-check`, `openjd summary`, and `openjd run` pass every 2023-09 conformance test at this RFC's head, including the 395
+check`, `openjd summary`, and `openjd run` pass every 2023-09 conformance test at this RFC's head, including the 402
 under `conformance-tests/2023-09/ENV_PARAMS`. The `env-params` branch of
 [mwiebe/openjd-model-for-python](https://github.com/mwiebe/openjd-model-for-python/tree/env-params) exposes it to Python
 through the Rust-backed bindings.
@@ -972,16 +981,21 @@ These parts of the proposal changed because of the prototype:
    order unrelated to §7.4.1. The prototype reports them in one pass, ordered by the §7.4.1 step, then the Step, then
    the Job's Environment order. This also changes the order in which `openjd-rs` reports errors for a Job Template
    without `ENV_PARAMS` that has Environment Templates attached, a change to review on its own.
+6. **Effective values are equal only with the same text.** An earlier draft compared FLOAT values as numbers. The
+   prototype keeps a FLOAT's text, as the Expression Language does, and a Step that supplied `"3.1"` ran its Tasks in an
+   Environment that a Step supplying `"3.10"` had entered, which printed `3.10`. Its serialized values also kept the
+   text, so `1.5` and `"1.50"` were equal but serialized differently, and a scheduler that keyed Sessions on them
+   needed a canonical encoding of numbers.
+   [§3.2.2](../wiki/2023-09-Template-Schemas.md#322-effective-environment-parameter-values) now makes two values equal
+   only when they have the same type and string form, so the Environment sees what was compared, and the type with the
+   text is the key (see [Sessions that serve several Steps](#sessions-that-serve-several-steps)).
 
 These were unclear or hard to implement:
 
-1. **Comparing effective values.** A scheduler that shares Sessions compares the effective values of Steps. The
-   prototype compares typed values, but its serialized form keeps the spelling of a FLOAT, so `1.5` and `"1.50"` are
-   equal and serialize differently. A scheduler that keys Sessions on serialized values needs a canonical encoding.
-2. **The number of `environment:` entries.** An entry with `required: false` may name nothing, so a Step's
+1. **The number of `environment:` entries.** An entry with `required: false` may name nothing, so a Step's
    `dependencies` are not bounded by the number of Environments. The specification leaves the maximum to
    implementations, and the prototype adds a caller limit, `CallerLimits::max_step_environment_entries`.
-3. **Why an Environment is not entered.** An implementation that shows a Step's Environments to users needs the reason
+2. **Why an Environment is not entered.** An implementation that shows a Step's Environments to users needs the reason
    one was not entered: declined, disabled, superseded, or named by an optional entry that resolved to nothing. Job
    creation knows it, but a Job's Steps do not carry it, so the prototype adds per-Step Environment statuses to the
    result of Job creation.

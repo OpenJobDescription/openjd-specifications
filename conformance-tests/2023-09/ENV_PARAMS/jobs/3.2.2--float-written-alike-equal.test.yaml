@@ -1,0 +1,52 @@
+# RFC 0010 / Template Schemas §3.2.2 (equal values): white space around a FLOAT is not part of its text (§7.5), so
+# Step A's "3.10" and Step B's " 3.10 " are equal, and both Steps' Tasks see 3.10. The Steps may share the entered
+# Environment, but the suite cannot require it (README, Rules without a definite test, item 3), so this test checks
+# only what every conforming run prints.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: FloatWrittenAlike
+  jobEnvironments:
+  - name: Py
+    envParameterDefinitions:
+    - name: Version
+      type: FLOAT
+    variables:
+      PY_VERSION: "{{Env.Param.Version}}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Py, "Version=[{{Env.Param.Version}}]"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Py
+      parameters:
+        Version: "3.10"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_A_VERSION=['+os.environ['PY_VERSION']+']')"]
+  - name: B
+    dependencies:
+    - dependsOn: A
+    - environment: Py
+      parameters:
+        Version: " 3.10 "
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_B_VERSION=['+os.environ['PY_VERSION']+']')"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Py Version=[3.10]
+  - TASK_A_VERSION=[3.10]
+  - TASK_B_VERSION=[3.10]
+  forbidden:
+  - ENTER Py Version=[3.1]
+  - TASK_B_VERSION=[3.1]
+  - TASK_B_VERSION=[ 3.10 ]
