@@ -721,8 +721,8 @@ Where:
     3. *groupLabel* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
     4. *singleStepDelta* — How much the value changes for a single step modification.
 
-Each item of a value given for this parameter when a Job is created, and each item of *default* and of
-*item.allowedValues*, *item.minValue* and *item.maxValue*, may be an integer or an `<intstring>` (see
+Each item of a value given for this parameter when a Job is created, each item of *default* and
+*item.allowedValues*, and *item.minValue* and *item.maxValue* may be an integer or an `<intstring>` (see
 [Numeric strings](#75-numeric-strings)). For example, `[1, " 2 "]` is the list `[1, 2]`.
 
 The value of a Job Parameter of this type is referenced in format strings as:
@@ -773,8 +773,8 @@ Where:
     4. *decimals* — The number of places editable after the decimal point.
     5. *singleStepDelta* — How much the value changes for a single step modification.
 
-Each item of a value given for this parameter when a Job is created, and each item of *default* and of
-*item.allowedValues*, *item.minValue* and *item.maxValue*, may be a number or a `<floatstring>` (see
+Each item of a value given for this parameter when a Job is created, each item of *default* and
+*item.allowedValues*, and *item.minValue* and *item.maxValue* may be a number or a `<floatstring>` (see
 [Numeric strings](#75-numeric-strings)). An item of a value or of *default* given as a `<floatstring>` keeps the text
 it was written with, without the white space around it, as in
 [Float Value Pass-Through](2026-02-Expression-Language#134-float-value-pass-through). For example, given
@@ -872,9 +872,9 @@ Where:
     2. *label* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
     3. *groupLabel* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
 
-Each integer in an inner list of a value given for this parameter when a Job is created, or of *default*, and each
-item of *item.item.allowedValues*, *item.item.minValue* and *item.item.maxValue*, may be an integer or an `<intstring>`
-(see [Numeric strings](#75-numeric-strings)). For example, `[[1, " 2 "], ["3"]]` is `[[1, 2], [3]]`.
+Each integer in an inner list of a value given for this parameter when a Job is created or of *default*, each item of
+*item.item.allowedValues*, and *item.item.minValue* and *item.item.maxValue* may be an integer or an `<intstring>` (see
+[Numeric strings](#75-numeric-strings)). For example, `[[1, " 2 "], ["3"]]` is `[[1, 2], [3]]`.
 
 The value of a Job Parameter of this type is referenced in format strings as:
 
@@ -2165,8 +2165,8 @@ so `"1 000"` is not an `<intstring>`, and a string that is empty or holds only w
 
 This applies wherever this specification reads a string as one of these forms:
 
-1. a value written in a template, such as a *default*, an item of a LIST[INT], LIST[FLOAT] or LIST[LIST[INT]]
-   parameter's *default* or item constraints (see [§2.13](#213-joblistintparameterdefinition-extension-expr),
+1. a value written in a template, such as a *default*, a number in the *default* or the item constraints of a
+   LIST[INT], LIST[FLOAT] or LIST[LIST[INT]] parameter (see [§2.13](#213-joblistintparameterdefinition-extension-expr),
    [§2.14](#214-joblistfloatparameterdefinition-extension-expr) and
    [§2.16](#216-joblistlistintparameterdefinition-extension-expr)), or an element of a *range* list;
 2. the string a [Format String](#73-format-strings) resolves to where one of these forms is expected, such as a
