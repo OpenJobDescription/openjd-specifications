@@ -98,22 +98,22 @@ the **Service Session**, on a **Service host** chosen by the scheduler subject t
 and it outlives every **Session** that runs Tasks against it. A **Service Session** enters the Job's **Environments**,
 in the same order a **Session** for a Task would, around the **Service**'s own actions, so a **Service** is provisioned
 by the same Conda, Rez, or container **Environments** as the Tasks; a **Service** belongs to no Step and enters no
-Step's **Environments**. Later **Environments** take precedence over earlier ones for environment variables, and the
-**Service**'s own `variables` over all of them. An **Environment** that configures clients of a
-**Service** lists `service: <name>` in its `dependencies`, which is what lets it reference `Service.*`. Every
-**Session** that enters it, whether for Tasks or for another **Service**, therefore waits for the listed **Service** to
-be **READY**, and a **Service** whose **Sessions** enter it starts after the listed one. The listed **Service**'s own
-**Session** does not enter it, since that **Service** cannot wait for itself. Under the WRAP_ACTIONS extension, a
-wrapping **Environment** that a **Service Session** enters wraps the **Service**'s `onEnter`, `onRun`,
-`onHealthCheck`, and `onExit` with its `onWrapServiceEnter`, `onWrapServiceRun`, `onWrapServiceHealthCheck`, and
-`onWrapServiceExit` hooks, exactly as `onWrapTaskRun` wraps a Task's `onRun`, and wraps the inner **Environments** of
-the **Service Session** with `onWrapEnvEnter` and `onWrapEnvExit` as in any **Session**. Placement is up to the
-scheduler: a distributed render manager might dedicate a host to a **Service**, while a single-host runner starts it
-alongside the Tasks on loopback. Whatever the placement, `connectAddress` and `port`, over the port's `protocol`, must
-reach the service process from every host in the scope. A **Service Session** is a **Session** in every other respect
-too: it has its own working directory, and it receives [Path Mapping Rules](#path-mapping) for the **Service host** the
-same way a **Session** running Tasks does, so `PATH` Job Parameters in a **Service**'s actions are mapped for the host
-the **Service** runs on.
+Step's **Environments**. Later **Environments** take precedence over earlier ones for environment variables, the
+**Service**'s own `variables` over all of them, and variables the **Service**'s `onEnter` sets with `openjd_env` over
+its `variables`. An **Environment** that configures clients of a **Service** lists `service: <name>` in its
+`dependencies`, which is what lets it reference `Service.*`. Every **Session** that enters it, whether for Tasks or for
+another **Service**, therefore waits for the listed **Service** to be **READY**, and a **Service** whose **Sessions**
+enter it starts after the listed one. The listed **Service**'s own **Session** does not enter it, since that **Service**
+cannot wait for itself. Under the WRAP_ACTIONS extension, a wrapping **Environment** that a **Service Session** enters
+wraps the **Service**'s `onEnter`, `onRun`, `onHealthCheck`, and `onExit` with its `onWrapServiceEnter`,
+`onWrapServiceRun`, `onWrapServiceHealthCheck`, and `onWrapServiceExit` hooks, exactly as `onWrapTaskRun` wraps a Task's
+`onRun`, and wraps the inner **Environments** of the **Service Session** with `onWrapEnvEnter` and `onWrapEnvExit` as in
+any **Session**. Placement is up to the scheduler: a distributed render manager might dedicate a host to a **Service**,
+while a single-host runner starts it alongside the Tasks on loopback. Whatever the placement, `connectAddress` and
+`port`, over the port's `protocol`, must reach the service process from every host in the scope. A **Service Session**
+is a **Session** in every other respect too: it has its own working directory, and it receives [Path Mapping
+Rules](#path-mapping) for the **Service host** the same way a **Session** running Tasks does, so `PATH` Job Parameters
+in a **Service**'s actions are mapped for the host the **Service** runs on.
 
 ### Service lifecycle
 

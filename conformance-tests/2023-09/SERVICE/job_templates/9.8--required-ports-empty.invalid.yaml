@@ -11,6 +11,8 @@ externalServices:
   ports: []
 steps:
 - name: Use
+  dependencies:
+  - service: Ext
   script:
     actions:
       onRun:

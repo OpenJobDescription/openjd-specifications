@@ -10,6 +10,8 @@ externalServices:
 - name: Ext
 steps:
 - name: Use
+  dependencies:
+  - service: Ext
   script:
     actions:
       onRun:

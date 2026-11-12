@@ -2,7 +2,8 @@
 # an inline Service may reference a required Service's `port` and
 # `connectAddress` only when it lists `service: <name>` in its `dependencies`.
 # Proxy references Service.Ext.main without depending on Ext and is rejected.
-# Use depends on Service Proxy, so Proxy is not unused.
+# Use depends on Proxy and Ext, so neither is unused; Use's entry for Ext does
+# not let Proxy reference it.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
@@ -26,6 +27,7 @@ steps:
 - name: Use
   dependencies:
   - service: Proxy
+  - service: Ext
   script:
     actions:
       onRun:

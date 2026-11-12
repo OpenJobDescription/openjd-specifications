@@ -9,14 +9,14 @@ name: TestJob
 services:
 - name: Store
   let:
-  - Dir = Session.WorkingDirectory
+  - dir = Session.WorkingDirectory
   ports:
   - name: main
   script:
     actions:
       onRun:
         command: python
-        args: ["-c", "print()", "{{ Dir }}"]
+        args: ["-c", "print()", "{{ dir }}"]
 steps:
 - name: Step1
   dependencies:

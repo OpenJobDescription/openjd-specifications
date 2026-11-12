@@ -5,6 +5,7 @@ extensions:
 - SERVICE
 - ENV_PARAMS
 - EXPR
+- FEATURE_BUNDLE_1
 name: TestJob
 services:
 - name: Store

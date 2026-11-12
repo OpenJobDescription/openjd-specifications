@@ -22,6 +22,8 @@ externalServices:
   - name: p11
 steps:
 - name: Use
+  dependencies:
+  - service: Ext
   script:
     actions:
       onRun:

@@ -42,6 +42,18 @@ externalServices:
   - name: main
 steps:
 - name: Use
+  dependencies:
+  - service: Ext1
+  - service: Ext2
+  - service: Ext3
+  - service: Ext4
+  - service: Ext5
+  - service: Ext6
+  - service: Ext7
+  - service: Ext8
+  - service: Ext9
+  - service: Ext10
+  - service: Ext11
   script:
     actions:
       onRun:

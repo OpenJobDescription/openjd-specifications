@@ -12,6 +12,8 @@ externalServices:
   - name: main
 steps:
 - name: Use
+  dependencies:
+  - service: Ext
   hostRequirements:
     attributes:
     - name: attr.cache.host

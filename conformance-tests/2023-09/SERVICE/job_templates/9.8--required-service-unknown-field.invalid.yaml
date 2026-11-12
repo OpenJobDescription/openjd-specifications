@@ -17,6 +17,8 @@ externalServices:
         args: ["-c", "print()"]
 steps:
 - name: Use
+  dependencies:
+  - service: Ext
   script:
     actions:
       onRun:
