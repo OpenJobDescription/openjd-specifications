@@ -77,11 +77,11 @@ that does not list `ENV_PARAMS` behaves as `ALWAYS`, except that a Step's disabl
 - **Environment `envParameterDefinitions`** (§4 item 3, §4.5): 1–50 entries, unique names that may coincide with Job
   Parameters and other Environments' parameters, not on `stepEnvironments`; permitted types and fields; `default`
   scope; a literal `default` checked at template validation, a non-literal one only where a Step takes it.
-- **`activation`** (§4 item 4): `ALWAYS`, `BY_DEFAULT`, or `ON_REQUEST`, default `BY_DEFAULT`, not on
-  `stepEnvironments`; an `ON_REQUEST` Environment is entered, and its `variables` set, only in the Sessions of Steps
-  that request it, and entered Environments keep their order. An `ALWAYS` Environment cannot be disabled: its
-  `enableIf` being false for a Step is an error, at template validation for a literal `false` and at job creation
-  otherwise (§4 item 6, §3.2.2 item 6).
+- **`activation`** (§4 item 4): `ALWAYS`, `BY_DEFAULT`, or `ON_REQUEST`, default `BY_DEFAULT` in a document that lists
+  `ENV_PARAMS`, not on `stepEnvironments`; an `ON_REQUEST` Environment is entered, and its `variables` set, only in the
+  Sessions of Steps that request it, and entered Environments keep their order. An `ALWAYS` Environment cannot be
+  disabled: its `enableIf` being false for a Step is an error, at template validation for a literal `false` and at job
+  creation otherwise (§4 item 6, §3.2.2 item 6).
 - **Environment `enableIf`** (§4 item 6): requires `ENV_PARAMS`; an expression field of type `bool`
   (§7.6) with the scopes of the Environment's `hostRequirements` (or, on a Step Environment, `Step.Name` and the
   Step's `let`); decided per Step at job creation from its effective values, never `null`; a disabled Environment is
@@ -796,7 +796,7 @@ here (the constraints 5 and 6 row is V19 and V45).
 | V49 | An `allOf` for `attr.worker.os.family` or `attr.worker.cpu.arch` has at most one element: a list as written, and a `<ListExpressionString>` result (§3.3.2.1). Listed after V48; in the RFC table it follows V6 | Template validation for a list; job creation for an expression | base `3.3--allof-multiple-single-value-attr.invalid`; JB-147 |
 | V50 | `exclusiveGroup` is an `<Identifier>`, not on `stepEnvironments`, and not on an `ALWAYS` Environment (§4 item 7). Listed after V49; in the RFC table it follows V3 | Template validation | ET-48, ET-49, JT-187, JT-188; undetermined before job creation: JT-189 |
 | V51 | Of the Environments a Step's Sessions would enter that share an `exclusiveGroup`, only the first in the Job's Environment order whose `enableIf` is not `false` for the Step is entered; the others are superseded and disabled (§4 item 7, §3.2.2). Listed after V50; in the RFC table it follows V50 | Job creation, per Step | JB-148–JB-154 |
-| V52 | An Environment from a document that does not list `ENV_PARAMS` behaves as `activation: ALWAYS` with no `enableIf`: every Step's Sessions enter it, and a disabled `environment:` entry that names it has no effect and is not an error (§4 item 4, §3.2 item 3.2). Listed after V51; in the RFC table it follows V43 | Job creation | JB-169–JB-171, JB-173; enabled entries: JB-19, JB-20, JB-172; the `BY_DEFAULT` contrast: JB-140, JB-174 |
+| V52 | An Environment from a document that does not list `ENV_PARAMS` behaves as `activation: ALWAYS` with no `enableIf`: every Step's Sessions enter it, and a disabled `environment:` entry that names it has no effect and is not an error (§4 item 4, §3.2 item 3.2). Listed after V51; in the RFC table it follows V43 | Job creation; before then by a validator given the Environment Templates | JB-169–JB-171, JB-173; enabled entries: JB-19, JB-20, JB-172; the `BY_DEFAULT` contrast: JB-140, JB-174 |
 
 The rule that a Session runs Tasks of a Step only when its Environments and values match (§3.2.2) is a scheduling rule
 with no Validation row. Its observable parts are JB-10 and JB-85.
