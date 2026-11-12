@@ -57,11 +57,12 @@ parameters:                        # optional, 1–50 keys
 | `Job.EnvNames` | `list[string]` | every format string resolved at job creation or later, in a document that lists `ENV_PARAMS`; not an Environment parameter `default` or the Job `name` |
 
 Values are fixed per Step when the Job is created. For each Step and each Environment its Sessions enter, a parameter's
-**effective value** is the value the Step's enabled entry supplies, or else the parameter's resolved `default`
-(§3.2.2). A Session enters an Environment with `activation: ALWAYS` or `BY_DEFAULT` always, and one with
-`activation: ON_REQUEST` only when its Step requests it, unless the Environment's `enableIf` is false for the Step. For
-an `ALWAYS` Environment, an `enableIf` that is false for a Step is an error instead. An Environment from a document
-that does not list `ENV_PARAMS` behaves as `ALWAYS`, except that a Step's disabled entry for it has no effect.
+**effective value** is the value the Step's enabled entry supplies, or else the parameter's resolved `default` (§3.2.2).
+A Session enters an Environment with `activation: ALWAYS` always, one with `BY_DEFAULT` unless its Step declines it with
+a disabled entry, and one with `activation: ON_REQUEST` only when its Step requests it, in each case unless the
+Environment's `enableIf` is false for the Step. For an `ALWAYS` Environment, an `enableIf` that is false for a Step, or
+a disabled entry, is an error instead. An Environment from a document that does not list `ENV_PARAMS` behaves as
+`ALWAYS`, except that a Step's disabled entry for it has no effect.
 
 ## RFC rules these tests verify
 
