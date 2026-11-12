@@ -1,0 +1,23 @@
+# Template Schemas §2.13 and §7.5: an item constraint given as an <intstring> constrains a supplied value as the number
+# does. Here item.maxValue is " 5 " and the supplied value contains 6, so job creation must fail.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Values
+    type: LIST[INT]
+    item:
+      maxValue: " 5 "
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print()
+parameters:
+  Values: [1, 6]

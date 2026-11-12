@@ -689,13 +689,13 @@ Defines a job parameter that accepts a list of integer values.
 name: <Identifier>
 type: "LIST[INT]"
 description: <Description> # @optional
-default: [ <integer>, ... ] # @optional
+default: [ <integer> | <intstring>, ... ] # @optional
 minLength: <integer> # @optional
 maxLength: <integer> # @optional
 item: # @optional
-  allowedValues: [ <integer>, ... ] # @optional
-  minValue: <integer> # @optional
-  maxValue: <integer> # @optional
+  allowedValues: [ <integer> | <intstring>, ... ] # @optional
+  minValue: <integer> | <intstring> # @optional
+  maxValue: <integer> | <intstring> # @optional
 userInterface: # @optional
    control: enum("SPIN_BOX_LIST", "HIDDEN") # @optional
    label: <UserInterfaceLabelStringValue> # @optional
@@ -721,7 +721,8 @@ Where:
     3. *groupLabel* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
     4. *singleStepDelta* — How much the value changes for a single step modification.
 
-Each item of a value given for this parameter when a Job is created may be an integer or an `<intstring>` (see
+Each item of a value given for this parameter when a Job is created, and each item of *default* and of
+*item.allowedValues*, *item.minValue* and *item.maxValue*, may be an integer or an `<intstring>` (see
 [Numeric strings](#75-numeric-strings)). For example, `[1, " 2 "]` is the list `[1, 2]`.
 
 The value of a Job Parameter of this type is referenced in format strings as:
@@ -738,13 +739,13 @@ Defines a job parameter that accepts a list of floating-point values.
 name: <Identifier>
 type: "LIST[FLOAT]"
 description: <Description> # @optional
-default: [ <float>, ... ] # @optional
+default: [ <float> | <floatstring>, ... ] # @optional
 minLength: <integer> # @optional
 maxLength: <integer> # @optional
 item: # @optional
-  allowedValues: [ <float>, ... ] # @optional
-  minValue: <float> # @optional
-  maxValue: <float> # @optional
+  allowedValues: [ <float> | <floatstring>, ... ] # @optional
+  minValue: <float> | <floatstring> # @optional
+  maxValue: <float> | <floatstring> # @optional
 userInterface: # @optional
    control: enum("SPIN_BOX_LIST", "HIDDEN") # @optional
    label: <UserInterfaceLabelStringValue> # @optional
@@ -772,10 +773,13 @@ Where:
     4. *decimals* — The number of places editable after the decimal point.
     5. *singleStepDelta* — How much the value changes for a single step modification.
 
-Each item of a value given for this parameter when a Job is created may be a number or a `<floatstring>` (see
-[Numeric strings](#75-numeric-strings)). An item given as a `<floatstring>` keeps the text it was written with, without
-the white space around it, as in [Float Value Pass-Through](2026-02-Expression-Language#134-float-value-pass-through).
-For example, given `[" 1.00 ", "2.50"]`, `{{Param.<name>[0]}}` resolves to `1.00`.
+Each item of a value given for this parameter when a Job is created, and each item of *default* and of
+*item.allowedValues*, *item.minValue* and *item.maxValue*, may be a number or a `<floatstring>` (see
+[Numeric strings](#75-numeric-strings)). An item of a value or of *default* given as a `<floatstring>` keeps the text
+it was written with, without the white space around it, as in
+[Float Value Pass-Through](2026-02-Expression-Language#134-float-value-pass-through). For example, given
+`[" 1.00 ", "2.50"]`, `{{Param.<name>[0]}}` resolves to `1.00`, and with `default: [1.5, "2.50"]`,
+`{{Param.<name>[1]}}` resolves to `2.50`.
 
 The value of a Job Parameter of this type is referenced in format strings as:
 
@@ -835,16 +839,16 @@ like representing graph adjacency lists for task-task dependencies.
 name: <Identifier>
 type: "LIST[LIST[INT]]"
 description: <Description> # @optional
-default: [ [ <integer>, ... ], ... ] # @optional
+default: [ [ <integer> | <intstring>, ... ], ... ] # @optional
 minLength: <integer> # @optional
 maxLength: <integer> # @optional
 item: # @optional
   minLength: <integer> # @optional
   maxLength: <integer> # @optional
   item: # @optional
-    allowedValues: [ <integer>, ... ] # @optional
-    minValue: <integer> # @optional
-    maxValue: <integer> # @optional
+    allowedValues: [ <integer> | <intstring>, ... ] # @optional
+    minValue: <integer> | <intstring> # @optional
+    maxValue: <integer> | <intstring> # @optional
 userInterface: # @optional
    control: enum("HIDDEN") # @optional
    label: <UserInterfaceLabelStringValue> # @optional
@@ -868,8 +872,9 @@ Where:
     2. *label* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
     3. *groupLabel* — See: [&lt;UserInterfaceLabelStringValue&gt;](#26-userinterfacelabelstringvalue).
 
-Each integer in an inner list of a value given for this parameter when a Job is created may be an integer or an
-`<intstring>` (see [Numeric strings](#75-numeric-strings)). For example, `[[1, " 2 "], ["3"]]` is `[[1, 2], [3]]`.
+Each integer in an inner list of a value given for this parameter when a Job is created, or of *default*, and each
+item of *item.item.allowedValues*, *item.item.minValue* and *item.item.maxValue*, may be an integer or an `<intstring>`
+(see [Numeric strings](#75-numeric-strings)). For example, `[[1, " 2 "], ["3"]]` is `[[1, 2], [3]]`.
 
 The value of a Job Parameter of this type is referenced in format strings as:
 
@@ -2160,7 +2165,10 @@ so `"1 000"` is not an `<intstring>`, and a string that is empty or holds only w
 
 This applies wherever this specification reads a string as one of these forms:
 
-1. a value written in a template, such as a *default* or an element of a *range* list;
+1. a value written in a template, such as a *default*, an item of a LIST[INT], LIST[FLOAT] or LIST[LIST[INT]]
+   parameter's *default* or item constraints (see [§2.13](#213-joblistintparameterdefinition-extension-expr),
+   [§2.14](#214-joblistfloatparameterdefinition-extension-expr) and
+   [§2.16](#216-joblistlistintparameterdefinition-extension-expr)), or an element of a *range* list;
 2. the string a [Format String](#73-format-strings) resolves to where one of these forms is expected, such as a
    `<TaskParameterStringValue>` element of an `<IntRangeList>` or a `chunks.defaultTaskCount`; and
 3. a value given as a string for an INT or FLOAT Job Parameter when a Job is created, and a number given as a string
