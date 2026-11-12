@@ -1123,7 +1123,7 @@ type is determined by the schema context in which the expression appears:
 
 Some fields of the Template Schemas are *expression fields*, marked `@expr <type>`, whose value is one expression
 written without `{{ }}` and whose target type is `<type>` (see
-[Template Schemas §7.5](2023-09-Template-Schemas#75-expression-fields) for how the result must fit it).
+[Template Schemas §7.6](2023-09-Template-Schemas#76-expression-fields) for how the result must fit it).
 
 When a format string is exactly `"{{<expr>}}"` with no surrounding text, the target type is
 inherited from the field context — the format string is transparent and the expression can

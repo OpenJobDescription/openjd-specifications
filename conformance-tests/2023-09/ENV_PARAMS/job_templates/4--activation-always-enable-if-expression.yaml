@@ -1,4 +1,4 @@
-# Template Schemas §4 item 6 and §7.5 rule 5 (RFC 0010): an ALWAYS Environment's enableIf that is an expression
+# Template Schemas §4 item 6 and §7.6 rule 5 (RFC 0010): an ALWAYS Environment's enableIf that is an expression
 # is not known at template validation, so it may still be true for every Step and the template is valid. Whether it
 # is false for some Step is decided when the Job is created (JB-128, JB-129).
 specificationVersion: jobtemplate-2023-09

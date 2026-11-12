@@ -1,4 +1,4 @@
-# Template Schemas §3.2 constraint 9 and §7.5 rule 2 (RFC 0010): enableIf is an expression field of type bool,
+# Template Schemas §3.2 constraint 9 and §7.6 rule 2 (RFC 0010): enableIf is an expression field of type bool,
 # and an expression field widens only int to float. Param.Count is an INT, so the entry is rejected at
 # template validation.
 specificationVersion: jobtemplate-2023-09

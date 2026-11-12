@@ -1,4 +1,4 @@
-# Template Schemas §3.2 (checked-at paragraph), §4 item 6 (enableIf tail), and §7.5 rule 5, with RFC 0008
+# Template Schemas §3.2 (checked-at paragraph), §4 item 6 (enableIf tail), and §7.6 rule 5, with RFC 0008
 # (single-layer rule): Always is a BY_DEFAULT wrapping Environment; OnRequest is an ON_REQUEST wrapping Environment
 # that Step A requests through an entry whose enableIf is an expression. The entry is undetermined at template
 # validation, so A's Sessions may or may not enter OnRequest, and template validation reports no error.

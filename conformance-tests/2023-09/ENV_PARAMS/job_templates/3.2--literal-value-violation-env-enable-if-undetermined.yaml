@@ -1,4 +1,4 @@
-# Template Schemas §3.2.2, §3.2 (checked-at paragraph), and §7.5 rule 5 (RFC 0010): Lic's enableIf is an expression,
+# Template Schemas §3.2.2, §3.2 (checked-at paragraph), and §7.6 rule 5 (RFC 0010): Lic's enableIf is an expression,
 # undetermined at template validation. A's literal value vray is outside Product's allowedValues, but it is checked
 # only if the enableIf resolves to true, so template validation reports nothing. JB-108 and JB-109 run it.
 specificationVersion: jobtemplate-2023-09

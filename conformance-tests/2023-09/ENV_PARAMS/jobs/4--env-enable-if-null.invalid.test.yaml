@@ -1,5 +1,5 @@
 # RFC 0010 / Template Schemas §4 item 6 ("a null result is an error"): an Environment's enableIf that resolves
-# to null at job creation is rejected. §7.5 rule 2 accepts bool? for a bool expression field and makes null an
+# to null at job creation is rejected. §7.6 rule 2 accepts bool? for a bool expression field and makes null an
 # error at evaluation (README ambiguity 13, resolved).
 template:
   specificationVersion: jobtemplate-2023-09

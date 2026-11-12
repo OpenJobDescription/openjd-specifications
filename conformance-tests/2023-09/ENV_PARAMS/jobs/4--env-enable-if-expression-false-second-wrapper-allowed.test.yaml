@@ -1,4 +1,4 @@
-# Template Schemas §4 item 6 (enableIf tail) and §7.5 rule 5, with RFC 0008 (single-layer rule): the template of
+# Template Schemas §4 item 6 (enableIf tail) and §7.6 rule 5, with RFC 0008 (single-layer rule): the template of
 # JT-150. Inner's enableIf is an expression, so the single-layer rule waits for job creation; there it resolves to
 # false, the Session's stack holds one wrapping Environment, and the Job runs wrapped by Outer only.
 template:

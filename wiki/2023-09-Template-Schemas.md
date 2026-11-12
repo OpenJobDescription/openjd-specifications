@@ -25,7 +25,7 @@ Notations used in this document to annotate aspects of the schema definition:
   * `@fmtstring[host]` - The value is evaluated at runtime on the worker host on which the job is running. The value is otherwise
      evaluated when the job template is submitted and the render manager is constructing a job.
 * `@expr <type>` - The value of the annotated property is an expression field with target type `<type>`. See
-  [Expression Fields](#75-expression-fields).
+  [Expression Fields](#76-expression-fields).
 * `@optional` - The annotated property is optional.
 * `@extension EXTENSION_NAME` - The annotated property is available only when extension EXTENSION_NAME is requested
   in the `extensions` list of the template. Implementations can choose which extensions to support.
@@ -1026,7 +1026,7 @@ Where:
        Environment. When `false` and the name of an enabled entry resolves to an attached Environment that declares no
        *envParameterDefinitions*, the entry's *parameters* are ignored (see
        [§3.2.1](#321-resolving-external-environments) item 1).
-    2. *enableIf* — Whether this entry is in effect. An [expression field](#75-expression-fields) of type `bool`. The
+    2. *enableIf* — Whether this entry is in effect. An [expression field](#76-expression-fields) of type `bool`. The
        values it may reference are given in the [`ENV_PARAMS` Scope Summary](#732-env_params-scope-summary). It is
        evaluated when the Job is created, before the entry's name is resolved. A `null` result is an error. If omitted,
        the entry is enabled. Where it is `false`, the entry is *disabled*. A disabled entry requests nothing and
@@ -1081,7 +1081,7 @@ Constraints:
    disabled for the Step (see [§3.2.2](#322-effective-environment-parameter-values)), the Step must supply every
    parameter that has no `default`.
 8. *required* must not be `false` on an entry that names a *jobEnvironments* entry.
-9. *enableIf* is an expression field of type `bool` (see [§7.5](#75-expression-fields)).
+9. *enableIf* is an expression field of type `bool` (see [§7.6](#76-expression-fields)).
 
 Constraints 1–4, 8, and 9 are checked at template validation. Constraint 3 applies to entries as written, enabled or
 not, so two entries for one Environment with complementary *enableIf* conditions are an error. Constraints 5 and 6
@@ -1095,7 +1095,7 @@ apply only to an enabled entry. They are checked:
 An entry whose *enableIf* is any other expression may turn out to be disabled, so its keys and values are not checked
 until the Job is created. Constraint 7 is checked at template validation for the *jobEnvironments* entries, and when the
 Job is created for every Environment. At template validation, constraint 7 and any other check that depends on whether
-an entry is enabled or an Environment is disabled report an error only as [§7.5](#75-expression-fields) rule 5
+an entry is enabled or an Environment is disabled report an error only as [§7.6](#76-expression-fields) rule 5
 describes. Otherwise the check is made when the Job is created.
 
 For an entry that names no *jobEnvironments* entry, template validation can check only constraints 1–4, 8, and 9, and
@@ -1188,7 +1188,7 @@ rules apply:
 5. Where the result is unresolved, it depends on a missing, unresolvable, or unconvertible value, and that is an error.
    The error is reported at template validation when two things hold. First, the value is known to be missing: it has
    no `default`, and no entry supplies it whatever an undetermined entry *enableIf* resolves to. Second, the result
-   depends on it whatever every value still unknown at that stage resolves to (see [§7.5](#75-expression-fields) rule
+   depends on it whatever every value still unknown at that stage resolves to (see [§7.6](#76-expression-fields) rule
    5). Otherwise the error is reported when the Job is created.
 6. An Environment whose *activation* is `ALWAYS` cannot be disabled (see [&lt;Environment&gt;](#4-environment)
    *activation*).
@@ -1988,7 +1988,7 @@ Where:
     * `ALWAYS` — Every Session of the Job enters this Environment, in its position in the Job's Environment order
       ([§1.1](#11-job-template) item 7). No Step can leave it out. A Step's disabled *environment* entry for it is an
       error, and so is its *enableIf* being `false` for a Step. Either error names the Step and the Environment. It is
-      reported at the earliest stage at which it is known (see [§7.5](#75-expression-fields) rule 5): at template
+      reported at the earliest stage at which it is known (see [§7.6](#76-expression-fields) rule 5): at template
       validation for a literal `false`, and otherwise when the Job is created. For a disabled entry, template validation
       reports it only for an entry that names a *jobEnvironments* entry. A `true` *enableIf* is not an error.
     * `BY_DEFAULT` — Every Session of the Job enters this Environment, in its position in the Job's Environment order,
@@ -2016,7 +2016,7 @@ Where:
    values (see [§3.2.2](#322-effective-environment-parameter-values)). So one Environment may impose different
    requirements on different Steps. How the requirements combine with the Step's is specified in [Combined Host
    Requirements](#333-combined-host-requirements). Available with the `ENV_PARAMS` extension.
-6. *enableIf* — Whether a Step's Sessions enter this Environment. An [expression field](#75-expression-fields) of type
+6. *enableIf* — Whether a Step's Sessions enter this Environment. An [expression field](#76-expression-fields) of type
    `bool`. The values it may reference are given in the
    [`ENV_PARAMS` Scope Summary](#732-env_params-scope-summary). It is evaluated when the Job is
    created, once for each Step whose Sessions would otherwise enter the Environment, with that Step's effective values
@@ -2048,7 +2048,7 @@ Where:
 
 A check that depends on which Environments a Step's Sessions enter, such as the `WRAP_ACTIONS` single-layer rule
 ([&lt;EnvironmentActions&gt;](#43-environmentactions) constraint 2), uses what is known at each stage (see
-[§7.5](#75-expression-fields) rule 5). Before the Job is created:
+[§7.6](#76-expression-fields) rule 5). Before the Job is created:
 
 * A Step's Sessions may be taken to enter every Environment whose *activation* is `ALWAYS`.
 * They are known to enter an Environment whose *enableIf* is absent or `true` when the Step would otherwise enter it:
@@ -2656,7 +2656,7 @@ different sets of values are known, which determines which format strings can be
 | **Task execution** | On the worker host | All values: `Param.*`, `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*`, `Env.Param.*`, path mapping rules | *(none)* | Format strings annotated `@fmtstring[host]` are resolved. Path mapping rules are applied to PATH-type parameters, including PATH and LIST[PATH] Environment parameters (`ENV_PARAMS`). Embedded files are written. With the `EXPR` extension: `let` bindings in `<StepScript>` and `<EnvironmentScript>` are evaluated; all remaining expressions are fully evaluated. |
 
 The `@fmtstring` and `@fmtstring[host]` annotations in this specification indicate which stage
-a format string is resolved in. An expression field, marked `@expr <type>` (see [§7.5](#75-expression-fields)),
+a format string is resolved in. An expression field, marked `@expr <type>` (see [§7.6](#76-expression-fields)),
 states its stage in its own definition. A format string annotated `@fmtstring` (without `[host]`) is
 resolved at job creation time. A format string annotated `@fmtstring[host]` is resolved at task
 execution time on the worker host.
