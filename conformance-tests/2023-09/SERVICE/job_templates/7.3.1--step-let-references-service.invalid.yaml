@@ -21,9 +21,9 @@ steps:
   dependencies:
   - service: Store
   let:
-  - Port = Service.Store.main.port
+  - port = Service.Store.main.port
   script:
     actions:
       onRun:
         command: python
-        args: ["-c", "print()", "{{ Port }}"]
+        args: ["-c", "print()", "{{ port }}"]

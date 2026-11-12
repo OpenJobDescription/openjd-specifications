@@ -1,6 +1,7 @@
 # Section 3.2 constraint 4 (RFC 0009): exactly one of dependsOn, step, service,
 # or environment is present in a <StepDependency>; an entry that gives both
-# `service` and `environment` is rejected.
+# `service` and `environment` is rejected. Other lists Store, so Store is not
+# unused.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - SERVICE
@@ -21,6 +22,14 @@ services:
         command: python
         args: ["-c", "print()"]
 steps:
+- name: Other
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
 - name: Step1
   dependencies:
   - service: Store

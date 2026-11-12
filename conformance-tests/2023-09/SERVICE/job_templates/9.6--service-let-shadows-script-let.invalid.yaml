@@ -10,12 +10,12 @@ name: TestJob
 services:
 - name: Store
   let:
-  - X = 1
+  - x = 1
   ports:
   - name: main
   script:
     let:
-    - X = 2
+    - x = 2
     actions:
       onRun:
         command: python

@@ -12,6 +12,8 @@ externalServices:
     protocol: SCTP
 steps:
 - name: Use
+  dependencies:
+  - service: Ext
   script:
     actions:
       onRun:
