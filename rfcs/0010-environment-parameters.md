@@ -34,51 +34,6 @@ Step uses the first one attached (`exclusiveGroup`), and state the hosts it need
 then gets per-Step software from whichever of these Environments a system provides, and runs unchanged where none is
 provided, while existing Environment Templates and Job Templates keep working.
 
-### Decisions for reviewers
-
-These are the choices that most need a reviewer's agreement. Each links its rationale.
-
-1. **Parameters are declared on the Environment**, in `envParameterDefinitions`, read only inside it as `Env.Param.*`,
-   and never merged with Job Parameters ([Parameters declared on the
-   Environment](#parameters-declared-on-the-environment), [A `stepOverridable`
-   flag](#a-stepoverridable-flag-on-template-level-job-parameters)).
-2. **A Step supplies values in an `environment:` entry of `dependencies`**, not in a separate key ([The
-   `environment:` form of `<StepDependency>`](#the-environment-form-of-stepdependency), [A separate key for
-   Environment requests](#a-separate-key-for-environment-requests)).
-3. **Values are fixed per Step when the Job is created.** Steps share an entered Environment only when their values
-   have the same type and string form ([Values fixed per Step](#values-fixed-per-step), [Sessions that serve several
-   Steps](#sessions-that-serve-several-steps)).
-4. **`activation` is `ALWAYS`, `BY_DEFAULT`, or `ON_REQUEST`.** It defaults to `BY_DEFAULT` in a document that lists
-   `ENV_PARAMS`, and an Environment from a document that does not list it behaves as `ALWAYS`, so a Step can decline
-   only a `BY_DEFAULT` Environment ([`activation`](#activation), [Environments from documents without `ENV_PARAMS` are
-   `ALWAYS`](#environments-from-documents-without-env_params-are-always)).
-5. **`enableIf` on Environments and entries is an expression field**, written without `{{ }}`. RFC 0011 puts the same
-   field on Steps and loops ([The name `enableIf`](#the-name-enableif), [Expression fields rather than format
-   strings](#expression-fields-rather-than-format-strings)).
-6. **A Step must supply the required parameters of every Environment that applies to it**, whatever that Environment's
-   `enableIf` turns out to be, and the `enableIf` reads only concrete values ([Required parameters are
-   allowed](#required-parameters-are-allowed), [`enableIf` sees only concrete
-   values](#enableif-sees-only-concrete-values)).
-7. **`exclusiveGroup` gives precedence by the Job's Environment order**, across documents, so the order in which a
-   system attaches Environments decides which one a Step uses ([`exclusiveGroup`](#exclusivegroup)).
-8. **An Environment's `hostRequirements` combine with the Step's by conjunction**, and empty or resolved-empty
-   requirements are allowed ([`hostRequirements` on the Environment](#hostrequirements-on-the-environment), [Empty and
-   resolved-empty host requirements](#empty-and-resolved-empty-host-requirements)).
-9. **A `required: false` entry for an Environment that declares no parameters ignores its parameters**, and
-   implementations should warn ([Parameters for an Environment that declares none are
-   ignored](#parameters-for-an-environment-that-declares-none-are-ignored)).
-10. **`required` concerns only whether the name resolves.** An enabled `required: true` entry whose Environment is
-    disabled or superseded for the Step is not an error ([`required` with an
-    `exclusiveGroup`](#required-with-an-exclusivegroup)).
-11. **A disabled Environment's other fields are still resolved and checked** at Job creation, as without the extension,
-    which answers RFC 0011's Open Question 15 ([A disabled Environment's other fields are
-    resolved](#a-disabled-environments-other-fields-are-resolved)).
-12. **`step:` and `Job.EnvNames` are part of this RFC** ([`step:` as a synonym of
-    `dependsOn:`](#step-as-a-synonym-of-dependson), [`Job.EnvNames`](#jobenvnames)).
-13. **`ENV_PARAMS` requires `EXPR`, and a few changes apply without the extension** ([`ENV_PARAMS` requires
-    `EXPR`](#env_params-requires-expr), [Changes that apply without the
-    extension](#changes-that-apply-without-the-extension)).
-
 ## Basic Examples
 
 ### An external Conda Environment that each Step configures
