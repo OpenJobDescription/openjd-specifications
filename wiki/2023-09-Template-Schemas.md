@@ -430,7 +430,7 @@ base-10, with optional white space around it (see [Numeric strings](#75-numeric-
 In a format string, a value given as a `<floatstring>` is its text without the white space around it. A value given
 as a `<float>` number is written as Python's `repr(float)` writes it, as the
 [Expression Language](2026-02-Expression-Language#134-float-value-pass-through) writes a computed float: `default: 2`
-is `2.0`, and `default: 1.0e+20` is `1e+20`.
+is `2.0`, and `default: 1.0e+20` is `1e+20`. Zero is always `0.0`.
 
 With the EXPR extension, the value of a Job Parameter of this type is referenced in format strings as `Param.<name>`, returning a `float` type value.
 
