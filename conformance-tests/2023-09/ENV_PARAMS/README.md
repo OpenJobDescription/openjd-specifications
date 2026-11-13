@@ -53,11 +53,11 @@ parameters:                        # optional, 1–50 keys
 
 | Value | Type | Available in |
 |---|---|---|
-| `Env.Param.<name>` | the `Param.<name>` type of the parameter's type | the declaring Environment only: `variables`, script `let`, actions, embedded files, and `hostRequirements` and `enableIf` (not PATH / LIST[PATH]); PATH values are path-mapped |
+| `Env.Param.<name>` | the `Param.<name>` type of the parameter's type | the declaring Environment only: `variables`, script `let`, an action's `command` and `args` (not its `timeout` or `cancelation`), embedded files, and `hostRequirements` and `enableIf` (not PATH / LIST[PATH]); PATH values are path-mapped |
 | `Env.RawParam.<name>` | as `Env.Param.<name>`, but `string` / `list[string]` for PATH / LIST[PATH] | as `Env.Param.<name>`; never path-mapped |
 | `Job.EnvNames` | `list[string]` | every format string resolved at job creation or later, in a document that lists `ENV_PARAMS`; not an Environment parameter `default` or the Job `name` |
 
-Values are fixed per Step when the Job is created. For each Step and each Environment its Sessions enter, a parameter's
+Values are fixed per Step when the Job is created. For each Step and each Environment that applies to it, a parameter's
 **effective value** is the value the Step's enabled entry supplies, or else the parameter's resolved `default` (§3.2.2).
 A Session enters an Environment with `activation: ALWAYS` always, one with `BY_DEFAULT` unless its Step declines it with
 a disabled entry, and one with `activation: ON_REQUEST` only when its Step requests it, in each case unless the
@@ -355,6 +355,7 @@ lists the extensions the document under test declares, where it matters (`EP` = 
 | JT-67 | `7.3.1--env-names-in-job-name.invalid.yaml` | EP, EX | `Job.EnvNames` in the Job Template's `name` is rejected. |
 | JT-68 | `7.3.1--env-names-is-list.invalid.yaml` | EP, EX | `{{ Job.EnvNames.upper() }}` is a type error (`list[string]`). |
 | JT-123 | `7.3.1--env-raw-param-in-step-script.invalid.yaml` | EP | A Step's `onRun` reading `Env.RawParam.X` of an Environment it requests is rejected. |
+| JT-210 | `7.3.1--env-param-in-action-timeout.invalid.yaml` | EP, EX, FB1 | An `onEnter` *timeout* of `"{{Env.Param.T}}"` is rejected: a *timeout* is resolved when the Job is created, where `Env.Param.*` is not available (§7.3.1, §4). |
 
 #### `<StepDependency>` `environment:` entries (§3.2)
 
@@ -723,6 +724,7 @@ permitted but not required, so for those only the values both Tasks see are chec
 | JB-162 | `4.5--path-relative-windows-backslash.test.yaml` | EP, EX | `relative\dir` is accepted. |
 | JB-163 | `4.5--path-relative-windows-drive.test.yaml` | EP, EX | The drive-relative `C:dir` is accepted. |
 | JB-164 | `4.5--path-relative-windows-rooted.test.yaml` | EP, EX | The drive-less rooted `\dir` is accepted. |
+| JB-200 | `4.5--path-allowed-values-mapped-only.invalid.test.yaml` | EP, EX | `runOn: [posix]`. `allowedValues` lists the path a mapping rule would produce, not the value as given; the unmapped value is not allowed, so the submission is rejected (§4.5 item 3). The contrast of JB-62. |
 
 #### Host requirements (§3.3.3, §4 item 5)
 
@@ -767,6 +769,7 @@ matches them against the local host.
 | JB-146 | `3.2.1--unreachable-attached-always-required.invalid.test.yaml` | EP; env EP, EX | An attached `ALWAYS` Environment named like a Job Environment, so unreachable, with a parameter without `default`: every Step's Sessions enter it and none can supply the value, so the submission is rejected (§3.2.1 item 4). |
 | JB-147 | `3.3.2--all-of-expression-os-family-two-values.invalid.test.yaml` | EP, EX | A Step's `allOf: "{{ ['linux', Param.Second] }}"` on `attr.worker.os.family` passes template validation and resolves to two values when the Job is created; a host has one value of that attribute, so the submission is rejected (§3.3.2.1). The literal `allOf: [linux, windows]` is the base suite's `3.3--allof-multiple-single-value-attr.invalid`. |
 | JB-199 | `3.3.3--combined-fifty-capabilities-accepted.test.yaml` | EP, EX | A Step with 30 attribute requirements enters a Job Environment with 20 others; the combined set names 50 capabilities, the floor every implementation accepts, and the Job runs (§3.3.3). |
+| JB-201 | `3.3.2--any-of-expression-invalid-element.invalid.test.yaml` | EP, EX | An Environment's `anyOf` written as one expression resolves to `[a, "has space"]`; the second element is not an `<AttributeCapabilityValue>`, so the submission is rejected (§3.3.2). |
 
 #### Extensions per document and backward compatibility (§1.2, RFC §Backward compatibility)
 
@@ -833,7 +836,7 @@ keeps its number with a note. Earlier drafts of the RFC carried the same index a
 | V7 | Removed: the RFC no longer specifies composition with `CONTROL_FLOW` (see its *Extensions specified after this one*) | — | — |
 | V8 | `default` references only `Param.*` / `RawParam.*` of the same document's Job Parameters | Template validation | JT-27–JT-33, JT-121, ET-18–ET-22; merged value: JB-06, JB-07 |
 | V9 | A literal `default` satisfies its type and constraints, whether or not any Step uses it, and whatever any `enableIf` decides | Template validation | JT-34–JT-36, JT-168, ET-23 |
-| V10 | `Env.Param.*` / `Env.RawParam.*` name a parameter of the enclosing Environment, and appear only inside it | Template validation | JT-55–JT-64, JT-123, ET-27, ET-28, ET-31; run time: JB-01–JB-04, JB-76 |
+| V10 | `Env.Param.*` / `Env.RawParam.*` name a parameter of the enclosing Environment, and appear only inside it | Template validation | JT-55–JT-64, JT-123, ET-27, ET-28, ET-31; run time: JB-01–JB-04, JB-76; not in an action's `timeout` or `cancelation`: JT-210 |
 | V11 | A `parameters` value or `enableIf` references only `RawParam.*`, non-PATH `Param.*`, and `Job.Name`, `Job.EnvNames`, `Step.Name`, Step `let`; never `Task.*`, `Session.*`, `Env.*` | Template validation | JT-105–JT-116, JT-122; run time: JB-14, JB-53 |
 | V12 | Merged into V4 | — | — |
 | V13 | `Job.EnvNames` only inside `{{ }}` or an expression field, not in an Environment parameter `default` | Template validation | JT-10, JT-33, JT-65–JT-68, ET-22, ET-29; contents: JB-47–JB-53, JB-86 (see ambiguity 7 for "inside `{{ }}`") |
@@ -849,10 +852,10 @@ keeps its number with a note. Earlier drafts of the RFC carried the same index a
 | V23 | Removed: `ENV_PARAMS` requires `EXPR`, so no requesting document lacks `EXPR`; see V36 | — | — |
 | V24 | A format-string value or `default` for a list-typed parameter is one `{{ }}` expression | Template validation for `default`s and Job Environment entries; job creation for external | JT-37, JT-38, JT-91, ET-24, JB-29 |
 | V25 | A resolved, non-literal `default` satisfies its type and constraints for each Step that takes it | Job creation | JB-11, JB-12 |
-| V26 | PATH / LIST[PATH] values used as given, not required to be absolute; string constraints on the unmapped value, including an unused literal `default` | Job creation | JB-60–JB-63, JB-157–JB-164; mapping: JB-54–JB-59 |
+| V26 | PATH / LIST[PATH] values used as given, not required to be absolute; string constraints on the unmapped value, including an unused literal `default` | Job creation | JB-60–JB-63, JB-157–JB-164; an unmapped value outside `allowedValues` is rejected even when its mapped value is in them: JB-200; mapping: JB-54–JB-59 |
 | V27 | Merged into V20 | — | — |
 | V28 | Removed: the RFC no longer specifies composition with `SERVICE` | — | — |
-| V29 | Removed: the RFC no longer specifies composition with `SERVICE`. RFC 0008's wrap-hook rules apply per Session stack, which with `activation` and `enableIf` is per Step's Environment set | Job creation | JB-77 |
+| V29 | RFC 0008's wrap-hook rules apply per Session stack, which with `activation` and `enableIf` is per Step's Environment set. Composition with `SERVICE` is no longer specified | Job creation | JB-77 |
 | V30 | Removed: Environment `enableIf` is now part of this RFC; see V32, V33 | — | — |
 | V31 | A `step:` entry obeys every rule of the `dependsOn:` entry it is a synonym of; a `step:` and a `dependsOn:` entry naming one Step are duplicates (§3.2 item 2). | Template validation | JT-124, JT-130–JT-133 |
 | V32 | Environment `enableIf` (listed after V31 so that existing row numbers are stable, as V33 and V34 are): `ENV_PARAMS`; an expression field of type `bool` (§7.6); the scopes of §7.3.2 | Template validation | JT-135–JT-137, JT-139–JT-147, ET-39–ET-41, JT-153, JT-154; run time: JB-111 |
@@ -865,7 +868,7 @@ keeps its number with a note. Earlier drafts of the RFC carried the same index a
 | V39 | In a document that lists `ENV_PARAMS`, a Step's or an Environment's `hostRequirements` may be `{}` or have empty `amounts` and `attributes` (§3.3 constraint 1); a literal amount with neither `min` nor `max`, or a literal empty `anyOf` or `allOf`, is still rejected (§3.3). | Template validation | JT-117, JT-173, JT-174, ET-46; still rejected: JT-175, JT-176 |
 | V40 | At job creation, an `anyOf` or `allOf` of a Step's or an Environment's `hostRequirements` that has no values after resolution, an expression whose result is an empty list or a list whose items all resolve to `null`, is rejected, naming the Step or Environment and the attribute (§3.3 item 3, §3.3.2). | Job creation, per Step | JB-133, JB-136 |
 | V41 | In a document that lists `ENV_PARAMS`, an `anyOf` or `allOf` written as a string is exactly one `{{ }}` expression, and its static type fits `list[string]?` (§3.3.2). | Template validation | JT-177; rejected: JT-178, JT-179 |
-| V42 | An `anyOf` or `allOf` written as one expression that resolves to `null` is omitted, and an attribute requirement left with neither is discarded; each element of a list result satisfies `<AttributeCapabilityValue>` (§3.3 item 2, §3.3.2). | Job creation, per Step | JB-135; a list result: JB-137 |
+| V42 | An `anyOf` or `allOf` written as one expression that resolves to `null` is omitted, and an attribute requirement left with neither is discarded; each element of a list result satisfies `<AttributeCapabilityValue>` (§3.3 item 2, §3.3.2). | Job creation, per Step | JB-135; a list result: JB-137; an invalid element: JB-201 |
 | V43 | A Step's disabled `environment:` entry for an `ALWAYS` Environment is an error naming the Step and the Environment (§3.2 *enableIf*). | Template validation for an `enableIf` known there to be `false` on an entry naming a Job Environment; otherwise job creation | JT-181, JT-202, JB-44, JB-92, JB-141; an expression that is not known is not rejected at template validation: JT-182 |
 | V44 | A Step's disabled `environment:` entry for a `BY_DEFAULT` Environment declines it: its Sessions do not enter it, and constraint 7, its effective-value checks, and the Environment's `hostRequirements` do not apply to the Step (§3.2 *enableIf*, §3.3.3). | Template validation for an `enableIf` known there to be `false` (§7.6 rule 5); job creation otherwise | JT-103, JB-35, JB-139, JB-140, JB-142 |
 | V45 | Constraints 5 and 6 apply only to an enabled entry; a disabled entry's `parameters` are not checked (§3.2 *enableIf*). | Template validation for an entry whose `enableIf` is absent or known there to be `true` (§7.6 rule 5); job creation for one that resolves to `true` then | JT-183, JT-184, JT-203, JB-143, JB-144 |
@@ -892,7 +895,7 @@ Runtime behaviors in the suite's scope that are not Validation rows are covered 
 `onExit`, and `variables` (JB-01–JB-04); defaults from merged Job Parameters (JB-05–JB-08); `ON_REQUEST` entry
 (JB-36–JB-41); entry `enableIf` true, false, and `null` (JB-42–JB-46), and a disabled entry declining a `BY_DEFAULT` Environment (JB-139, JB-140) and having no effect on one from a document without `ENV_PARAMS` (JB-169–JB-171); every `enableIf` evaluated in template scope (JB-104); `Job.EnvNames` contents and order (JB-47–JB-53, JB-86);
 path mapping in `Env.Param.*` and not `Env.RawParam.*` (JB-54–JB-59); INT `1` vs `"1"` (JB-10); per-document
-extensions (JB-74, JB-75); wrap hooks (JB-76, JB-77); host requirements of a disabled entry and case-insensitive combination (JB-88–JB-90). The Basic Examples are JB-78–JB-81, JB-84, JB-85, and JB-148–JB-150, and the pre-extension
+extensions (JB-74, JB-75); wrap hooks (JB-76, JB-77); TASK_CHUNKING (JB-191); REDACTED_ENV_VARS (JB-192); the `Job.EnvNames` rationale example (JB-197, JB-198); host requirements of a disabled entry and case-insensitive combination (JB-88–JB-90). The Basic Examples are JB-78–JB-81, JB-84, JB-85, and JB-148–JB-150, and the pre-extension
 `Conda` case of the second example (reduced to one Step with only a `Conda` entry), whose `required: false` entry's
 `parameters` are ignored, is JB-19.
 
@@ -1021,7 +1024,7 @@ Deliberately, and why:
   definite output in `openjd run` (items 3 and 4 above). The suite tests only what job creation decides:
   conflicts are rejected and non-conflicts run.
 - **Warnings** (item 5 above), since the test format cannot assert one.
-- **The forms listed above as ambiguous** (items 2, 6, 7, and 9) whose outcome the text does not decide. Where a form is
+- **The forms listed above as ambiguous** (items 7 and 9) whose outcome the text does not decide. Where a form is
   definite under every reading, it is tested and the item names the test.
 - **Repeat variants of a tested rule.** A rule that applies to several types or fields is tested where an
   implementation could plausibly differ, for example `objectType` on both PATH and LIST[PATH] (JT-25, JT-120). A literal

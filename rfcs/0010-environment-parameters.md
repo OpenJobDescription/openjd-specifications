@@ -14,7 +14,7 @@
   * RFC 0008, Environment Wrap Actions (`WRAP_ACTIONS`)
     (https://github.com/OpenJobDescription/openjd-specifications/issues/132)
   * RFC 0009, Service (`SERVICE`) (draft), whose `service:` dependency form this RFC's `environment:` form follows. Its
-    earlier drafts defined a `runScope` field, which this RFC's `activation` supersedes in the RFC 0009 draft.
+    current draft uses this RFC's `activation` in place of the `runScope` field its earlier drafts defined.
   * RFC 0011, Control Flow (`CONTROL_FLOW`) (draft), which puts this RFC's *enableIf* field on Steps and loops, with the
     same name, form, and meaning of `false`, and extends the Environment *enableIf* with what needs its later stages.
     Its Step *enableIf* depends on this RFC's expression fields (Template Schemas §7.6) as well as its Environment
@@ -67,9 +67,15 @@ These are the choices that most need a reviewer's agreement. Each links its rati
 9. **A `required: false` entry for an Environment that declares no parameters ignores its parameters**, and
    implementations should warn ([Parameters for an Environment that declares none are
    ignored](#parameters-for-an-environment-that-declares-none-are-ignored)).
-10. **`step:` and `Job.EnvNames` are part of this RFC** ([`step:` as a synonym of
+10. **`required` concerns only whether the name resolves.** An enabled `required: true` entry whose Environment is
+    disabled or superseded for the Step is not an error ([`required` with an
+    `exclusiveGroup`](#required-with-an-exclusivegroup)).
+11. **A disabled Environment's other fields are still resolved and checked** at Job creation, as without the extension,
+    which answers RFC 0011's Open Question 15 ([A disabled Environment's other fields are
+    resolved](#a-disabled-environments-other-fields-are-resolved)).
+12. **`step:` and `Job.EnvNames` are part of this RFC** ([`step:` as a synonym of
     `dependsOn:`](#step-as-a-synonym-of-dependson), [`Job.EnvNames`](#jobenvnames)).
-11. **`ENV_PARAMS` requires `EXPR`, and a few changes apply without the extension** ([`ENV_PARAMS` requires
+13. **`ENV_PARAMS` requires `EXPR`, and a few changes apply without the extension** ([`ENV_PARAMS` requires
     `EXPR`](#env_params-requires-expr), [Changes that apply without the
     extension](#changes-that-apply-without-the-extension)).
 
@@ -320,15 +326,13 @@ This RFC is additive and gated by the `ENV_PARAMS` extension name declared under
   that lists `ENV_PARAMS` without `EXPR` is rejected, and a document that lists neither keeps its current meaning.
   `step:` is a synonym for `dependsOn:`, which keeps its meaning and stays valid with or without `ENV_PARAMS`; the plan
   to remove `dependsOn:` applies to a future major version of the specification, not to `jobtemplate-2023-09`.
-- An extension applies only to the document that lists it. When any document of a submission lists `ENV_PARAMS`, Job
-  creation takes the steps of [§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params) for the
-  whole submission, and each rule the extension adds for a document's content applies only to the documents that list
-  it. For example, a Step's own host requirement that resolves to nothing is discarded only in a Job Template that lists
-  `ENV_PARAMS`. A Job Template that does not list `ENV_PARAMS` runs with an Environment Template that does: every
-  Environment parameter takes its default, which is how an Environment Template author keeps existing Job Templates
-  working while adding per-Step configuration. Such a Job Template cannot request anything, so its Sessions never enter
-  an attached `ON_REQUEST` Environment. An author who wants existing Job Templates to keep getting an Environment leaves
-  its `activation` at the default, `BY_DEFAULT`, or sets `ALWAYS`.
+- An extension applies only to the document that lists it (see
+  [Extension name and the documents that list it](#extension-name-and-the-documents-that-list-it) for a submission in
+  which only some documents list it). A Job Template that does not list `ENV_PARAMS` runs with an Environment Template
+  that does: every Environment parameter takes its default, which is how an Environment Template author keeps existing
+  Job Templates working while adding per-Step configuration. Such a Job Template cannot request anything, so its
+  Sessions never enter an attached `ON_REQUEST` Environment. An author who wants existing Job Templates to keep getting
+  an Environment leaves its `activation` at the default, `BY_DEFAULT`, or sets `ALWAYS`.
 - An Environment Template that does not list `ENV_PARAMS` runs with a Job Template that does. Its Environment behaves as
   one with `activation: ALWAYS` and no `enableIf`, so every Session enters it, and a disabled `environment:` entry that
   names it has no effect and is not an error (see [Environments from documents without `ENV_PARAMS` are
@@ -379,7 +383,7 @@ Schemas unless another page is named.
 | **Request** | A Step requests an Environment with an enabled `environment:` entry in its `dependencies` that names it. |
 | **Disabled entry** | An `environment:` entry whose own `enableIf` is `false`. It requests nothing and supplies no values. |
 | **Decline** | A Step declines a `BY_DEFAULT` Environment with a disabled entry naming it, and its Sessions then do not enter it. |
-| **Applies** | An Environment applies to a Step when its `activation` is `ALWAYS`, when it is `BY_DEFAULT` and the Step does not decline it, or when it is `ON_REQUEST` and the Step requests it. The Step must supply its parameters that have no `default`, whatever its *enableIf*. |
+| **Applies** | An Environment applies to a Step when its `activation` is `ALWAYS`, when it is `BY_DEFAULT` and the Step does not decline it, or when it is `ON_REQUEST` and the Step requests it. The Step must supply each of the Environment's parameters that has no `default`, whatever the Environment's *enableIf*. |
 | **Disabled Environment** | An Environment whose own `enableIf` is `false` for a Step, or that is superseded for it. That Step's Sessions do not enter it. |
 | **Superseded** | An Environment is superseded for a Step when an earlier Environment of its `exclusiveGroup`, in the Job's Environment order, is one the Step's Sessions enter. |
 | **Effective values** | For one Step and one Environment that applies to it, the value of each of the Environment's parameters: the one the Step's enabled entry supplies, or else the parameter's resolved `default`. |
@@ -419,6 +423,16 @@ them as changes to the base specification:
    a Session enters the Environments attached from Environment Templates before the Job Template's `jobEnvironments`,
    in the order they are attached. The base specification did not say. `openjd run` and Deadline Cloud already behave
    this way, and render management systems must now do so.
+4. **`$schema` and `extensions` in an Environment Template.**
+   [§1.2](../wiki/2023-09-Template-Schemas.md#12-environment-template) adds both keys to the Environment Template
+   schema, and states that an extension listed there applies to that document only, so a Job Template need not list the
+   extensions of the Environment Templates attached to it. RFC 0008 already required an Environment Template to list
+   `WRAP_ACTIONS`, but the schema had neither key.
+5. **A conditional whose branches give the same value.** With `EXPR`, the Expression Language's [Progressive
+   Expression Evaluation](../wiki/2026-02-Expression-Language.md#progressive-expression-evaluation) now gives
+   `c if U else c` the value `c` when the condition `U` is not yet known. So template validation can reject a template
+   that only Job creation rejected before: `timeout: "{{ 0 if Param.F else 0 }}"` fails `openjd check` because the
+   timeout is `0` either way. Job creation rejects the same templates as before.
 
 The prototype also changes the order in which `openjd-rs` reports several Job-creation errors, for Job Templates with
 or without the extension (see [Prototype](#prototype) change 5). That is not a specification change:
@@ -501,9 +515,10 @@ a `default`. [§3.2.2](../wiki/2023-09-Template-Schemas.md#322-effective-environ
 item 7, *exclusiveGroup*, names a group of Environments of which each Step's Sessions enter only the first, in the Job's
 Environment order, that they would otherwise enter and that its *enableIf* does not disable. The later ones are
 superseded, which disables them for the Step, and their *enableIf* is not evaluated. Attached Environments come first,
-so one can supersede a Job Environment, and a validator given only the Job Template treats a grouped Job Environment as
-undetermined. An `ALWAYS` Environment cannot have a group (see [`exclusiveGroup`](#exclusivegroup)). A Step Environment
-may have *enableIf* but none of the other new fields (see [Not on Step Environments](#not-on-step-environments)).
+so one can supersede a Job Environment, and a validator given only the Job Template never treats a grouped Job
+Environment as known to be entered. An `ALWAYS` Environment cannot have a group (see
+[`exclusiveGroup`](#exclusivegroup)). A Step Environment may have *enableIf* but none of the other new fields (see
+[Not on Step Environments](#not-on-step-environments)).
 
 Being disabled for a Step changes which Sessions enter an Environment, not its definition. Its other fields resolved
 at Job creation, such as an action's *timeout*, read no effective values, and are resolved and checked as without the
@@ -513,11 +528,11 @@ resolved](#a-disabled-environments-other-fields-are-resolved)).
 ### Effective values and Session sharing
 
 §3.2.2 defines a Step's effective value for each parameter: the value its enabled entry supplies, or else the resolved
-`default`. Two values are equal when they have the same type and the same string form, the text
-`{{Env.RawParam.<name>}}` gives the value before path mapping. A FLOAT keeps the text it was written with, so `"3.10"`
+`default`. Two values are equal when they have the same type and the same string form, which is the text that
+`{{Env.RawParam.<name>}}` gives the value, before path mapping. A FLOAT keeps the text it was written with, so `"3.10"`
 and `"3.1"` are not equal; an INT `1` and `"1"` are; a STRING compares by code points, with no normalization; a
-RANGE_EXPR's string form is its canonical form; and lists compare element by element. §3.2.2 also states that a
-Session runs a Step's Tasks only when it entered the Step's Environments with the Step's values, and
+RANGE_EXPR's string form is its canonical form; and lists compare element by element. §3.2.2 also states that a Session
+runs a Step's Tasks only when it entered the Step's Environments with the Step's values, and
 [How Jobs Are Run](../wiki/How-Jobs-Are-Run.md#environment-parameters) explains it.
 
 Effective values are fixed per Step, so with `TASK_CHUNKING` every chunk of a Step's Tasks runs in Environments entered
@@ -565,10 +580,10 @@ The [§7.4](../wiki/2023-09-Template-Schemas.md#74-template-processing-stages) s
 at each stage, and the new [§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params) orders the
 work done at Job creation. The new [§7.6](../wiki/2023-09-Template-Schemas.md#76-expression-fields) defines expression
 fields, which both *enableIf* fields are: one typed expression with no `{{ }}` and no implicit conversion other than
-widening `int` to `float`. Before it is evaluated, its value is known when it is a scalar or when the Expression
-Language's rules for unknown operands give a result with the values not yet known. A check whose fields are known is
-made then; one that depends on a field that is not known reports an error only when the error holds for every value it
-could take.
+widening `int` to `float`. Before it is evaluated, its value is known when it is a boolean, integer, or float scalar, or
+when the Expression Language's rules for unknown operands give a result with the values not yet known. A check whose
+fields are known is made then; one that depends on a field that is not known reports an error only when the error holds
+for every value it could take.
 
 ### Expression Language
 
@@ -606,8 +621,8 @@ that adds a kind of Session or a later stage of evaluation specifies how it exte
   `environment:` entries, and to say which Service Sessions enter an Environment of each `activation`.
 
 RFC 0011's Open Question 15 asks whether this RFC should leave a disabled Environment's TEMPLATE-scope format strings
-unevaluated, as RFC 0011 does for a disabled Step Environment. It does not: under this RFC those fields read no
-effective values and only values known at Job creation, so they are resolved and checked as without the extension (see
+unevaluated, as RFC 0011 does for a disabled Step Environment. It does not: under this RFC those fields cannot read
+effective values, only values known at Job creation, so they are resolved and checked as without the extension (see
 [A disabled Environment's other fields are resolved](#a-disabled-environments-other-fields-are-resolved)).
 
 ### Recommended names (non-normative)
@@ -1119,7 +1134,7 @@ cannot change between the two.
 The prototype is the `env-params-prototype` branch of
 [mwiebe/openjd-rs](https://github.com/mwiebe/openjd-rs/tree/env-params-prototype), developed alongside this RFC. It
 implements the extension in `openjd-model`, `openjd-sessions`, `openjd-cli`, and `openjd-for-js`, and its `openjd
-check`, `openjd summary`, and `openjd run` pass every 2023-09 conformance test at this RFC's head, including the 441
+check`, `openjd summary`, and `openjd run` pass every 2023-09 conformance test at this RFC's head, including the 444
 under `conformance-tests/2023-09/ENV_PARAMS`. The `env-params` branch of
 [mwiebe/openjd-model-for-python](https://github.com/mwiebe/openjd-model-for-python/tree/env-params) exposes it to Python
 through the Rust-backed bindings.
@@ -1141,8 +1156,8 @@ These parts of the proposal changed because of the prototype:
    while the Expression Language already gives template-scope expressions POSIX semantics.
    [§4.5](../wiki/2023-09-Template-Schemas.md#45-environmentparameterdefinition-extension-env_params) item 3 now uses
    PATH and LIST[PATH] values as given (see [Path values are used as given](#path-values-are-used-as-given)).
-4. **Joining onto an empty path.** Joining onto an empty PATH value gave a root path. The Expression Language now
-   follows `pathlib`, where an empty path joined with another gives the other.
+4. **Joining onto an empty path.** Joining onto an empty PATH value gave a root path. In a change already made on
+   mainline, the Expression Language now follows `pathlib`, where an empty path joined with another gives the other.
 5. **Job-creation errors in step order.** With several failures, deciding one document at a time reported errors in an
    order unrelated to §7.4.1. The prototype reports them in one pass, ordered by the §7.4.1 step, then the Step, then
    the Job's Environment order. This also changes the order in which `openjd-rs` reports errors for a Job Template
@@ -1176,8 +1191,9 @@ These were unclear or hard to implement:
 - **Rust (openjd-rs)**: `openjd-model` gains the new `<Environment>` fields, including `exclusiveGroup`, the
   `environment:` and `step:` forms of `StepDependency`, `Job.EnvNames`, and the `Env.Param.*` and `Env.RawParam.*`
   scopes, reusing the existing parameter-definition and host-requirement types. Job creation computes each Step's
-  Environment set (applying each `exclusiveGroup` after the Environments' *enableIf*), effective values, and combined
-  host requirements, in the order §7.4.1 gives, and stores them on the Job's Steps. `openjd-sessions` takes the
+  Environment set (evaluating the Environments' *enableIf* in the Job's Environment order and applying each
+  `exclusiveGroup` as it goes, so a superseded Environment's *enableIf* is not evaluated), effective values, and
+  combined host requirements, in the order §7.4.1 gives, and stores them on the Job's Steps. `openjd-sessions` takes the
   effective values when it enters an Environment, as it takes Job Parameter values today, and `openjd run` passes the
   values of the Step being run.
 - **Python (openjd-model-for-python, openjd-sessions-for-python)**: openjd-model-for-python includes Rust-backed

@@ -1229,9 +1229,10 @@ rules apply:
    *activation*).
 
 Being disabled for a Step affects only which Sessions enter the Environment and the checks above. The Environment's
-other fields that are resolved when the Job is created, such as an action's *timeout*, do not read effective values.
-They are resolved and checked as they are without this extension, whether or not the Environment is disabled for any
-Step, so a *timeout* that resolves to `0` is an error even in an Environment that no Session enters.
+other fields that are resolved when the Job is created, such as an action's *timeout*, cannot read effective values
+([§7.3.1](#731-value-references)). They are resolved and checked as they are without this extension, whether or not the
+Environment is disabled for any Step, so a *timeout* that resolves to `0` is an error even in an Environment that no
+Session enters.
 
 Two effective values are *equal* when they have the same type and, for a value that is not a list, the same *string
 form*: the text that `{{Env.RawParam.<name>}}` gives it in the Environment. Two lists are equal when they have the same
@@ -2156,8 +2157,9 @@ The format string scopes available to format strings within an Environment are:
 2. `Session.*` — Values such as the Session's working directory.
 3. `Env.*` — Scope of the environment entity itself. Values such as the embedded files defined within the Environment
    entity. With the `ENV_PARAMS` extension, also `Env.Param.*` and `Env.RawParam.*`, the values of this Environment's
-   parameters with which the Session entered it (see [§7.3.1](#731-value-references)). A Step's own script cannot
-   reference `Env.Param.*`, and no Environment can reference another Environment's parameters.
+   parameters with which the Session entered it (see [§7.3.1](#731-value-references)), except in an Action's *timeout*
+   and *cancelation*, which are resolved when the Job is created. A Step's own script cannot reference `Env.Param.*`,
+   and no Environment can reference another Environment's parameters.
 4. Names bound by `let` in the enclosing `<EnvironmentScript>`. Available with the `EXPR` extension.
 5. `WrappedAction.*` — Available within `onWrapEnvEnter`, `onWrapTaskRun`, and `onWrapEnvExit` only. Carries
    the wrapped `<Action>`'s fields. Available with the `WRAP_ACTIONS` extension.
@@ -2695,7 +2697,7 @@ specification for the extended grammar, type system, and evaluation semantics.
 |`Task.RawParam.<ParamName>`|Values of task parameters are available within the `Task.Param` object.|Available within the Step Script Actions and Embedded Files.|
 |`Task.File.<name>`|The filesystem location to which the Task Embedded File with key `<name>` has been written.| Available within the Step Script Actions and Embedded Files.|
 |`Env.File.<name>`|The filesystem location to which the Environment Attachment with key `<name>` has been written.|Available within the Environment Script Actions and Embedded Files.|
-|`Env.Param.<ParamName>`|The value of the Environment parameter `<ParamName>` with which the Session entered the Environment, which is the effective value for every Step whose Tasks the Session runs (see [§3.2.2](#322-effective-environment-parameter-values)). Read as `Param.<ParamName>` reads a Job Parameter of its type, with the same types and path mapping. Requires the `ENV_PARAMS` extension.|Available within the Environment that declares the parameter: its `variables`, its `hostRequirements` and `enableIf` (types other than PATH and LIST[PATH]), and its Script's `let`, Actions, and Embedded Files. Not available in any other Environment or in a Step.|
+|`Env.Param.<ParamName>`|The value of the Environment parameter `<ParamName>` with which the Session entered the Environment, which is the effective value for every Step whose Tasks the Session runs (see [§3.2.2](#322-effective-environment-parameter-values)). Read as `Param.<ParamName>` reads a Job Parameter of its type, with the same types and path mapping. Requires the `ENV_PARAMS` extension.|Available within the Environment that declares the parameter: its `variables`, its `hostRequirements` and `enableIf` (types other than PATH and LIST[PATH]), and its Script's `let`, the `command` and `args` of its Actions, and its Embedded Files. Not available in an Action's `timeout` or `cancelation`, which with `FEATURE_BUNDLE_1` are resolved when the Job is created, in any other Environment, or in a Step.|
 |`Env.RawParam.<ParamName>`|The same value, read as `RawParam.<ParamName>` reads a Job Parameter of its type. Requires the `ENV_PARAMS` extension.|As for `Env.Param.<ParamName>`.|
 |`Session.WorkingDirectory`|The agent is expected to create a local temporary scratch directory for the duration of a Session. This builtin provides the location of that temporary directory. This is the working directory that the Worker Agent uses when running the task.|This is available within all Environment Script Actions & Embedded Files, and all Step Script Actions and Embedded Files.|
 |`Job.Name`|The resolved name of the Job. This is a `string` type. Requires the `EXPR` extension.|Available in every Format String in the Job Template, except the `name` field of the Job Template itself.|

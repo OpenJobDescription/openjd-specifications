@@ -1,0 +1,40 @@
+# RFC 0010 / Template Schemas §4.5 item 3 (string constraints of a PATH value are checked against the unmapped
+# value): allowedValues lists the path that a mapping rule would produce on the host, not the value as given. The
+# unmapped value is not allowed, so the submission is rejected, even though the mapped value would be. The contrast
+# of JB-62.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: PathAllowedValuesMappedOnly
+  parameterDefinitions:
+  - name: D
+    type: PATH
+  jobEnvironments:
+  - name: Mnt
+    envParameterDefinitions:
+    - name: Dir
+      type: PATH
+      allowedValues: [/mapped/data]
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Mnt]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Mnt
+      parameters:
+        Dir: "{{RawParam.D}}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+parameters:
+  D: /original/data
+pathMapping:
+- source_path_format: POSIX
+  source_path: /original
+  destination_path: /mapped
+runOn: [posix]
