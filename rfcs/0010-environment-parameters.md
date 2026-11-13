@@ -952,7 +952,7 @@ cannot change between the two.
 The prototype is the `env-params-prototype` branch of
 [mwiebe/openjd-rs](https://github.com/mwiebe/openjd-rs/tree/env-params-prototype), developed alongside this RFC. It
 implements the extension in `openjd-model`, `openjd-sessions`, `openjd-cli`, and `openjd-for-js`, and its `openjd
-check`, `openjd summary`, and `openjd run` pass every 2023-09 conformance test at this RFC's head, including the 402
+check`, `openjd summary`, and `openjd run` pass every 2023-09 conformance test at this RFC's head, including the 403
 under `conformance-tests/2023-09/ENV_PARAMS`. The `env-params` branch of
 [mwiebe/openjd-model-for-python](https://github.com/mwiebe/openjd-model-for-python/tree/env-params) exposes it to Python
 through the Rust-backed bindings.

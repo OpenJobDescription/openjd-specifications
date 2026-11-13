@@ -155,13 +155,13 @@ matches with no order, so order is observed within one line: `Job.EnvNames` is p
 that each `onEnter` appends to with `openjd_env` and the Task prints (POSIX `bash` only).
 
 Which Steps share a Session is the scheduler's choice, so no test can require two Steps to share one. What §3.2.2
-requires is observable: a Step's Tasks never run in an Environment entered with values that are not equal to the
-Step's. The JB-175–JB-181 tests give two Steps values written differently and print each Task's `Env.Param.*` value,
-through the Environment's `variables`, in brackets (`TASK_B_VERSION=[3.1]`), so that one value is never a substring of
-another. An implementation may exit and enter the Environment again within one Session, as the `openjd-rs` prototype's
-`openjd run` does, or run the second Step in another Session; both print the same lines, and a line showing the second
-Step's Task with the first Step's value is `forbidden`. For values that are equal, the tests check only that both Tasks
-see the same value (see [Rules without a definite test](#rules-without-a-definite-test), item 3).
+requires is observable: a Step's Tasks never run in an Environment entered with values that are not equal to the Step's.
+The JB-175–JB-182 tests give two Steps values written differently and have each Task print the value it sees, or its
+length, through the Environment's `variables`, in brackets (`TASK_B_VERSION=[3.1]`), so that one value is never a
+substring of another. An implementation may exit and enter the Environment again within one Session, as the `openjd-rs`
+prototype's `openjd run` does, or run the second Step in another Session; both print the same lines, and a line showing
+the second Step's Task with the first Step's value is `forbidden`. For values that are equal, the tests check only that
+both Tasks see the same value (see [Rules without a definite test](#rules-without-a-definite-test), item 3).
 
 Directory rules, from the task plan:
 
@@ -543,11 +543,12 @@ permitted but not required, so for those only the values both Tasks see are chec
 |---|---|---|---|
 | JB-175 | `3.2.2--float-written-differently-reenters.test.yaml` | EP | A FLOAT supplied as `"3.10"` by A and `"3.1"` by B: the values are not equal, so the Environment is entered with each, and B's Task sees `3.1`, never `3.10`. |
 | JB-176 | `3.2.2--float-written-alike-equal.test.yaml` | EP | `"3.10"` and `" 3.10 "` are equal, since the white space is not part of the text (§7.5); both Tasks see `3.10`, and the Environment is never entered with `3.1`. |
-| JB-177 | `3.2.2--list-float-written-differently-reenters.test.yaml` | EP, EX | The JB-175 case for LIST[FLOAT]: `["1.50", "2.5"]` and `["1.5", "2.5"]` are not equal, and B's Task sees `1.5 2.5`. |
-| JB-178 | `3.2.2--list-float-written-alike-equal.test.yaml` | EP, EX | The JB-176 case for LIST[FLOAT]: `["1.50", "2.5"]` and `[" 1.50 ", "2.5"]` are equal, and both Tasks see `1.50 2.5`. |
-| JB-179 | `3.2.2--string-unicode-normalization-not-equal.test.yaml` | EP, EX | A STRING `"café"` with U+00E9 (4 code points) and with `e` and U+0301 (5) are not equal, with no Unicode normalization; each Task sees its own length. |
+| JB-177 | `3.2.2--list-float-written-differently-reenters.test.yaml` | EP | The JB-175 case for LIST[FLOAT]: `["1.50", "2.5"]` and `["1.5", "2.5"]` are not equal, and B's Task sees `1.5 2.5`. |
+| JB-178 | `3.2.2--list-float-written-alike-equal.test.yaml` | EP | The JB-176 case for LIST[FLOAT]: `["1.50", "2.5"]` and `[" 1.50 ", "2.5"]` are equal, and both Tasks see `1.50 2.5`. |
+| JB-179 | `3.2.2--string-unicode-normalization-not-equal.test.yaml` | EP | A STRING `"café"` with U+00E9 (4 code points) and with `e` and U+0301 (5) are not equal, with no Unicode normalization; each Task sees its own length. |
 | JB-180 | `3.2.2--int-bool-range-expr-spellings-equal.test.yaml` | EP | INT `"007"` and `7`, BOOL `"yes"` and `true`, and RANGE_EXPR `"1,2,3"` and `"1-3"` each have one string form, so the values are equal; both Tasks see `7 true 1-3`. |
 | JB-181 | `3.2.2--path-written-differently-not-equal.test.yaml` | EP | `runOn: [posix]`. A PATH `/data/x` and `/data/./x` are not equal, since a PATH compares by its unmapped string, as given; B's Task sees `/data/./x`. |
+| JB-182 | `3.2.2--float-number-and-string-not-equal.test.yaml` | EP | A FLOAT given as the YAML number `1.50` by A is written `1.5`, since a number has no text of its own, and so is not equal to B's string `"1.50"`; A's Task sees `1.5` and B's `1.50`. |
 
 #### External resolution (§3.2.1)
 
@@ -825,7 +826,7 @@ here (the constraints 5 and 6 row is V19 and V45).
 | V50 | `exclusiveGroup` is an `<Identifier>`, not on `stepEnvironments`, and not on an `ALWAYS` Environment (§4 item 7). Listed after V49; in the RFC table it follows V3 | Template validation | ET-48, ET-49, JT-187, JT-188; undetermined before job creation: JT-189 |
 | V51 | Of the Environments a Step's Sessions would enter that share an `exclusiveGroup`, only the first in the Job's Environment order whose `enableIf` is not `false` for the Step is entered; the others are superseded and disabled (§4 item 7, §3.2.2). Listed after V50; in the RFC table it follows V50 | Job creation, per Step | JB-148–JB-154 |
 | V52 | An Environment from a document that does not list `ENV_PARAMS` behaves as `activation: ALWAYS` with no `enableIf`: every Step's Sessions enter it, and a disabled `environment:` entry that names it has no effect and is not an error (§4 item 4, §3.2 item 3.2). Listed after V51; in the RFC table it follows V43 | Job creation; before then by a validator given the Environment Templates | JB-169–JB-171, JB-173; enabled entries: JB-19, JB-20, JB-172; the `BY_DEFAULT` contrast: JB-140, JB-174 |
-| V53 | Two effective values are equal only when they have the same type and string form (a FLOAT as written, a STRING by code points, a RANGE_EXPR in canonical form, lists element by element), and a Session runs a Step's Tasks only when it entered each of the Step's Environments with values equal to the Step's (§3.2.2). Listed after V52; in the RFC table it is the last row | Run time, as a Session takes a Step's Tasks | JB-175, JB-177, JB-179, JB-181; equal values: JB-10, JB-176, JB-178, JB-180; one Environment per Step's values: JB-85 |
+| V53 | Two effective values are equal only when they have the same type and string form (a FLOAT as written, a STRING by code points, a RANGE_EXPR in canonical form, lists element by element), and a Session runs a Step's Tasks only when it entered each of the Step's Environments with values equal to the Step's (§3.2.2). Listed after V52; in the RFC table it is the last row | Run time, as a Session takes a Step's Tasks | JB-175, JB-177, JB-179, JB-181, JB-182; equal values: JB-10, JB-176, JB-178, JB-180; one Environment per Step's values: JB-85 |
 
 The rule that a Session runs Tasks of a Step only when its Environments and values match (§3.2.2) is V53. Whether two
 Steps with equal values share a Session is not observable as a requirement (item 3 of
@@ -880,7 +881,7 @@ These rules, or parts of rules, have no planned test with a definite expected ou
    same value (JB-10, JB-176, JB-178, JB-180). That a Step never runs Tasks under an Environment entered with other
    values is a requirement. An implementation may meet it by exiting and entering the Environment again within one
    Session or by starting a new Session, and the lines each Task and each `onEnter` prints are the same either way,
-   so JB-175, JB-177, JB-179, and JB-181 test it. How many times an Environment is entered is not checked.
+   so JB-175, JB-177, JB-179, JB-181, and JB-182 test it. How many times an Environment is entered is not checked.
 4. **Placement and reservation by combined host requirements.** That a Session is placed only on a host satisfying the
    combined set, that `amounts` are reserved for the Session, and that amounts "do not add" (one GPU, not two) are
    scheduler behaviors with no output in `openjd run`. Only conflict and resolution rejection (JB-65–JB-69, JB-73,

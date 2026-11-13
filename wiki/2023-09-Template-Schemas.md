@@ -1210,7 +1210,9 @@ Environment cannot tell them apart. Values are compared as resolved when the Job
   ([Expression Language §1.3.4](2026-02-Expression-Language#134-float-value-pass-through), [§7.5](#75-numeric-strings)).
   So `"3.10"` and `"3.1"` are not equal, although they are the same number and the Expression Language's
   `3.10 == 3.1` is `true`, while `"3.10"` and `" 3.10 "` are equal. A FLOAT computed by an expression is written in the
-  shortest form that gives back its number. This applies to each element of a LIST[FLOAT].
+  shortest form that gives back its number, and so is a FLOAT given as a YAML or JSON number rather than a string,
+  since a number has no text of its own: the number `1.50` is written `1.5`, so it equals `"1.5"` and not `"1.50"`.
+  This applies to each element of a LIST[FLOAT].
 * A STRING is compared by its sequence of Unicode code points, with no normalization. `"é"` written as the one code
   point U+00E9 and as `e` followed by U+0301 are not equal.
 * A PATH value is compared by its unmapped string, as given
