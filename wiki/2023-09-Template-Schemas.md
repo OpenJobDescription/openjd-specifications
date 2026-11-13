@@ -1198,12 +1198,13 @@ rules apply:
 6. An Environment whose *activation* is `ALWAYS` cannot be disabled (see [&lt;Environment&gt;](#4-environment)
    *activation*).
 
-Two effective values are *equal* when they have the same type and the same string form. A value's *string form* is
-the text that `{{Env.RawParam.<name>}}` gives it in the Environment, so two values are equal exactly when the
-Environment cannot tell them apart. Values are compared as resolved when the Job is created, before any path mapping:
+Two effective values are *equal* when they have the same type and, for a value that is not a list, the same *string
+form*: the text that `{{Env.RawParam.<name>}}` gives it in the Environment. Two lists are equal when they have the same
+number of elements and equal elements in the same order. So two values are equal exactly when the Environment cannot
+tell them apart. Values are compared as resolved when the Job is created, before any path mapping:
 
 * An INT or a BOOL has one string form for each value, so how it was written does not matter. An INT supplied as `1`
-  by one Step and as `"1"`, `" 1 "`, or `"01"` by another resolves to the INT 1 for both, so the values are equal. A
+  by one Step and as `"1"` or `" 1 "` by another resolves to the INT 1 for both, so the values are equal. A
   BOOL supplied as `true` and as `"yes"` is `true` for both. This applies to each integer of a LIST[INT] or
   LIST[LIST[INT]] and each element of a LIST[BOOL].
 * A FLOAT keeps the text it was written with, without the white space around it
@@ -1221,7 +1222,6 @@ Environment cannot tell them apart. Values are compared as resolved when the Job
   ([§4.5](#45-environmentparameterdefinition-extension-env_params) item 3). `/data/x` and `/data/./x` are not equal.
 * A RANGE_EXPR value's string form is its canonical form ([§3.4.1.1.1](#34111-intrangeexpr)), so two values are equal
   when they denote the same integers. `1-3` and `1,2,3` are equal.
-* Two lists are equal when they have the same number of elements and equal elements in the same order.
 
 A render management system can therefore compare values, or key Sessions on them, by each value's type together with
 its string form, and for a list the string forms of its elements in order. It needs no numeric comparison and no

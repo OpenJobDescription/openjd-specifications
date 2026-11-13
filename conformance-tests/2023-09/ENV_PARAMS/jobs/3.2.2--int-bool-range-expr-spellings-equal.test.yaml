@@ -1,5 +1,5 @@
 # RFC 0010 / Template Schemas §3.2.2 (equal values): an INT, a BOOL, and a RANGE_EXPR each have one string form for
-# each value, so how a Step writes them does not matter. Step A supplies "007", "yes", and "1,2,3", and Step B 7, true,
+# each value, so how a Step writes them does not matter. Step A supplies " 7 ", "yes", and "1,2,3", and Step B 7, true,
 # and "1-3": the values are equal, and both Steps' Tasks see 7, true, and the canonical form 1-3. Sharing the entered
 # Environment is permitted but not required, so only what every conforming run prints is checked.
 template:
@@ -27,7 +27,7 @@ template:
     dependencies:
     - environment: Render
       parameters:
-        Threads: "007"
+        Threads: " 7 "
         Denoise: "yes"
         Frames: "1,2,3"
     script:
