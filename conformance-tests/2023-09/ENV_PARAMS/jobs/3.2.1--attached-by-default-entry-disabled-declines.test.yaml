@@ -1,4 +1,4 @@
-# RFC 0010 / Template Schemas §3.2 item 3.2 and §3.2.1: a disabled entry's name is still resolved against the attached
+# RFC 0010 / Template Schemas §3.2 *enableIf* and §3.2.1: a disabled entry's name is still resolved against the attached
 # Environments, and for an attached BY_DEFAULT Environment it declines it. Conda omits activation, so it is
 # BY_DEFAULT. Step A's entry for Conda has enableIf "'Docker' in Job.EnvNames", which is false, so A's Sessions do
 # not enter Conda, although every Session would otherwise enter it with its default.

@@ -1,4 +1,4 @@
-# RFC 0010 / Template Schemas §3.2 item 3.2: Step A's entry for Conda has an undeclared key and a value outside
+# RFC 0010 / Template Schemas §3.2 *enableIf*: Step A's entry for Conda has an undeclared key and a value outside
 # allowedValues, and an enableIf that resolves to false when the Job is created. A disabled entry's parameters are not
 # checked, so the Job runs; A declines the BY_DEFAULT Conda, so its Sessions do not enter it.
 template:

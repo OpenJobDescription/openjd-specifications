@@ -1,0 +1,35 @@
+# Template Schemas §4.5 item 5 (RFC 0010): each element of a LIST[STRING] value is at most 1024 characters.
+# An element that resolves to 1200 characters is rejected at job creation.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ListElementOverLimit
+  parameterDefinitions:
+  - name: Half
+    type: STRING
+    default: "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+  - name: F
+    type: BOOL
+    default: false
+  jobEnvironments:
+  - name: E
+    envParameterDefinitions:
+    - name: V
+      type: LIST[STRING]
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, E, "VLEN={{ len(Env.Param.V) }}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: E
+      parameters:
+        V: "{{ [Param.Half + Param.Half] }}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]

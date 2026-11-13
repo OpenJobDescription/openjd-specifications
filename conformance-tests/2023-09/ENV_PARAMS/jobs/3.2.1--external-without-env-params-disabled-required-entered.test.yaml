@@ -1,4 +1,4 @@
-# RFC 0010 / Template Schemas §4 item 4 (activation), §3.2 item 3.2: as JB-169 with required: true and no
+# RFC 0010 / Template Schemas §4 item 4 (activation), §3.2 *enableIf*: as JB-169 with required: true and no
 # parameters. A disabled entry naming an Environment from a document that does not list ENV_PARAMS has no effect,
 # whatever required says, so it is not the error it would be for an attached ALWAYS Environment (JB-141), and the
 # Step's Session enters Lic.

@@ -1,4 +1,4 @@
-# Template Schemas §3.2 item 3.2 (RFC 0010): enableIf has the same available scopes as a parameters value,
+# Template Schemas §3.2 *enableIf* (RFC 0010): enableIf has the same available scopes as a parameters value,
 # which exclude Task.*, so an enableIf reading Task.Param.Frame is rejected.
 specificationVersion: jobtemplate-2023-09
 extensions:

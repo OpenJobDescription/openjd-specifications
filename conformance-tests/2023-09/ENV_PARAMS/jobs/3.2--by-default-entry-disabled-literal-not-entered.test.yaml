@@ -1,4 +1,4 @@
-# RFC 0010 / Template Schemas §3.2 item 3.2: a disabled entry for a BY_DEFAULT Job Environment declines it. Step A's
+# RFC 0010 / Template Schemas §3.2 *enableIf*: a disabled entry for a BY_DEFAULT Job Environment declines it. Step A's
 # entry for Lic has enableIf: false, so A's Sessions do not enter Lic, neither with A's value nor with the default.
 # Before ENV_PARAMS changed this, a disabled entry was as if absent and A entered Lic with its default.
 template:

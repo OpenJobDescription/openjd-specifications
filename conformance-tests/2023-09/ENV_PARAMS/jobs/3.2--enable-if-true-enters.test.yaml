@@ -1,4 +1,4 @@
-# RFC 0010 / Template Schemas §3.2 item 3.2: an entry whose enableIf resolves to
+# RFC 0010 / Template Schemas §3.2 *enableIf*: an entry whose enableIf resolves to
 # true at job creation is in effect, so its ON_REQUEST Environment is
 # entered with the entry's value.
 template:

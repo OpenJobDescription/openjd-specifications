@@ -1,0 +1,51 @@
+# Template Schemas §3.2 item 3.1 (*required*), §4 item 7 (RFC 0010): Conda (BY_DEFAULT) and Docker (ON_REQUEST)
+# share an exclusiveGroup and Conda is attached first. A Step's entry for Docker has the default required: true. Conda
+# supersedes Docker for the Step, which is not an error: required concerns only whether the name resolves. The Step
+# runs in Conda, and Docker is not entered.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: RequiredEntrySuperseded
+  steps:
+  - name: A
+    dependencies:
+    - environment: Docker
+      parameters:
+        Image: ubuntu
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    exclusiveGroup: SoftwareProvider
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda]
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Docker
+    activation: ON_REQUEST
+    exclusiveGroup: SoftwareProvider
+    envParameterDefinitions:
+    - name: Image
+      type: STRING
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Docker, "Image={{Env.Param.Image}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda
+  - TASK A
+  forbidden:
+  - ENTER Docker

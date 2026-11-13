@@ -1,4 +1,4 @@
-# Template Schemas §3.2 item 3.2 (RFC 0010): no Step can leave an ALWAYS Environment out, so a Step's disabled entry
+# Template Schemas §3.2 *enableIf* (RFC 0010): no Step can leave an ALWAYS Environment out, so a Step's disabled entry
 # for one is an error. Render's entry for Lic has enableIf: false, a literal, and names a jobEnvironments entry, so
 # the error is known at template validation (§7.6 rule 5). Lic's parameter has a default, so constraint 7 is not
 # what rejects it.

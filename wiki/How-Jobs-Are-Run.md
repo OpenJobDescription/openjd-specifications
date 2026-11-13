@@ -154,7 +154,8 @@ templates. So before anything runs, the render management system knows which **E
 [§4](2023-09-Template-Schemas#4-environment) give the exact rules, including when a submission is rejected.
 
 When a **Session** enters an **Environment**, it keeps the same parameter values until it exits that **Environment**.
-The **Environment**'s `onEnter`, every Task run while it is entered, and its `onExit` all see the same values. This
+The **Environment**'s `onEnter`, its `onExit`, and what it provides to every Task run while it is entered, such as its
+`variables` and wrap hooks, all use the same values. A Task's own script still cannot read them. This
 adds a condition to sharing a **Session** between Steps. A **Session** can run Tasks of a Step only when the
 **Environments** it has entered, and not yet exited, are exactly the ones that Step's **Sessions** enter, and the Step's
 values for each of them are equal to the values the **Session** entered it with

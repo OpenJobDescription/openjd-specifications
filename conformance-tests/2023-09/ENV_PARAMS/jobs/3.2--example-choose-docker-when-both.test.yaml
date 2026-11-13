@@ -1,4 +1,4 @@
-# Template Schemas §3.2 item 3.2, §7.3.1 Job.EnvNames (RFC 0010): an entry's enableIf may read Job.EnvNames. With
+# Template Schemas §3.2 *enableIf*, §7.3.1 Job.EnvNames (RFC 0010): an entry's enableIf may read Job.EnvNames. With
 # Conda and Docker both attached as ON_REQUEST, the Conda entry's enableIf "'Docker' not in Job.EnvNames" is false,
 # so the Step enters Docker only.
 template:

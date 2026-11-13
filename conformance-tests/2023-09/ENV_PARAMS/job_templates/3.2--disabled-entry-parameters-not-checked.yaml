@@ -1,4 +1,4 @@
-# Template Schemas §3.2 item 3.2 (RFC 0010): a disabled entry's parameters are not checked. Render's entry for Conda
+# Template Schemas §3.2 *enableIf* (RFC 0010): a disabled entry's parameters are not checked. Render's entry for Conda
 # has enableIf: false, a key Conda does not declare, and a value outside allowedValues. Neither is an error.
 specificationVersion: jobtemplate-2023-09
 extensions:

@@ -1,0 +1,130 @@
+# Template Schemas §3.3.3 (RFC 0010): an implementation may reject a Step whose combined host requirements name more
+# capabilities than a limit it documents, which must be at least 50. A Step with 30 attribute requirements that enters
+# a Job Environment with 20 others has 50 in its combined requirements, which every implementation accepts.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: CombinedFifty
+  jobEnvironments:
+  - name: Hw
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.e01
+        anyOf: [v]
+      - name: conformance:attr.e02
+        anyOf: [v]
+      - name: conformance:attr.e03
+        anyOf: [v]
+      - name: conformance:attr.e04
+        anyOf: [v]
+      - name: conformance:attr.e05
+        anyOf: [v]
+      - name: conformance:attr.e06
+        anyOf: [v]
+      - name: conformance:attr.e07
+        anyOf: [v]
+      - name: conformance:attr.e08
+        anyOf: [v]
+      - name: conformance:attr.e09
+        anyOf: [v]
+      - name: conformance:attr.e10
+        anyOf: [v]
+      - name: conformance:attr.e11
+        anyOf: [v]
+      - name: conformance:attr.e12
+        anyOf: [v]
+      - name: conformance:attr.e13
+        anyOf: [v]
+      - name: conformance:attr.e14
+        anyOf: [v]
+      - name: conformance:attr.e15
+        anyOf: [v]
+      - name: conformance:attr.e16
+        anyOf: [v]
+      - name: conformance:attr.e17
+        anyOf: [v]
+      - name: conformance:attr.e18
+        anyOf: [v]
+      - name: conformance:attr.e19
+        anyOf: [v]
+      - name: conformance:attr.e20
+        anyOf: [v]
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Hw]
+  steps:
+  - name: A
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.s01
+        anyOf: [v]
+      - name: conformance:attr.s02
+        anyOf: [v]
+      - name: conformance:attr.s03
+        anyOf: [v]
+      - name: conformance:attr.s04
+        anyOf: [v]
+      - name: conformance:attr.s05
+        anyOf: [v]
+      - name: conformance:attr.s06
+        anyOf: [v]
+      - name: conformance:attr.s07
+        anyOf: [v]
+      - name: conformance:attr.s08
+        anyOf: [v]
+      - name: conformance:attr.s09
+        anyOf: [v]
+      - name: conformance:attr.s10
+        anyOf: [v]
+      - name: conformance:attr.s11
+        anyOf: [v]
+      - name: conformance:attr.s12
+        anyOf: [v]
+      - name: conformance:attr.s13
+        anyOf: [v]
+      - name: conformance:attr.s14
+        anyOf: [v]
+      - name: conformance:attr.s15
+        anyOf: [v]
+      - name: conformance:attr.s16
+        anyOf: [v]
+      - name: conformance:attr.s17
+        anyOf: [v]
+      - name: conformance:attr.s18
+        anyOf: [v]
+      - name: conformance:attr.s19
+        anyOf: [v]
+      - name: conformance:attr.s20
+        anyOf: [v]
+      - name: conformance:attr.s21
+        anyOf: [v]
+      - name: conformance:attr.s22
+        anyOf: [v]
+      - name: conformance:attr.s23
+        anyOf: [v]
+      - name: conformance:attr.s24
+        anyOf: [v]
+      - name: conformance:attr.s25
+        anyOf: [v]
+      - name: conformance:attr.s26
+        anyOf: [v]
+      - name: conformance:attr.s27
+        anyOf: [v]
+      - name: conformance:attr.s28
+        anyOf: [v]
+      - name: conformance:attr.s29
+        anyOf: [v]
+      - name: conformance:attr.s30
+        anyOf: [v]
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Hw
+  - TASK A

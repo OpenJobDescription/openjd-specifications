@@ -1,4 +1,4 @@
-# RFC 0010 / Template Schemas §3.3.3 and §3.2 item 3.2: a Step that declines a BY_DEFAULT Environment with a disabled
+# RFC 0010 / Template Schemas §3.3.3 and §3.2 *enableIf*: a Step that declines a BY_DEFAULT Environment with a disabled
 # entry gets none of its requirements. Gpu's anyOf conflicts with Step A's own, and A's only entry for Gpu has an
 # enableIf that resolves to false, so A declines Gpu, there is no conflict, and the Job runs without entering Gpu.
 template:

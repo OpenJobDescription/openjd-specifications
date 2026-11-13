@@ -1,4 +1,4 @@
-# Template Schemas §3.2 item 3.2 (RFC 0010): an entry whose enableIf reads Job.EnvNames. With only Conda attached,
+# Template Schemas §3.2 *enableIf* (RFC 0010): an entry whose enableIf reads Job.EnvNames. With only Conda attached,
 # the Conda entry is enabled and its Session enters Conda with colmap=3.11; the required: false Docker entry is
 # ignored.
 template:

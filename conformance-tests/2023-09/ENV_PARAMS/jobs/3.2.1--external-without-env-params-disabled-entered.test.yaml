@@ -1,4 +1,4 @@
-# RFC 0010 / Template Schemas §4 item 4 (activation), §3.2 item 3.2: an attached Environment from a document that
+# RFC 0010 / Template Schemas §4 item 4 (activation), §3.2 *enableIf*: an attached Environment from a document that
 # does not list ENV_PARAMS behaves as ALWAYS, so the JB-19 entry with enableIf: false has no effect. It does not
 # decline the Environment and is not an error: the Step's Session enters Conda, configured by its Job Parameter.
 template:

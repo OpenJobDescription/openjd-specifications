@@ -1,4 +1,4 @@
-# RFC 0010 / Template Schemas §3.2 item 3.2 and §3.2.1: Step A's entry for Lic has the literal enableIf: false. Lic is
+# RFC 0010 / Template Schemas §3.2 *enableIf* and §3.2.1: Step A's entry for Lic has the literal enableIf: false. Lic is
 # not a jobEnvironments entry, so template validation cannot know its activation; when the Job is created the name
 # resolves to an attached ALWAYS Environment, which no Step can leave out, so the submission is rejected, naming A
 # and Lic. Lic's parameter has a default, so constraint 7 is not what rejects it.

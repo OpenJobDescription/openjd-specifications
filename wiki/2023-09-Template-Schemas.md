@@ -591,7 +591,9 @@ both must satisfy them. The strings are the value as written (the string submitt
 although its canonical form `1-3` fits. With `minLength: 4`, the value `1-3:2` is rejected because its canonical form
 `1,3` is too short. In any other document, they are checked against the value as written. When a Job Parameter's
 definitions in several templates are merged ([§1.2.1](#121-merging-environment-template-parameter-definitions)), each
-definition's *minLength* and *maxLength* are checked under the rule of the document that contains it.
+definition's *minLength* and *maxLength* are checked under the rule of the document that contains it. So adding
+`ENV_PARAMS` to a document changes how the *minLength* and *maxLength* of that document's existing RANGE_EXPR Job
+Parameters are checked, and a value that the document accepted before can be rejected after.
 
 The value of a Job Parameter of this type is referenced in format strings as:
 
@@ -946,7 +948,8 @@ Where:
    See: [&lt;StepDependency&gt;](#32-stepdependency)
     * Minimum number of elements: If provided, then this list must contain at least one element.
     * Maximum number of elements: There is no maximum defined, though implementations may choose to constrain the number of
-    dependencies.
+    dependencies. With the `ENV_PARAMS` extension, an implementation that constrains it must accept a Step with at
+    least 50 *environment* entries, besides its entries that name Steps.
 5. *stepEnvironments* — An ordered list of the environments that are required to run Tasks in this Step.
   These are entered in the order provided at the start of every Session for Tasks in the Step, and exited in the reverse
   order at the end of those Sessions. With the `ENV_PARAMS` extension, one whose *enableIf* is `false` for the Step is
@@ -1015,9 +1018,9 @@ Where:
    Template's *jobEnvironments* with that `name`, if there is one. Otherwise it resolves to an *external Environment*:
    the `environment` of an Environment Template that the scheduler attaches to the submission, matched by `name` when
    the Job is created (see [Resolving External Environments](#321-resolving-external-environments)). The name of a
-   disabled entry resolves in the same way. An enabled entry declares that the Step's Sessions need the Environment,
-   entered with the entry's values. The Environment's *activation*, *enableIf*, and *exclusiveGroup* decide whether the
-   Step's Sessions enter it (see [&lt;Environment&gt;](#4-environment)). The entry is met when the Step's Sessions enter
+   disabled entry resolves in the same way. An enabled entry asks for the Environment, entered with the entry's values.
+   The Environment's *activation*, *enableIf*, and *exclusiveGroup* decide whether the Step's Sessions enter it (see
+   [&lt;Environment&gt;](#4-environment)). The entry is met when the Step's Sessions enter
    the Environment, before they run the Step's Tasks, so it does not delay scheduling them. It does not change the
    position of the Environment in the order a Session enters its Environments. Available with the `ENV_PARAMS`
    extension. The other fields of this form are:
@@ -1025,7 +1028,11 @@ Where:
        Environment when the Job is created, the entry has no effect, and the Step's Sessions run without that
        Environment. When `false` and the name of an enabled entry resolves to an attached Environment that declares no
        *envParameterDefinitions*, the entry's *parameters* are ignored (see
-       [§3.2.1](#321-resolving-external-environments) item 1).
+       [§3.2.1](#321-resolving-external-environments) item 1). Otherwise *required* concerns only whether the name
+       resolves to an Environment. An enabled entry with `required: true` whose Environment the Step's Sessions do not
+       enter, because the Environment's own *enableIf* is `false` for the Step or because an earlier Environment of its
+       *exclusiveGroup* supersedes it, is not an error, and the Step runs without it. Implementations may warn when this
+       happens.
     2. *enableIf* — Whether this entry is in effect. An [expression field](#76-expression-fields) of type `bool`. The
        values it may reference are given in the [`ENV_PARAMS` Scope Summary](#732-env_params-scope-summary). It is
        evaluated when the Job is created, before the entry's name is resolved. A `null` result is an error. If omitted,
@@ -1077,8 +1084,9 @@ Constraints:
    Environment that declares none, including one from a document that does not list `ENV_PARAMS`, accepts an entry with
    no *parameters* and rejects one with any, except that it ignores the *parameters* of an entry with `required: false`
    (see [§3.2.1](#321-resolving-external-environments) item 1).
-6. Every value must be valid for the parameter it supplies: of its type, and within its `allowedValues`, `minLength`,
-   `maxLength`, `minValue`, `maxValue`, and `item` constraints.
+6. Every value must be valid for the parameter it supplies: of its type, within its `allowedValues`, `minLength`,
+   `maxLength`, `minValue`, `maxValue`, and `item` constraints, and within the length limit of
+   [§4.5](#45-environmentparameterdefinition-extension-env_params) item 5.
 7. For every Environment that *applies* to a Step, the Step must supply every parameter that has no `default`. An
    Environment applies to a Step when its *activation* is `ALWAYS`, when it is `BY_DEFAULT` and the Step does not
    decline it with a disabled entry, and when it is `ON_REQUEST` and an enabled entry of the Step requests it. An
@@ -1092,7 +1100,8 @@ Constraints:
 
 Constraints 1–4, 8, and 9 are checked at template validation. Constraint 3 applies to entries as written, enabled or
 not, so two entries for one Environment with complementary *enableIf* conditions are an error. Constraints 5 and 6
-apply only to an enabled entry. They are checked:
+apply only to an enabled entry, and constraint 6 only where the Environment is not disabled for the Step
+([§3.2.2](#322-effective-environment-parameter-values) item 3). They are checked:
 
 1. At template validation, for an entry that names a *jobEnvironments* entry and whose *enableIf* is absent or known
    there to be `true` ([§7.6](#76-expression-fields) rule 5). Constraint 6 is checked there against literal values
@@ -1113,7 +1122,7 @@ whether an entry is enabled or an Environment is disabled is made as §7.6 rule 
 when the Job is created.
 
 For an entry that names no *jobEnvironments* entry, template validation can check only constraints 1–4, 8, and 9, and
-the type of a literal value where its form fixes one (a list is not a STRING). A validator that is given the
+that each value has one of the forms of an `<EnvironmentParameterValue>`. A validator that is given the
 Environment Templates a scheduler will attach, as `openjd run` accepts them, can resolve the entry as
 [§3.2.1](#321-resolving-external-environments) describes. It can then check constraints 5–7 before the Job is created.
 
@@ -1127,14 +1136,16 @@ When a Job is created from a Job Template and zero or more Environment Templates
 are resolved too (see *enableIf* in [&lt;StepDependency&gt;](#32-stepdependency)). The rules are:
 
 1. If exactly one attached Environment Template's `environment` has the entry's name, the entry refers to it. For an
-   enabled entry, constraints 5 and 6 are checked against that Environment's *envParameterDefinitions*, with one
-   exception. If the Environment declares no *envParameterDefinitions*, such as one from an Environment Template that
-   does not list `ENV_PARAMS`, and the enabled entry has `required: false`, the entry's *parameters* are ignored: the
-   entry supplies no values, its values are not resolved, and constraints 5 and 6 do not apply to them. Each value must
-   still have one of the forms of an `<EnvironmentParameterValue>`, as for any entry, so a `null` or an object is an
-   error. Implementations should warn when they ignore an entry's *parameters*, naming the entry, the Environment, and
-   the ignored keys. The entry still refers to the Environment, and has every other effect of an entry, so it requests
-   an `ON_REQUEST` Environment. Otherwise constraints 5 and 6 apply as usual, whatever *required* says. In particular:
+   enabled entry, constraints 5 and 6 are checked against that Environment's *envParameterDefinitions*, constraint 6
+   only where the Environment is not disabled for the Step ([§3.2.2](#322-effective-environment-parameter-values) item
+   3), with one exception. If the Environment declares no *envParameterDefinitions*, such as one from an Environment
+   Template that does not list `ENV_PARAMS`, and the enabled entry has `required: false`, the entry's *parameters* are
+   ignored: the entry supplies no values, its values are not resolved, and constraints 5 and 6 do not apply to them.
+   Each value must still have one of the forms of an `<EnvironmentParameterValue>`, as for any entry, so a `null` or an
+   object is an error. Implementations should warn when they ignore an entry's *parameters*, naming the entry, the
+   Environment, and the ignored keys. The entry still refers to the Environment, and has every other effect of an entry,
+   so it requests an `ON_REQUEST` Environment. Otherwise constraints 5 and 6 apply as usual, whatever *required* says.
+   In particular:
     * If an enabled entry with `required: true` supplies parameters to an attached Environment that declares none, the
       submission must be rejected, naming the entry and the parameter.
     * If an enabled entry supplies a key that an attached Environment with *envParameterDefinitions* does not declare,
@@ -1179,6 +1190,12 @@ for `default`). The Environment's *hostRequirements*, if any, are resolved for t
 [Combined Host Requirements](#333-combined-host-requirements)). Path mapping rules are applied to PATH-typed effective
 values on the Worker Host, as they are to PATH Job Parameters.
 
+Effective values are fixed for the Step, so with the `TASK_CHUNKING` extension every chunk of the Step's Tasks runs in
+Environments entered with the same values, and chunking does not change which Sessions may run them. They are part of
+the Job, which a render management system stores and may show to anyone who can see the Job. The `REDACTED_ENV_VARS`
+extension redacts what an action prints after it sets a variable with `openjd_redacted_env`. It does not hide effective
+values, so an effective value is not a place for a secret.
+
 An Environment is *disabled* for a Step when its *enableIf* is `false` for the Step, or when it is superseded for the
 Step by an earlier Environment of its *exclusiveGroup* ([&lt;Environment&gt;](#4-environment) *exclusiveGroup*). These
 rules apply:
@@ -1211,6 +1228,11 @@ rules apply:
 6. An Environment whose *activation* is `ALWAYS` cannot be disabled (see [&lt;Environment&gt;](#4-environment)
    *activation*).
 
+Being disabled for a Step affects only which Sessions enter the Environment and the checks above. The Environment's
+other fields that are resolved when the Job is created, such as an action's *timeout*, do not read effective values.
+They are resolved and checked as they are without this extension, whether or not the Environment is disabled for any
+Step, so a *timeout* that resolves to `0` is an error even in an Environment that no Session enters.
+
 Two effective values are *equal* when they have the same type and, for a value that is not a list, the same *string
 form*: the text that `{{Env.RawParam.<name>}}` gives it in the Environment. Two lists are equal when they have the same
 number of elements and equal elements in the same order. So two values are equal exactly when the Environment cannot
@@ -1241,10 +1263,10 @@ canonical form of a number.
 
 A **Session** must not run a Task of a Step unless the Environments it has entered, and not yet exited, are exactly the
 Environments that Step's Sessions enter, and each of the Step's effective values for each of them is equal to the value
-the Session entered it with. The Environment's `onEnter`, every Task run while it is entered, and its `onExit` then all
-see the same values. To run Tasks of a Step whose Environments or values differ, a Session exits Environments, in the
-reverse of the order it entered them, and enters others, or enters the same Environment again with that Step's values;
-or the render management system runs the Step in another Session (see
+the Session entered it with. The Environment's `onEnter` and `onExit`, and its *variables* and wrap hooks for every Task
+run while it is entered, then all use the same values. To run Tasks of a Step whose Environments or values differ, a
+Session exits Environments, in the reverse of the order it entered them, and enters others, or enters the same
+Environment again with that Step's values; or the render management system runs the Step in another Session (see
 [How Jobs Are Run](How-Jobs-Are-Run#environment-parameters)).
 
 ### 3.3. `<HostRequirements>`
@@ -1277,8 +1299,9 @@ Where:
 With the constraints:
 
 1. If this object is provided in a Job Template, then at least one of the *amounts* or *attributes* properties must be
-   defined. With the `ENV_PARAMS` extension, this constraint does not apply: on a Step or an Environment, an empty
-   object, or one whose *amounts* and *attributes* are empty lists, is valid and means no requirements.
+   defined. In a document that lists the `ENV_PARAMS` extension, this constraint does not apply: on a Step or an
+   Environment, an empty object, or one whose *amounts* and *attributes* are empty lists, is valid and means no
+   requirements.
 2. The sum of the lengths of the *amounts* and *attributes* arrays must not exceed 50 elements.
 3. No two elements in the *amounts* array may have the same value for the *name* property, after the *name* format
    strings have been resolved.
@@ -1289,7 +1312,9 @@ With the `ENV_PARAMS` extension, an Environment may also have *hostRequirements*
 [Combined Host Requirements](#333-combined-host-requirements)).
 
 With the `ENV_PARAMS` extension, a requirement that resolves to nothing when the Job is created is discarded. This
-applies to the *hostRequirements* of a Step and of an Environment alike:
+applies to the *hostRequirements* of a Step and of an Environment alike, in a document that lists `ENV_PARAMS`. A
+Step's own requirements in a Job Template that does not list it keep the base rules, even when an Environment its
+Sessions enter comes from a document that does:
 
 1. An [&lt;AmountRequirement&gt;](#331-amountrequirement) whose *min* and *max* both resolve to `null` is discarded.
    Both are then omitted ([Expression Language
@@ -1496,8 +1521,10 @@ sources, not on the order in which they are combined:
 
 The constraints of [§3.3](#33-hostrequirements) on list length and on duplicate names apply to each source's
 *hostRequirements* separately, not to the combined set. Combining them adds no error other than the conflicts in items 1
-and 2.1. Requirements that resolve to nothing are discarded from each source before the sources are combined (see
-[§3.3](#33-hostrequirements)).
+and 2.1, with one exception: an implementation may reject a Job in which a Step's combined requirements, in the form
+above, name more capabilities than a limit that the implementation documents. That limit must be at least 50, the number
+a Step's own *hostRequirements* may have. Requirements that resolve to nothing are discarded from each source before the
+sources are combined (see [§3.3](#33-hostrequirements)).
 
 An Environment's *hostRequirements* apply only to the Sessions that enter it. A Step gets none of an Environment's
 requirements when its Sessions do not enter the Environment, for any of the reasons that
@@ -2022,7 +2049,8 @@ Where:
    See: [&lt;EnvironmentParameterDefinition&gt;](#45-environmentparameterdefinition-extension-env_params). Available
    with the `ENV_PARAMS` extension. Constraints:
     1. Minimum number of elements: If provided, then this list must contain at least one element.
-    2. Maximum number of elements: 50.
+    2. Maximum number of elements: 50, also with the `FEATURE_BUNDLE_1` extension, which raises the limit on
+       *parameterDefinitions* but not this one.
     3. No two definitions in this list may have the same value for the `name` property. A name may coincide with a Job
        Parameter name or with a parameter of another Environment; they do not conflict.
 4. *activation* — Which Sessions of the Job enter this Environment. `<EnvironmentActivation>` is one of:
@@ -2335,6 +2363,11 @@ Job runs, and does not declare the files that the Job reads or writes.
    [§2.10](#210-jobrangeexprparameterdefinition-extension-expr)). The value as written is the literal's string, a format
    string's resolved string, or the string result of a single `{{ }}` expression. A single expression whose result is
    a `range_expr`, such as `{{Param.Frames}}`, has only its canonical form.
+5. *Value length* — A STRING or PATH effective value, and each element of a LIST[STRING] or LIST[PATH] effective
+   value, must be at most 1024 characters, the maximum length of a
+   [&lt;JobParameterStringValue&gt;](#25-jobparameterstringvalue). This holds whether the Step supplies the value or
+   it comes from the `default`, and whether the value is a literal or a resolved format string. It is one of the
+   parameter's constraints (item 2), so it is not checked where the Environment is disabled for the Step.
 
 > **NOTE:** Take path values from PATH Job Parameters, through `RawParam.<name>`, so that they have the path format the
 > Job's path mapping rules expect. A literal path is portable only across submitters that use its path format. A
@@ -2708,7 +2741,7 @@ different sets of values are known, which determines which format strings can be
 
 | Stage | When | Known Values | Unknown Values | What Happens |
 |-------|------|-------------|----------------|--------------|
-| **Template validation** | `openjd check` or equivalent | Literal values, parameter type declarations | `Param.*`, `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*`, `Env.Param.*`, `Job.EnvNames` | Syntax validation, structural checks. With the `EXPR` extension: type checking of expressions using declared parameter types. `Job.Name` and `Step.Name` are available as `unresolved[string]`. With the `ENV_PARAMS` extension: `Env.Param.*` is type-checked against the Environment's *envParameterDefinitions* and `Job.EnvNames` is `unresolved[list[string]]`; literal Environment parameter `default`s, and literal `environment:` values for Job Environments in entries whose *enableIf* is absent or known to be `true` ([§7.6](#76-expression-fields) rule 5), are checked against their definitions. |
+| **Template validation** | `openjd check` or equivalent | Literal values, parameter type declarations | `Param.*`, `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*`, `Env.Param.*`, `Job.EnvNames` | Syntax validation, structural checks. With the `EXPR` extension: type checking of expressions using declared parameter types. `Job.Name` and `Step.Name` are available as `unresolved[string]`. With the `ENV_PARAMS` extension: `Env.Param.*` is type-checked against the Environment's *envParameterDefinitions* and `Job.EnvNames` is `unresolved[list[string]]`; literal Environment parameter `default`s, and literal `environment:` values for Job Environments in entries whose *enableIf* is absent or known to be `true`, for an Environment known not to be disabled for the Step ([§7.6](#76-expression-fields) rule 5), are checked against their definitions. |
 | **Job creation** | Job submission with parameter values | `Param.*`, `RawParam.*`; with `ENV_PARAMS`, at the end of this stage, each Step's Environment parameter effective values | `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*` | Parameter values are bound. Format strings not annotated `@fmtstring[host]` are resolved (e.g., `name`, `parameterSpace` ranges). PATH and `LIST[PATH]` Job Parameter defaults must be relative and are joined with the job template directory (see [§2.2](#22-jobpathparameterdefinition)); relative PATH and `LIST[PATH]` parameter values are joined with the current working directory. With the `EXPR` extension: `let` bindings in `<StepTemplate>` are evaluated; expressions in TEMPLATE scope are fully evaluated; `Job.Name` and `Step.Name` are concrete. With the `ENV_PARAMS` extension, the steps of [§7.4.1](#741-job-creation-with-env_params) are taken. |
 | **Task execution** | On the worker host | All values: `Param.*`, `Task.Param.*`, `Session.*`, `Task.File.*`, `Env.File.*`, `Env.Param.*`, path mapping rules | *(none)* | Format strings annotated `@fmtstring[host]` are resolved. Path mapping rules are applied to PATH-type parameters, including PATH and LIST[PATH] Environment parameters (`ENV_PARAMS`). Embedded files are written. With the `EXPR` extension: `let` bindings in `<StepScript>` and `<EnvironmentScript>` are evaluated; all remaining expressions are fully evaluated. |
 
@@ -2724,7 +2757,12 @@ as possible. See the [Expression Language](2026-02-Expression-Language) specific
 
 #### 7.4.1. Job Creation with `ENV_PARAMS`
 
-With the `ENV_PARAMS` extension, Job creation takes these steps in order:
+When any document of a submission, the Job Template or an attached Environment Template, lists the `ENV_PARAMS`
+extension, Job creation takes these steps in order. A rule that the extension adds for the content of a document still
+applies only to a document that lists it ([§1.2](#12-environment-template) item 3): an Environment from a document that
+does not list it behaves as [&lt;Environment&gt;](#4-environment) *activation* says, and step 8 keeps the base rules for
+a Step's own requirements in a Job Template that does not list it. The steps fix when each check is made. When a
+submission has several errors, which of them an implementation reports, and in what order, is not specified.
 
 1. The Environment Templates attached to the Job are determined. `Job.EnvNames` is concrete before any TEMPLATE-scope
    expression of the Job, including a Step's `let` bindings, is evaluated.
@@ -2754,8 +2792,10 @@ With the `ENV_PARAMS` extension, Job creation takes these steps in order:
    as the `WRAP_ACTIONS` single-layer rule, are made for the Environments that remain in each Step's set (see
    [§3.2.2](#322-effective-environment-parameter-values)).
 8. Each Environment's *hostRequirements* are resolved with each entering Step's effective values. Requirements that
-   resolve to nothing are discarded from them and from the Step's own, and an *anyOf* or *allOf* that resolves to no
-   values is an error (see [§3.3](#33-hostrequirements)). They are then combined with the Step's own (see
+   resolve to nothing are discarded from them, and from the Step's own when the Job Template lists `ENV_PARAMS`, and an
+   *anyOf* or *allOf* that resolves to no values is an error (see [§3.3](#33-hostrequirements)). A Step's own
+   requirement that resolves to nothing in a Job Template that does not list `ENV_PARAMS` is an error, as in the base
+   rules. They are then combined with the Step's own (see
    [Combined Host Requirements](#333-combined-host-requirements)).
 
 Environment parameter PATH and LIST[PATH] values are used as given, never joined with any directory (see

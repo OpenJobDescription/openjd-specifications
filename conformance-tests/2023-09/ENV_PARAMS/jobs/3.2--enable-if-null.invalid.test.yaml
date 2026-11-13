@@ -1,4 +1,4 @@
-# RFC 0010 / Template Schemas §3.2 item 3.2 ("a null result is an error"): an
+# RFC 0010 / Template Schemas §3.2 *enableIf* ("a null result is an error"): an
 # enableIf of static type bool? that resolves to null at job creation is
 # rejected. §7.6 rule 2 accepts bool? for a bool expression field and makes
 # null an error at evaluation (README ambiguity 13, resolved).

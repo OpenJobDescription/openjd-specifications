@@ -1,4 +1,4 @@
-# Template Schemas §3.2 item 3.2 and constraint 7, §3.2.2, and §4 item 6, with RFC 0008 (single-layer rule): two
+# Template Schemas §3.2 *enableIf* and constraint 7, §3.2.2, and §4 item 6, with RFC 0008 (single-layer rule): two
 # wrapping BY_DEFAULT Job Environments, each with a parameter without default, whose enableIf conditions are never true
 # together. With Runtime=a, A's entry for RuntimeB is disabled, so A declines RuntimeB: RuntimeB does not apply to A, so
 # constraint 7 does not require Image of it, its own enableIf is not evaluated for A, and A's Sessions do not enter it.

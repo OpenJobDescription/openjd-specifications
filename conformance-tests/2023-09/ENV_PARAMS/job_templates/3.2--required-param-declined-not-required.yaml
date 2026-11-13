@@ -1,4 +1,4 @@
-# Template Schemas §3.2 item 3.2 and constraint 7 (RFC 0010): Step A declines the BY_DEFAULT Job Environment E with an
+# Template Schemas §3.2 *enableIf* and constraint 7 (RFC 0010): Step A declines the BY_DEFAULT Job Environment E with an
 # entry whose enableIf is false, so E does not apply to A and A need not supply X, a parameter without default that E's
 # own enableIf reads. Step B supplies X. Valid.
 specificationVersion: jobtemplate-2023-09

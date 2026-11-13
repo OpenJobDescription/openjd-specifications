@@ -1,4 +1,4 @@
-# Template Schemas §3.2 item 3.2, constraint 9, and §7.6 (RFC 0010): with EXPR, enableIf is an expression field of
+# Template Schemas §3.2 *enableIf*, constraint 9, and §7.6 (RFC 0010): with EXPR, enableIf is an expression field of
 # type bool, here reading Job.EnvNames.
 specificationVersion: jobtemplate-2023-09
 extensions:

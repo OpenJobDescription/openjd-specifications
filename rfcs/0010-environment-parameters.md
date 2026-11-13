@@ -6,42 +6,72 @@
 * Accepted On: (pending)
 * Depends On:
   * RFC 0002, Model Extensions (https://github.com/OpenJobDescription/openjd-specifications/issues/57)
-  * RFC 0005, Expression Language (`EXPR`) (https://github.com/OpenJobDescription/openjd-specifications/pull/93), which
-    `ENV_PARAMS` requires
+  * RFC 0005, Expression Language (`EXPR`) (https://github.com/OpenJobDescription/openjd-specifications/issues/112),
+    which `ENV_PARAMS` requires
 * Related:
   * Discussion #198, the idea thread for this RFC
     (https://github.com/OpenJobDescription/openjd-specifications/discussions/198)
   * RFC 0008, Environment Wrap Actions (`WRAP_ACTIONS`)
-    (https://github.com/OpenJobDescription/openjd-specifications/pull/130)
-  * RFC 0009, Service (`SERVICE`) (draft), whose `service:` dependency form this RFC's `environment:` form follows, and
-    whose earlier drafts defined a `runScope` field that this RFC replaces with `activation`
-  * RFC 0011, Control Flow (`CONTROL_FLOW`) (draft), which defines `enableIf` on Steps and extends this RFC's `enableIf`
-    on Environments with what needs its later stages
+    (https://github.com/OpenJobDescription/openjd-specifications/issues/132)
+  * RFC 0009, Service (`SERVICE`) (draft), whose `service:` dependency form this RFC's `environment:` form follows. Its
+    earlier drafts defined a `runScope` field, which this RFC's `activation` supersedes in the RFC 0009 draft.
+  * RFC 0011, Control Flow (`CONTROL_FLOW`) (draft), which puts this RFC's *enableIf* field on Steps and loops, with the
+    same name, form, and meaning of `false`, and extends the Environment *enableIf* with what needs its later stages.
+    Its Step *enableIf* depends on this RFC's expression fields (Template Schemas §7.6) as well as its Environment
+    parts, so this RFC is to be accepted first (see
+    [Extensions specified after this one](#extensions-specified-after-this-one-non-normative)).
 
 ## Summary
 
-Consider a Job that uses different software together, like decoding a video and then processing each frame. Each Step
-consumes the output of the one before it, so the Steps belong in one Job. Open Job Description is structured to let
-external Environments, such as a Conda or Docker environment, provide software to Jobs, but currently this only works
-with Job Parameters that have one value for the whole Job. The Environment then provides the same software to every
-Step.
+A Job often needs different software in different Steps, such as ffmpeg to decode a video into frames and COLMAP to
+solve the camera path through them. Open Job Description lets external Environments, such as a Conda or Docker
+Environment that a scheduler attaches, provide software to Jobs, but today they take their configuration from Job
+Parameters, so every Step of a Job gets the same software. This RFC lets each Step configure the Environments that wrap
+it: an `<Environment>` declares parameters in `envParameterDefinitions` and reads them as `{{Env.Param.<name>}}`, and a
+Step supplies values in an `environment:` entry of its `dependencies`. An Environment can also say which Sessions enter
+it (`activation`), skip the Steps it has nothing to do for (`enableIf`), form a group with alternatives so that each
+Step uses the first one attached (`exclusiveGroup`), and state the hosts it needs (`hostRequirements`). One Job Template
+then gets per-Step software from whichever of these Environments a system provides, and runs unchanged where none is
+provided, while existing Environment Templates and Job Templates keep working.
 
-This RFC lets each Step configure the Environments that wrap it. An `<Environment>` declares the parameters a Step may
-set in `envParameterDefinitions` and reads them as `{{Env.Param.<name>}}`. A Step supplies values in an `environment:`
-entry of its `dependencies`, so the decoding Step and the processing Step can each ask the Conda Environment for their
-own packages.
+### Decisions for reviewers
 
-One Job Template can then get its software from whichever of these Environments a system provides, such as Conda on one
-and Docker on another, and run unchanged where none is provided. Where a system provides several, the Environments
-themselves decide which one each Step uses. Existing Environment Templates can adopt parameters without breaking the Job
-Templates that use them today.
+These are the choices that most need a reviewer's agreement. Each links its rationale.
 
-Not every Environment belongs in every Session. An Environment can choose whether every Session enters it or only the
-Sessions of Steps that ask for it, and can skip the Steps it has nothing to do for, such as a Step that asks Conda for
-no packages.
-
-An Environment can also say where it can run, so a Docker Environment places its Steps on Linux hosts, and on GPU hosts
-only for the Steps that ask for a GPU.
+1. **Parameters are declared on the Environment**, in `envParameterDefinitions`, read only inside it as `Env.Param.*`,
+   and never merged with Job Parameters ([Parameters declared on the
+   Environment](#parameters-declared-on-the-environment), [A `stepOverridable`
+   flag](#a-stepoverridable-flag-on-template-level-job-parameters)).
+2. **A Step supplies values in an `environment:` entry of `dependencies`**, not in a separate key ([The
+   `environment:` form of `<StepDependency>`](#the-environment-form-of-stepdependency), [A separate key for
+   Environment requests](#a-separate-key-for-environment-requests)).
+3. **Values are fixed per Step when the Job is created.** Steps share an entered Environment only when their values
+   have the same type and string form ([Values fixed per Step](#values-fixed-per-step), [Sessions that serve several
+   Steps](#sessions-that-serve-several-steps)).
+4. **`activation` is `ALWAYS`, `BY_DEFAULT`, or `ON_REQUEST`.** It defaults to `BY_DEFAULT` in a document that lists
+   `ENV_PARAMS`, and an Environment from a document that does not list it behaves as `ALWAYS`, so a Step can decline
+   only a `BY_DEFAULT` Environment ([`activation`](#activation), [Environments from documents without `ENV_PARAMS` are
+   `ALWAYS`](#environments-from-documents-without-env_params-are-always)).
+5. **`enableIf` on Environments and entries is an expression field**, written without `{{ }}`. RFC 0011 puts the same
+   field on Steps and loops ([The name `enableIf`](#the-name-enableif), [Expression fields rather than format
+   strings](#expression-fields-rather-than-format-strings)).
+6. **A Step must supply the required parameters of every Environment that applies to it**, whatever that Environment's
+   `enableIf` turns out to be, and the `enableIf` reads only concrete values ([Required parameters are
+   allowed](#required-parameters-are-allowed), [`enableIf` sees only concrete
+   values](#enableif-sees-only-concrete-values)).
+7. **`exclusiveGroup` gives precedence by the Job's Environment order**, across documents, so the order in which a
+   system attaches Environments decides which one a Step uses ([`exclusiveGroup`](#exclusivegroup)).
+8. **An Environment's `hostRequirements` combine with the Step's by conjunction**, and empty or resolved-empty
+   requirements are allowed ([`hostRequirements` on the Environment](#hostrequirements-on-the-environment), [Empty and
+   resolved-empty host requirements](#empty-and-resolved-empty-host-requirements)).
+9. **A `required: false` entry for an Environment that declares no parameters ignores its parameters**, and
+   implementations should warn ([Parameters for an Environment that declares none are
+   ignored](#parameters-for-an-environment-that-declares-none-are-ignored)).
+10. **`step:` and `Job.EnvNames` are part of this RFC** ([`step:` as a synonym of
+    `dependsOn:`](#step-as-a-synonym-of-dependson), [`Job.EnvNames`](#jobenvnames)).
+11. **`ENV_PARAMS` requires `EXPR`, and a few changes apply without the extension** ([`ENV_PARAMS` requires
+    `EXPR`](#env_params-requires-expr), [Changes that apply without the
+    extension](#changes-that-apply-without-the-extension)).
 
 ## Basic Examples
 
@@ -261,6 +291,17 @@ Session of the Job.
 
 [Prior Art](#prior-art) describes workflow systems that let each unit of work choose its own software environment.
 
+### How common these needs are
+
+Per-Step software is a standard feature of workflow systems. Every workflow system in [Prior Art](#prior-art) has it,
+while an OpenJD external Environment, such as Deadline Cloud's Conda queue environment, gives every Step of a Job the
+same software. Nextflow and Snakemake let each process or rule name its own Conda environment or container, Argo
+Workflows' container and script templates each name their own image, and NVIDIA OSMO requires an `image` on every task.
+The need is not specific to one company's way of working: any pipeline that chains applications has it. Users rarely ask
+for the feature in this form. The need tends to reach a render management system restated as something else, such as a
+request for one queue per application or for a larger shared environment, or users rule the system out for such
+pipelines without saying why.
+
 ### Why the values come from the Step
 
 A Session enters its Environments and then runs Tasks, which may come from one Step or from several whose Environments
@@ -271,16 +312,23 @@ do for them.
 
 This RFC is additive and gated by the `ENV_PARAMS` extension name declared under RFC 0002.
 
-- A document that uses any of the syntax listed in the first row of [Validation](#validation) MUST list `ENV_PARAMS` and
-  `EXPR` in its `extensions`, and a scheduler that does not implement `ENV_PARAMS` rejects it under RFC 0002. A document
+- A document that uses any of the syntax this RFC adds MUST list `ENV_PARAMS` and `EXPR` in its `extensions`, and a
+  scheduler that does not implement `ENV_PARAMS` rejects it under RFC 0002. That syntax is an Environment's
+  `envParameterDefinitions`, `activation`, `hostRequirements`, `enableIf`, or `exclusiveGroup`; an `environment:` or
+  `step:` entry; `Job.EnvNames`, `Env.Param.*`, or `Env.RawParam.*`; an `anyOf` or `allOf` written as one expression;
+  and a `hostRequirements` that is empty or has empty lists. A document
   that lists `ENV_PARAMS` without `EXPR` is rejected, and a document that lists neither keeps its current meaning.
   `step:` is a synonym for `dependsOn:`, which keeps its meaning and stays valid with or without `ENV_PARAMS`; the plan
   to remove `dependsOn:` applies to a future major version of the specification, not to `jobtemplate-2023-09`.
-- An extension applies only to the document that lists it. A Job Template that does not list `ENV_PARAMS` runs with an
-  Environment Template that does: every Environment parameter takes its default, which is how an Environment Template
-  author keeps existing Job Templates working while adding per-Step configuration. Such a Job Template cannot request
-  anything, so its Sessions never enter an attached `ON_REQUEST` Environment. An author who wants existing Job Templates
-  to keep getting an Environment leaves its `activation` at the default, `BY_DEFAULT`, or sets `ALWAYS`.
+- An extension applies only to the document that lists it. When any document of a submission lists `ENV_PARAMS`, Job
+  creation takes the steps of [§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params) for the
+  whole submission, and each rule the extension adds for a document's content applies only to the documents that list
+  it. For example, a Step's own host requirement that resolves to nothing is discarded only in a Job Template that lists
+  `ENV_PARAMS`. A Job Template that does not list `ENV_PARAMS` runs with an Environment Template that does: every
+  Environment parameter takes its default, which is how an Environment Template author keeps existing Job Templates
+  working while adding per-Step configuration. Such a Job Template cannot request anything, so its Sessions never enter
+  an attached `ON_REQUEST` Environment. An author who wants existing Job Templates to keep getting an Environment leaves
+  its `activation` at the default, `BY_DEFAULT`, or sets `ALWAYS`.
 - An Environment Template that does not list `ENV_PARAMS` runs with a Job Template that does. Its Environment behaves as
   one with `activation: ALWAYS` and no `enableIf`, so every Session enters it, and a disabled `environment:` entry that
   names it has no effect and is not an error (see [Environments from documents without `ENV_PARAMS` are
@@ -304,12 +352,13 @@ This RFC is additive and gated by the `ENV_PARAMS` extension name declared under
   say. A Job Template that lists `ENV_PARAMS` but no `environment:` entries, run with an Environment Template that
   declares parameters and keeps the default `activation`, also shares Sessions as today: every Step takes the same
   defaults, so every Step's values are equal.
-- Three changes state or correct rules of the base specification, and apply with or without the extension. The
-  definition of `<nonnegativefloatstring>` in §3.3.1 said "non-zero and positive", which contradicts its name and an
-  amount's `min` of 0, and now says "non-negative". §3.3.2.1 now states that an *allOf* written as a list for
-  `attr.worker.os.family` or `attr.worker.cpu.arch` has at most one element, which the base conformance suite already
-  tests. §1.1 item 7 now states that a Session enters the Environments attached from Environment Templates before the
-  Job Template's `jobEnvironments`, in the order they are attached, where the base specification did not say.
+- Adding `ENV_PARAMS` to a document changes how the *minLength* and *maxLength* of its existing RANGE_EXPR Job
+  Parameters are checked: both the value as written and its canonical form must satisfy them
+  ([§2.10](../wiki/2023-09-Template-Schemas.md#210-jobrangeexprparameterdefinition-extension-expr)). So a value that a
+  Job Template accepted before can be rejected after (see [Lengths of a RANGE_EXPR
+  value](#lengths-of-a-range_expr-value)).
+- A few changes state or correct rules of the base specification and apply with or without the extension. They are
+  listed in [Changes that apply without the extension](#changes-that-apply-without-the-extension).
 
 ## Specification
 
@@ -345,9 +394,36 @@ an Environment Template the `$schema` and `extensions` keys, as the RFC 0009 dra
 only to the document that lists it, so an Environment Template can adopt parameters while Job Templates that do not
 list `ENV_PARAMS` keep running with it (see [Backward compatibility](#backward-compatibility)).
 
+When only some documents of a submission list `ENV_PARAMS`, Job creation still takes the steps of
+[§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params), and each rule the extension adds for a
+document's content applies only to the documents that list it. An Environment from a document that does not list it
+behaves as `ALWAYS`, and a Step's own host requirements in a Job Template that does not list it keep the base rules.
+
 The item descriptions of *jobEnvironments*, *stepEnvironments*, *let*, and *dependencies* each gain a sentence so that
 they stay true with the extension. §1.1 item 7 also states the Job's Environment order, which applies with or without
 the extension: attached Environments first, in the order they are attached, then the `jobEnvironments`.
+
+### Changes that apply without the extension
+
+These changes apply to every 2023-09 document, whether or not it lists `ENV_PARAMS`, so core reviewers should agree to
+them as changes to the base specification:
+
+1. **`<nonnegativefloatstring>`.** [§3.3.1](../wiki/2023-09-Template-Schemas.md#331-amountrequirement) defined it as
+   "non-zero and positive", which contradicts its name and an amount's `min` of 0. It now says "non-negative".
+2. **One value of `attr.worker.os.family` and `attr.worker.cpu.arch`.**
+   [§3.3.2.1](../wiki/2023-09-Template-Schemas.md#3321-attributecapabilityname) now states that a host has exactly one
+   value of each, so an *allOf* written as a list for either has at most one element. A template the old text allowed,
+   such as `allOf: [linux, windows]`, is now invalid. No host could run it, and the base conformance suite already
+   rejects it.
+3. **The Job's Environment order.** [§1.1](../wiki/2023-09-Template-Schemas.md#11-job-template) item 7 now states that
+   a Session enters the Environments attached from Environment Templates before the Job Template's `jobEnvironments`,
+   in the order they are attached. The base specification did not say. `openjd run` and Deadline Cloud already behave
+   this way, and render management systems must now do so.
+
+The prototype also changes the order in which `openjd-rs` reports several Job-creation errors, for Job Templates with
+or without the extension (see [Prototype](#prototype) change 5). That is not a specification change:
+[§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params) says when each check is made, and that
+which of several errors an implementation reports, and in what order, is not specified.
 
 ### Environment parameters
 
@@ -382,11 +458,13 @@ dependencies:
 ```
 
 An *environment* entry names a Job Environment of that name if there is one, and otherwise an external Environment. It
-is met when the Step's Sessions enter the Environment, so it does not delay scheduling. *required* says whether the
-Environment must be present. *enableIf* is evaluated when the Job is created; a `false` entry requests and supplies
-nothing, declines a `BY_DEFAULT` Environment, is an error for an `ALWAYS` one, and has no effect on one from a document
-that does not list `ENV_PARAMS`. *parameters* supplies values, each a literal or a format string resolved when the Job
-is created.
+is met when the Step's Sessions enter the Environment, so it does not delay scheduling. *required* says whether the name
+must resolve to an Environment. An enabled `required: true` entry whose Environment its own *enableIf* disables, or an
+earlier member of its *exclusiveGroup* supersedes, is not an error, and implementations may warn. *enableIf* is
+evaluated when the Job is created, and a value known before then, such as a literal `false`, also decides what template
+validation checks. A `false` entry requests and supplies nothing, declines a `BY_DEFAULT` Environment, is an error for
+an `ALWAYS` one, and has no effect on one from a document that does not list `ENV_PARAMS`. *parameters* supplies values,
+each a literal or a format string resolved when the Job is created.
 
 The constraints keep an entry to one form and one Environment to one entry, require each key to be declared and each
 value to be valid (except that an attached Environment that declares no parameters ignores a `required: false` entry's
@@ -427,6 +505,11 @@ so one can supersede a Job Environment, and a validator given only the Job Templ
 undetermined. An `ALWAYS` Environment cannot have a group (see [`exclusiveGroup`](#exclusivegroup)). A Step Environment
 may have *enableIf* but none of the other new fields (see [Not on Step Environments](#not-on-step-environments)).
 
+Being disabled for a Step changes which Sessions enter an Environment, not its definition. Its other fields resolved
+at Job creation, such as an action's *timeout*, read no effective values, and are resolved and checked as without the
+extension, whether or not any Step enters it (see [A disabled Environment's other fields are
+resolved](#a-disabled-environments-other-fields-are-resolved)).
+
 ### Effective values and Session sharing
 
 §3.2.2 defines a Step's effective value for each parameter: the value its enabled entry supplies, or else the resolved
@@ -436,6 +519,24 @@ and `"3.1"` are not equal; an INT `1` and `"1"` are; a STRING compares by code p
 RANGE_EXPR's string form is its canonical form; and lists compare element by element. §3.2.2 also states that a
 Session runs a Step's Tasks only when it entered the Step's Environments with the Step's values, and
 [How Jobs Are Run](../wiki/How-Jobs-Are-Run.md#environment-parameters) explains it.
+
+Effective values are fixed per Step, so with `TASK_CHUNKING` every chunk of a Step's Tasks runs in Environments entered
+with the same values. They are part of the Job, and `REDACTED_ENV_VARS` does not hide them, so they are not a place for
+secrets (see [Security Considerations](#security-considerations)).
+
+### Limits
+
+* An Environment declares at most 50 parameters, also with `FEATURE_BUNDLE_1`
+  ([§4](../wiki/2023-09-Template-Schemas.md#4-environment) item 3).
+* A STRING or PATH effective value, and each element of a LIST[STRING] or LIST[PATH] one, is at most 1024 characters
+  ([§4.5](../wiki/2023-09-Template-Schemas.md#45-environmentparameterdefinition-extension-env_params) item 5).
+* The specification sets no maximum number of a Step's *dependencies*, but an implementation that sets one must accept
+  at least 50 `environment:` entries ([§3](../wiki/2023-09-Template-Schemas.md#3-steptemplate) *dependencies*).
+* Each source's *hostRequirements* keep the limit of 50 requirements. An implementation may reject a Step whose combined
+  requirements name more capabilities than a limit it documents, which must be at least 50
+  ([§3.3.3](../wiki/2023-09-Template-Schemas.md#333-combined-host-requirements)).
+
+See [The limits chosen](#the-limits-chosen) for why.
 
 ### Host requirements
 
@@ -492,9 +593,22 @@ and Environment parameter names that Environment Templates and Job Templates sho
 
 This RFC is specified against mainline. Every value it adds is fixed when the Job is created: effective values, each
 Step's Environment set, each Environment's *enableIf*, and combined host requirements. An RFC accepted after this one
-that adds a kind of Session or a later stage of evaluation specifies how it extends these rules. In particular, this RFC
-defines *enableIf* on every `<Environment>`, decided at Job creation. RFC 0011 (`CONTROL_FLOW`) extends that definition
-with what needs its own stages, such as an *enableIf* that reads `Steps.*`, rather than defining it again.
+that adds a kind of Session or a later stage of evaluation specifies how it extends these rules. Two drafts do so:
+
+* **RFC 0011 (`CONTROL_FLOW`)** puts this RFC's *enableIf* on Steps and loops. It is one field on every entity that has
+  it: the same name, an expression field of type `bool` as
+  [§7.6](../wiki/2023-09-Template-Schemas.md#76-expression-fields) defines, and the same meaning of `false`. The
+  entities differ only in when the field is evaluated and what it may reference. RFC 0011 also extends the Environment
+  *enableIf* with what needs its later stages, such as a Step Environment's *enableIf* that reads `Steps.*`, rather than
+  defining it again. Its Step *enableIf* depends on this RFC's §7.6 Expression Fields as well as on its Environment
+  parts, so this RFC is to be accepted first.
+* **RFC 0009 (`SERVICE`)** adds Service Sessions. It is expected to let a Service request Environments with
+  `environment:` entries, and to say which Service Sessions enter an Environment of each `activation`.
+
+RFC 0011's Open Question 15 asks whether this RFC should leave a disabled Environment's TEMPLATE-scope format strings
+unevaluated, as RFC 0011 does for a disabled Step Environment. It does not: under this RFC those fields read no
+effective values and only values known at Job creation, so they are resolved and checked as without the extension (see
+[A disabled Environment's other fields are resolved](#a-disabled-environments-other-fields-are-resolved)).
 
 ### Recommended names (non-normative)
 
@@ -508,60 +622,12 @@ attached each Step uses the first one attached.
 
 ### Validation
 
-This section is a non-normative index of the rules this extension adds, by the stage that checks them. Each row cites
-the section of Template Schemas that states the rule. That section is normative, and where a row and its section differ,
-the section governs. Constraint numbers refer to
-[`<StepDependency>`](../wiki/2023-09-Template-Schemas.md#32-stepdependency).
-
-| Rule | Checked at |
-|------|-----------|
-| `ENV_PARAMS` listed by any document that uses Environment *envParameterDefinitions*, `activation`, `hostRequirements`, `enableIf`, or `exclusiveGroup`; `environment:` or `step:` entries; `Job.EnvNames`, `Env.Param.*`, or `Env.RawParam.*`; an `anyOf` or `allOf` written as one expression; or a `hostRequirements` that is empty or has empty lists | Template validation |
-| A document that lists `ENV_PARAMS` also lists `EXPR` | Template validation |
-| Environment *envParameterDefinitions*: 1–50 entries, unique names, not on *stepEnvironments*, permitted types and fields | Template validation |
-| `activation` is `ALWAYS`, `BY_DEFAULT`, or `ON_REQUEST`, and not on *stepEnvironments* | Template validation |
-| `exclusiveGroup` is an `<Identifier>`, not on *stepEnvironments*, and not on an Environment whose `activation` is `ALWAYS` (§4 *exclusiveGroup*) | Template validation |
-| Of the Environments a Step's Sessions would enter that share an `exclusiveGroup`, only the first in the Job's Environment order whose *enableIf* is not `false` for the Step is entered; the later ones are superseded and disabled for the Step, and their *enableIf* is not evaluated (§4 *exclusiveGroup*, §3.2.2, §7.4.1) | Job creation, per Step. Before then only as far as known; a Job Environment with an `exclusiveGroup` is undetermined unless the validator is given the Environment Templates (§4) |
-| Environment *hostRequirements*: §3.3 shape and constraints, and not on *stepEnvironments*. They reference only the scopes §7.3.2 lists for them | Template validation |
-| In a document that lists `ENV_PARAMS`, a Step's or an Environment's *hostRequirements* may be `{}` or have empty *amounts* and *attributes* (§3.3 constraint 1); a literal amount with neither `min` nor `max`, or a literal empty `anyOf` or `allOf`, is still rejected (§3.3) | Template validation |
-| In a document that lists `ENV_PARAMS`, an `anyOf` or `allOf` written as a string is exactly one `{{ }}` expression, and its static type fits `list[string]?` (§3.3.2) | Template validation |
-| Environment *enableIf*: an expression field of type `bool` (§7.6) that references only the scopes §7.3.2 lists for it, which differ between a Step Environment and other Environments | Template validation |
-| A check over a Step's Environment set, such as the `WRAP_ACTIONS` single-layer rule, where an Environment's *enableIf* decides membership | Job creation; before then only when the violation holds whatever every undetermined *enableIf* resolves to (§7.6 rule 5) |
-| Environment *enableIf* does not resolve to `null`, for each Step that the Environment applies to and that it is evaluated for | Job creation, per Step |
-| The *enableIf* of an Environment whose `activation` is `ALWAYS` is not known at template validation to be `false`: a literal `false`, or an expression that the rules for unknown operands make `false` (§4 *activation*, §7.6 rule 5) | Template validation |
-| The *enableIf* of an Environment whose `activation` is `ALWAYS` does not resolve to `false` for any Step; the error names the Step and the Environment. This covers *jobEnvironments* entries and attached Environments (§4 *activation*) | Job creation, per Step |
-| A disabled `environment:` entry (its *enableIf* is `false`) for an Environment whose `activation` is `ALWAYS` is an error naming the Step and the Environment (§3.2 item 3.2) | Template validation for an *enableIf* known there to be `false` on an entry that names a *jobEnvironments* entry; otherwise Job creation |
-| An Environment from a document that does not list `ENV_PARAMS` behaves as `activation: ALWAYS` with no *enableIf*: every Step's Sessions enter it, and a disabled `environment:` entry that names it has no effect and is not an error (§4 *activation*, §3.2 item 3.2) | Job creation; before then by a validator given the Environment Templates (§4) |
-| A Step's disabled `environment:` entry for a `BY_DEFAULT` Environment declines it: the Step's Sessions do not enter it, and constraint 7, the checks of the Step's effective values for it, and its *hostRequirements* do not apply to the Step (§3.2 item 3.2) | Template validation for an *enableIf* known there to be `false` (§7.6 rule 5); Job creation otherwise |
-| An Environment's *hostRequirements*, resolved for a Step, satisfy §3.3.1 and §3.3.2 (for example, a non-negative `min`, and no two names in one source equal after resolution) once requirements that resolve to `null` are discarded, as from a Step's own (§3.3) | Job creation, per Step |
-| An *anyOf* or *allOf* of a Step's or an Environment's *hostRequirements* that has no values after resolution (an empty list result, or list items that all resolve to `null`) is rejected, naming the Step or Environment and the attribute (§3.3 item 3, §3.3.2) | Job creation, per Step |
-| An *anyOf* or *allOf* written as one expression that resolves to `null` is omitted, and an attribute requirement left with neither is discarded (§3.3 item 2, §3.3.2); each element of a list result satisfies `<AttributeCapabilityValue>` and the list has at most 50 elements | Job creation, per Step |
-| Combined host requirements are satisfiable: `min` ≤ `max` for each amount, and for `attr.worker.os.family` and `attr.worker.cpu.arch` a value in every list (§3.3.3 items 1, 2.1) | Job creation |
-| An *allOf* for `attr.worker.os.family` or `attr.worker.cpu.arch` has at most one element (§3.3.2.1) | Template validation for a list; Job creation for a `<ListExpressionString>` result |
-| `default` references only `RawParam.*` and `Param.*` other than PATH and LIST[PATH] of the same document's Job Parameters | Template validation |
-| A literal `default` satisfies its parameter's type and constraints, whether or not any Step uses it, and whatever any `enableIf` decides | Template validation |
-| A RANGE_EXPR value satisfies *minLength* and *maxLength* both as written and in canonical form: every Environment parameter, and a Job Parameter in a document that lists `ENV_PARAMS` (§2.10, §4.5) | Template validation for literals; Job creation |
-| `Env.Param.*` / `Env.RawParam.*` name a parameter of the enclosing Environment, and appear only inside it | Template validation |
-| An entry's *parameters* value or *enableIf* references only `RawParam.*`, non-PATH `Param.*`, `Job.Name`, `Job.EnvNames`, `Step.Name`, and the Step's `let`; never `Task.*`, `Session.*`, or `Env.*` (§3.2) | Template validation |
-| `Job.EnvNames` appears only inside a `{{ }}` expression or an expression field, and not in an Environment parameter `default` | Template validation |
-| An expression field (§7.6): parses as one expression, with no `{{ }}`; its static type fits its target type (Expression Language §1.2.3 step 1), or is that made optional, with no implicit conversion other than widening `int` to `float`; a boolean, integer, or float scalar that fits is a literal; a `null` or omitted-value field is an error | Template validation; a `null` result at evaluation |
-| `<StepDependency>` has exactly one of *dependsOn* / *step* / *environment*; *required*, *enableIf*, and *parameters* only with *environment* (constraint 1) | Template validation |
-| A *step* entry obeys every rule of the *dependsOn* entry it is a synonym of; a *step* and a *dependsOn* entry naming one Step are duplicates (§3.2 item 2) | Template validation |
-| An entry's *enableIf* is an expression field of type `bool` (constraint 9, §7.6) | Template validation |
-| An entry's *enableIf* does not resolve to `null` | Job creation |
-| *environment* does not name the Step's own *stepEnvironments* entry; no duplicates per list; 1–50 *parameters* (constraints 2–4) | Template validation |
-| `required: false` not used on an entry naming a *jobEnvironments* entry (constraint 8) | Template validation |
-| Keys and literal values of *parameters* for a *jobEnvironments* entry (constraints 5, 6), only for an enabled entry; a disabled entry's *parameters* are not checked (§3.2 item 3.2) | Template validation for an entry whose *enableIf* is absent or known there to be `true` (§7.6 rule 5); Job creation for one whose *enableIf* resolves to `true` then |
-| Each parameter without a `default` is supplied by every Step that the Environment applies to: every Step for `ALWAYS`, every Step that does not decline it for `BY_DEFAULT`, every requesting Step for `ON_REQUEST`. The Environment's own *enableIf* and *exclusiveGroup* do not matter, so this holds for a Step for which the Environment turns out to be disabled. This covers *jobEnvironments* entries and, after resolution, attached Environments (constraint 7, §3.2.1, §7.4.1 step 5) | Job creation, before any Environment *enableIf* is evaluated. For a *jobEnvironments* entry, also template validation where the Step's entries that bear on it are known, and otherwise where it fails whatever every undetermined entry *enableIf* resolves to (§7.6 rule 5) |
-| External name resolution: missing with `required: true`, or ambiguous (§3.2.1) | Job creation |
-| Keys and values for an external Environment; resolved format-string values (constraints 5, 6). A key the resolved Environment does not declare is an error even with `required: false`, unless the Environment declares no parameters: then a `required: false` entry's *parameters* are ignored (implementations should warn), and a `required: true` entry's are an error (§3.2.1 item 1) | Job creation |
-| An attached `ALWAYS` or `BY_DEFAULT` Environment with the name of a *jobEnvironments* entry, which no entry can reach or decline, has every parameter supplied by a `default` (§3.2.1 item 4) | Job creation |
-| A format-string value or `default` for a list-typed parameter is a single `{{ }}` expression (§3.2, §4.5) | Template validation for `default`s and *jobEnvironments* entries; Job creation for external Environments |
-| A resolved, non-literal `default` satisfies its parameter's type and constraints, for each Step that takes it (§4.5) | Job creation |
-| The Step's effective values for an Environment disabled for it (its *enableIf* is `false`, or it is superseded) are not checked; the entry's keys (constraint 5) and value forms still are, and so is constraint 7 (§3.2.2 items 3, 4) | Template validation for an *enableIf* known there to be `false` (§7.6 rule 5); Job creation otherwise |
-| An Environment *enableIf* is evaluated at Job creation with concrete values only; one that reads a value that fails to resolve or does not convert is not evaluated, the Environment is not disabled for the Step, and the value is an error (§3.2.2 item 2) | Job creation |
-| Before an expression field is evaluated, its value is known when it is a scalar or when evaluating it with the values not yet known as `unresolved[T]` gives a result, by the Expression Language's rules for unknown operands; a check whose fields are known is made then (§7.6 rule 5, Expression Language §2.1.6) | Template validation |
-| PATH and LIST[PATH] string constraints are checked against the unmapped value, including for a literal `default` that no Step uses (§4.5) | Job creation |
-| Two effective values are equal only when they have the same type and string form (a FLOAT as written, a STRING by code points, a RANGE_EXPR in canonical form, lists element by element), and a Session runs a Step's Tasks only when it entered each of the Step's Environments with values equal to the Step's (§3.2.2) | Run time, as a Session takes a Step's Tasks |
+[Template Schemas](../wiki/2023-09-Template-Schemas.md) states each rule this extension adds and the stage that checks
+it, and [Processing stages and expression fields](#processing-stages-and-expression-fields) summarizes the stages. The
+conformance suite's README indexes the rules: its
+[Validation index](../conformance-tests/2023-09/ENV_PARAMS/README.md#validation-index) lists each rule, the stage that
+checks it, and the tests that cover it, and its
+[coverage matrix](../conformance-tests/2023-09/ENV_PARAMS/README.md#coverage-matrix) lists every test.
 
 ## Design Choice Rationale
 
@@ -601,18 +667,28 @@ Ideas](#a-flat-per-step-map-of-values)).
 
 ### `step:` as a synonym of `dependsOn:`
 
-Every other form of `<StepDependency>` is keyed by the kind of thing it names, and inside a list named `dependencies`,
-"depends on" says nothing the list does not already say:
+With this RFC, `dependencies` holds more than one kind of entry for the first time. Each new form is keyed by the kind
+of thing it names, `environment:` here and `service:` in the RFC 0009 draft, while the existing form is keyed by a
+verb, and inside a list named `dependencies`, "depends on" says nothing the list does not already say. `step:` gives
+Step entries the same shape as the others:
 
 ```yaml
 dependencies:
-  - step: DecodeFrames
-  - environment: Conda
+  - step: DecodeFrames          # waits for the Step to complete
+  - environment: Conda          # entered in each Session; does not delay scheduling
     parameters: {Packages: "colmap=3.11"}
 ```
 
-Renaming the key would break every existing Job Template, so `step:` is a synonym and `dependsOn:` keeps its meaning
-until a future major version. `step:` is gated by `ENV_PARAMS` only because this RFC adds it.
+This has two concrete uses. A reader sees from each entry's key what it names, which matters now that some entries
+order Steps and others do not (see [The `environment:` form of
+`<StepDependency>`](#the-environment-form-of-stepdependency)). And a tool that processes `dependencies`, such as a
+template editor, a linter, or a scheduler's dependency graph, reads one key per kind of entry.
+
+It is added in this RFC because this is the RFC that mixes the kinds. Templates written against it set the style that
+later ones copy, and with only `dependsOn:` available, each of them would mix a verb key with noun keys. Renaming the
+key would break every existing Job Template, so `step:` is a synonym, `dependsOn:` keeps its meaning and stays valid in
+`jobtemplate-2023-09`, and a future major version can remove `dependsOn:`. `step:` is gated by `ENV_PARAMS` only
+because this RFC adds it.
 
 ### `required` defaults to `true`
 
@@ -669,8 +745,10 @@ has nothing to do for a Step with no packages. It keeps a `BY_DEFAULT` Environme
 out of the Sessions that would enter it only to do nothing.
 
 It is decided at Job creation, once per Step, so Session sharing and combined host requirements see a fixed set of
-Environments. It reads the same scopes as the Environment's *hostRequirements*, and not the Job Template's Step names or
-bindings, so it means the same in an Environment Template as in a Job Template.
+Environments. On a Job Environment or an attached Environment it reads the same scopes as the Environment's
+*hostRequirements*, and not the Step's name or `let` bindings, so it means the same in an Environment Template as in a
+Job Template. On a Step Environment, which only its own Step's Sessions enter, it may also read `Step.Name` and the
+Step's `let` bindings.
 
 A disabled Environment's values are not checked against their types and constraints, since a Step that never enters it
 has no reason to configure them. A parameter without a `default` must still be supplied by every Step the Environment
@@ -701,9 +779,13 @@ value that no Session uses, so values are converted after the decision.
 
 ### The name `enableIf`
 
-It is the name discussion #81 proposed and RFC 0011 uses for Steps. It says what `false` does: a disabled Environment is
-not entered and a disabled entry requests nothing. A name such as `when:` invites the reading "wait until this is true",
-and OpenJD Steps do wait.
+Most of the systems surveyed name such a field `when`: Argo Workflows, Tekton, CWL, Nextflow, Ansible, CircleCI, and
+Jenkins. GitHub Actions, Buildkite, and GitLab CI use `if`, and Azure Pipelines uses `condition`. This RFC uses
+`enableIf`, the name discussion #81 proposed. It says what `false` does: a disabled Environment is not entered, and a
+disabled entry requests nothing. `when` is shorter and familiar, but it can read as "wait until this is true", and
+OpenJD Steps do wait. RFC 0011 puts the same field, with the same name and form, on Steps and loops, so that one idea
+has one name across the specification. A field name is permanent once implementations ship it, so the name was settled
+before this RFC's Final Comment Period.
 
 ### Expression fields rather than format strings
 
@@ -739,6 +821,25 @@ declare is a typo, or a parameter of a later version of the Environment. Either 
 author should see before anything runs, and ignoring it would run the Step with the wrong software. An entry with
 `required: true` states that the Step needs the Environment as it asks for it, so supplying values to an Environment
 that cannot take them stays an error.
+
+### A disabled Environment's other fields are resolved
+
+Disabling an Environment for a Step decides which Sessions enter it. It does not make the Environment's definition
+optional. Its other fields resolved at Job creation, such as an action's *timeout*, read only values known then and no
+effective values, so they can be checked whether or not any Step enters the Environment, as they are without the
+extension. Skipping them would leave an error in a Job Environment unreported until some Job enables it, so the same
+Job Template would fail for some Job Parameters and not others. RFC 0011 asks, in its Open Question 15, whether this
+RFC should leave them unevaluated, as RFC 0011 does for a disabled Step Environment. There a field may read a value
+that is missing at run time, such as the output of a skipped Step. That cannot happen under this RFC alone, so it keeps
+the base behavior, and RFC 0011's rule stays with the stages that need it.
+
+### `required` with an `exclusiveGroup`
+
+An entry with `required: true` says that the name must resolve to an Environment, which catches a typo or a missing
+attachment before anything runs. Whether the Step's Sessions then enter the Environment is the Environment's decision,
+through its *enableIf* and *exclusiveGroup*. A Job Template cannot know which member of a group a system attaches first,
+so rejecting a `required: true` entry whose Environment is superseded would reject the Jobs the group exists for.
+Implementations may warn, since a Step that asked for Docker and runs in Conda may surprise its author.
 
 ### Names resolve to the Job Template first
 
@@ -782,9 +883,21 @@ Step, which suits values such as a cache key but prevents sharing Sessions.
 
 ### `Job.EnvNames`
 
-A template sometimes needs to know which Environments the Job has, for example to supply a value only when a particular
-Environment is attached. A list of names answers that, and `EXPR` can already test it with `in`. It is in the `Job.*`
-scope because it is a property of the Job, and it is concrete at Job creation, as `Job.Name` is. It lists every
+A Job Template sometimes needs to know which Environments the Job has, beyond what `exclusiveGroup` decides. The main
+case is an Environment written before this extension, such as Deadline Cloud's console Conda queue environment. It
+cannot be in an `exclusiveGroup`, because the field needs `ENV_PARAMS`, so a Job Environment that should give way to it
+tests for it by name:
+
+```yaml
+jobEnvironments:
+  - name: InstallTools                    # the Job Template's own fallback
+    enableIf: "'Conda' not in Job.EnvNames"
+    script: ...                           # provides the tools some other way
+```
+
+The same test lets an entry's value or a Step's script depend on what is attached, for example to log which
+Environments a Job ran with. A list of names answers these, and `EXPR` can already test it with `in`. It is in the
+`Job.*` scope because it is a property of the Job, and it is concrete at Job creation, as `Job.Name` is. It lists every
 Environment whatever its `activation`, because its purpose is to show what can be requested, and omits Step
 Environments, which no Step can request.
 
@@ -890,6 +1003,18 @@ from the Job Template alone, and the *enableIf* never sees a missing value.
 A Job Environment is always present, so `required: false` on its entry can only be a mistake, most likely an entry
 meant for an external Environment whose name collides with a Job Environment.
 
+### The limits chosen
+
+A render management system stores each Step's Environment set, effective values, and combined host requirements, and
+keys Sessions on the values, so each needs a bound that a template author can rely on. The bounds reuse existing ones.
+An Environment has at most 50 parameters, as a Job Template has without `FEATURE_BUNDLE_1`. That extension raised the
+limit for templates with many submitter inputs, which an Environment's parameters are not, so it leaves this limit at
+50. A STRING or PATH value is at most 1024 characters, the length of a Job Parameter's `default` and `allowedValues`.
+The specification sets no maximum number of `dependencies`, and a `required: false` entry may name nothing, so a floor
+of 50 `environment:` entries tells authors how many alternatives a portable template may list. Combined host
+requirements join sources that each have at most 50 requirements, so rather than a fixed cap, an implementation may
+document a limit of at least 50, which every Step's own requirements already fit.
+
 ### `ENV_PARAMS` requires `EXPR`
 
 Environment parameters flow into expressions: *enableIf* reads them, `let` bindings and `Job.EnvNames` feed them, and
@@ -918,6 +1043,11 @@ Step rejects the Job. A Step can decline only a `BY_DEFAULT` Environment, which 
 Environment Template authors must still treat `Env.Param.*` as untrusted input in their scripts, as they should treat
 `Param.*` today: the values are chosen by whoever submits the Job, which on a shared system is not the Environment
 Template's author.
+
+Do not pass secrets as Environment parameter values. Effective values are part of the Job, which a render management
+system stores and may show to anyone who can see the Job, and `REDACTED_ENV_VARS` redacts only what an action prints
+after setting a variable with `openjd_redacted_env`, not the values themselves. An Environment that needs a secret
+should fetch it on the Worker Host, as it would without this extension.
 
 ### Do not substitute values into script source
 
@@ -975,6 +1105,10 @@ cannot change between the two.
   `inputs.parameters` let a step pass values into a template. A parameterized template invoked from several steps with
   different `arguments` is the shape of this RFC's parameterized Job Environment. Argo has no notion of an externally
   supplied environment around a template, since every step is its own container.
+* **NVIDIA OSMO** — Every task of a workflow runs in a container, and its `image` is a required field
+  ([specification](https://nvidia.github.io/OSMO/main/user_guide/workflows/specification/index.html)). A workflow whose
+  tasks use different tools names a different image for each. As in Argo, there is no externally supplied environment
+  around a task.
 * **Slurm and Environment Modules** — A batch script runs `module load colmap/3.11` per job step, or `srun
   --container-image=...` (with Pyxis/Enroot) per step. The selection lives in the script text, so no tool can see which
   software a step needs without parsing shell, which the [Tooling parseable](../wiki/Design-Tenets.md) tenet asks OpenJD
@@ -985,7 +1119,7 @@ cannot change between the two.
 The prototype is the `env-params-prototype` branch of
 [mwiebe/openjd-rs](https://github.com/mwiebe/openjd-rs/tree/env-params-prototype), developed alongside this RFC. It
 implements the extension in `openjd-model`, `openjd-sessions`, `openjd-cli`, and `openjd-for-js`, and its `openjd
-check`, `openjd summary`, and `openjd run` pass every 2023-09 conformance test at this RFC's head, including the 424
+check`, `openjd summary`, and `openjd run` pass every 2023-09 conformance test at this RFC's head, including the 441
 under `conformance-tests/2023-09/ENV_PARAMS`. The `env-params` branch of
 [mwiebe/openjd-model-for-python](https://github.com/mwiebe/openjd-model-for-python/tree/env-params) exposes it to Python
 through the Rust-backed bindings.
@@ -1046,16 +1180,21 @@ These were unclear or hard to implement:
   host requirements, in the order §7.4.1 gives, and stores them on the Job's Steps. `openjd-sessions` takes the
   effective values when it enters an Environment, as it takes Job Parameter values today, and `openjd run` passes the
   values of the Step being run.
-- **Python (openjd-model, openjd-sessions)**: The same changes in the pydantic models and the session's symbol table. As
-  RFC 0009 notes, the Python packages are intended to become bindings over openjd-rs, in which case they inherit the
-  feature.
+- **Python (openjd-model-for-python, openjd-sessions-for-python)**: openjd-model-for-python includes Rust-backed
+  bindings to openjd-rs, and openjd-sessions-for-python a Session that runs on them. The prototype's `env-params`
+  branches extend the bindings to the new fields, Job creation, and effective values, and pass the values when the
+  Session enters an Environment, so Python gets the feature from the Rust implementation rather than from a second one.
+  The pure-Python pydantic model would need the same changes as `openjd-model` to support the extension itself.
+- **Other languages**: Nothing in the extension is harder to implement in one language than another. It adds model
+  fields, checks at Job creation, and values passed when a Session enters an Environment, and needs no new run-time
+  mechanism.
 - **Schedulers**: Store each Step's Environment set, effective values, and combined host requirements, which the Job
   carries, and pass the values to the Worker when a Session enters each Environment. Place Sessions by the combined host
   requirements, which have the shape of a Step's. A scheduler that shares Sessions across Steps must also compare their
   effective values ([How Jobs Are Run](../wiki/How-Jobs-Are-Run.md#environment-parameters)); one that never shares a
   Session across Steps needs no grouping change. Using the values for host affinity is an optional optimization.
 - **Conformance tests**: The PR includes a conformance suite under `conformance-tests/2023-09/ENV_PARAMS`, whose README
-  maps each row of the [Validation](#validation) table to the tests that cover it.
+  indexes each rule the extension adds and the tests that cover it (see [Validation](#validation)).
 
 The effective values are a small map per Step and Environment, computed once at Job creation. At run
 time they are passed when a Session enters an Environment and compared when a scheduler shares a
@@ -1100,6 +1239,34 @@ identified and ordered, and a kind registry would need a vocabulary the specific
 false` pattern with one entry per expected name covers the motivating cases, and `exclusiveGroup` decides which of the
 attached ones a Step uses.
 
+### A separate key for Environment requests
+
+A Step could request Environments in a key of its own, such as `environments:` beside `dependencies`, since an entry
+for an Environment does not delay scheduling the way a Step dependency does. This RFC keeps the requests in
+`dependencies` because each entry there names something the Step needs in place before its Tasks run: a completed Step,
+or an Environment entered with the Step's values, and in the RFC 0009 draft a running Service. `required: true` rejects
+a submission in which the Environment is missing, as a missing Step is rejected. A separate key would sit beside
+`stepEnvironments`, which defines Environments, and readers would have to learn which of two lists defines Environments
+and which requests them. The difference in ordering is real, and [The `environment:` form of
+`<StepDependency>`](#the-environment-form-of-stepdependency) states it. With `step:` and `environment:` keys, each entry
+says what kind of thing it names.
+
+### Split the Job into several Jobs with job-to-job dependencies
+
+A pipeline whose Steps need different software could be split into one Job per application, each setting the queue's
+Conda Job Parameters for itself, and chained by a scheduler's job-to-job dependencies. This is rejected because it
+loses:
+
+1. **Step dependencies and parallelism within one Job.** In one Job, independent Steps run their Tasks in parallel and
+   a dependent Step starts when the Steps it depends on complete. Job-to-job dependencies are not part of Open Job
+   Description, so the chain is specific to one scheduler, and the pipeline is no longer one portable template.
+2. **One submission and one set of Job Parameters.** The user submits, monitors, retries, and cancels one Job, and sets
+   a frame range or an output directory once, rather than keeping several Jobs' parameters consistent.
+3. **What other systems do.** No system in [Prior Art](#prior-art) requires a workflow to be split by software. Each
+   lets one workflow give each unit of work its own environment.
+
+Splitting remains possible, and this RFC does not prevent it.
+
 ### `activation` as a list of Session kinds
 
 Its vocabulary would grow with each kind of Session, and each of its useful combinations (`[TASK]` for Steps only,
@@ -1113,15 +1280,8 @@ Environment must not become opt-in because one Step's entry says so, and two Ste
 
 ## Open Questions
 
-A field name is permanent once implementations ship it, so this should be settled before acceptance.
-
-1. **The name `enableIf`.** This RFC uses `enableIf`, the name discussion #81 proposed and RFC 0011 uses for Steps (see
-   [The name `enableIf`](#the-name-enableif)). Most of the systems surveyed use `when:` for the same idea: Argo
-   Workflows, Tekton, CWL, Nextflow, Ansible, CircleCI, and Jenkins. GitHub Actions, Buildkite, and GitLab CI use `if:`,
-   and Azure Pipelines uses `condition:`. Should the field be named `when` instead, so that it reads as authors of those
-   systems expect? `when` is shorter and familiar. `enableIf` says what `false` does, where `when` can read as "wait
-   until this is true", and OpenJD Steps do wait. RFC 0011 would need to make the same choice for Steps, so that one
-   idea has one name across the specification.
+There are no open questions. The last one, whether to name *enableIf* `when`, was decided as `enableIf`, an expression
+field, together with RFC 0011 (see [The name `enableIf`](#the-name-enableif)).
 
 ## Future Work
 

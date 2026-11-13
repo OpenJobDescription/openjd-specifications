@@ -1,4 +1,4 @@
-# Template Schemas §3.2 item 3.2 and constraint 7 (RFC 0010): a disabled entry requests nothing, so the Step
+# Template Schemas §3.2 *enableIf* and constraint 7 (RFC 0010): a disabled entry requests nothing, so the Step
 # does not enter the ON_REQUEST Environment and need not supply its parameter without a default.
 specificationVersion: jobtemplate-2023-09
 extensions:

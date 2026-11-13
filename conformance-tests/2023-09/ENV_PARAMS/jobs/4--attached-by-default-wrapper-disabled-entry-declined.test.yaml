@@ -1,4 +1,4 @@
-# RFC 0010 / Template Schemas §3.2 item 3.2, with RFC 0008 (single-layer rule, §4.3 constraint 2): the companion of
+# RFC 0010 / Template Schemas §3.2 *enableIf*, with RFC 0008 (single-layer rule, §4.3 constraint 2): the companion of
 # JB-173, which shows that the single-layer rule is what rejects it. Here AttachedWrap's Environment Template lists
 # ENV_PARAMS and omits activation, so AttachedWrap is BY_DEFAULT, and Step A's entry with enableIf: false declines it.
 # A's Sessions enter only JobWrap, which wraps the Task, and the Job runs.

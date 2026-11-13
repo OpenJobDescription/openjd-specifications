@@ -1,4 +1,4 @@
-# RFC 0010 / Template Schemas §3.2 item 3.2: no Step can leave an ALWAYS Environment out, so a Step's disabled entry
+# RFC 0010 / Template Schemas §3.2 *enableIf*: no Step can leave an ALWAYS Environment out, so a Step's disabled entry
 # for one is an error. A's entry for Lic has enableIf "Param.Mode == 'on'", an expression, so the template passes
 # template validation (JT-182), but with Mode=off it resolves to false when the Job is created, and the Job is
 # rejected, naming A and Lic.

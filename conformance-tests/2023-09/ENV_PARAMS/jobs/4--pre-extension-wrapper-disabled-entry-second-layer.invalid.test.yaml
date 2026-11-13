@@ -1,4 +1,4 @@
-# RFC 0010 / Template Schemas §4 item 4 (activation), §3.2 item 3.2, with RFC 0008 (single-layer rule, §4.3
+# RFC 0010 / Template Schemas §4 item 4 (activation), §3.2 *enableIf*, with RFC 0008 (single-layer rule, §4.3
 # constraint 2): the attached Environment AttachedWrap wraps, and its Environment Template lists WRAP_ACTIONS but not
 # ENV_PARAMS, so it behaves as ALWAYS. Step A's entry for it with enableIf: false has no effect, so A's Sessions enter
 # both AttachedWrap and the Job Environment JobWrap. Two wrapping Environments in one Session violate the

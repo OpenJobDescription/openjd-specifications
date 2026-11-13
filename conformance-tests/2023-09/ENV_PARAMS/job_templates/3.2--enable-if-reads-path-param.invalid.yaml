@@ -1,4 +1,4 @@
-# Template Schemas §3.2 item 3.2 (RFC 0010): enableIf may read Param.* only of Job Parameters not of type PATH
+# Template Schemas §3.2 *enableIf* (RFC 0010): enableIf may read Param.* only of Job Parameters not of type PATH
 # or LIST[PATH], so an enableIf reading Param.<PATH> is rejected.
 specificationVersion: jobtemplate-2023-09
 extensions:
