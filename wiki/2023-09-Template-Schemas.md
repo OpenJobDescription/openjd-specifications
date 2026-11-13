@@ -1091,10 +1091,10 @@ Constraints:
    Environment applies to a Step when its *activation* is `ALWAYS`, when it is `BY_DEFAULT` and the Step does not
    decline it with a disabled entry, and when it is `ON_REQUEST` and an enabled entry of the Step requests it. A Job
    Environment or Environment Template from a document that does not list `ENV_PARAMS` applies to every Step (see
-   [&lt;Environment&gt;](#4-environment) *activation*). Whether an Environment applies to a Step does not depend on the
-   Environment's own *enableIf* or on its *exclusiveGroup*. So a parameter that the Step does not supply is an error in
-   the Step's definition even where the Environment turns out to be disabled for the Step (see
-   [§3.2.2](#322-effective-environment-parameter-values)).
+   [&lt;Environment&gt;](#4-environment) *activation*). A Step Environment applies only to its own Step. Whether an
+   Environment applies to a Step does not depend on the Environment's own *enableIf* or on its *exclusiveGroup*. So a
+   parameter that the Step does not supply is an error in the Step's definition even where the Environment turns out to
+   be disabled for the Step (see [§3.2.2](#322-effective-environment-parameter-values)).
 8. *required* must not be `false` on an entry that names a *jobEnvironments* entry.
 9. *enableIf* is an expression field of type `bool` (see [§7.6](#76-expression-fields)).
 
@@ -2084,12 +2084,12 @@ Where:
    has an *enableIf*, so its Job Environments are entered by every Session either way.
 
    A Session that does not enter an Environment does not enter or exit it, does not have its *variables* set, and does
-   not have it in its Environment stack. The Environments a Session does enter keep their relative order. An
-   Environment whose *activation* is `ALWAYS` is entered by every Step's Sessions, or the Job is rejected, and a Job
-   Environment or Environment Template from a document that does not list `ENV_PARAMS` is entered by every Step's
-   Sessions. So a check that depends on whether a
-   Step's Sessions enter either may treat it as entered. Such checks include the `WRAP_ACTIONS` single-layer rule and
-   the [Combined Host Requirements](#333-combined-host-requirements). Available with the `ENV_PARAMS` extension.
+   not have it in its Environment stack. The Environments a Session does enter keep their relative order. An Environment
+   whose *activation* is `ALWAYS` is entered by every Step's Sessions, or the Job is rejected, and a Job Environment or
+   Environment Template from a document that does not list `ENV_PARAMS` is entered by every Step's Sessions. So a check
+   that depends on whether a Step's Sessions enter either may treat it as entered. Such checks include the
+   `WRAP_ACTIONS` single-layer rule and the [Combined Host Requirements](#333-combined-host-requirements). Available
+   with the `ENV_PARAMS` extension.
    Constraints:
     1. An implementation must reject an `<EnvironmentActivation>` it does not recognize. The values are case-sensitive,
        as are this schema's other enumerated values except parameter type names. `always` and `On_Request` are not

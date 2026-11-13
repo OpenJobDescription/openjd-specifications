@@ -302,11 +302,11 @@ This RFC is additive and gated by the `ENV_PARAMS` extension name declared under
   ignored](#parameters-for-an-environment-that-declares-none-are-ignored).
 - No existing field changes meaning. A Job with no `environment:` entries, no Environment `envParameterDefinitions`, no
   `activation`, and no Environment `enableIf` behaves as today, including which Environments each Session enters and how
-  Sessions are shared between Steps. An Environment written before this extension behaves as `activation: ALWAYS` with
-  no `enableIf`, so every Session enters it, as today, whatever the entries of a Job Template that lists `ENV_PARAMS`
-  say. A Job Template that lists `ENV_PARAMS` but no `environment:` entries, run with an Environment Template that
-  declares parameters and keeps the default `activation`, also shares Sessions as today: every Step takes the same
-  defaults, so every Step's values are equal.
+  Sessions are shared between Steps. A Job Environment or Environment Template written before this extension behaves as
+  `activation: ALWAYS` with no `enableIf`, so every Session enters it, as today, whatever the entries of a Job Template
+  that lists `ENV_PARAMS` say. A Job Template that lists `ENV_PARAMS` but no `environment:` entries, run with an
+  Environment Template that declares parameters and keeps the default `activation`, also shares Sessions as today: every
+  Step takes the same defaults, so every Step's values are equal.
 - Adding `ENV_PARAMS` to a document changes how the *minLength* and *maxLength* of its existing RANGE_EXPR Job
   Parameters are checked: both the value as written and its canonical form must satisfy them
   ([§2.10](../wiki/2023-09-Template-Schemas.md#210-jobrangeexprparameterdefinition-extension-expr)). So a value that a

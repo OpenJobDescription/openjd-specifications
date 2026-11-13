@@ -790,7 +790,7 @@ matches them against the local host.
 | JB-77 | `4--on-request-wrapper-not-applied-to-other-step.test.yaml` | EP, WA, EX | An `ON_REQUEST` wrapping Environment wraps the requesting Step's Task and not the other Step's (the wrap sentinel is absent from the other Step's output). |
 | JB-173 | `4--pre-extension-wrapper-disabled-entry-second-layer.invalid.test.yaml` | EP, WA, EX; env WA, EX | `runOn: [posix]`. An attached wrapping Environment whose document lists `WRAP_ACTIONS` but not `ENV_PARAMS` behaves as `ALWAYS`, so a Step's disabled entry for it does not remove it, and with a wrapping Job Environment the Step has two layers; rejected (§4 item 4, RFC 0008). |
 | JB-174 | `4--attached-by-default-wrapper-disabled-entry-declined.test.yaml` | EP, WA, EX; env EP, WA, EX | `runOn: [posix]`. The same with `ENV_PARAMS` in the attached Environment's document, so it is `BY_DEFAULT` and the entry declines it: one layer, and the Job runs wrapped by the Job Environment. |
-| JB-202 | `4--pre-extension-step-wrappers-not-shared.test.yaml` | WA, EX; env EP, EX | `runOn: [posix]`. A Job Template that lists `WRAP_ACTIONS` but not `ENV_PARAMS`, with a wrapping Step Environment in each of Steps A and B, and an attached Environment Template that lists `ENV_PARAMS`: a Step Environment is entered only by its own Step's Sessions, even from a document without `ENV_PARAMS`, so each Step has one layer and the Job runs (§4 item 4, §3.2 constraint 7, RFC 0008). |
+| JB-202 | `4--pre-extension-step-wrappers-not-shared.test.yaml` | WA, EX; env EP, EX | `runOn: [posix]`. A Job Template that lists `WRAP_ACTIONS` but not `ENV_PARAMS`, with a wrapping Step Environment in each of Steps A and B, and an attached Environment Template that lists `ENV_PARAMS`: a Step Environment is entered only by its own Step's Sessions, even from a document without `ENV_PARAMS`, so each Step has one layer and the Job runs (§4 item 4, §3.2 constraint 7, §7.4.1 step 7, RFC 0008). |
 
 #### Exclusive groups (§4 item 7)
 
@@ -1007,10 +1007,10 @@ These rules, or parts of rules, have no planned test with a definite expected ou
     different: rule 5 says it is made at that stage, so JT-152, JT-194, JT-196, JT-198, JT-200, and JT-202 to JT-205 are
     `job_templates/` tests. So is constraint 7 for a Step whose entries are known, which does not depend on any
     Environment's `enableIf` (JT-148, JT-158, JT-162, JT-189–JT-191).
-19. **Environments from documents without `ENV_PARAMS` in combinations that cannot be written.** §4 item 4 makes such
-    an Environment behave as `ALWAYS`. Two combinations it might seem to need tests for cannot occur. Such an
-    Environment cannot have an `exclusiveGroup`, because the field requires `ENV_PARAMS` (ET-50, V1), so it never takes
-    part in the group rule. A Job Environment of a Job Template that does not list
+19. **Environments from documents without `ENV_PARAMS` in combinations that cannot be written.** §4 item 4 makes a Job
+    Environment or Environment Template from such a document behave as `ALWAYS`. Two combinations it might seem to need
+    tests for cannot occur. Such an Environment cannot have an `exclusiveGroup`, because the field requires `ENV_PARAMS`
+    (ET-50, V1), so it never takes part in the group rule. A Job Environment of a Job Template that does not list
     `ENV_PARAMS` cannot be named by a Step whose template lists it, because a Job Template's Steps are in the same
     document, and without the extension no Step has an `environment:` entry and no Environment has an `enableIf`; its
     Job Environments are entered by every Session whichever `activation` they are read as.
