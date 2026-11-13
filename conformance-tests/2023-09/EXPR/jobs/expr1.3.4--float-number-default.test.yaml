@@ -1,6 +1,7 @@
 # Expression Language §1.3.4: a FLOAT given as a YAML or JSON number has no original string representation, so it is
 # written as the shortest decimal string, as Python's repr(float) writes it. `default: 2` outputs 2.0, as
-# `{{ Param.A * 1.0 }}` does. A default given as a string keeps its spelling (Template Schemas §7.5).
+# `{{ Param.A * 1.0 }}` does. F is a tie between two equally near shortest strings, which repr breaks to the even
+# digit, for a number and for a computed value. A default given as a string keeps its spelling (Template Schemas §7.5).
 # Each exponent is written with a decimal point and a signed exponent (1.0e+20) so that a YAML 1.1 reader also reads
 # it as a number; YAML 1.1 reads 1e20 as a string.
 template:
@@ -43,10 +44,10 @@ template:
           - -c
           - |
             print(r'A:{{ Param.A }} B:{{ Param.B }} C:{{ Param.C }} D:{{ Param.D }} E:{{ Param.E }} F:{{ Param.F }}')
-            print(r'COMPUTED_A:{{ Param.A * 1.0 }} COMPUTED_B:{{ Param.B * 1.0 }}')
+            print(r'COMPUTED_A:{{ Param.A * 1.0 }} COMPUTED_B:{{ Param.B * 1.0 }} COMPUTED_F:{{ Param.F * 1.0 }}')
             print(r'STRINGS AS:{{ Param.AS }} BS:{{ Param.BS }}')
 expected:
   output:
   - 'A:2.0 B:1e+20 C:1e+16 D:1e-05 E:1000000000000000.0 F:1000000000000000.2'
-  - 'COMPUTED_A:2.0 COMPUTED_B:1e+20'
+  - 'COMPUTED_A:2.0 COMPUTED_B:1e+20 COMPUTED_F:1000000000000000.2'
   - 'STRINGS AS:2 BS:2.50'
