@@ -330,9 +330,10 @@ Schemas unless another page is named.
 | **Request** | A Step requests an Environment with an enabled `environment:` entry in its `dependencies` that names it. |
 | **Disabled entry** | An `environment:` entry whose own `enableIf` is `false`. It requests nothing and supplies no values. |
 | **Decline** | A Step declines a `BY_DEFAULT` Environment with a disabled entry naming it, and its Sessions then do not enter it. |
+| **Applies** | An Environment applies to a Step when its `activation` is `ALWAYS`, when it is `BY_DEFAULT` and the Step does not decline it, or when it is `ON_REQUEST` and the Step requests it. The Step must supply its parameters that have no `default`, whatever its *enableIf*. |
 | **Disabled Environment** | An Environment whose own `enableIf` is `false` for a Step, or that is superseded for it. That Step's Sessions do not enter it. |
 | **Superseded** | An Environment is superseded for a Step when an earlier Environment of its `exclusiveGroup`, in the Job's Environment order, is one the Step's Sessions enter. |
-| **Effective values** | For one Step and one Environment its Sessions would enter, the value of each of the Environment's parameters: the one the Step's enabled entry supplies, or else the parameter's resolved `default`. |
+| **Effective values** | For one Step and one Environment that applies to it, the value of each of the Environment's parameters: the one the Step's enabled entry supplies, or else the parameter's resolved `default`. |
 | **Combined host requirements** | A Step's own `hostRequirements` together with those of every Environment its Sessions enter. |
 | **Expression field** | A field whose value is one Expression Language expression written without `{{ }}`, with the target type its `@expr <type>` annotation gives. Both `enableIf` fields of this RFC are expression fields. |
 
@@ -525,7 +526,7 @@ the section governs. Constraint numbers refer to
 | In a document that lists `ENV_PARAMS`, an `anyOf` or `allOf` written as a string is exactly one `{{ }}` expression, and its static type fits `list[string]?` (§3.3.2) | Template validation |
 | Environment *enableIf*: an expression field of type `bool` (§7.6) that references only the scopes §7.3.2 lists for it, which differ between a Step Environment and other Environments | Template validation |
 | A check over a Step's Environment set, such as the `WRAP_ACTIONS` single-layer rule, where an Environment's *enableIf* decides membership | Job creation; before then only when the violation holds whatever every undetermined *enableIf* resolves to (§7.6 rule 5) |
-| Environment *enableIf* does not resolve to `null`, for each Step whose Sessions would enter the Environment | Job creation, per Step |
+| Environment *enableIf* does not resolve to `null`, for each Step that the Environment applies to and that it is evaluated for | Job creation, per Step |
 | The *enableIf* of an Environment whose `activation` is `ALWAYS` is not known at template validation to be `false`: a literal `false`, or an expression that the rules for unknown operands make `false` (§4 *activation*, §7.6 rule 5) | Template validation |
 | The *enableIf* of an Environment whose `activation` is `ALWAYS` does not resolve to `false` for any Step; the error names the Step and the Environment. This covers *jobEnvironments* entries and attached Environments (§4 *activation*) | Job creation, per Step |
 | A disabled `environment:` entry (its *enableIf* is `false`) for an Environment whose `activation` is `ALWAYS` is an error naming the Step and the Environment (§3.2 item 3.2) | Template validation for an *enableIf* known there to be `false` on an entry that names a *jobEnvironments* entry; otherwise Job creation |
@@ -696,7 +697,7 @@ false`, so validators agree on what they report.
 A value that the *enableIf* does not read still need not convert when the Environment is disabled: an entry
 `Seats: "{{Param.N}}"` for an INT parameter, with the Job Parameter `N` set to `"many"`, is not an error for a Step for
 which the *enableIf* is `false`. Converting every value before the *enableIf* would be stricter, but it would reject a
-value that no Session uses, so it is not required.
+value that no Session uses, so values are converted after the decision.
 
 ### The name `enableIf`
 
@@ -984,7 +985,7 @@ cannot change between the two.
 The prototype is the `env-params-prototype` branch of
 [mwiebe/openjd-rs](https://github.com/mwiebe/openjd-rs/tree/env-params-prototype), developed alongside this RFC. It
 implements the extension in `openjd-model`, `openjd-sessions`, `openjd-cli`, and `openjd-for-js`, and its `openjd
-check`, `openjd summary`, and `openjd run` pass every 2023-09 conformance test at this RFC's head, including the 419
+check`, `openjd summary`, and `openjd run` pass every 2023-09 conformance test at this RFC's head, including the 423
 under `conformance-tests/2023-09/ENV_PARAMS`. The `env-params` branch of
 [mwiebe/openjd-model-for-python](https://github.com/mwiebe/openjd-model-for-python/tree/env-params) exposes it to Python
 through the Rust-backed bindings.

@@ -1,0 +1,42 @@
+# Template Schemas §3.2.2 item 2 (RFC 0010): an enableIf reads a parameter when its expression references it, whether
+# or not evaluation reaches the reference. Lic's enableIf "Param.Use == 'yes' and Env.Param.Seats > 0" would be false
+# with Use=no before it reaches Seats, but it reads Seats, whose value "many" does not convert to INT. So it is not
+# evaluated, Lic is not disabled for A, and the value's error rejects the Job. JB-110 is the same with an enableIf that
+# does not reference Seats, which runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ReadsValueItDoesNotReach
+  parameterDefinitions:
+  - name: Use
+    type: STRING
+    allowedValues: ["yes", "no"]
+  - name: N
+    type: STRING
+  jobEnvironments:
+  - name: Lic
+    activation: ON_REQUEST
+    enableIf: "Param.Use == 'yes' and Env.Param.Seats > 0"
+    envParameterDefinitions:
+    - name: Seats
+      type: INT
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Lic, "Seats={{Env.Param.Seats}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Lic
+      parameters:
+        Seats: "{{Param.N}}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+parameters:
+  Use: "no"
+  N: many
+runOn: [posix, windows]

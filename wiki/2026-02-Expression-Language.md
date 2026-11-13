@@ -1579,10 +1579,19 @@ logical operators then give:
 | `U and U`, `U or U` | `U` |
 | `not U` | `U` |
 
-A result is known exactly when every value that `U` could take gives the same result, as for a
-conditional whose branches give the same value: `c if U else c` is `c` (see Conditional
-Expressions with Unknown Conditions). Template Schemas uses these results only before the values
-are known, to decide which errors to report early
+An unknown operand of another type may still decide the result, because `and` and `or` look only at
+whether an operand is `null` or `false`. An unknown `string`, `int`, `float`, `path`, or list,
+`unresolved[string]` for example, is never `null` or `false`: `and` always passes on from it, and
+`or` always returns it. So with `S` of type `unresolved[string]`, `S and false` is `false` and
+`S and true` is `true`, while `S or true` is `S`, which is not known. An unknown operand of a type
+that admits `null`, such as `unresolved[string?]`, or of type `any`, may be `null`, which `and`
+returns: with `O` of type `unresolved[string?]`, `O and false` is `null` or `false`, so it is not
+known.
+
+In general, a result is known exactly when every value that the unknown operands could take, given
+their types, gives the same result, as for a conditional whose branches give the same value:
+`c if U else c` is `c` (see Conditional Expressions with Unknown Conditions). Template Schemas uses
+these results only before the values are known, to decide which errors to report early
 ([§7.6](2023-09-Template-Schemas#76-expression-fields) rule 5). Once the values are known, the
 expression is evaluated again, and its result is what that evaluation gives. So `U and false`,
 which is known to be `false` early, still fails when it is evaluated if evaluating `U` fails.
