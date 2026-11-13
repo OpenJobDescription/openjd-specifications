@@ -1,6 +1,7 @@
-# Template Schemas §3.2 (checked-at paragraph) and §7.6 rule 5 (RFC 0010): an entry whose enableIf is an expression
-# may turn out to be disabled, and a disabled entry's parameters are not checked, so its undeclared key and its value
-# outside allowedValues are not errors at template validation. JB-143 and JB-144 create Jobs from the same shape.
+# Template Schemas §3.2 (checked-at paragraph) and §7.6 rule 5 (RFC 0010): an entry whose enableIf reads a Job Parameter
+# is not known at template validation and may turn out to be disabled, and a disabled entry's parameters are not
+# checked, so its undeclared key and its value outside allowedValues are not errors at template validation. JB-143 and
+# JB-144 create Jobs from the same shape.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - ENV_PARAMS
