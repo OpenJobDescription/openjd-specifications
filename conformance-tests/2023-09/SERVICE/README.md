@@ -176,8 +176,9 @@ values. The rule has no exceptions.
   earlier attachment's); not empty. A Service's
   `environment:` entry may read `RawParam.*`, `Param.*`, `Job.Name`,
   `Job.EnvNames`, and the Service's `let`, not `Step.Name`; a Service supplies
-  every required parameter of each Environment its Session enters, as a Step
-  does (RFC 0010 constraint 7).
+  every parameter without a `default` of each Environment that applies to it
+  by its `activation` and the Service's entries, as a Step does (RFC 0010
+  constraint 7).
 - **`externalServices`** (§1.1 item 9, §9.8, §9.8.1): a requirement makes the
   listed ports' `port` and `connectAddress` available under the inline rule:
   to Steps (script and Step Environments), inline Services, and Job
@@ -187,7 +188,8 @@ values. The rule has no exceptions.
   lists is rejected, like an unused inline Service; `ports` is
   required, 1–10, unique, names not `File`, with a `protocol` of `TCP`
   (default) or `UDP` and no port number; no other property; Job Template only.
-- **Environment Template root** (§1.2): `$schema` and `extensions` accepted,
+- **Environment Template root** (§1.2): `$schema` and `extensions` accepted
+  (both from RFC 0010, "Changes that apply without the extension" item 4),
   `environment` optional, at least one of `environment` or `services`.
 - **Every action inside a wrapper is wrapped** (§4.3 `WRAP_ACTIONS`
   constraint 6): a wrapping Environment that a Task Session enters defines
@@ -643,6 +645,7 @@ SERVICE/
     │  # The Service Session
     ├── service-environments-follow-activation.test.yaml
     ├── service-environment-disabled-for-service.test.yaml
+    ├── service-disabled-entry-for-pre-extension-environment.test.yaml
     ├── service-enters-environment-listing-other-service.test.yaml
     ├── service-on-enter-openjd-env-reaches-health-check.test.yaml
     ├── service-on-enter-openjd-env-reaches-on-run.test.yaml
@@ -660,6 +663,7 @@ SERVICE/
     ├── service-external-declines-earlier-attachment-environment.test.yaml
     ├── service-external-declines-earlier-attachment-wrapper.test.yaml
     ├── service-external-disabled-entry-for-earlier-on-request-environment.test.yaml
+    ├── service-external-disabled-entry-for-pre-extension-environment.test.yaml
     ├── service-external-disabled-entry-matching-nothing-ignored.test.yaml
     ├── service-external-enters-only-earlier-documents-environments.test.yaml
     ├── service-external-own-environment-hides-earlier-same-name.test.yaml
@@ -695,6 +699,7 @@ SERVICE/
     ├── service-combined-host-requirements-conflict.invalid.test.yaml
     ├── service-external-declines-ambiguous-earlier-environment.invalid.test.yaml
     ├── service-external-declines-earlier-attachment-always-environment.invalid.test.yaml
+    ├── service-external-disabled-entry-for-pre-extension-wrapper.invalid.test.yaml
     ├── service-job-wrapper-with-external-service.invalid.test.yaml
     ├── service-max-restarts-exhausted.invalid.test.yaml
     ├── service-max-restarts-from-param-negative.invalid.test.yaml
@@ -791,7 +796,11 @@ SERVICE/
   different configurations of one Environment
   (`service-supplies-environment-parameters`), and an Environment's `enableIf`
   is evaluated with the Service's values, so it may exclude the Service's
-  Session and not the Task's (`service-environment-disabled-for-service`).
+  Session and not the Task's (`service-environment-disabled-for-service`). A
+  Service's disabled entry declines a `BY_DEFAULT` Job Environment and has no
+  effect on an attached Environment from a document that does not list
+  `ENV_PARAMS`, which its Session still enters
+  (`service-disabled-entry-for-pre-extension-environment`).
 - **`openjd_env` within a Service** (§9.7): variables set by `onEnter` reach
   `onRun` and `onExit`, override declarative `variables`, and never propagate to
   Tasks (`service-on-enter-openjd-env-reaches-on-run`); they reach every
@@ -830,7 +839,13 @@ SERVICE/
   wrapper that cannot wrap it
   (`service-external-declines-earlier-attachment-wrapper`), but not an
   `ALWAYS` one
-  (`service-external-declines-earlier-attachment-always-environment`). Its
+  (`service-external-declines-earlier-attachment-always-environment`). An
+  Environment from a document that does not list `ENV_PARAMS` behaves as
+  `ALWAYS`, and a disabled entry for it has no effect and is not an error, as
+  for a Step: the Service's Session still enters it
+  (`service-external-disabled-entry-for-pre-extension-environment`), and so
+  enters a wrapper from such a document that cannot wrap it, which rejects the
+  Job (`service-external-disabled-entry-for-pre-extension-wrapper`). Its
   disabled entry resolves to its own document's Environment first
   (`service-external-own-environment-hides-earlier-same-name`), and otherwise
   among earlier attachments' Environments, whatever their `activation`, where
@@ -923,11 +938,13 @@ SERVICE/
 - **Submission-time checks** (§1.2.2 item 4): a wrapping Environment that a
   Service Session enters but that lacks the `onWrapService*` hooks is rejected
   — from a document without `SERVICE` attached to a Job declaring a Service,
-  in a Job submitted alongside an external Service, or from a document that
-  declares `SERVICE` but defines three hooks
+  in a Job submitted alongside an external Service, from a document that
+  declares `SERVICE` but defines three hooks, or from a document without
+  `ENV_PARAMS` that an attached Service's disabled entry cannot decline
   (`service-wrapper-without-service-declaration`,
   `service-job-wrapper-with-external-service`,
-  `service-wrapper-three-hooks-entered-by-service`). A Service whose own host
+  `service-wrapper-three-hooks-entered-by-service`,
+  `service-external-disabled-entry-for-pre-extension-wrapper`). A Service whose own host
   requirements conflict with those of an Environment its Session enters is
   rejected (`service-combined-host-requirements-conflict`).
 
@@ -985,7 +1002,8 @@ runner contract. The behavior specific to `SERVICE`:
    disabled `environment:` entries among the Environments of its own document
    and of earlier attachments (§1.2 item 6 constraint 5), the document's own
    first, rejecting one that declines an `ALWAYS` Environment or matches two
-   earlier attachments' Environments and ignoring one that matches none.
+   earlier attachments' Environments and ignoring one that matches none or
+   names an Environment from a document that does not list `ENV_PARAMS`.
 3. Before any Task of a Step runs, every Service whose scope includes the Step
    must be started in a Service Session of its own — after the Steps in its
    `dependencies` have completed and the Services in it are READY,

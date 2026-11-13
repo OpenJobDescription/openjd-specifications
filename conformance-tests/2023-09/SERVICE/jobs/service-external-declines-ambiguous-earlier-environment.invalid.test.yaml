@@ -3,7 +3,10 @@
 # matches the Environments of two earlier attachments is ambiguous, an error
 # as it is for a Step. The two attachments that both define Shared are
 # otherwise valid, since nothing else names Shared, and Cache declines its
-# own client Environment, so the ambiguous entry is the only error.
+# own client Environment, so the ambiguous entry is the only error. Neither
+# attachment lists ENV_PARAMS, so a disabled entry that resolved to one of
+# them would have no effect, but the name is resolved first and matches two
+# (RFC 0010, Template Schemas §3.2.1 item 3).
 template:
   specificationVersion: jobtemplate-2023-09
   name: ExternalServiceDeclinesAmbiguousEarlierEnvironment

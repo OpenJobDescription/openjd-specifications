@@ -1,0 +1,59 @@
+# RFC 0009 "Services run inside Environments" / RFC 0010 "Environments from
+# documents without ENV_PARAMS are ALWAYS": a Job Template's Service selects
+# its Environments exactly as a Step does. The attached Environment Queue
+# comes from a document that does not list ENV_PARAMS, so it behaves as
+# ALWAYS. The Service Store has a disabled entry for Queue, which, as a
+# Step's would, has no effect and is not an error, so Store's Session still
+# enters Queue. The Job Environment Local is BY_DEFAULT, and Store's
+# disabled entry for it declines it.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: ServiceDisabledEntryForPreExtensionEnvironment
+  jobEnvironments:
+  - name: Local
+    variables:
+      SEEN_LOCAL: "yes"
+  services:
+  - name: Store
+    dependencies:
+    # Queue's document does not list ENV_PARAMS: this entry has no effect.
+    - environment: Queue
+      enableIf: false
+    # Local is BY_DEFAULT: this entry declines it.
+    - environment: Local
+      enableIf: false
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os, time; [print('SERVICE_' + v + '=' + os.environ.get(v, 'unset'), flush=True) for v in ['SEEN_QUEUE', 'SEEN_LOCAL']]; print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  steps:
+  - name: Use
+    dependencies:
+    - service: Store
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os; [print('TASK_' + v + '=' + os.environ.get(v, 'unset')) for v in ['SEEN_QUEUE', 'SEEN_LOCAL']]"]
+
+environments:
+- specificationVersion: environment-2023-09
+  environment:
+    name: Queue
+    variables:
+      SEEN_QUEUE: "yes"
+
+expected:
+  output:
+  - SERVICE_SEEN_QUEUE=yes
+  - SERVICE_SEEN_LOCAL=unset
+  - TASK_SEEN_QUEUE=yes
+  - TASK_SEEN_LOCAL=yes

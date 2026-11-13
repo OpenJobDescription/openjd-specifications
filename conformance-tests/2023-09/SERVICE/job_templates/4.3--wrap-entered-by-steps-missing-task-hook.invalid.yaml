@@ -1,6 +1,7 @@
 # Section 4.3 WRAP_ACTIONS constraint 6: a wrapping Environment with the
-# default `activation: BY_DEFAULT` is entered by every Task Session, so
-# onWrapTaskRun is required even when all four Service hooks are defined.
+# default `activation: BY_DEFAULT` that no Step declines is entered by every
+# Task Session, so onWrapTaskRun is required even when all four Service
+# hooks are defined.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - WRAP_ACTIONS

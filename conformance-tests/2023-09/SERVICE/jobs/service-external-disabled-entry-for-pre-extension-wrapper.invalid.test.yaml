@@ -1,0 +1,71 @@
+# Section 1.2 item 6 constraint 5 / Section 1.2.2 item 4 (RFC 0009) / RFC 0010
+# "Environments from documents without ENV_PARAMS are ALWAYS": the first
+# attachment is an RFC 0008 wrapping Environment from a document that lists
+# neither SERVICE nor ENV_PARAMS, so it cannot define the onWrapService*
+# hooks and behaves as ALWAYS. A later attachment's Service Cache has a
+# disabled entry for it, which, as for a Step, has no effect and is not an
+# error. Cache's Session still enters the wrapper, which cannot wrap Cache's
+# actions, so the submission-time wrapper check rejects the Job. The same
+# Job with a wrapper whose document lists ENV_PARAMS is valid
+# (service-external-declines-earlier-attachment-wrapper).
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: ExternalServiceDisabledEntryForPreExtensionWrapper
+  steps:
+  - name: Use
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_MUST_NOT_RUN')"]
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [WRAP_ACTIONS, EXPR]
+  environment:
+    name: QueueWrapper
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args: ["{{ Env.File.Launch }}", "{{ WrappedAction.Command }}", "{{ repr_py(WrappedAction.Args) }}"]
+        onWrapTaskRun:
+          command: python
+          args: ["{{ Env.File.Launch }}", "{{ WrappedAction.Command }}", "{{ repr_py(WrappedAction.Args) }}"]
+        onWrapEnvExit:
+          command: python
+          args: ["{{ Env.File.Launch }}", "{{ WrappedAction.Command }}", "{{ repr_py(WrappedAction.Args) }}"]
+      embeddedFiles:
+      - name: Launch
+        type: TEXT
+        data: |
+          import ast, os, subprocess, sys
+          sys.exit(subprocess.call([sys.argv[1], *ast.literal_eval(sys.argv[2])], env={**os.environ, "WRAPPED": "yes"}))
+- specificationVersion: environment-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  services:
+  - name: Cache
+    dependencies:
+    - environment: CacheClient
+      enableIf: false
+    # QueueWrapper cannot wrap a Service's actions, but this entry has no
+    # effect on an Environment from a document without ENV_PARAMS.
+    - environment: QueueWrapper
+      enableIf: false
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import time; print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  environment:
+    name: CacheClient
+    dependencies:
+    - service: Cache
+    variables:
+      CACHE_PORT: "{{ Service.Cache.main.port }}"

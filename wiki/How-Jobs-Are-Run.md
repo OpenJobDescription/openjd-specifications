@@ -252,8 +252,10 @@ restart policy governs them. An Environment Template may define both `services:`
 their scope, and may for example set environment variables that point Tasks at them. Those **Services** typically
 decline the **Environment** for their own **Sessions** with a disabled `environment:` entry, since they cannot wait
 for themselves. A disabled entry can also decline a `BY_DEFAULT` **Environment** of an Environment Template attached
-earlier that the **Service** does not need, but not an `ALWAYS` one; an entry whose name matches no **Environment** of
-its own document or an earlier attachment has no effect.
+earlier that the **Service** does not need; declining an `ALWAYS` one is an error. An entry whose name matches no
+**Environment** of its own document or an earlier attachment has no effect. Nor does one for an **Environment** from a
+document that does not list `ENV_PARAMS`, and it is not an error: such an **Environment** behaves as `ALWAYS`, so the
+**Service**'s **Sessions** enter it, as a Step's do.
 A Job Template that reads the endpoint itself declares the **Service** and the ports it uses in `externalServices` (see
 [Section 9.8](2023-09-Template-Schemas#98-servicerequirement)) and lists it in `dependencies` as it would an inline
 **Service**; at submission the scheduler matches each requirement to exactly one attached **Service** of that name

@@ -1,10 +1,13 @@
 # Section 1.2 item 6 constraint 5 / Section 1.2.2 item 4 (RFC 0009): the first
 # attachment is an RFC 0008 wrapping Environment from a document that does not
-# declare SERVICE, so it cannot define the onWrapService* hooks and, without
-# ENV_PARAMS, is BY_DEFAULT. A later attachment's Service Cache would enter it
-# and fail the submission-time wrapper check, but Cache declines it with a
-# disabled entry, so the Job is valid. The Task's Session still enters the
-# wrapper, which marks the Task's environment.
+# declare SERVICE, so it cannot define the onWrapService* hooks. Its document
+# lists ENV_PARAMS, so it has the default `activation: BY_DEFAULT`. A later
+# attachment's Service Cache would enter it and fail the submission-time
+# wrapper check, but Cache declines it with a disabled entry, so the Job is
+# valid. The Task's Session still enters the wrapper, which marks the Task's
+# environment. Without ENV_PARAMS the wrapper would behave as ALWAYS and the
+# decline would have no effect (see
+# service-external-disabled-entry-for-pre-extension-wrapper.invalid).
 template:
   specificationVersion: jobtemplate-2023-09
   name: ExternalServiceDeclinesEarlierAttachmentWrapper
@@ -18,7 +21,7 @@ template:
 
 environments:
 - specificationVersion: environment-2023-09
-  extensions: [WRAP_ACTIONS, EXPR]
+  extensions: [WRAP_ACTIONS, ENV_PARAMS, EXPR]
   environment:
     name: QueueWrapper
     script:
