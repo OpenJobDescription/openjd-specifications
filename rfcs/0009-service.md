@@ -606,10 +606,20 @@ This RFC is additive and gated by the `SERVICE` extension name declared under RF
 - No existing field changes meaning. One combination is newly rejected at submission: a wrapping
   Environment (RFC 0008) that a Service Session enters but that does not define the
   `onWrapService*` hooks, such as one from a document without `SERVICE`, in a Job that has any
-  Service ([Environment Template](#environment-template) item 4).
-- The `$schema` and `extensions` keys on the Environment Template are not gated by `SERVICE`; they
-  formalize what `openjd-model` already accepts, and RFC 0010 adds the same keys. Environment
-  Templates that omit both are unaffected.
+  Service ([Environment Template](#environment-template) item 4). A queue wrapper that lists
+  neither `SERVICE` nor `ENV_PARAMS`, such as one written before both extensions, behaves as
+  `activation: ALWAYS` under RFC 0010, and no Service can decline it. Such a queue rejects every
+  Job whose Job Template has a Service that runs, and every Job that uses a Service of an
+  Environment Template attached after the wrapper, until the wrapper's author defines the hooks,
+  or lists `ENV_PARAMS` and makes the wrapper `ON_REQUEST` or keeps that extension's default,
+  `BY_DEFAULT`, for each Service to decline (see [Environment Template](#environment-template)
+  item 4). Each of these lists `ENV_PARAMS`: the hooks need `SERVICE`, which requires it, and
+  `activation` is part of it. So a wrapper that must
+  still be entered by every Session that may enter it also sets `activation: ALWAYS`.
+- An Environment Template needs the `extensions` key to list `SERVICE`. RFC 0010 adds it, and
+  `$schema`, to every Environment Template, whether or not it lists `ENV_PARAMS` (its
+  [Changes that apply without the extension](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#changes-that-apply-without-the-extension)
+  item 4). This RFC adds neither key; it adds `SERVICE` to the names `extensions` may list.
 
 ## Specification
 
@@ -627,7 +637,7 @@ This RFC is additive and gated by the `SERVICE` extension name declared under RF
 | **External Service** | A Service supplied to a Job by the scheduler from an Environment Template, rather than declared in the Job Template. A Job Template that reads an external Service's endpoint declares a **requirement** for it in `externalServices`. |
 | **Inline Service** | A Service declared in the Job Template's own `services` list, as opposed to an external Service. |
 | **Environment selection** | Which Environments a Session enters, as RFC 0010 decides it from each Environment's `activation`, `enableIf`, and `exclusiveGroup` and from the entity's `environment:` entries (RFC 0010, [Which Sessions enter an Environment](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#which-sessions-enter-an-environment)). A Service's Sessions are selected exactly as a Step's are, with "Step" read as "Service", among the Environments that [Services run inside Environments](#services-run-inside-environments) makes available to the Service. |
-| **Requesting entity** | As in RFC 0010, extended to Services: the Step or Service whose `dependencies` contain an `environment:` entry. |
+| **Request, decline, applies** | As RFC 0010 defines them for a Step, extended to Services: a Service requests an Environment with an enabled `environment:` entry in its `dependencies`, declines a `BY_DEFAULT` one with a disabled entry, and an Environment applies to it by its `activation` and those entries, among the Environments it chooses from (see [Services run inside Environments](#services-run-inside-environments)). |
 
 ### Schema modifications
 
@@ -680,21 +690,20 @@ Extension list addition to item 3 (*extensions*): `SERVICE` (this RFC).
 
 ```diff
   specificationVersion: environment-2023-09
-+ $schema: <string> # @optional
-+ extensions: [ <ExtensionName>, ... ] # @optional
+  $schema: <string> # @optional
+  extensions: [ <ExtensionName>, ... ] # @optional
   parameterDefinitions: [ <JobParameterDefinition>, ... ] # @optional
 - environment: <Environment>
 + environment: <Environment> # @optional
 + services: [ <Service>, ... ] # @optional @extension SERVICE
 ```
 
-New and changed properties:
+*$schema* and *extensions* are as RFC 0010 adds them (see [Backward
+compatibility](#backward-compatibility)). An extension listed in *extensions* applies to the
+content of that document only, so a Job Template need not list `SERVICE` for its Steps to enter
+an attached Environment that lists an attached Service; reading the endpoint itself needs
+`externalServices`, which requires `SERVICE`. New and changed properties:
 
-* *$schema* — Ignored, as on the Job Template. Allowed for compatibility with JSON-editing IDEs.
-* *extensions* — If provided, a non-empty list of extensions that this document uses, with the
-  same available names as the Job Template. An extension listed here applies to the content of
-  this document only; a Job Template does not need to list the extensions used by the Environment
-  Templates a scheduler applies to it, and vice versa.
 * *environment* — Now optional. The definition of an Environment that the Environment Template
   defines. When *services* is also provided, the Environment may list those Services in its
   `dependencies`, which makes their endpoints visible to it (see [`<Environment>`](#environment)).
@@ -715,9 +724,9 @@ New and changed properties:
        attachment's Environment, or supplying values to it, is not provided for: a request would
        make the Service depend on another document's Environment being attached, and values would
        depend on its parameter definitions, while a decline depends only on the Environment's name
-       and `activation`. A disabled entry requests nothing and supplies no values; it keeps the
-       Service's Sessions out of the Environment it names (RFC 0010's decline of a `BY_DEFAULT`
-       Environment). It serves both for the document's own *environment*, which would otherwise be a
+       and `activation`. A disabled entry requests nothing and supplies no values; for a
+       `BY_DEFAULT` Environment it is RFC 0010's decline, which keeps the Service's Sessions out of
+       it. It serves both for the document's own *environment*, which would otherwise be a
        cycle when it lists the Service, and for an Environment of an Environment Template attached
        earlier that the Service does not need (see
        [Services run inside Environments](#services-run-inside-environments)). The entry's name
@@ -727,11 +736,15 @@ New and changed properties:
        attached before it in place of the attached ones: to the document's own *environment* if it
        has that name, and otherwise among the earlier attachments' Environments, whatever their
        `activation`. RFC 0010 then gives the entry's effect from the `activation` of the Environment
-       it names, which makes declining an `ALWAYS` one an error. A later attachment's Environments
-       and the Job Template's are not among them, so an entry that names only one of those resolves
-       to no Environment and, as RFC 0010 gives for a disabled entry, has no effect. An entry that
-       names the document's own *environment* is checked at template validation, and any other entry
-       when the Job is created, from the combined Job.
+       it names, which makes declining an `ALWAYS` one an error. An Environment from a document
+       that does not list `ENV_PARAMS` behaves as `ALWAYS` with no `enableIf`, but RFC 0010 gives a
+       disabled entry for it no effect instead of an error
+       ([Environments from documents without `ENV_PARAMS` are `ALWAYS`](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#environments-from-documents-without-env_params-are-always)),
+       so the Service's Sessions still enter it. A later attachment's Environments and the Job
+       Template's are not among them, so an entry that names only one of those resolves to no
+       Environment and, as RFC 0010 gives for a disabled entry, has no effect. An entry that names
+       the document's own *environment* is checked at template validation, and any other entry when
+       the Job is created, from the combined Job.
 
 At least one of *environment* or *services* must be provided.
 
@@ -782,17 +795,29 @@ When a submission combines a Job Template with one or more Environment Templates
    Service. A document that does not declare `SERVICE` cannot define those hooks, so a wrapping
    Environment from such a document is rejected in any Job that has a Service whose Sessions enter
    it. The remedy is for that document to declare `SERVICE` and define the hooks, or to declare
-   `ENV_PARAMS` and make the wrapper `ON_REQUEST`, so that only the Steps that request it enter it.
-   A wrapper from a document without `ENV_PARAMS` has RFC 0010's default `activation: BY_DEFAULT`,
-   so any Service may also decline it (a Service of an Environment Template with the disabled entry
-   of *services* constraint 5); none can decline an `ALWAYS` wrapper. A wrapping Environment in a
-   Step's `stepEnvironments` is never entered by a Service Session and is not subject to this
-   check.
+   `ENV_PARAMS` and `EXPR` and either make the wrapper `ON_REQUEST`, so that only the Steps that
+   request it enter it, or leave it `BY_DEFAULT`, so that any Service may decline it with a
+   disabled entry (for an Environment Template's Service, the one *services* constraint 5
+   permits). A document that declares `SERVICE` also lists `ENV_PARAMS`, so its wrapper defaults
+   to `BY_DEFAULT` too. Only a wrapper that defines the hooks and sets `activation: ALWAYS` is
+   entered by every Session that may enter it, that is every Task Session and the Sessions of
+   every Service of its own or a later document (see
+   [Services run inside Environments](#services-run-inside-environments)): an `ON_REQUEST`
+   wrapper is left out of every Session that does not request it, and a `BY_DEFAULT` one may be
+   declined by a Step as well as a Service. No Service can decline an `ALWAYS` wrapper, nor one
+   from a document that does not list `ENV_PARAMS`: RFC 0010 makes such a wrapper behave as
+   `activation: ALWAYS` with no `enableIf`, and a Service's disabled entry for it has no effect, as
+   a Step's does, so the Service's Sessions still enter it and the submission is rejected. A
+   wrapping Environment in a Step's `stepEnvironments` is never entered by a Service Session and is
+   not subject to this check.
 
 Items 2 and 4, and the `ENV_PARAMS` checks that need the attached Environments, are the only checks
 that require the combined Job; everything else is checked when each document is validated on its
-own. The `ENV_PARAMS` checks are: resolving `environment:` entries (RFC 0010 §3.2.1); RFC 0010's
-`<StepDependency>` constraints 5–7 for entries that resolve to attached Environments; evaluating
+own. The `ENV_PARAMS` checks are those that need the attached Environments, made at the steps of
+RFC 0010's Template Schemas §7.4.1 (which also says how they apply when only some documents list
+`ENV_PARAMS`) and applied to Services as to Steps: resolving `environment:` entries (RFC 0010 §3.2.1); RFC 0010's
+`<StepDependency>` constraints 5 and 6 for entries that resolve to attached Environments, and
+constraint 7 for every attached Environment that applies to a Step or Service; evaluating
 the `enableIf` of attached Environments; every check that depends on an `enableIf` or *parameters*
 value that reads `Job.EnvNames`; and, for Services as for Steps, the combined host requirement
 conflicts of RFC 0010 §3.3.3 that involve an attached Environment. This RFC adds the cycles of
@@ -824,7 +849,7 @@ The `<StepTemplate>` object is unchanged. One of its items changes under `SERVIC
 A `<StepDependency>` names a Step or, with `SERVICE`, a Service that the entity listing it depends
 on, or an Environment that it requests (RFC 0010). It appears in the `dependencies` of a
 `<StepTemplate>`, of a [`<Service>`](#service), and of a Job [`<Environment>`](#environment). RFC
-0010 makes it one of two objects; this RFC adds a third:
+0010 makes it one of three objects; this RFC adds a fourth:
 
 ```diff
   # <StepDependency> is one of:
@@ -1756,7 +1781,8 @@ a later attachment's. The rule differs for Services because a Step always belong
 Template, the last document: with it, no dependency edge points from a document to a later one, so
 a cycle never spans documents and each author can keep their own document acyclic. The
 Environments a Service Session enters keep their order in `jobEnvironments`. A Service belongs to
-no Step, so no Step's `stepEnvironments` are entered, whatever the Service's scope.
+no Step, so no Step's `stepEnvironments` are entered, whatever the Service's scope: under RFC 0010
+a Step Environment has no `activation`, and only its own Step's Sessions enter it.
 
 An Environment that lists a Service waits for that Service to be READY, so the Service's own
 Sessions must not enter it. There is no exception for this: if they would enter it, the template has
@@ -1769,11 +1795,16 @@ the same means.
 
 An Environment Template's Service may have disabled `environment:` entries and no other
 `environment:` entries. One declines a `BY_DEFAULT` Environment the Service chooses among: its own
-document's, or an earlier attachment's, such as a wrapper without the `onWrapService*` hooks or one
-with a parameter that has no `default`. The name resolves as
+document's, or an earlier attachment's, such as a wrapper from a document that lists `ENV_PARAMS`
+but not `SERVICE`, or one with a parameter that has no `default`. The name resolves as
 [Environment Template](#environment-template) *services* constraint 5 gives: declining an `ALWAYS`
 Environment and matching two earlier attachments' Environments are errors, and matching none has no
-effect.
+effect. An entry that names an earlier attachment's Environment from a document that does not list
+`ENV_PARAMS` has no effect either: RFC 0010 makes that Environment behave as `ALWAYS`, so the
+Service's Sessions enter it. Where they must not, its author lists `ENV_PARAMS` and `EXPR` and
+leaves it `BY_DEFAULT` or makes it `ON_REQUEST`, which also lets Steps leave it out. A wrapper that
+must stay in every Session that may enter it instead lists `SERVICE`, defines the
+`onWrapService*` hooks, and sets `activation: ALWAYS`.
 
 The Environments a Service Session enters are all entered before the Service's *onEnter* and exited,
 in reverse, after its *onExit*. Environment variables set by an Environment's `variables` or
@@ -1885,7 +1916,7 @@ boolean scalar, or on an attached Environment.
 | No `Service.*` value in a field resolved at job creation | [The `Service.*` scope](#the-service-scope) |
 | An Environment's `dependencies` holds only `service` entries and is absent from `stepEnvironments` | [`<Environment>`](#environment) *dependencies* constraints 2–4 |
 | A wrapping Environment defines the hook for every kind of action that a kind of Session entering it may run *(enableIf)* | [`<Environment>`](#environment) wrap hook rule 1 |
-| Every `dependencies` entry is well formed, `environment:` entries appear only on Steps and Services, and on an Environment Template's Services only disabled ones, none naming an `ALWAYS` Environment or matching two earlier attachments' Environments *(enableIf)* | [`<StepDependency>`](#stepdependency) constraints 1, 2, and 4 and item 3; [`<Service>`](#service) item 4 constraint 4; [Environment Template](#environment-template) *services* constraint 5 |
+| Every `dependencies` entry is well formed, `environment:` entries appear only on Steps and Services, and on an Environment Template's Services only disabled ones, none declining an Environment whose `activation` is `ALWAYS` or matching two earlier attachments' Environments *(enableIf)* | [`<StepDependency>`](#stepdependency) constraints 1, 2, and 4 and item 3; [`<Service>`](#service) item 4 constraint 4; [Environment Template](#environment-template) *services* constraint 5 |
 | A Service's `environment:` entries read only the scopes available to a Service | [`<Service>`](#service) item 4 |
 | The `dependencies` graph, including the edges from entering an Environment that lists a Service, is acyclic, with no exception for a Service's own client Environment *(enableIf)* | [`<StepDependency>`](#stepdependency) constraint 3; [Environment Template](#environment-template) *services* constraint 4 |
 | A Service's combined host requirements do not conflict *(enableIf)* | [`<Service>`](#service) item 5 |
@@ -2100,7 +2131,10 @@ A decline adds no edge to another document: it can let the Service's Sessions en
 of an `exclusiveGroup`, but that member is of the Service's own document or an earlier one, so any
 cycle that results is one its author can see, and it is rejected as usual. Without the decline, two
 of a queue's Environment Templates could be incompatible only because of the order in which they are
-attached.
+attached. The decline does not reach an Environment from a document that does not list
+`ENV_PARAMS`, which RFC 0010 keeps in every Session that may enter it, so that an Environment
+written before that extension cannot be left out by a later document; a Service is held to that
+exactly as a Step is.
 
 ### `onHealthCheck` is an action of the Service
 
@@ -2215,14 +2249,14 @@ defined alongside it, or the Job Template, lists it.
 
 Earlier drafts of this RFC added `runScope: [ <RunScopeName>, ... ]` to `<Environment>`, a list of
 the kinds of Session (`TASK`, `SERVICE`) the Environment is entered in, defaulting to `[TASK]` for an
-Environment that lists a Service and to every kind otherwise. RFC 0010 replaces it with
-an Environment's `activation` and `enableIf` and the `environment:` dependency entry, and this RFC
-depends on RFC 0010 for them. Selection by kind was mostly a stand-in for selection by who asked: an
+Environment that lists a Service and to every kind otherwise. This RFC replaced it with RFC 0010's
+`activation` and `enableIf` on an Environment and its `environment:` dependency entry, which it
+depends on. Selection by kind was mostly a stand-in for selection by who asked: an
 Environment "for Services only" is one that each Service requests and no Step does. A list of kinds
 would also grow with every extension that adds a kind of Session. The one rule that was about
 kinds, that an Environment reading a Service's endpoint cannot run in that Service's Session, is not
 a rule of its own either: it is the cycle check of [`<StepDependency>`](#stepdependency)
-constraint 3. See RFC 0010's
+constraint 3. RFC 0010 rejects a list of Session kinds for `activation` for the same reason; see its
 [`activation`](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#activation)
 and [`activation` as a list of Session
 kinds](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#activation-as-a-list-of-session-kinds).

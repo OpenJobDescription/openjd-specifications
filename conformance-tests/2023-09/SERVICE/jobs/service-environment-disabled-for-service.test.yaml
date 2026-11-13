@@ -2,7 +2,9 @@
 # enableIf: an Environment's enableIf is evaluated for a Service with the
 # Service's effective values. Conda is entered only when Packages is not
 # empty; the Service supplies '' and so does not enter it, while the Step
-# supplies a package list and does.
+# supplies a package list and does. The Service's entry is enabled with the
+# default `required: true`, which is not an error when the Environment's own
+# enableIf disables it (RFC 0010, Template Schemas §3.2 *required*).
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [SERVICE, ENV_PARAMS, EXPR]

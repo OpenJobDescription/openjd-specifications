@@ -1,0 +1,63 @@
+# Section 1.2 item 6 constraint 5 (RFC 0009) / RFC 0010 "Environments from
+# documents without ENV_PARAMS are ALWAYS": the first attachment's
+# Environment Earlier comes from a document that does not list ENV_PARAMS,
+# so it behaves as ALWAYS. A later attachment's Service Cache has a disabled
+# entry for Earlier, with `required: true` (the default, written to show it
+# changes nothing for a disabled entry). As for a Step, the entry has no
+# effect and is not an error, unlike one for an Environment that is ALWAYS
+# by its own `activation`
+# (service-external-declines-earlier-attachment-always-environment.invalid).
+# Cache's Session still enters Earlier.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: ExternalServiceDisabledEntryForPreExtensionEnvironment
+  steps:
+  - name: Use
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os; [print('TASK_' + v + '=' + os.environ.get(v, 'unset')) for v in ['SEEN_EARLIER', 'SEEN_CACHE_CLIENT']]"]
+
+environments:
+- specificationVersion: environment-2023-09
+  environment:
+    name: Earlier
+    variables:
+      SEEN_EARLIER: "yes"
+- specificationVersion: environment-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  services:
+  - name: Cache
+    dependencies:
+    - environment: CacheClient
+      enableIf: false
+    # Earlier's document does not list ENV_PARAMS: this entry has no effect.
+    - environment: Earlier
+      required: true
+      enableIf: false
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os, time; [print('SERVICE_' + v + '=' + os.environ.get(v, 'unset'), flush=True) for v in ['SEEN_EARLIER', 'SEEN_CACHE_CLIENT']]; print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  environment:
+    name: CacheClient
+    dependencies:
+    - service: Cache
+    variables:
+      SEEN_CACHE_CLIENT: "yes"
+      CACHE_PORT: "{{ Service.Cache.main.port }}"
+
+expected:
+  output:
+  - SERVICE_SEEN_EARLIER=yes
+  - SERVICE_SEEN_CACHE_CLIENT=unset
+  - TASK_SEEN_EARLIER=yes
+  - TASK_SEEN_CACHE_CLIENT=yes
