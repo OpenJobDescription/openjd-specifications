@@ -62,8 +62,8 @@ Values are fixed per Step when the Job is created. For each Step and each Enviro
 A Session enters an Environment with `activation: ALWAYS` always, one with `BY_DEFAULT` unless its Step declines it with
 a disabled entry, and one with `activation: ON_REQUEST` only when its Step requests it, in each case unless the
 Environment's `enableIf` is false for the Step. For an `ALWAYS` Environment, an `enableIf` that is false for a Step, or
-a disabled entry, is an error instead. An Environment from a document that does not list `ENV_PARAMS` behaves as
-`ALWAYS`, except that a Step's disabled entry for it has no effect.
+a disabled entry, is an error instead. A Job Environment or Environment Template from a document that does not list
+`ENV_PARAMS` behaves as `ALWAYS`, except that a Step's disabled entry for it has no effect.
 
 ## RFC rules these tests verify
 
@@ -790,6 +790,7 @@ matches them against the local host.
 | JB-77 | `4--on-request-wrapper-not-applied-to-other-step.test.yaml` | EP, WA, EX | An `ON_REQUEST` wrapping Environment wraps the requesting Step's Task and not the other Step's (the wrap sentinel is absent from the other Step's output). |
 | JB-173 | `4--pre-extension-wrapper-disabled-entry-second-layer.invalid.test.yaml` | EP, WA, EX; env WA, EX | `runOn: [posix]`. An attached wrapping Environment whose document lists `WRAP_ACTIONS` but not `ENV_PARAMS` behaves as `ALWAYS`, so a Step's disabled entry for it does not remove it, and with a wrapping Job Environment the Step has two layers; rejected (§4 item 4, RFC 0008). |
 | JB-174 | `4--attached-by-default-wrapper-disabled-entry-declined.test.yaml` | EP, WA, EX; env EP, WA, EX | `runOn: [posix]`. The same with `ENV_PARAMS` in the attached Environment's document, so it is `BY_DEFAULT` and the entry declines it: one layer, and the Job runs wrapped by the Job Environment. |
+| JB-202 | `4--pre-extension-step-wrappers-not-shared.test.yaml` | WA, EX; env EP, EX | `runOn: [posix]`. A Job Template that lists `WRAP_ACTIONS` but not `ENV_PARAMS`, with a wrapping Step Environment in each of Steps A and B, and an attached Environment Template that lists `ENV_PARAMS`: a Step Environment is entered only by its own Step's Sessions, even from a document without `ENV_PARAMS`, so each Step has one layer and the Job runs (§4 item 4, §3.2 constraint 7, RFC 0008). |
 
 #### Exclusive groups (§4 item 7)
 
@@ -879,7 +880,7 @@ keeps its number with a note. Earlier drafts of the RFC carried the same index a
 | V49 | An `allOf` for `attr.worker.os.family` or `attr.worker.cpu.arch` has at most one element: a list as written, and a `<ListExpressionString>` result (§3.3.2.1). | Template validation for a list; job creation for an expression | base `3.3--allof-multiple-single-value-attr.invalid`; JB-147 |
 | V50 | `exclusiveGroup` is an `<Identifier>`, not on `stepEnvironments`, and not on an `ALWAYS` Environment (§4 item 7). | Template validation | ET-48, ET-49, JT-187, JT-188 |
 | V51 | Of the Environments a Step's Sessions would enter that share an `exclusiveGroup`, only the first in the Job's Environment order whose `enableIf` is not `false` for the Step is entered; the others are superseded and disabled (§4 item 7, §3.2.2). | Job creation, per Step | JB-148–JB-150, JB-152–JB-154; a superseded Environment is still held to constraint 7: JB-151 |
-| V52 | An Environment from a document that does not list `ENV_PARAMS` behaves as `activation: ALWAYS` with no `enableIf`: every Step's Sessions enter it, and a disabled `environment:` entry that names it has no effect and is not an error (§4 item 4, §3.2 *enableIf*). | Job creation; before then by a validator given the Environment Templates | JB-169–JB-171, JB-173; enabled entries: JB-19, JB-20, JB-172; the `BY_DEFAULT` contrast: JB-140, JB-174 |
+| V52 | A Job Environment or Environment Template from a document that does not list `ENV_PARAMS` behaves as `activation: ALWAYS` with no `enableIf`: every Step's Sessions enter it, and a disabled `environment:` entry that names it has no effect and is not an error (§4 item 4, §3.2 *enableIf*). | Job creation; before then by a validator given the Environment Templates | JB-169–JB-171, JB-173; Step Environments excluded: JB-202; enabled entries: JB-19, JB-20, JB-172; the `BY_DEFAULT` contrast: JB-140, JB-174 |
 | V53 | Two effective values are equal only when they have the same type and string form (a FLOAT as written, a STRING by code points, a RANGE_EXPR in canonical form, lists element by element), and a Session runs a Step's Tasks only when it entered each of the Step's Environments with values equal to the Step's (§3.2.2). | Run time, as a Session takes a Step's Tasks | JB-175, JB-177, JB-179, JB-181–JB-183; equal values: JB-10, JB-176, JB-178, JB-180; one Environment per Step's values: JB-85 |
 | V54 | Before an expression field is evaluated, its value is known when it is a scalar or when evaluating it with the values not yet known as `unresolved[T]` gives a result by the Expression Language's rules for unknown operands (`U and false` is `false`, `U or true` is `true`, `not U` is `U`, and `c if U else c` is `c`); a check whose fields are known is made then (§7.6 rule 5, Expression Language §2.1.6). | Template validation | JT-152, JT-194–JT-205, ET-51; at job creation: JB-185 |
 | V55 | A STRING or PATH effective value, and each element of a LIST[STRING] or LIST[PATH] one, is at most 1024 characters, except where the Environment is disabled for the Step (§4.5 item 5) | Template validation for literals; job creation | JT-208, JT-209, JB-193, JB-194; not checked where disabled: JB-195 |
@@ -1012,7 +1013,7 @@ These rules, or parts of rules, have no planned test with a definite expected ou
     part in the group rule. A Job Environment of a Job Template that does not list
     `ENV_PARAMS` cannot be named by a Step whose template lists it, because a Job Template's Steps are in the same
     document, and without the extension no Step has an `environment:` entry and no Environment has an `enableIf`; its
-    Environments are entered by every Session whichever `activation` they are read as.
+    Job Environments are entered by every Session whichever `activation` they are read as.
 
 ## What the suite does not test
 

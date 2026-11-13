@@ -126,10 +126,10 @@ decides which **Sessions** enter it:
 * `ON_REQUEST`: only the **Sessions** of the Steps that ask for it, less any for which its `enableIf` is false. Other
   **Sessions** never enter it.
 
-An **Environment** from a template that does not list ENV_PARAMS, such as one written before the extension, is entered
-by every **Session**, as an `ALWAYS` one is. A Step's entry for it whose `enableIf` is false has no effect, so a Job
-cannot leave out an **Environment** that a render management system attached for licensing or auditing before it
-adopted ENV_PARAMS.
+A Job's or an Environment Template's **Environment** from a template that does not list ENV_PARAMS, such as one written
+before the extension, is entered by every **Session**, as an `ALWAYS` one is. A Step's entry for it whose `enableIf` is
+false has no effect, so a Job cannot leave out an **Environment** that a render management system attached for licensing
+or auditing before it adopted ENV_PARAMS.
 
 The **Environments** a **Session** does enter keep the order they have in the Job.
 

@@ -1039,10 +1039,10 @@ Where:
        the entry is enabled. Where it is `false`, the entry is *disabled*. A disabled entry requests nothing and
        supplies no values. Its *parameters* are not checked: constraints 5 and 6 do not apply to it, so a key that the
        Environment does not declare, or a value that it would reject, is not an error. A disabled entry whose name
-       resolves to no Environment has no effect, whatever *required* says. Nor does one whose name resolves to an
-       Environment from a document that does not list `ENV_PARAMS`: every Session of the Job enters that Environment,
-       and the entry is not an error (see [&lt;Environment&gt;](#4-environment) *activation*). Otherwise its effect
-       depends on the *activation* of the Environment it names:
+       resolves to no Environment has no effect, whatever *required* says. Nor does one whose name resolves to a Job
+       Environment or Environment Template from a document that does not list `ENV_PARAMS`: every Session of the Job
+       enters that Environment, and the entry is not an error (see [&lt;Environment&gt;](#4-environment)
+       *activation*). Otherwise its effect depends on the *activation* of the Environment it names:
         * `ON_REQUEST` — The Step does not request the Environment, as if the entry were absent.
         * `BY_DEFAULT` — The Step *declines* the Environment. Its Sessions do not enter it, exactly as for an
           `ON_REQUEST` Environment that the Step does not request. The Environment's *enableIf* is not evaluated for the
@@ -1089,8 +1089,8 @@ Constraints:
    [§4.5](#45-environmentparameterdefinition-extension-env_params) item 5.
 7. For every Environment that *applies* to a Step, the Step must supply every parameter that has no `default`. An
    Environment applies to a Step when its *activation* is `ALWAYS`, when it is `BY_DEFAULT` and the Step does not
-   decline it with a disabled entry, and when it is `ON_REQUEST` and an enabled entry of the Step requests it. An
-   Environment from a document that does not list `ENV_PARAMS` applies to every Step (see
+   decline it with a disabled entry, and when it is `ON_REQUEST` and an enabled entry of the Step requests it. A Job
+   Environment or Environment Template from a document that does not list `ENV_PARAMS` applies to every Step (see
    [&lt;Environment&gt;](#4-environment) *activation*). Whether an Environment applies to a Step does not depend on the
    Environment's own *enableIf* or on its *exclusiveGroup*. So a parameter that the Step does not supply is an error in
    the Step's definition even where the Environment turns out to be disabled for the Step (see
@@ -2138,8 +2138,8 @@ A check that depends on which Environments a Step's Sessions enter, such as the 
 ([&lt;EnvironmentActions&gt;](#43-environmentactions) constraint 2), uses what is known at each stage (see
 [§7.6](#76-expression-fields) rule 5). Before the Job is created:
 
-* A Step's Sessions may be taken to enter every Environment whose *activation* is `ALWAYS`, and every Environment from
-  a document that does not list `ENV_PARAMS`.
+* A Step's Sessions may be taken to enter every Environment whose *activation* is `ALWAYS`, and every Job Environment
+  or Environment Template from a document that does not list `ENV_PARAMS`.
 * They are known to enter an Environment whose *enableIf* is absent or known to be `true` when the Step would otherwise
   enter it: by `activation: BY_DEFAULT` with no entry for it or with an entry whose *enableIf* is absent or known to be
   `true`, or through such an entry.
@@ -2780,9 +2780,9 @@ submission has several errors, which of them an implementation reports, and in w
 4. The set of Environments that apply to each Step ([&lt;StepDependency&gt;](#32-stepdependency) constraint 7) is fixed
    from each Environment's *activation* and the Step's entries. An enabled entry requests an `ON_REQUEST` Environment. A
    disabled entry declines a `BY_DEFAULT` one, or, for an `ALWAYS` one, causes the Job to be rejected, naming the Step
-   and the Environment (see [&lt;StepDependency&gt;](#32-stepdependency) *enableIf*). It has no effect on an Environment
-   from a document that does not list `ENV_PARAMS`, which is in every Step's set (see
-   [&lt;Environment&gt;](#4-environment) *activation*).
+   and the Environment (see [&lt;StepDependency&gt;](#32-stepdependency) *enableIf*). It has no effect on a Job
+   Environment or Environment Template from a document that does not list `ENV_PARAMS`, which is in every Step's set
+   (see [&lt;Environment&gt;](#4-environment) *activation*).
 5. Environment parameter defaults and *environment* entry values are resolved into each Step's effective values. The
    *parameters* of an entry that [§3.2.1](#321-resolving-external-environments) item 1 ignores are not resolved.
    Constraint 7 is checked for every Environment in each Step's set, before any *enableIf* of step 6 is evaluated, so a
