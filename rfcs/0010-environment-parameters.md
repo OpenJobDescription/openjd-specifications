@@ -356,7 +356,7 @@ up to 50 parameters, read only inside it as `Env.Param.<name>` and `Env.RawParam
 `<JobParameterDefinition>` of any type available with `EXPR`, except that:
 
 * The `default` is a format string resolved when the Job is created, and may read the same document's Job Parameters.
-  A parameter without one must be supplied by every Step whose Sessions enter the Environment.
+  A parameter without one must be supplied by every Step that the Environment applies to, whatever its *enableIf*.
 * A PATH or LIST[PATH] value is used as given: never joined with a directory, and not required to be absolute.
 * A RANGE_EXPR value's *minLength* and *maxLength* apply to the value as written and to its canonical form.
 
@@ -388,10 +388,10 @@ that does not list `ENV_PARAMS`. *parameters* supplies values, each a literal or
 is created.
 
 The constraints keep an entry to one form and one Environment to one entry, require each key to be declared and each
-value to be valid (except that an attached Environment that declares no parameters ignores a `required: false`
-entry's values), require every Step whose Sessions enter an Environment to supply each parameter without a `default`
-(constraint 7), and forbid `required: false` on an entry that names a Job Environment. The section says at which stage
-each constraint is checked.
+value to be valid (except that an attached Environment that declares no parameters ignores a `required: false` entry's
+values), require every Step that an Environment applies to, by its `activation` and the Step's entries, to supply each
+parameter without a `default` whatever the Environment's *enableIf* is (constraint 7), and forbid `required: false` on
+an entry that names a Job Environment. The section says at which stage each constraint is checked.
 
 ### Resolving external Environments
 
@@ -414,16 +414,17 @@ ignored](#parameters-for-an-environment-that-declares-none-are-ignored)).
 An Environment from a document that does not list `ENV_PARAMS` behaves as `ALWAYS` with no *enableIf*, except that a
 Step's disabled entry for it has no effect rather than being an error.
 
-§4 item 6, *enableIf*, is evaluated when the Job is created, once per Step with that Step's effective values.
-[§3.2.2](../wiki/2023-09-Template-Schemas.md#322-effective-environment-parameter-values) decides it before constraint 7
-and the value checks, which do not apply to a Step for which it is `false`. A result that depends on a missing or
-unconvertible value is an error. §4 item 7, *exclusiveGroup*, names a group of Environments of which each Step's
-Sessions enter only the first, in the Job's Environment order, that they would otherwise enter and that its *enableIf*
-does not disable. The later ones are superseded, which disables them for the Step, and their *enableIf* is not
-evaluated. Attached Environments come first, so one can supersede a Job Environment, and a validator given only the Job
-Template treats a grouped Job Environment as undetermined. An `ALWAYS` Environment cannot have a group (see
-[`exclusiveGroup`](#exclusivegroup)). A Step Environment may have *enableIf* but none of the other new fields (see [Not
-on Step Environments](#not-on-step-environments)).
+§4 item 6, *enableIf*, is evaluated when the Job is created, once per Step with that Step's effective values. It comes
+after constraint 7, which does not depend on it: a Step that an Environment applies to supplies every parameter without
+a `default`. [§3.2.2](../wiki/2023-09-Template-Schemas.md#322-effective-environment-parameter-values) then evaluates the
+*enableIf* with concrete values, before the value checks, which do not apply to a Step for which it is `false`. An
+*enableIf* that reads a value that fails to resolve or does not convert is not evaluated, and the value is an error. §4
+item 7, *exclusiveGroup*, names a group of Environments of which each Step's Sessions enter only the first, in the Job's
+Environment order, that they would otherwise enter and that its *enableIf* does not disable. The later ones are
+superseded, which disables them for the Step, and their *enableIf* is not evaluated. Attached Environments come first,
+so one can supersede a Job Environment, and a validator given only the Job Template treats a grouped Job Environment as
+undetermined. An `ALWAYS` Environment cannot have a group (see [`exclusiveGroup`](#exclusivegroup)). A Step Environment
+may have *enableIf* but none of the other new fields (see [Not on Step Environments](#not-on-step-environments)).
 
 ### Effective values and Session sharing
 
@@ -462,16 +463,21 @@ The [§7.4](../wiki/2023-09-Template-Schemas.md#74-template-processing-stages) s
 at each stage, and the new [§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params) orders the
 work done at Job creation. The new [§7.6](../wiki/2023-09-Template-Schemas.md#76-expression-fields) defines expression
 fields, which both *enableIf* fields are: one typed expression with no `{{ }}` and no implicit conversion other than
-widening `int` to `float`. Until it is evaluated, a check that depends on one reports an error only when the error holds
-for every value it could take.
+widening `int` to `float`. Before it is evaluated, its value is known when it is a scalar or when the Expression
+Language's rules for unknown operands give a result with the values not yet known. A check whose fields are known is
+made then; one that depends on a field that is not known reports an error only when the error holds for every value it
+could take.
 
 ### Expression Language
 
 The [Expression Language](../wiki/2026-02-Expression-Language.md) adds the new symbols to
 [§1.2.2](../wiki/2026-02-Expression-Language.md#122-built-in-symbol-types), defines expression fields in
-[§1.3.2](../wiki/2026-02-Expression-Language.md#132-evaluation-within-template-schemas), and names an Environment's
-*enableIf* as an exception in [Progressive Expression
-Evaluation](../wiki/2026-02-Expression-Language.md#progressive-expression-evaluation).
+[§1.3.2](../wiki/2026-02-Expression-Language.md#132-evaluation-within-template-schemas), and says in [Progressive
+Expression Evaluation](../wiki/2026-02-Expression-Language.md#progressive-expression-evaluation) that an Environment's
+*enableIf* reads only concrete values at Job creation.
+[§2.1.6](../wiki/2026-02-Expression-Language.md#216-logical-operators) gives the results of `and`, `or`, and `not` with
+an unknown operand, such as `U and false = false`, and a conditional whose branches give the same value is that value,
+which template validation uses to decide which errors it reports early.
 
 ### How Jobs Are Run
 
@@ -520,11 +526,11 @@ the section governs. Constraint numbers refer to
 | Environment *enableIf*: an expression field of type `bool` (§7.6) that references only the scopes §7.3.2 lists for it, which differ between a Step Environment and other Environments | Template validation |
 | A check over a Step's Environment set, such as the `WRAP_ACTIONS` single-layer rule, where an Environment's *enableIf* decides membership | Job creation; before then only when the violation holds whatever every undetermined *enableIf* resolves to (§7.6 rule 5) |
 | Environment *enableIf* does not resolve to `null`, for each Step whose Sessions would enter the Environment | Job creation, per Step |
-| The *enableIf* of an Environment whose `activation` is `ALWAYS` is not the literal `false` (§4 *activation*) | Template validation |
+| The *enableIf* of an Environment whose `activation` is `ALWAYS` is not known at template validation to be `false`: a literal `false`, or an expression that the rules for unknown operands make `false` (§4 *activation*, §7.6 rule 5) | Template validation |
 | The *enableIf* of an Environment whose `activation` is `ALWAYS` does not resolve to `false` for any Step; the error names the Step and the Environment. This covers *jobEnvironments* entries and attached Environments (§4 *activation*) | Job creation, per Step |
-| A disabled `environment:` entry (its *enableIf* is `false`) for an Environment whose `activation` is `ALWAYS` is an error naming the Step and the Environment (§3.2 item 3.2) | Template validation for a literal `false` on an entry that names a *jobEnvironments* entry; otherwise Job creation |
+| A disabled `environment:` entry (its *enableIf* is `false`) for an Environment whose `activation` is `ALWAYS` is an error naming the Step and the Environment (§3.2 item 3.2) | Template validation for an *enableIf* known there to be `false` on an entry that names a *jobEnvironments* entry; otherwise Job creation |
 | An Environment from a document that does not list `ENV_PARAMS` behaves as `activation: ALWAYS` with no *enableIf*: every Step's Sessions enter it, and a disabled `environment:` entry that names it has no effect and is not an error (§4 *activation*, §3.2 item 3.2) | Job creation; before then by a validator given the Environment Templates (§4) |
-| A Step's disabled `environment:` entry for a `BY_DEFAULT` Environment declines it: the Step's Sessions do not enter it, and constraint 7, the checks of the Step's effective values for it, and its *hostRequirements* do not apply to the Step (§3.2 item 3.2) | Template validation for a literal `false`, as far as the check is known then (§7.6 rule 5); Job creation otherwise |
+| A Step's disabled `environment:` entry for a `BY_DEFAULT` Environment declines it: the Step's Sessions do not enter it, and constraint 7, the checks of the Step's effective values for it, and its *hostRequirements* do not apply to the Step (§3.2 item 3.2) | Template validation for an *enableIf* known there to be `false` (§7.6 rule 5); Job creation otherwise |
 | An Environment's *hostRequirements*, resolved for a Step, satisfy §3.3.1 and §3.3.2 (for example, a non-negative `min`, and no two names in one source equal after resolution) once requirements that resolve to `null` are discarded, as from a Step's own (§3.3) | Job creation, per Step |
 | An *anyOf* or *allOf* of a Step's or an Environment's *hostRequirements* that has no values after resolution (an empty list result, or list items that all resolve to `null`) is rejected, naming the Step or Environment and the attribute (§3.3 item 3, §3.3.2) | Job creation, per Step |
 | An *anyOf* or *allOf* written as one expression that resolves to `null` is omitted, and an attribute requirement left with neither is discarded (§3.3 item 2, §3.3.2); each element of a list result satisfies `<AttributeCapabilityValue>` and the list has at most 50 elements | Job creation, per Step |
@@ -543,15 +549,16 @@ the section governs. Constraint numbers refer to
 | An entry's *enableIf* does not resolve to `null` | Job creation |
 | *environment* does not name the Step's own *stepEnvironments* entry; no duplicates per list; 1–50 *parameters* (constraints 2–4) | Template validation |
 | `required: false` not used on an entry naming a *jobEnvironments* entry (constraint 8) | Template validation |
-| Keys and literal values of *parameters* for a *jobEnvironments* entry (constraints 5, 6), only for an enabled entry; a disabled entry's *parameters* are not checked (§3.2 item 3.2) | Template validation for an entry whose *enableIf* is absent or `true`; Job creation for one whose *enableIf* is an expression that resolves to `true` |
-| Each parameter without a `default` is supplied by every Step whose Sessions enter the Environment: every Step for `ALWAYS`, every Step that does not decline it for `BY_DEFAULT`, every requesting Step for `ON_REQUEST`, except Steps for which the Environment is disabled. This covers *jobEnvironments* entries and, after resolution, attached Environments (constraint 7, §3.2.1) | Job creation. For a *jobEnvironments* entry, also template validation when constraint 7 fails whatever every undetermined entry or Environment *enableIf* resolves to (§7.6 rule 5) |
+| Keys and literal values of *parameters* for a *jobEnvironments* entry (constraints 5, 6), only for an enabled entry; a disabled entry's *parameters* are not checked (§3.2 item 3.2) | Template validation for an entry whose *enableIf* is absent or known there to be `true` (§7.6 rule 5); Job creation for one whose *enableIf* resolves to `true` then |
+| Each parameter without a `default` is supplied by every Step that the Environment applies to: every Step for `ALWAYS`, every Step that does not decline it for `BY_DEFAULT`, every requesting Step for `ON_REQUEST`. The Environment's own *enableIf* and *exclusiveGroup* do not matter, so this holds for a Step for which the Environment turns out to be disabled. This covers *jobEnvironments* entries and, after resolution, attached Environments (constraint 7, §3.2.1, §7.4.1 step 5) | Job creation, before any Environment *enableIf* is evaluated. For a *jobEnvironments* entry, also template validation where the Step's entries that bear on it are known, and otherwise where it fails whatever every undetermined entry *enableIf* resolves to (§7.6 rule 5) |
 | External name resolution: missing with `required: true`, or ambiguous (§3.2.1) | Job creation |
 | Keys and values for an external Environment; resolved format-string values (constraints 5, 6). A key the resolved Environment does not declare is an error even with `required: false`, unless the Environment declares no parameters: then a `required: false` entry's *parameters* are ignored (implementations should warn), and a `required: true` entry's are an error (§3.2.1 item 1) | Job creation |
-| An attached `ALWAYS` Environment with the name of a *jobEnvironments* entry, which no entry can reach, has every parameter supplied by a `default` (§3.2.1 item 4) | Job creation |
+| An attached `ALWAYS` or `BY_DEFAULT` Environment with the name of a *jobEnvironments* entry, which no entry can reach or decline, has every parameter supplied by a `default` (§3.2.1 item 4) | Job creation |
 | A format-string value or `default` for a list-typed parameter is a single `{{ }}` expression (§3.2, §4.5) | Template validation for `default`s and *jobEnvironments* entries; Job creation for external Environments |
 | A resolved, non-literal `default` satisfies its parameter's type and constraints, for each Step that takes it (§4.5) | Job creation |
-| An Environment disabled for a Step (its *enableIf* is `false` with the values that are known, or it is superseded) is not held to constraint 7, and the Step's effective values for it are not checked; the entry's keys (constraint 5) and value forms still are (§3.2.2 items 3, 4) | Template validation for a literal `false`; Job creation otherwise |
-| An Environment *enableIf* whose result depends on a missing, unresolvable, or unconvertible value is an error (§3.2.2) | The earliest stage at which it is known: template validation for a value known then to be missing, whatever every value still unknown resolves to; Job creation otherwise |
+| The Step's effective values for an Environment disabled for it (its *enableIf* is `false`, or it is superseded) are not checked; the entry's keys (constraint 5) and value forms still are, and so is constraint 7 (§3.2.2 items 3, 4) | Template validation for an *enableIf* known there to be `false` (§7.6 rule 5); Job creation otherwise |
+| An Environment *enableIf* is evaluated at Job creation with concrete values only; one that reads a value that fails to resolve or does not convert is not evaluated, the Environment is not disabled for the Step, and the value is an error (§3.2.2 item 2) | Job creation |
+| Before an expression field is evaluated, its value is known when it is a scalar or when evaluating it with the values not yet known as `unresolved[T]` gives a result, by the Expression Language's rules for unknown operands; a check whose fields are known is made then (§7.6 rule 5, Expression Language §2.1.6) | Template validation |
 | PATH and LIST[PATH] string constraints are checked against the unmapped value, including for a literal `default` that no Step uses (§4.5) | Job creation |
 | Two effective values are equal only when they have the same type and string form (a FLOAT as written, a STRING by code points, a RANGE_EXPR in canonical form, lists element by element), and a Session runs a Step's Tasks only when it entered each of the Step's Environments with values equal to the Step's (§3.2.2) | Run time, as a Session takes a Step's Tasks |
 
@@ -664,12 +671,32 @@ It is decided at Job creation, once per Step, so Session sharing and combined ho
 Environments. It reads the same scopes as the Environment's *hostRequirements*, and not the Job Template's Step names or
 bindings, so it means the same in an Environment Template as in a Job Template.
 
-A disabled Environment is not held to constraint 7, and its values are not checked, since a Step that never enters it
-has no reason to configure it. An *enableIf* whose result depends on a missing or unconvertible value is an error, so
-the mistake is reported rather than hidden.
+A disabled Environment's values are not checked against their types and constraints, since a Step that never enters it
+has no reason to configure them. A parameter without a `default` must still be supplied by every Step the Environment
+applies to (see [Required parameters are allowed](#required-parameters-are-allowed)), and the *enableIf* reads only
+concrete values (see [`enableIf` sees only concrete values](#enableif-sees-only-concrete-values)).
 
 `Job.EnvNames` lists an Environment even for the Steps for which it is disabled. Otherwise `Job.EnvNames` would depend
 on *enableIf* results that can be computed from `Job.EnvNames`.
+
+### `enableIf` sees only concrete values
+
+An earlier draft decided the Environment's *enableIf* before checking that the Step supplied its required parameters,
+and evaluated it with a missing or unconvertible value as unknown. Whether `"Env.Param.X == 'a' and false"` rejected a
+Step that did not supply `X` then depended on how `and` treats an unknown operand, which the Expression Language did not
+define, so two implementations could accept different Jobs.
+
+Now a missing value is an error of the Step, whatever the *enableIf* is, and an *enableIf* that reads a value that does
+not resolve or convert is not evaluated, and the value is an error. Whether a value is read is a property of the text,
+so it does not depend on evaluation order. At Job creation the *enableIf* is then an ordinary evaluation of concrete
+values. Unknown values remain only at template validation, where Job Parameters are not yet known, and there they only
+decide which errors are reported early. The Expression Language now defines their results, such as `U and false =
+false`, so validators agree on what they report.
+
+A value that the *enableIf* does not read still need not convert when the Environment is disabled: an entry
+`Seats: "{{Param.N}}"` for an INT parameter, with the Job Parameter `N` set to `"many"`, is not an error for a Step for
+which the *enableIf* is `false`. Converting every value before the *enableIf* would be stricter, but it would reject a
+value that no Session uses, so it is not required.
 
 ### The name `enableIf`
 
@@ -685,8 +712,9 @@ and bring implicit conversions under which `"{{'yes'}}"` becomes `true`. As an e
 `"Env.Param.Packages != ''"` and its type must fit `bool` without conversion, as a `let` binding already reads.
 
 Existing single-expression fields such as `timeout` stay as they are, since changing their kind would break accepted
-templates. A constant expression such as `"false"` is undetermined at template validation like any other expression, so
-implementations agree on what template validation reports without each deciding which expressions are constant.
+templates. At template validation an expression's value is known when the Expression Language's rules for unknown
+operands give one, so a constant expression such as `"false"` is known there, and implementations agree on what template
+validation reports.
 
 ### Parameters for an Environment that declares none are ignored
 
@@ -847,10 +875,14 @@ to a Job Template never changes how an Environment Template's constraints are ch
 
 ### Required parameters are allowed
 
-A parameter without a `default` makes each Step that enters the Environment say what it wants, which suits a Job
+A parameter without a `default` makes each Step that the Environment applies to say what it wants, which suits a Job
 Environment like `RenderLicense`. In an `ALWAYS` or `BY_DEFAULT` Environment Template it would break every Job Template
 that does not know the parameter, so the choice is the Environment Template author's, who normally gives a default or
 uses `ON_REQUEST`.
+
+Which Steps must supply it depends only on the Environment's `activation` and the Steps' entries, not on its *enableIf*
+or its *exclusiveGroup*. A missing value is then an error in the Step's definition, which template validation can report
+from the Job Template alone, and the *enableIf* never sees a missing value.
 
 ### `required: false` is an error on a Job Environment entry
 
@@ -952,7 +984,7 @@ cannot change between the two.
 The prototype is the `env-params-prototype` branch of
 [mwiebe/openjd-rs](https://github.com/mwiebe/openjd-rs/tree/env-params-prototype), developed alongside this RFC. It
 implements the extension in `openjd-model`, `openjd-sessions`, `openjd-cli`, and `openjd-for-js`, and its `openjd
-check`, `openjd summary`, and `openjd run` pass every 2023-09 conformance test at this RFC's head, including the 404
+check`, `openjd summary`, and `openjd run` pass every 2023-09 conformance test at this RFC's head, including the 419
 under `conformance-tests/2023-09/ENV_PARAMS`. The `env-params` branch of
 [mwiebe/openjd-model-for-python](https://github.com/mwiebe/openjd-model-for-python/tree/env-params) exposes it to Python
 through the Rust-backed bindings.
@@ -963,8 +995,7 @@ These parts of the proposal changed because of the prototype:
    document's Environments separately, which gave the wrong result when a group spans the Job Template and an attached
    Environment Template. [§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params)
    now decides every Environment of a Step in the Job's Environment order, and its step 6 says that a superseded
-   Environment's *enableIf* is not evaluated for the Step, so an expression that would be unresolved there is not an
-   error.
+   Environment's *enableIf* is not evaluated for the Step.
 2. **What a validator knows before Job creation.** Without the Environment Templates, a validator cannot know whether a
    grouped Job Environment is entered, because an attached member of its group may come first.
    [§4](../wiki/2023-09-Template-Schemas.md#4-environment) now says when an Environment is known to be entered or not
@@ -989,6 +1020,11 @@ These parts of the proposal changed because of the prototype:
    [§3.2.2](../wiki/2023-09-Template-Schemas.md#322-effective-environment-parameter-values) now makes two values equal
    only when they have the same type and string form, so the Environment sees what was compared, and the type with the
    text is the key (see [Sessions that serve several Steps](#sessions-that-serve-several-steps)).
+7. **Required parameters are checked before `enableIf`.** The prototype decided an Environment's *enableIf* first and
+   treated a missing value as unknown, so `"not Param.F and Env.Param.X == 'a'"` disabled the Environment for a Step
+   that did not supply `X`, and the Job ran. Whether it should was not defined. Constraint 7 now applies to every
+   Environment that applies to the Step, whatever its *enableIf*, and the *enableIf* reads only concrete values (see
+   [`enableIf` sees only concrete values](#enableif-sees-only-concrete-values)).
 
 These were unclear or hard to implement:
 

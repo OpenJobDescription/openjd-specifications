@@ -1,6 +1,7 @@
 # Template Schemas §3.2.1 (after resolution), constraint 7, and §3.2.2 (RFC 0010): an attached BY_DEFAULT Environment
-# with a parameter that has no default, and an enableIf over its Environment Template's own Job Parameter that resolves to
-# false. The Environment is disabled for Step A, so A need not supply Product; the Job runs without entering it.
+# with a parameter that has no default, and an enableIf over its Environment Template's own Job Parameter that resolves
+# to false. The Environment applies to Step A, which does not decline it, so A must supply Product whatever the enableIf
+# is, and the submission is rejected.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [ENV_PARAMS, EXPR]
@@ -32,8 +33,3 @@ environments:
           command: echo
           args: [ENTER, Lic, "Product={{Env.Param.Product}}"]
 runOn: [posix, windows]
-expected:
-  output:
-  - TASK A
-  forbidden:
-  - ENTER Lic

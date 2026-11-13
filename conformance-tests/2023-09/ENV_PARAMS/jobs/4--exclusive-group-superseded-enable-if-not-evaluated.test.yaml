@@ -1,17 +1,25 @@
 # Template Schemas §4 item 7, §7.4.1 step 6 (RFC 0010): once an Environment of a group is entered for a Step, the
-# enableIf of the later ones is not evaluated. Docker's enableIf reads Image, which has no default and which the
-# Step does not supply, so evaluating it would be an error (§3.2.2 rule 5). Conda, attached first, is entered, so
-# Docker is superseded and the Job runs.
+# enableIf of the later ones is not evaluated. Docker's enableIf reads Seats, and the Step's value for the INT Seats
+# resolves to "many", which does not convert, so evaluating it would be an error (§3.2.2 item 2). Conda, attached
+# first, is entered, so Docker is superseded: disabled for the Step, its enableIf is not evaluated and its values are
+# not checked, and the Job runs.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [ENV_PARAMS, EXPR]
   name: GroupJob
+  parameterDefinitions:
+  - name: N
+    type: STRING
+    default: many
   steps:
   - name: S
     dependencies:
     - environment: Conda
       parameters:
         Packages: colmap=3.11
+    - environment: Docker
+      parameters:
+        Seats: "{{Param.N}}"
     script:
       actions:
         onRun:
@@ -36,11 +44,12 @@ environments:
   extensions: [ENV_PARAMS, EXPR]
   environment:
     name: Docker
-    enableIf: "Env.Param.Image != ''"
+    activation: ON_REQUEST
+    enableIf: "Env.Param.Seats > 0"
     exclusiveGroup: SoftwareProvider
     envParameterDefinitions:
-    - name: Image
-      type: STRING
+    - name: Seats
+      type: INT
     script:
       actions:
         onEnter:

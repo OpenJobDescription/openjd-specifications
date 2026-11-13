@@ -1,7 +1,6 @@
-# Template Schemas §4 (the known/undetermined bullets) and item 7 (RFC 0010): a Job Environment with an
-# exclusiveGroup is never known to be entered at template validation, because an attached Environment of the same
-# group comes before it in the Job's Environment order and may supersede it. So constraint 7 is not an error here
-# even though no Step supplies Product, which has no default.
+# Template Schemas §3.2 constraint 7 and §4 item 7 (RFC 0010): a BY_DEFAULT Job Environment with an exclusiveGroup
+# applies to every Step that does not decline it, whether or not an attached Environment of its group supersedes it, so
+# its required parameter Product, which no Step supplies, is a constraint 7 error at template validation.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - ENV_PARAMS

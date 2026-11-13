@@ -1,7 +1,6 @@
-# Template Schemas §3.2 constraint 7, §3.2.2, and §7.6 rule 5 (RFC 0010): Lic is a BY_DEFAULT Job Environment with a
-# parameter without default that Step A does not supply. Lic's enableIf reads only Param.Use, so whether Lic is
-# disabled for A, and so whether constraint 7 applies, is undetermined at template validation: no error. JB-113 runs
-# it.
+# Template Schemas §3.2 constraint 7 and §3.2.2 (RFC 0010): Lic is a BY_DEFAULT Job Environment with a parameter without
+# default that Step A does not supply. Lic applies to A whatever its enableIf, which reads only Param.Use, so the
+# template is rejected at template validation. JB-113 shows the same at job creation with the enableIf false.
 specificationVersion: jobtemplate-2023-09
 extensions: [ENV_PARAMS, EXPR]
 name: RequiredParamOfDisabledEnvironment

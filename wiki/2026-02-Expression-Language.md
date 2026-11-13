@@ -372,8 +372,12 @@ would accept — that would fail a template at validation time that would have r
 When the condition of an `if`/`else` expression evaluates to `unresolved[bool]`, the evaluator
 does not know which branch will be taken at runtime. Both branches are evaluated:
 
-- If both branches succeed, the result is `unresolved[T | S]` where `T` and `S` are the result
-  types of the two branches (since either could be the runtime result).
+- If both branches succeed with the same known value, the result is that value, since it is
+  the runtime result either way: `c if U else c` is `c`. The values are the same when they have
+  the same type and are equal, and two floats are the same only when they are also written with
+  the same text ([§1.3.4](#134-float-value-pass-through)).
+- If both branches succeed otherwise, the result is `unresolved[T | S]` where `T` and `S` are the
+  result types of the two branches (since either could be the runtime result).
 - If one branch succeeds and the other fails, the result is the type from the succeeding
   branch (wrapped in `unresolved` since the condition is unresolved). The failing branch's error
   is suppressed — that branch would always fail at runtime, so it can never produce a value —
@@ -436,16 +440,21 @@ At each stage, known values are evaluated concretely while unresolved values pro
    of a conditional with an unknown condition, `and`/`or` operands and chained-comparison links
    after one whose value is not known, and the condition and element expression of a list
    comprehension over unknown elements), but a name that resolves nowhere is (see Names that
-   Resolve Nowhere above).
+   Resolve Nowhere above). Where Template Schemas uses the value of an expression field at this
+   stage to decide which errors to report early, the value is known when the evaluation gives one
+   that is not unresolved, by the rules for unknown operands ([§2.1.6](#216-logical-operators))
+   and for conditionals with unknown conditions (above), as [Template Schemas
+   §7.6](2023-09-Template-Schemas#76-expression-fields) rule 5 describes.
 
 2. **Job parameter binding** ("submit time"). Job parameter values are now known, so `Param.*`
    symbols are concrete. Expressions in TEMPLATE scope can be fully evaluated. Expressions in
    host-context scopes (SESSION/TASK) still have `Task.Param.*`, `Session.*`, `Task.File.*`,
    and `Env.File.*` as unresolved, but can now type-check operations on the known `Param.*`
    values combined with the unresolved task/session symbols.
-   With the `ENV_PARAMS` extension, an Environment's *enableIf* is the exception. A Step's effective value that is
-   missing, fails to resolve, or does not convert is `unresolved[T]` of its type, and a result that stays unresolved
-   is an error ([Template Schemas §3.2.2](2023-09-Template-Schemas#322-effective-environment-parameter-values)).
+   With the `ENV_PARAMS` extension, an Environment's *enableIf* is evaluated at this stage with concrete values only.
+   It is not evaluated for a Step whose effective value for a parameter it reads is missing, fails to resolve, or
+   does not convert ([Template Schemas §3.2.2](2023-09-Template-Schemas#322-effective-environment-parameter-values)
+   item 2).
 
 3. **Worker host execution**. All symbols are known — `Task.Param.*`, `Session.*`, file paths,
    and path mapping rules are all concrete. Every expression is fully evaluated with no
@@ -1556,6 +1565,27 @@ falsy), and serves a similar role to null-coalescing operators in other language
 JavaScript (`??`), Kotlin (`?:`), and Swift (`??`).
 
 Note: `not` remains strictly boolean — it requires a `bool` operand and returns `bool`.
+
+**Unknown operands.** During [progressive evaluation](#progressive-expression-evaluation), an
+operand may be a `bool` whose value is not yet known, `unresolved[bool]`, written `U` here. The
+logical operators then give:
+
+| Expression | Result |
+|------------|--------|
+| `U and false`, `false and U` | `false` |
+| `U and true`, `true and U` | `U` |
+| `U or true`, `true or U` | `true` |
+| `U or false`, `false or U` | `U` |
+| `U and U`, `U or U` | `U` |
+| `not U` | `U` |
+
+A result is known exactly when every value that `U` could take gives the same result, as for a
+conditional whose branches give the same value: `c if U else c` is `c` (see Conditional
+Expressions with Unknown Conditions). Template Schemas uses these results only before the values
+are known, to decide which errors to report early
+([§7.6](2023-09-Template-Schemas#76-expression-fields) rule 5). Once the values are known, the
+expression is evaluated again, and its result is what that evaluation gives. So `U and false`,
+which is known to be `false` early, still fails when it is evaluated if evaluating `U` fails.
 
 #### 2.1.7. Subscript Operator
 

@@ -1,0 +1,26 @@
+# Template Schemas §7.6 rule 5 and Expression Language §2.1.6 (RFC 0010): at template validation the BOOL Job Parameter
+# F is unresolved[bool], U here. Audit's enableIf is "Param.F and true". U and true is U, so the value is not known and
+# template validation reports nothing. JB-185 runs it with F false.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: UnknownUAndTrue
+parameterDefinitions:
+- name: F
+  type: BOOL
+  default: true
+jobEnvironments:
+- name: Audit
+  activation: ALWAYS
+  enableIf: "Param.F and true"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Audit]
+steps:
+- name: A
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

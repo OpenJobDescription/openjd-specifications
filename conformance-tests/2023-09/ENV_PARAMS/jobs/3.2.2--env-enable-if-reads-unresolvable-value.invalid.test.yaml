@@ -1,6 +1,6 @@
-# Template Schemas §3.2.2 (RFC 0010): Lic's enableIf reads Env.Param.Seats, and A's value for it, {{ Param.L[5] }},
-# fails to resolve (L has one element). The enableIf's result depends on that unresolvable value, so the Job is
-# rejected when it is created.
+# Template Schemas §3.2.2 item 2 (RFC 0010): Lic's enableIf reads Env.Param.Seats, and A's value for it, {{ Param.L[5]
+# }}, fails to resolve (L has one element). The enableIf sees only concrete values, so it is not evaluated, and the
+# value's error rejects the Job when it is created.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [ENV_PARAMS, EXPR]

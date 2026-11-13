@@ -1,7 +1,7 @@
 # Template Schemas §3.2.1 item 4 and constraint 7 (RFC 0010): the attached BY_DEFAULT Environment Lic has the name of a
-# jobEnvironments entry, so no entry can reach it to supply Product, which has no default. Its enableIf, over its
-# Environment Template's own Job Parameter, resolves to false, so it is disabled for every Step and needs no values:
-# the Job runs without entering it.
+# jobEnvironments entry, so no entry can reach it to supply or decline it, and it applies to every Step. Its parameter
+# Product has no default, so the submission is rejected, although Lic's enableIf, over its Environment Template's own
+# Job Parameter, resolves to false.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [ENV_PARAMS, EXPR]
@@ -40,9 +40,3 @@ environments:
           command: echo
           args: [ENTER, AttachedLic, "Product={{Env.Param.Product}}"]
 runOn: [posix, windows]
-expected:
-  output:
-  - ENTER JobLic
-  - TASK A
-  forbidden:
-  - ENTER AttachedLic

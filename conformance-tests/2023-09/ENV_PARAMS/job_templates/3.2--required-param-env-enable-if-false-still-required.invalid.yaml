@@ -1,5 +1,6 @@
-# Template Schemas §3.2 constraint 7 and §3.2.2 (RFC 0010): Lic's enableIf is the literal false, so Lic is disabled
-# for Step A, and constraint 7 does not apply to it: A need not supply Product, which has no default.
+# Template Schemas §3.2 constraint 7 and §3.2.2 (RFC 0010): Lic is a BY_DEFAULT Job Environment, so it applies to Step
+# A, which does not decline it. A must supply Product, which has no default, whatever Lic's enableIf is. The enableIf is
+# the literal false, but the missing value is an error in A's definition, so the template is rejected.
 specificationVersion: jobtemplate-2023-09
 extensions: [ENV_PARAMS, EXPR]
 name: TestJob

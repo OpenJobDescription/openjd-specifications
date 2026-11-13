@@ -140,6 +140,13 @@ one `environment:` entry for each kind it can use, and the system that attaches 
 each Step gets. [Environment Name Conventions](Environment-Name-Conventions) lists the names that such **Environments**
 and the Job Templates that use them should share.
 
+A parameter without a default must be supplied by every Step that the **Environment** applies to: every Step for an
+`ALWAYS` one, every Step that does not decline a `BY_DEFAULT` one, and every Step that requests an `ON_REQUEST` one.
+This holds even for a Step for which the **Environment**'s own `enableIf` turns out to be false, so a missing value is
+a mistake in the Step. Checking the Job Template reports it for the Job's own **Environments**, and creating the Job
+reports it for attached ones. The `enableIf` is then evaluated with the Step's actual values. If it reads a value that
+cannot be worked out, such as `"many"` for an INT parameter, it is not evaluated, and the Job is rejected.
+
 All of these values and decisions are worked out once, when the Job is created, from the Job Parameters and the
 templates. So before anything runs, the render management system knows which **Environments** each Step's
 **Sessions** enter and with which values. [Template Schemas §3.2](2023-09-Template-Schemas#32-stepdependency) and

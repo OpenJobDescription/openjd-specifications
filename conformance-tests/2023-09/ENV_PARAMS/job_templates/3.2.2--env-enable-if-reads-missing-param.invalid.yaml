@@ -1,6 +1,6 @@
-# Template Schemas §3.2.2 and §4 item 6 (RFC 0010): Lic's enableIf reads Env.Param.Product, a parameter without
-# default that Step A does not supply. The value is known to be missing at template validation and the enableIf's
-# result depends on it, so the template is rejected then.
+# Template Schemas §3.2 constraint 7 and §3.2.2 (RFC 0010): Lic is a BY_DEFAULT Job Environment, so it applies to Step
+# A, which does not supply Product, a parameter without default. That is an error in A's definition whatever Lic's
+# enableIf is, so the template is rejected. The enableIf, which reads Product, is never evaluated with a missing value.
 specificationVersion: jobtemplate-2023-09
 extensions: [ENV_PARAMS, EXPR]
 name: EnableIfReadsMissingParam

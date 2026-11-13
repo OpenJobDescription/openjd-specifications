@@ -1,6 +1,5 @@
-# Template Schemas §3.2 (checked-at paragraph) and §7.6 rule 5: the template of JT-152, which passes template
-# validation because its entry's enableIf "true" is undetermined there. At job creation the entry resolves to true,
-# so A requests Lic without supplying Product, and constraint 7 rejects the Job.
+# Template Schemas §3.2 constraint 7 and §7.6 rule 5 (RFC 0010): the template of JT-152. The entry's enableIf "true"
+# resolves to true, so A requests Lic without supplying Product, and constraint 7 rejects the Job.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [ENV_PARAMS, EXPR]
