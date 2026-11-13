@@ -154,13 +154,27 @@ services: [ <Service>, ... ] # @optional @extension SERVICE
       4. The `dependencies` of the Services in this list form one graph, which must be acyclic. The graph also has an
          edge from each of these Services whose Sessions enter the document's *environment* to each Service that
          Environment lists (see [&lt;StepDependency&gt;](#32-stepdependency) constraint 3).
-      5. Every entry of a Service's `dependencies` in this list uses the `service` key and names a Service in this
-         list, or is a disabled *environment* entry
+      5. Every entry of a Service's `dependencies` in this list uses the `service` key and names a Service in this list,
+         or is a disabled *environment* entry
          ([RFC 0010](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md),
-         `ENV_PARAMS`) that names the document's own *environment*: one whose *enableIf* is the literal `false` and
-         that has no *parameters*. The document has no Steps, and its author can give its *environment* values
-         directly. A disabled entry can only keep the Service's Sessions out of that Environment, which they would
-         otherwise enter in a cycle when it lists the Service (see [&lt;Environment&gt;](#4-environment) item 3).
+         `ENV_PARAMS`): one whose *enableIf* is the literal `false` and that has no *parameters*. The document has no
+         Steps, and its author can give its *environment* values directly. Requesting an earlier attachment's
+         Environment, or supplying values to it, is not provided for: a request would make the Service depend on another
+         document's Environment being attached, and values would depend on its parameter definitions, while a decline
+         depends only on the Environment's name and *activation*. A disabled entry requests nothing and supplies no
+         values; it keeps the Service's Sessions out of the Environment it names. It serves both for the document's own
+         *environment*, which would otherwise be a cycle when it lists the Service (see
+         [&lt;Environment&gt;](#4-environment) item 3), and for an Environment of an Environment Template attached
+         earlier that the Service does not need. The entry's name resolves by RFC 0010's rules for a Step's entry (see
+         [Resolving external Environments](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#resolving-external-environments)),
+         with the Service's own document in place of the Job Template and the Environment Templates attached before it
+         in place of the attached ones: to the document's own *environment* if it has that name, and otherwise among the
+         earlier attachments' Environments, whatever their *activation*. RFC 0010 then gives the entry's effect from the
+         *activation* of the Environment it names, which makes declining an `ALWAYS` one an error. A later attachment's
+         Environments and the Job Template's are not among them, so an entry that names only one of those resolves to no
+         Environment and, as RFC 0010 gives for a disabled entry, has no effect. An entry that names the document's own
+         *environment* is checked at template validation, and any other entry when the Job is created, from the combined
+         Job.
 
 Subject to the constraint that at least one of *environment* or *services* must be provided.
 
@@ -228,13 +242,16 @@ When a submission combines a Job Template with one or more Environment Templates
    the Environment, the document that defines it, and the Service. A document that does not declare `SERVICE` cannot
    define those hooks, so a wrapping Environment from such a document is rejected in any Job that has a Service whose
    Sessions enter it. The remedies are for that document to declare `SERVICE` and define the hooks, or to declare
-   `ENV_PARAMS` and make the wrapper `ON_REQUEST` for the Steps that request it. A Job Template's Service may also
-   decline a `BY_DEFAULT` wrapper. A wrapping Environment in a Step's `stepEnvironments` is never entered by a Service
-   Session and is not subject to this check.
+   `ENV_PARAMS` and make the wrapper `ON_REQUEST` for the Steps that request it. Any Service may also decline a
+   `BY_DEFAULT` wrapper (a Service of an Environment Template with the disabled entry of item 6 constraint 5); none can
+   decline an `ALWAYS` one. A wrapping Environment in a Step's `stepEnvironments` is never entered by a Service Session
+   and is not subject to this check.
 
-Items 2 and 4, and the cycles of [&lt;StepDependency&gt;](#32-stepdependency) constraint 3 whose edges depend on the
-attached Environments, are the only checks that require the combined Job; everything else is checked when each
-document is validated on its own.
+Items 2 and 4, the `ENV_PARAMS` checks of RFC 0010 that need the attached Environments, the cycles of
+[&lt;StepDependency&gt;](#32-stepdependency) constraint 3 whose edges depend on the attached Environments, and
+resolving a Service's disabled entries against the Environment Templates attached before its own (item 6 constraint 5)
+are the only checks that require the combined Job; everything else is checked when each document is validated on its
+own.
 
 ## 2. `<JobParameterDefinition>`
 
@@ -2716,6 +2733,8 @@ Where:
        scope, directly or through other Services, is a cycle; a Service that a Job Environment lists, directly or
        through other Services, has in its scope every Step whose Sessions enter that Environment, and so can list none
        of them.
+    4. On a Service in an Environment Template, an *environment* entry is permitted only as
+       [Environment Template](#12-environment-template) item 6 constraint 5 permits it.
 5. *hostRequirements* — Describes the requirements on the Worker Host's capabilities that must be satisfied for the
    Service to be placed on the host. Amount capabilities are allocated to the Service for its lifetime. This is
    independent of the *hostRequirements* of any Step whose Tasks use the Service.
@@ -3131,8 +3150,10 @@ Where:
 This section indexes the rules the `SERVICE` extension adds; each is stated in full where the pointer leads. Every rule
 is checked at template validation, except that the [numeric `@fmtstring` fields](#951-numeric-fmtstring-fields) are
 checked when resolved at job creation, the rules marked *(submission)* need the combined Job and are checked at
-submission, and a cycle with an edge not known at template validation (see [&lt;StepDependency&gt;](#32-stepdependency)
-constraint 3) is checked when the Job is created.
+submission, and these are checked when the Job is created: a cycle with an edge not known at template validation (see
+[&lt;StepDependency&gt;](#32-stepdependency) constraint 3), and an Environment Template Service's disabled entry that
+does not name its own document's *environment* (see [Environment Template](#12-environment-template) item 6 constraint
+5).
 
 | Rule | Stated in |
 |---|---|
@@ -3140,7 +3161,7 @@ constraint 3) is checked when the Job is created.
 | No `Service.*` value in a field resolved at job creation | [Section 9](#9-service-extension-service) |
 | An Environment's `dependencies` is well formed and absent from `stepEnvironments` | [&lt;Environment&gt;](#4-environment) item 3 constraints 2–4 |
 | A wrapping Environment defines the hook for every kind of action that a kind of Session entering it may run | [&lt;EnvironmentActions&gt;](#43-environmentactions) `WRAP_ACTIONS` constraint 6 |
-| Every `dependencies` entry is well formed | [&lt;StepDependency&gt;](#32-stepdependency) constraints 1, 2, and 4; [Environment Template](#12-environment-template) item 6 constraint 5 |
+| Every `dependencies` entry is well formed, and an Environment Template's Service has only disabled `environment:` entries, none naming an `ALWAYS` Environment or matching two earlier attachments' Environments | [&lt;StepDependency&gt;](#32-stepdependency) constraints 1, 2, and 4; [Environment Template](#12-environment-template) item 6 constraint 5 |
 | The `dependencies` graph, including the edges from entering an Environment that lists a Service, is acyclic, with no exception for a Service's own client Environment | [&lt;StepDependency&gt;](#32-stepdependency) constraint 3; [Environment Template](#12-environment-template) item 6 constraint 4 |
 | Every inline Service, and every `externalServices` entry, is listed by some Step, Service, or Job Environment | [Service scope](#91-service-scope) rule 4 |
 | Service, requirement, and port names are identifiers other than `File`, unique within their lists, and no requirement shares a `name` with an inline Service | [&lt;ServiceName&gt;](#92-servicename); [Job Template](#11-job-template) *externalServices* constraint 4 |
