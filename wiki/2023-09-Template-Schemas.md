@@ -2832,20 +2832,20 @@ Rules:
 4. Parse errors, type errors, and references to names that are not available are reported at template validation.
 5. Before the stage at which an expression field is evaluated, its value is *known* when it is a boolean, integer, or
    float scalar (item 1), or when its expression, evaluated with each value not yet known as `unresolved[T]` of its
-   type, gives a value that is not unresolved. The Expression Language's rules for unknown operands decide which
-   results are known ([Expression Language §2.1.6](2026-02-Expression-Language#216-logical-operators), and
-   [Conditional Expressions with Unknown
-   Conditions](2026-02-Expression-Language#static-type-checking-via-unresolved-values)). At template validation, the
-   values not yet known are those the [stage table](#74-template-processing-stages) lists as unknown there, which
-   include every Job Parameter and every `Env.Param.*`. So with a BOOL Job Parameter `F`, `"true"` and
-   `"Param.F or true"` are known to be `true`, `"Param.F and false"` and `"false if Param.F else false"` are known to be
-   `false`, and `"Param.F"`, `"not Param.F"`, `"Param.F and true"`, and `"Param.F or false"` are not known. An
-   *environment* entry or an Environment whose *enableIf* is not known is undetermined until the Job is created:
-   whether the entry is enabled, and whether the Environment is disabled for a Step, is not known before then. A check
-   whose fields are all known at an earlier stage is made at that stage. A check that depends on a field that is not
-   known reports an error at that stage only when the error holds for every value the field could take, and is made
-   again at the stage where the field is evaluated, with the value it then has. These rules decide only which errors
-   are reported early. When an expression field is evaluated at its own stage, every value it reads is concrete.
+   type, gives a value that is not unresolved. The Expression Language's rules for unknown operands decide which results
+   are known ([Expression Language §2.1.6](2026-02-Expression-Language#216-logical-operators), and [Conditional
+   Expressions with Unknown Conditions](2026-02-Expression-Language#static-type-checking-via-unresolved-values)). At
+   template validation, the values not yet known are those the [stage table](#74-template-processing-stages) lists as
+   unknown there, which include every Job Parameter and every `Env.Param.*`. So with a BOOL Job Parameter `F`, `"true"`
+   and `"Param.F or true"` are known to be `true`, `"Param.F and false"` and `"false if Param.F else false"` are known
+   to be `false`, and `"Param.F"`, `"not Param.F"`, `"Param.F and true"`, and `"Param.F or false"` are not known. An
+   *environment* entry or an Environment whose *enableIf* is not known is undetermined until the Job is created: whether
+   the entry is enabled, and whether the Environment is disabled for a Step, is not known before then. A check whose
+   fields are all known at an earlier stage is made at that stage. A check that depends on a field that is not known
+   reports an error at that stage only when the error holds for every value the field could take, and is made again at
+   the stage where the field is evaluated, with the value it then has. An implementation should report an error at the
+   earliest stage at which it holds for every such value. These rules decide only which errors are reported early. When
+   an expression field is evaluated at its own stage, every value it reads is concrete.
 
 With the `ENV_PARAMS` extension, the *enableIf* of an *environment* entry and of an Environment is evaluated in
 template scope, not in a host context. `path` values have POSIX semantics whatever path format the Job's paths have,
