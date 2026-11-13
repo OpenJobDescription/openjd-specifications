@@ -1,0 +1,28 @@
+# Expression Language §1.3.4 and Template Schemas §2.14: a number item of a LIST[FLOAT] default has no original string
+# representation, so it is written as Python's repr(float) writes it, alone and in the list.
+# Each exponent is written with a decimal point and a signed exponent (1.0e+20) so that a YAML 1.1 reader also reads
+# it as a number.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Scales
+    type: LIST[FLOAT]
+    default: [2, 1.0e+20, 0.00001, 1.0e+15]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'LIST:{{ Param.Scales }}')
+            print(r'FIRST:{{ Param.Scales[0] }} SECOND:{{ Param.Scales[1] }}')
+expected:
+  output:
+  - 'LIST:[2.0, 1e+20, 1e-05, 1000000000000000.0]'
+  - 'FIRST:2.0 SECOND:1e+20'
