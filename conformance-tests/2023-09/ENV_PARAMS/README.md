@@ -548,7 +548,7 @@ permitted but not required, so for those only the values both Tasks see are chec
 | JB-179 | `3.2.2--string-unicode-normalization-not-equal.test.yaml` | EP | A STRING `"café"` with U+00E9 (4 code points) and with `e` and U+0301 (5) are not equal, with no Unicode normalization; each Task sees its own length. |
 | JB-180 | `3.2.2--int-bool-range-expr-spellings-equal.test.yaml` | EP | INT `"007"` and `7`, BOOL `"yes"` and `true`, and RANGE_EXPR `"1,2,3"` and `"1-3"` each have one string form, so the values are equal; both Tasks see `7 true 1-3`. |
 | JB-181 | `3.2.2--path-written-differently-not-equal.test.yaml` | EP | `runOn: [posix]`. A PATH `/data/x` and `/data/./x` are not equal, since a PATH compares by its unmapped string, as given; B's Task sees `/data/./x`. |
-| JB-182 | `3.2.2--float-number-and-string-not-equal.test.yaml` | EP | A FLOAT given as the YAML number `1.50` by A is written `1.5`, since a number has no text of its own, and so is not equal to B's string `"1.50"`; A's Task sees `1.5` and B's `1.50`. |
+| JB-182 | `3.2.2--float-number-and-string-not-equal.test.yaml` | EP | A FLOAT given as the YAML number `1.50` by A has no text it was written with and is written `1.5`, as a computed float is, so it is not equal to B's string `"1.50"`; A's Task sees `1.5` and B's `1.50`. |
 
 #### External resolution (§3.2.1)
 

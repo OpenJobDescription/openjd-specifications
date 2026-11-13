@@ -1,7 +1,7 @@
 # RFC 0010 / Template Schemas §3.2.2 (equal values): a FLOAT given as a YAML or JSON number rather than a string has
-# no text of its own, so it is written in the shortest form that gives back its number. Step A's number 1.50 is
-# written 1.5, and Step B's string "1.50" keeps its text, so the values are not equal: B's Task does not run in the
-# Environment entered with A's value, and it sees 1.50.
+# no text it was written with, so it is written as the Expression Language writes a computed float. Step A's number
+# 1.50 is written 1.5, and Step B's string "1.50" keeps its text, so the values are not equal: B's Task does not run
+# in the Environment entered with A's value, and it sees 1.50.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [ENV_PARAMS, EXPR]
