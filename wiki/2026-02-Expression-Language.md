@@ -1143,6 +1143,18 @@ is preserved in output string interpolation. When an operation is performed on a
 it becomes a 64-bit IEEE floating point number, and string interpolation uses the shortest
 decimal string representation.
 
+The shortest decimal string representation is the one Python's `repr(float)` gives: the fewest
+significant digits that read back as the same 64-bit value, the nearer one when two strings have
+that many digits, and the even last digit when they are equally near. It uses fixed-point notation
+with at least one digit after the decimal point when `1e-4 <= abs(x) < 1e16` (`2.0`, `0.0001`,
+`1000000000000000.0`), and otherwise exponent notation with a sign and at least two exponent digits
+(`1e+16`, `1e-05`). Zero is always `0.0` (see below).
+
+A float given as a YAML or JSON number rather than as a string has no original string representation,
+so it is written the same way. A FLOAT parameter with `default: 2` outputs `"2.0"` from
+`{{Param.V}}`, and one with `default: 1e20` outputs `"1e+20"`. This holds for a number item of a
+LIST[FLOAT] default or value, and for a number given as the value of a FLOAT Job Parameter.
+
 For example, if a job submission provides the value `"3.500"` to a float parameter:
 - `{{Param.V}}` outputs `"3.500"` (original form preserved)
 - `{{Param.V + 1}}` outputs `"4.5"` (shortest representation after computation)
