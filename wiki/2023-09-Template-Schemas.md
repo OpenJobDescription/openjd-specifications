@@ -2064,10 +2064,14 @@ Where:
       *enableIf* is not an error.
     * `BY_DEFAULT` — Every Session of the Job enters this Environment, in its position in the Job's Environment order,
       except the Sessions of a Step that declines it with a disabled *environment* entry, and of a Step for which its
-      *enableIf* is `false`. This is the default in a document that lists `ENV_PARAMS`: an Environment there that omits
-      *activation* has `BY_DEFAULT`.
+      *enableIf* is `false`. This is the default in a document that lists `ENV_PARAMS`: a *jobEnvironments* entry of
+      such a Job Template, or the *environment* of such an Environment Template, that omits *activation* has
+      `BY_DEFAULT`.
     * `ON_REQUEST` — Only the Sessions of a Step that requests this Environment, through an enabled *environment* entry
       in its *dependencies*, enter it, less any Step for which its *enableIf* is `false`.
+
+   A Step Environment has no *activation* (it is not permitted on a *stepEnvironments* entry), and this default does
+   not apply to it. Only the Sessions of its own Step enter it, less those for which its *enableIf* is `false`.
 
    An Environment from a document that does not list `ENV_PARAMS` behaves as one with `activation: ALWAYS` and no
    *enableIf*: every Session of the Job enters it. Unlike for an `ALWAYS` Environment, a Step's disabled *environment*

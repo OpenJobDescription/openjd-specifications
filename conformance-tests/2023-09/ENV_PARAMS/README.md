@@ -266,6 +266,7 @@ lists the extensions the document under test declares, where it matters (`EP` = 
 | JT-41 | `4--activation-on-request.yaml` | EP | `activation: ON_REQUEST` on a Job Environment is valid. |
 | JT-42 | `4--activation-unknown.invalid.yaml` | EP | `activation: SOMETIMES` is rejected. |
 | JT-43 | `4--activation-on-step-environment.invalid.yaml` | EP | `activation` on a `stepEnvironments` entry is rejected. |
+| JT-211 | `4--step-environment-without-activation.yaml` | EP, EX | A `stepEnvironments` entry that omits `activation` is valid: the `BY_DEFAULT` default applies only to Job Environments and Environment Templates. |
 | JT-170 | `4--activation-always-enable-if-false.invalid.yaml` | EP, EX | `activation: ALWAYS` with the literal `enableIf: false` is rejected: an `ALWAYS` Environment cannot be disabled, and a literal `false` is known at template validation (§4 item 6, §3.2.2 item 6). |
 | JT-171 | `4--activation-by-default.yaml` | EP, EX | `activation: BY_DEFAULT` on a Job Environment is valid. |
 | JT-172 | `4--activation-always-enable-if-expression.yaml` | EP, EX | `activation: ALWAYS` with an expression `enableIf` is valid at template validation: the expression reads `Env.Param.Product`, which is unknown there, so its value is not known until the Job is created (§7.6 rule 5). JB-128 and JB-129 run Environments like it. |
@@ -829,7 +830,7 @@ keeps its number with a note. Earlier drafts of the RFC carried the same index a
 |---|---|---|---|
 | V1 | `ENV_PARAMS` listed by any document using Environment `envParameterDefinitions`, `activation`, `hostRequirements`, `enableIf`, or `exclusiveGroup`; `environment:` or `step:` entries; `Job.EnvNames`, `Env.Param.*`, or `Env.RawParam.*`; an `anyOf` or `allOf` written as one expression; or an empty `hostRequirements` | Template validation | JT-01–JT-04, JT-125, JT-139, ET-03–ET-05, ET-50; `Job.EnvNames`: JT-10; one expression: JT-186; empty `hostRequirements`: base `3.3--empty-host-requirements.invalid`; per-document: ET-01, JB-74, JB-75, JB-19, JB-20; Environment Template `extensions` and `$schema` keys: ET-01, ET-02, ET-32, ET-33 |
 | V2 | Environment `envParameterDefinitions`: 1–50, unique names, not on `stepEnvironments`, permitted types and fields | Template validation | JT-15–JT-26, JT-120, ET-07–ET-12, ET-34, ET-35, ET-37 |
-| V3 | `activation` is `ALWAYS`, `BY_DEFAULT`, or `ON_REQUEST`, not on `stepEnvironments` | Template validation | JT-40–JT-43, JT-171, JT-180, ET-13, ET-14, ET-45, ET-47; run time: JB-36–JB-41, JB-130 |
+| V3 | `activation` is `ALWAYS`, `BY_DEFAULT`, or `ON_REQUEST`, not on `stepEnvironments` | Template validation | JT-40–JT-43, JT-171, JT-180, JT-211, ET-13, ET-14, ET-45, ET-47; run time: JB-36–JB-41, JB-130 |
 | V4 | Environment `hostRequirements`: §3.3 shape, not on `stepEnvironments`; references only the document's `RawParam.*`, non-PATH `Param.*`, `Job.Name`, `Job.EnvNames`, and the enclosing Environment's own `Env.RawParam.*` of any type and non-PATH `Env.Param.*` | Template validation | JT-44–JT-54, JT-117–JT-119, JT-155, JT-169, ET-15–ET-17, ET-38 |
 | V5 | An Environment's resolved `hostRequirements` satisfy §3.3.1 and §3.3.2 per Step, once an amount whose `min` and `max` both resolve to `null`, or an attribute whose `anyOf` and `allOf` resolve to `null`, is discarded, as from a Step's own (§3.3); the duplicate-name check of §3.3 constraints 3 and 4 applies to the requirements left after discarding | Job creation | JB-73, JB-91; discarded: JB-132, JB-134, JB-135; a discarded amount is not a duplicate: JB-138 |
 | V6 | Combined host requirements are satisfiable: `min` ≤ `max` for each amount, and a common value for `attr.worker.os.family` and `attr.worker.cpu.arch` (§3.3.3 items 1, 2.1) | Job creation | JB-65–JB-69, JB-89, JB-121; non-conflicts: JB-64, JB-70–JB-72, JB-84, JB-88, JB-90, JB-119, JB-120 |
@@ -1017,8 +1018,8 @@ These rules, or parts of rules, have no planned test with a definite expected ou
 
 Deliberately, and why:
 
-- **Composition with `SERVICE` and `CONTROL_FLOW`.** The RFC no longer specifies either composition; those RFCs will
-  extend it (RFC *Extensions specified after this one*). No test uses either extension.
+- **Composition with `SERVICE` and `CONTROL_FLOW`.** The RFC does not specify either composition. No test uses either
+  extension.
 - **Scheduling behavior.** Whether Steps with equal values share a Session, placement on a host that satisfies the
   combined host requirements, reservation of `amounts`, and "amounts do not add" are scheduler decisions with no
   definite output in `openjd run` (items 3 and 4 above). The suite tests only what job creation decides:

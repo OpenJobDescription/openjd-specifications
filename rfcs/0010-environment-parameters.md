@@ -13,13 +13,9 @@
     (https://github.com/OpenJobDescription/openjd-specifications/discussions/198)
   * RFC 0008, Environment Wrap Actions (`WRAP_ACTIONS`)
     (https://github.com/OpenJobDescription/openjd-specifications/issues/132)
-  * RFC 0009, Service (`SERVICE`) (draft), whose `service:` dependency form this RFC's `environment:` form follows. Its
-    current draft uses this RFC's `activation` in place of the `runScope` field its earlier drafts defined.
-  * RFC 0011, Control Flow (`CONTROL_FLOW`) (draft), which puts this RFC's *enableIf* field on Steps and loops, with the
-    same name, form, and meaning of `false`, and extends the Environment *enableIf* with what needs its later stages.
-    Its Step *enableIf* depends on this RFC's expression fields (Template Schemas §7.6) as well as its Environment
-    parts, so this RFC is to be accepted first (see
-    [Extensions specified after this one](#extensions-specified-after-this-one-non-normative)).
+  * RFC 0009, Service (`SERVICE`) (https://github.com/OpenJobDescription/openjd-specifications/pull/194)
+  * RFC 0011, Control Flow (`CONTROL_FLOW`)
+    (https://github.com/mwiebe/openjd-specifications/blob/rfc-control-flow/rfcs/0011-control-flow.md)
 
 ## Summary
 
@@ -349,7 +345,7 @@ Schemas unless another page is named.
 
 [§1.1](../wiki/2023-09-Template-Schemas.md#11-job-template) adds `ENV_PARAMS`, which requires `EXPR` (see [`ENV_PARAMS`
 requires `EXPR`](#env_params-requires-expr)). [§1.2](../wiki/2023-09-Template-Schemas.md#12-environment-template) gives
-an Environment Template the `$schema` and `extensions` keys, as the RFC 0009 draft also proposes. An extension applies
+an Environment Template the `$schema` and `extensions` keys. An extension applies
 only to the document that lists it, so an Environment Template can adopt parameters while Job Templates that do not
 list `ENV_PARAMS` keep running with it (see [Backward compatibility](#backward-compatibility)).
 
@@ -455,12 +451,13 @@ ignored](#parameters-for-an-environment-that-declares-none-are-ignored)).
 [§4](../wiki/2023-09-Template-Schemas.md#4-environment) item 4, *activation*, is one of:
 
 * `ALWAYS`: every Session. Declining it or disabling it for a Step is an error.
-* `BY_DEFAULT`, the default in a document that lists `ENV_PARAMS`: every Session, except a Step's that declines it or
-  for which its *enableIf* is `false`.
+* `BY_DEFAULT`, the default for a Job Environment or Environment Template in a document that lists `ENV_PARAMS`:
+  every Session, except a Step's that declines it or for which its *enableIf* is `false`.
 * `ON_REQUEST`: the Sessions of the Steps that request it, less any for which its *enableIf* is `false`.
 
-An Environment from a document that does not list `ENV_PARAMS` behaves as `ALWAYS` with no *enableIf*, except that a
-Step's disabled entry for it has no effect rather than being an error.
+A Step Environment has no *activation*: only its own Step's Sessions enter it, less those for which its *enableIf* is
+`false`. An Environment from a document that does not list `ENV_PARAMS` behaves as `ALWAYS` with no *enableIf*, except
+that a Step's disabled entry for it has no effect rather than being an error.
 
 §4 item 6, *enableIf*, is evaluated when the Job is created, once per Step with that Step's effective values. It comes
 after constraint 7, which does not depend on it: a Step that an Environment applies to supplies every parameter without
@@ -563,22 +560,7 @@ and Environment parameter names that Environment Templates and Job Templates sho
 
 This RFC is specified against mainline. Every value it adds is fixed when the Job is created: effective values, each
 Step's Environment set, each Environment's *enableIf*, and combined host requirements. An RFC accepted after this one
-that adds a kind of Session or a later stage of evaluation specifies how it extends these rules. Two drafts do so:
-
-* **RFC 0011 (`CONTROL_FLOW`)** puts this RFC's *enableIf* on Steps and loops. It is one field on every entity that has
-  it: the same name, an expression field of type `bool` as
-  [§7.6](../wiki/2023-09-Template-Schemas.md#76-expression-fields) defines, and the same meaning of `false`. The
-  entities differ only in when the field is evaluated and what it may reference. RFC 0011 also extends the Environment
-  *enableIf* with what needs its later stages, such as a Step Environment's *enableIf* that reads `Steps.*`, rather than
-  defining it again. Its Step *enableIf* depends on this RFC's §7.6 Expression Fields as well as on its Environment
-  parts, so this RFC is to be accepted first.
-* **RFC 0009 (`SERVICE`)** adds Service Sessions. It is expected to let a Service request Environments with
-  `environment:` entries, and to say which Service Sessions enter an Environment of each `activation`.
-
-RFC 0011's Open Question 15 asks whether this RFC should leave a disabled Environment's TEMPLATE-scope format strings
-unevaluated, as RFC 0011 does for a disabled Step Environment. It does not: under this RFC those fields cannot read
-effective values, only values known at Job creation, so they are resolved and checked as without the extension (see
-[A disabled Environment's other fields are resolved](#a-disabled-environments-other-fields-are-resolved)).
+that adds a kind of Session or a later stage of evaluation specifies how it extends these rules.
 
 ### Recommended names (non-normative)
 
@@ -625,8 +607,8 @@ Environment can both call their input `Packages` without sharing a value.
 
 ### The `environment:` form of `<StepDependency>`
 
-Each entry in `dependencies` names something that must be in place before the Step's Tasks run: a completed Step, a
-running Service (RFC 0009), or, with this RFC, an Environment entered with the Step's parameter values. The forms differ
+Each entry in `dependencies` names something that must be in place before the Step's Tasks run: a completed Step, or,
+with this RFC, an Environment entered with the Step's parameter values. The forms differ
 in how that is met. A Step dependency is met by waiting for another Step, and an Environment dependency is met in each
 of the Step's Sessions before it runs the Step's Tasks, so it does not delay scheduling. `required: true` still rejects
 a submission in which the Environment is missing.
@@ -637,10 +619,10 @@ Ideas](#a-flat-per-step-map-of-values)).
 
 ### `step:` as a synonym of `dependsOn:`
 
-With this RFC, `dependencies` holds more than one kind of entry for the first time. Each new form is keyed by the kind
-of thing it names, `environment:` here and `service:` in the RFC 0009 draft, while the existing form is keyed by a
-verb, and inside a list named `dependencies`, "depends on" says nothing the list does not already say. `step:` gives
-Step entries the same shape as the others:
+With this RFC, `dependencies` holds more than one kind of entry for the first time. The new form is keyed by the kind
+of thing it names, `environment:`, while the existing form is keyed by a verb, and inside a list named `dependencies`,
+"depends on" says nothing the list does not already say. `step:` gives Step entries the same shape as Environment
+entries:
 
 ```yaml
 dependencies:
@@ -681,9 +663,10 @@ entry is the request.
 Conda Environment has nothing to do for a Step with no packages, so a Step may decline it. An operator's Environment for
 licensing, auditing, or security setup must be entered whatever a Job supplies.
 
-In a document that lists `ENV_PARAMS`, an Environment that omits `activation` is `BY_DEFAULT`, so that an author who
-writes an *enableIf* gets what it says without also writing `activation`. An Environment from a document that does not
-list the extension is `ALWAYS` (see [Environments from documents without `ENV_PARAMS` are
+In a document that lists `ENV_PARAMS`, a Job Environment or Environment Template that omits `activation` is
+`BY_DEFAULT`, so that an author who writes an *enableIf* gets what it says without also writing `activation`. A Step
+Environment has no `activation`, since only its own Step's Sessions can enter it. An Environment from a document that
+does not list the extension is `ALWAYS` (see [Environments from documents without `ENV_PARAMS` are
 `ALWAYS`](#environments-from-documents-without-env_params-are-always)). Both keep today's behavior, in which every
 Session enters the Environment.
 
@@ -753,9 +736,8 @@ Most of the systems surveyed name such a field `when`: Argo Workflows, Tekton, C
 Jenkins. GitHub Actions, Buildkite, and GitLab CI use `if`, and Azure Pipelines uses `condition`. This RFC uses
 `enableIf`, the name discussion #81 proposed. It says what `false` does: a disabled Environment is not entered, and a
 disabled entry requests nothing. `when` is shorter and familiar, but it can read as "wait until this is true", and
-OpenJD Steps do wait. RFC 0011 puts the same field, with the same name and form, on Steps and loops, so that one idea
-has one name across the specification. A field name is permanent once implementations ship it, so the name was settled
-before this RFC's Final Comment Period.
+OpenJD Steps do wait. A field name is permanent once implementations ship it, so the name was settled before this RFC's
+Final Comment Period.
 
 ### Expression fields rather than format strings
 
@@ -798,10 +780,7 @@ Disabling an Environment for a Step decides which Sessions enter it. It does not
 optional. Its other fields resolved at Job creation, such as an action's *timeout*, read only values known then and no
 effective values, so they can be checked whether or not any Step enters the Environment, as they are without the
 extension. Skipping them would leave an error in a Job Environment unreported until some Job enables it, so the same
-Job Template would fail for some Job Parameters and not others. RFC 0011 asks, in its Open Question 15, whether this
-RFC should leave them unevaluated, as RFC 0011 does for a disabled Step Environment. There a field may read a value
-that is missing at run time, such as the output of a skipped Step. That cannot happen under this RFC alone, so it keeps
-the base behavior, and RFC 0011's rule stays with the stages that need it.
+Job Template would fail for some Job Parameters and not others.
 
 ### `required` with an `exclusiveGroup`
 
@@ -818,12 +797,13 @@ those names first means an attached Environment can never change what such an en
 
 ### External Environments are named implicitly
 
-RFC 0009 requires a Job Template to declare each external Service in `externalServices`, so that its `Service.*`
-references can be type-checked. A Job Template never reads `Env.Param.*`; it only writes values, so no expression in it
-depends on an external Environment's shape. A declaration would be a second place to write the name, would add no
-information, and still could not be checked without the Environment Templates. Every mistake in a `required: true`
-entry is caught at Job creation with an error that names the entry, and a validator given the Environment Templates, as
-`openjd run` is, catches them before submission.
+A Job Template could be required to declare each external Environment it names, as it declares its Job Parameters.
+A declaration is useful where expressions read what it declares, so that they can be type-checked. A Job Template never
+reads `Env.Param.*`; it only writes values, so no expression in it depends on an external Environment's shape. A
+declaration would be a second place to write the name, would add no information, and still could not be checked
+without the Environment Templates. Every mistake in a `required: true` entry is caught at Job creation with an error
+that names the entry, and a validator given the Environment Templates, as `openjd run` is, catches them before
+submission.
 
 ### Values fixed per Step
 
@@ -1089,7 +1069,7 @@ cannot change between the two.
 The prototype is the `env-params-prototype` branch of
 [mwiebe/openjd-rs](https://github.com/mwiebe/openjd-rs/tree/env-params-prototype), developed alongside this RFC. It
 implements the extension in `openjd-model`, `openjd-sessions`, `openjd-cli`, and `openjd-for-js`, and its `openjd
-check`, `openjd summary`, and `openjd run` pass every 2023-09 conformance test at this RFC's head, including the 444
+check`, `openjd summary`, and `openjd run` pass every 2023-09 conformance test at this RFC's head, including the 445
 under `conformance-tests/2023-09/ENV_PARAMS`. The `env-params` branch of
 [mwiebe/openjd-model-for-python](https://github.com/mwiebe/openjd-model-for-python/tree/env-params) exposes it to Python
 through the Rust-backed bindings.
@@ -1215,7 +1195,7 @@ attached ones a Step uses.
 A Step could request Environments in a key of its own, such as `environments:` beside `dependencies`, since an entry
 for an Environment does not delay scheduling the way a Step dependency does. This RFC keeps the requests in
 `dependencies` because each entry there names something the Step needs in place before its Tasks run: a completed Step,
-or an Environment entered with the Step's values, and in the RFC 0009 draft a running Service. `required: true` rejects
+or an Environment entered with the Step's values. `required: true` rejects
 a submission in which the Environment is missing, as a missing Step is rejected. A separate key would sit beside
 `stepEnvironments`, which defines Environments, and readers would have to learn which of two lists defines Environments
 and which requests them. The difference in ordering is real, and [The `environment:` form of
@@ -1240,8 +1220,8 @@ Splitting remains possible, and this RFC does not prevent it.
 
 ### `activation` as a list of Session kinds
 
-Its vocabulary would grow with each kind of Session, and each of its useful combinations (`[TASK]` for Steps only,
-`[SERVICE]` for Services only) is one `ON_REQUEST` Environment that the right entities request.
+Its vocabulary would grow with each kind of Session that a later extension adds, and a list naming only some kinds of
+Session says the same as an `ON_REQUEST` Environment that only the entities that need it request.
 
 ### `activation` on the entry instead of the Environment
 
@@ -1252,7 +1232,7 @@ Environment must not become opt-in because one Step's entry says so, and two Ste
 ## Open Questions
 
 There are no open questions. The last one, whether to name *enableIf* `when`, was decided as `enableIf`, an expression
-field, together with RFC 0011 (see [The name `enableIf`](#the-name-enableif)).
+field (see [The name `enableIf`](#the-name-enableif)).
 
 ## Future Work
 
