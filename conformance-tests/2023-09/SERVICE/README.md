@@ -168,10 +168,12 @@ values. The rule has no exceptions.
   without referencing their endpoints); an entry must name a Step of the
   template or a Service other than itself; in an Environment Template every
   entry uses the `service` key and names a Service of the same document, or is
-  a disabled `environment:` entry for the document's own `environment`, with
-  the literal `enableIf: false` and no `parameters` (a Step name, an enabled
-  entry, one with an `enableIf` expression, and a disabled one with
-  `parameters` are rejected); not empty. A Service's
+  a disabled `environment:` entry, with the literal `enableIf: false` and no
+  `parameters` (a Step name, an enabled entry, one with an `enableIf`
+  expression, a disabled one with `parameters`, and one that declines the
+  document's own `ALWAYS` Environment are rejected; one naming an Environment
+  other than the document's own is valid on its own, since it may name an
+  earlier attachment's); not empty. A Service's
   `environment:` entry may read `RawParam.*`, `Param.*`, `Job.Name`,
   `Job.EnvNames`, and the Service's `let`, not `Step.Name`; a Service supplies
   every required parameter of each Environment its Session enters, as a Step
@@ -570,6 +572,7 @@ SERVICE/
 │   ├── 1.2--service-depends-on-earlier-service.yaml
 │   ├── 1.2--service-depends-on-later-service.yaml
 │   ├── 1.2--service-depends-on-service.yaml
+│   ├── 1.2--service-disabled-entry-names-other-environment.yaml
 │   ├── 1.2--service-references-job-name.yaml
 │   ├── 1.2--services-and-environment.yaml
 │   ├── 1.2--services-only.yaml
@@ -583,6 +586,7 @@ SERVICE/
 │   ├── 1.2--neither-environment-nor-services-no-extensions.invalid.yaml
 │   ├── 1.2--neither-environment-nor-services.invalid.yaml
 │   ├── 1.2--external-services-not-permitted.invalid.yaml
+│   ├── 1.2--service-declines-own-always-environment.invalid.yaml
 │   ├── 1.2--service-dependency-cycle.invalid.yaml
 │   ├── 1.2--service-dependency-on-step-not-permitted.invalid.yaml
 │   ├── 1.2--service-depends-on-unknown-service.invalid.yaml
@@ -653,7 +657,12 @@ SERVICE/
     ├── service-stop-order-dependent-service-stopped-first.test.yaml
     │  # External Services (§1.2.2) and externalServices (§9.8)
     ├── service-external-client-environment-uses-service-functions.test.yaml
+    ├── service-external-declines-earlier-attachment-environment.test.yaml
+    ├── service-external-declines-earlier-attachment-wrapper.test.yaml
+    ├── service-external-disabled-entry-for-earlier-on-request-environment.test.yaml
+    ├── service-external-disabled-entry-matching-nothing-ignored.test.yaml
     ├── service-external-enters-only-earlier-documents-environments.test.yaml
+    ├── service-external-own-environment-hides-earlier-same-name.test.yaml
     ├── service-external-parameter-override.test.yaml
     ├── service-external-same-name-as-inline-service.test.yaml
     ├── service-external-same-name-both-consumed.test.yaml
@@ -684,6 +693,8 @@ SERVICE/
     ├── service-wrapper-on-request-for-steps-with-service.test.yaml
     │  # Runs the runner must reject
     ├── service-combined-host-requirements-conflict.invalid.test.yaml
+    ├── service-external-declines-ambiguous-earlier-environment.invalid.test.yaml
+    ├── service-external-declines-earlier-attachment-always-environment.invalid.test.yaml
     ├── service-job-wrapper-with-external-service.invalid.test.yaml
     ├── service-max-restarts-exhausted.invalid.test.yaml
     ├── service-max-restarts-from-param-negative.invalid.test.yaml
@@ -812,7 +823,24 @@ SERVICE/
   attachments only, never a later attachment's or the Job Template's, while
   the Task Session enters all of them
   (`service-external-enters-only-earlier-documents-environments`). Each
-  attached Service declines its own document's client Environment.
+  attached Service declines its own document's client Environment. An attached
+  Service may also decline an earlier attachment's `BY_DEFAULT` Environment,
+  here one with a parameter it cannot supply
+  (`service-external-declines-earlier-attachment-environment`) and an RFC 0008
+  wrapper that cannot wrap it
+  (`service-external-declines-earlier-attachment-wrapper`), but not an
+  `ALWAYS` one
+  (`service-external-declines-earlier-attachment-always-environment`). Its
+  disabled entry resolves to its own document's Environment first
+  (`service-external-own-environment-hides-earlier-same-name`), and otherwise
+  among earlier attachments' Environments, whatever their `activation`, where
+  two matches are an error
+  (`service-external-declines-ambiguous-earlier-environment`) and one for an
+  `ON_REQUEST` Environment has no effect
+  (`service-external-disabled-entry-for-earlier-on-request-environment`). One
+  that names the Job Template's Environment, a later attachment's (even
+  `ALWAYS`), or no Environment at all has no effect, whatever `required` says
+  (`service-external-disabled-entry-matching-nothing-ignored`).
 - **Service names are per document** (§1.2.2 item 3): an attached
   Service named like an inline Service, or like another attachment's Service
   when nothing requires the name, is accepted; each document's Environment
@@ -953,7 +981,11 @@ runner contract. The behavior specific to `SERVICE`:
    Parameters, and keep a Service of one document distinct from a same-named
    Service of another (§1.2.2 item 3): a Job Template's `Service.*` references
    resolve to its own `services` and `externalServices`, and an Environment
-   Template's within that document.
+   Template's within that document. It must resolve an attached Service's
+   disabled `environment:` entries among the Environments of its own document
+   and of earlier attachments (§1.2 item 6 constraint 5), the document's own
+   first, rejecting one that declines an `ALWAYS` Environment or matches two
+   earlier attachments' Environments and ignoring one that matches none.
 3. Before any Task of a Step runs, every Service whose scope includes the Step
    must be started in a Service Session of its own — after the Steps in its
    `dependencies` have completed and the Services in it are READY,

@@ -1,0 +1,24 @@
+# Section 1.2 item 6 constraint 5 (RFC 0009) / RFC 0010 §4 item 4: a disabled
+# `environment:` entry on an Environment Template's Service may not name an
+# `activation: ALWAYS` Environment. Cache declines the document's own ALWAYS
+# Environment Tools, which is an error at template validation. Tools lists no
+# Service, so Cache's Session entering it is not also a cycle.
+specificationVersion: environment-2023-09
+extensions: [SERVICE, ENV_PARAMS, EXPR]
+services:
+- name: Cache
+  dependencies:
+  - environment: Tools
+    enableIf: false
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+environment:
+  name: Tools
+  activation: ALWAYS
+  variables:
+    TOOLS: "yes"

@@ -1,0 +1,20 @@
+# Section 1.2 item 6 constraint 5 (RFC 0009): a disabled `environment:` entry
+# on an Environment Template's Service may name an Environment other than the
+# document's own, since it may decline one from an Environment Template
+# attached earlier. Which Environment the name matches, if any, is known only
+# when the Job is created, so the document is valid on its own. This document
+# has no `environment` at all.
+specificationVersion: environment-2023-09
+extensions: [SERVICE, ENV_PARAMS, EXPR]
+services:
+- name: Cache
+  dependencies:
+  - environment: QueueConda
+    enableIf: false
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
