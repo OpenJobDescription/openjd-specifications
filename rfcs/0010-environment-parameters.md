@@ -455,9 +455,10 @@ ignored](#parameters-for-an-environment-that-declares-none-are-ignored)).
   every Session, except a Step's that declines it or for which its *enableIf* is `false`.
 * `ON_REQUEST`: the Sessions of the Steps that request it, less any for which its *enableIf* is `false`.
 
-A Step Environment has no *activation*: only its own Step's Sessions enter it, less those for which its *enableIf* is
-`false`. An Environment from a document that does not list `ENV_PARAMS` behaves as `ALWAYS` with no *enableIf*, except
-that a Step's disabled entry for it has no effect rather than being an error.
+A Step Environment has no *activation*: only its own Step's Sessions enter it, and they do not if its *enableIf* is
+`false` for that Step. A Job Environment or Environment Template from a document that does not list `ENV_PARAMS`
+behaves as `ALWAYS` with no *enableIf*, except that a Step's disabled entry for it has no effect rather than being an
+error.
 
 §4 item 6, *enableIf*, is evaluated when the Job is created, once per Step with that Step's effective values. It comes
 after constraint 7, which does not depend on it: a Step that an Environment applies to supplies every parameter without
@@ -655,20 +656,20 @@ Step with no use for it. With it, only the Steps that request the Environment ar
 
 ### The values and their names
 
-The field is named for what it decides: when a Session enters the Environment. `runScope` was not kept because "scope"
-already names value-reference scopes throughout the specification. `ON_REQUEST` names the mechanism: an `environment:`
-entry is the request.
+The field is named for what it decides: when a Session enters the Environment. A name with "scope" in it was avoided
+because "scope" already names value-reference scopes throughout the specification. `ON_REQUEST` names the mechanism: an
+`environment:` entry is the request.
 
 `BY_DEFAULT` and `ALWAYS` both have every Session enter the Environment, and differ in whether a Step can avoid it. A
 Conda Environment has nothing to do for a Step with no packages, so a Step may decline it. An operator's Environment for
 licensing, auditing, or security setup must be entered whatever a Job supplies.
 
 In a document that lists `ENV_PARAMS`, a Job Environment or Environment Template that omits `activation` is
-`BY_DEFAULT`, so that an author who writes an *enableIf* gets what it says without also writing `activation`. A Step
-Environment has no `activation`, since only its own Step's Sessions can enter it. An Environment from a document that
-does not list the extension is `ALWAYS` (see [Environments from documents without `ENV_PARAMS` are
-`ALWAYS`](#environments-from-documents-without-env_params-are-always)). Both keep today's behavior, in which every
-Session enters the Environment.
+`BY_DEFAULT`, so that an author who writes an *enableIf* gets what it says without also writing `activation`. An
+Environment from a document that does not list the extension is `ALWAYS` (see [Environments from documents without
+`ENV_PARAMS` are `ALWAYS`](#environments-from-documents-without-env_params-are-always)). Both keep today's behavior, in
+which every Session enters the Environment. A Step Environment has no `activation`, since only its own Step's Sessions
+can enter it.
 
 ### Environments from documents without `ENV_PARAMS` are `ALWAYS`
 

@@ -2071,21 +2071,23 @@ Where:
       in its *dependencies*, enter it, less any Step for which its *enableIf* is `false`.
 
    A Step Environment has no *activation* (it is not permitted on a *stepEnvironments* entry), and this default does
-   not apply to it. Only the Sessions of its own Step enter it, less those for which its *enableIf* is `false`.
+   not apply to it. Only the Sessions of its own Step enter it, and they do not if its *enableIf* is `false` for that
+   Step.
 
-   An Environment from a document that does not list `ENV_PARAMS` behaves as one with `activation: ALWAYS` and no
-   *enableIf*: every Session of the Job enters it. Unlike for an `ALWAYS` Environment, a Step's disabled *environment*
-   entry for it has no effect and is not an error (see [&lt;StepDependency&gt;](#32-stepdependency) *enableIf*). So a
-   Job Template that lists `ENV_PARAMS` cannot leave out an Environment written before the extension, such as one that
-   a render management system attaches to every Job for licensing or auditing, and its `required: false` entries work
-   whether or not an attached Environment lists the extension. In a Job Template that does not list `ENV_PARAMS`, no
-   Step has an *environment* entry and no Environment has an *enableIf*, so its Environments are entered by every
-   Session either way.
+   A Job Environment, or the *environment* of an Environment Template, from a document that does not list `ENV_PARAMS`
+   behaves as one with `activation: ALWAYS` and no *enableIf*: every Session of the Job enters it. Unlike for an
+   `ALWAYS` Environment, a Step's disabled *environment* entry for it has no effect and is not an error (see
+   [&lt;StepDependency&gt;](#32-stepdependency) *enableIf*). So a Job Template that lists `ENV_PARAMS` cannot leave out
+   an Environment written before the extension, such as one that a render management system attaches to every Job for
+   licensing or auditing, and its `required: false` entries work whether or not an attached Environment lists the
+   extension. In a Job Template that does not list `ENV_PARAMS`, no Step has an *environment* entry and no Environment
+   has an *enableIf*, so its Job Environments are entered by every Session either way.
 
    A Session that does not enter an Environment does not enter or exit it, does not have its *variables* set, and does
    not have it in its Environment stack. The Environments a Session does enter keep their relative order. An
-   Environment whose *activation* is `ALWAYS` is entered by every Step's Sessions, or the Job is rejected, and one from
-   a document that does not list `ENV_PARAMS` is entered by every Step's Sessions. So a check that depends on whether a
+   Environment whose *activation* is `ALWAYS` is entered by every Step's Sessions, or the Job is rejected, and a Job
+   Environment or Environment Template from a document that does not list `ENV_PARAMS` is entered by every Step's
+   Sessions. So a check that depends on whether a
    Step's Sessions enter either may treat it as entered. Such checks include the `WRAP_ACTIONS` single-layer rule and
    the [Combined Host Requirements](#333-combined-host-requirements). Available with the `ENV_PARAMS` extension.
    Constraints:
