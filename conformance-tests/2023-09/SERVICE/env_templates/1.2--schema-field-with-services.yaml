@@ -1,4 +1,5 @@
-# Section 1.2 item 2 (RFC 0009): `$schema` alongside `extensions` and
+# Section 1.2 item 2 (RFC 0010, "Changes that apply without the extension"
+# item 4) with RFC 0009's `services`: `$schema` alongside `extensions` and
 # `services`.
 specificationVersion: environment-2023-09
 $schema: "https://example.com/openjd/environment-2023-09.schema.json"

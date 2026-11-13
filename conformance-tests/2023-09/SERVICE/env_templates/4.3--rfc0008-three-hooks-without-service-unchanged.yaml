@@ -1,7 +1,7 @@
 # Section 4.3 WRAP_ACTIONS constraint 1: a document that does not declare
 # SERVICE is governed by RFC 0008's all-or-nothing rule unchanged; the three
-# hooks are valid on their own. (Attaching it to a Job that places a Service
-# in its scope is rejected at submission; see the jobs/ fixtures.)
+# hooks are valid on their own. (Attaching it to a Job with a Service whose
+# Sessions enter it is rejected at submission; see the jobs/ fixtures.)
 specificationVersion: environment-2023-09
 extensions:
 - WRAP_ACTIONS
