@@ -700,7 +700,6 @@ SERVICE/
     ├── service-external-declines-ambiguous-earlier-environment.invalid.test.yaml
     ├── service-external-declines-earlier-attachment-always-environment.invalid.test.yaml
     ├── service-external-disabled-entry-for-pre-extension-wrapper.invalid.test.yaml
-    ├── service-job-wrapper-with-external-service.invalid.test.yaml
     ├── service-max-restarts-exhausted.invalid.test.yaml
     ├── service-max-restarts-from-param-negative.invalid.test.yaml
     ├── service-port-from-param-out-of-range.invalid.test.yaml
@@ -938,11 +937,9 @@ SERVICE/
 - **Submission-time checks** (§1.2.2 item 4): a wrapping Environment that a
   Service Session enters but that lacks the `onWrapService*` hooks is rejected
   — from a document without `SERVICE` attached to a Job declaring a Service,
-  in a Job submitted alongside an external Service, from a document that
-  declares `SERVICE` but defines three hooks, or from a document without
-  `ENV_PARAMS` that an attached Service's disabled entry cannot decline
-  (`service-wrapper-without-service-declaration`,
-  `service-job-wrapper-with-external-service`,
+  from a document that declares `SERVICE` but defines three hooks, or from a
+  document without `ENV_PARAMS` that an attached Service's disabled entry
+  cannot decline (`service-wrapper-without-service-declaration`,
   `service-wrapper-three-hooks-entered-by-service`,
   `service-external-disabled-entry-for-pre-extension-wrapper`). A Service whose own host
   requirements conflict with those of an Environment its Session enters is
