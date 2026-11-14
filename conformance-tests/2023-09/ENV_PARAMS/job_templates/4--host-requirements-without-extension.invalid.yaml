@@ -1,0 +1,22 @@
+# Template Schemas §4 item 5 (RFC 0010): hostRequirements on an Environment are available only with the
+# ENV_PARAMS extension. This Job Template lists no extensions, so they are rejected.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+jobEnvironments:
+- name: Conda
+  hostRequirements:
+    attributes:
+    - name: conformance:attr.flavor
+      anyOf: [vanilla]
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

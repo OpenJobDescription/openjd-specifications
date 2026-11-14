@@ -1,0 +1,28 @@
+# Template Schemas §4.5 item 1 (RFC 0010): a default may reference Param.<name> only for a Job Parameter
+# not of type PATH or LIST[PATH], so a default reading Param.<PATH> is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Dir
+  type: PATH
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: CacheDir
+    type: PATH
+    default: "{{Param.Dir}}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

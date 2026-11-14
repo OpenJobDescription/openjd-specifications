@@ -1,0 +1,40 @@
+# Template Schemas §3.3 constraint 3 and the discard rule (RFC 0010): with ENV_PARAMS, the duplicate-name
+# check applies to the requirements left after discarding. The Job Environment's hostRequirements name
+# conformance:amount.widgets twice, but the second amount's FEATURE_BUNDLE_1 format-string min and max both
+# resolve to null when Gpus is empty, so it is discarded, only one amount with that name remains, and the
+# Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR, FEATURE_BUNDLE_1]
+  name: DuplicateAmountNameOneDiscarded
+  jobEnvironments:
+  - name: Hw
+    activation: ALWAYS
+    envParameterDefinitions:
+    - name: Gpus
+      type: STRING
+      default: ""
+    hostRequirements:
+      amounts:
+      - name: conformance:amount.widgets
+        min: 1
+      - name: conformance:amount.widgets
+        min: "{{ 2 if Env.Param.Gpus != '' else None }}"
+        max: "{{ 4 if Env.Param.Gpus != '' else None }}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Hw]
+  steps:
+  - name: Render
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, Render]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Hw
+  - TASK Render

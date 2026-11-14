@@ -1,0 +1,30 @@
+# Template Schemas §3.2 constraint 6 (RFC 0010): every value must satisfy its parameter's minValue; a
+# literal value for a Job Environment is checked at template validation.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: License
+  envParameterDefinitions:
+  - name: Seats
+    type: INT
+    minValue: 1
+    default: 1
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  dependencies:
+  - environment: License
+    parameters:
+      Seats: 0
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

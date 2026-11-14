@@ -1,0 +1,42 @@
+# RFC 0010 / Template Schemas §4.5 item 1, §1.2.1: an attached Environment's
+# parameter default "{{Param.CondaPackages}}" reads the merged Job Parameter, so
+# the Job Template's redefinition of the Job Parameter's default wins.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: DefaultReadsMergedJobParameter
+  parameterDefinitions:
+  - name: CondaPackages
+    type: STRING
+    default: jobdefault
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  parameterDefinitions:
+  - name: CondaPackages
+    type: STRING
+    default: envdefault
+  environment:
+    name: Conda
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: "{{Param.CondaPackages}}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda Packages=jobdefault
+  forbidden:
+  - ENTER Conda Packages=envdefault

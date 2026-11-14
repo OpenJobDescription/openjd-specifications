@@ -1,0 +1,108 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# ----
+# Demonstrates
+# ----
+# An external Conda Environment that each Step of a Job can configure, using the
+# ENV_PARAMS extension (RFC 0010). The Environment declares its own parameters,
+# Packages and Channels, read as {{Env.Param.*}}. Their defaults are the
+# template-level CondaPackages and CondaChannels Job Parameters, so a Job
+# Template that knows nothing about ENV_PARAMS keeps working: every Session
+# gets the job-wide packages, as before. For the same reason the Environment
+# keeps the default activation, BY_DEFAULT, under which every Step enters it
+# unless its enableIf leaves the Step out. The enableIf is decided per Step
+# from that Step's Packages, so a Step that ends up with no packages does not
+# enter the Environment at all. activation: ALWAYS would make that an error
+# instead. To offer conda only to Steps that ask for it, set
+# activation: ON_REQUEST.
+#
+# Its exclusiveGroup, SoftwareProvider, is shared with the Docker sample. When
+# a scheduler attaches several Environments of the group, each Step's Sessions
+# enter only the first one, in the order they are attached, that is enabled for
+# the Step, so a Job Template never chooses between them.
+#
+# A Step that lists this Environment in its dependencies supplies its own
+# values instead:
+#
+#   dependencies:
+#     - environment: Conda
+#       required: false
+#       parameters:
+#         Packages: "colmap=3.11"
+#
+# See job_templates/video-sfm-composite.yaml.
+#
+# ----
+# Requirements
+# ----
+# - bash shell
+# - conda (or mamba) on PATH
+#
+# -----
+# Contributors to this template:
+#   Mark Wiebe (https://github.com/mwiebe)
+
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+parameterDefinitions:
+- name: CondaPackages
+  type: STRING
+  description: >
+    Space-separated conda package specs to install in every Session, for Steps
+    that do not supply their own. Empty means use the host's software.
+  default: ""
+- name: CondaChannels
+  type: STRING
+  description: Space-separated conda channels to search.
+  default: "conda-forge"
+environment:
+  name: Conda
+  enableIf: "Env.Param.Packages != ''"
+  exclusiveGroup: SoftwareProvider
+  description: >
+    Creates a conda environment in the Session Working Directory with the
+    packages the Session's Step asked for, and activates it for the rest of
+    the Session.
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: "{{Param.CondaPackages}}"
+  - name: Channels
+    type: STRING
+    default: "{{Param.CondaChannels}}"
+  script:
+    actions:
+      onEnter:
+        command: bash
+        # The values travel as argv, never as script text, so a quote or other
+        # shell syntax in a value cannot change what the script runs.
+        args: ["{{Env.File.Enter}}", "{{Env.Param.Packages}}", "{{Env.Param.Channels}}"]
+    embeddedFiles:
+    - name: Enter
+      type: TEXT
+      data: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        # Word splitting of the arguments below is intended, globbing is not.
+        set -f
+
+        # argv: <packages> <channels>
+        PACKAGES="$1"
+        CHANNELS="$2"
+
+        CHANNEL_ARGS=()
+        for c in $CHANNELS; do
+          CHANNEL_ARGS+=(-c "$c")
+        done
+
+        echo "openjd_status: Creating conda environment with: $PACKAGES"
+        # Word splitting of $PACKAGES is intended: one argument per package spec.
+        # CHANNEL_ARGS may be empty, which bash before 4.4 rejects under set -u
+        # as "${CHANNEL_ARGS[@]}", so it is expanded only when it has elements.
+        conda create --yes --quiet --prefix ./.conda-env ${CHANNEL_ARGS[@]+"${CHANNEL_ARGS[@]}"} $PACKAGES
+
+        PREFIX="$(pwd)/.conda-env"
+        echo "openjd_env: CONDA_PREFIX=$PREFIX"
+        echo "openjd_env: PATH=$PREFIX/bin:$PATH"

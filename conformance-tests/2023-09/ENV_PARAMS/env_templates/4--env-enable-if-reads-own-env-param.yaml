@@ -1,0 +1,20 @@
+# Template Schemas §7.3.2 (RFC 0010): an Environment Template's environment may carry
+# enableIf, reading its own Env.Param.*.
+specificationVersion: environment-2023-09
+extensions: [ENV_PARAMS, EXPR]
+parameterDefinitions:
+- name: CondaPackages
+  type: STRING
+  default: ""
+environment:
+  name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: "{{Param.CondaPackages}}"
+  enableIf: "Env.Param.Packages != ''"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]

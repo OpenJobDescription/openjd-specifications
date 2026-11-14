@@ -1,0 +1,28 @@
+# Template Schemas §4.5 item 4 and §2.10 (RFC 0010): "1-3:2" is 5 characters, but its canonical form "1,3" is 3,
+# shorter than minLength 4; constraint 6 rejects it at template validation.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: RangeExprLength
+jobEnvironments:
+- name: Cache
+  activation: ON_REQUEST
+  envParameterDefinitions:
+  - name: Frames
+    type: RANGE_EXPR
+    minLength: 4
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Cache, "{{Env.Param.Frames}}"]
+steps:
+- name: A
+  dependencies:
+  - environment: Cache
+    parameters:
+      Frames: "1-3:2"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

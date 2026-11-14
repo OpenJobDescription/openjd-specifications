@@ -1,0 +1,45 @@
+# RFC 0010 §Basic Examples, "A Job Template whose Steps each ask for their own
+# software" (Template Schemas §3.2.1 item 2): on a queue that attaches neither
+# Conda nor Docker, every required: false entry is ignored and the Job runs
+# unchanged.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: VideoToCompositeNoQueueEnvironment
+  steps:
+  - name: DecodeFrames
+    dependencies:
+    - environment: Conda
+      required: false
+      parameters:
+        Packages: ffmpeg=7
+    - environment: Docker
+      required: false
+      parameters:
+        Image: docker.io/linuxserver/ffmpeg:latest
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, DecodeFrames]
+  - name: SolveSfM
+    dependencies:
+    - dependsOn: DecodeFrames
+    - environment: Conda
+      required: false
+      parameters:
+        Packages: colmap=3.11
+    - environment: Docker
+      required: false
+      parameters:
+        Image: docker.io/colmap/colmap:latest
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, SolveSfM]
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK DecodeFrames
+  - TASK SolveSfM

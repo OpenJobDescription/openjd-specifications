@@ -1,0 +1,27 @@
+# Template Schemas §3.2 item 3.3 (RFC 0010): parameters is optional. An entry without it supplies no values
+# and still requests the Environment; every parameter takes its default.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]
+steps:
+- name: Render
+  dependencies:
+  - environment: Conda
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

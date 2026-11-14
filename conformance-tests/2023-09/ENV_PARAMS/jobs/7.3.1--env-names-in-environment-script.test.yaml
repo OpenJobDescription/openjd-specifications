@@ -1,0 +1,36 @@
+# RFC 0010 / Template Schemas §7.3.1 Job.EnvNames ("available in every format
+# string of a Job Template or Environment Template resolved at Job creation or
+# later"): an attached Environment's onEnter reads Job.EnvNames, which includes
+# the Job Template's Environments, after the attached one (§1.1 jobEnvironments).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnvNamesInEnvironmentScript
+  jobEnvironments:
+  - name: J
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, J]
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: E
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, E, "NAMES=[{{ Job.EnvNames.join(',') }}]"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER E NAMES=[E,J]

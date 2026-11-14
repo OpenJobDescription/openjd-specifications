@@ -1,0 +1,15 @@
+# Template Schemas §4.5 item 1 and §7.3.2 (RFC 0010): an Environment Template's Environment parameter default may read
+# Job.Name, the name of the Job it is attached to.
+specificationVersion: environment-2023-09
+extensions: [ENV_PARAMS, EXPR]
+environment:
+  name: Docker
+  envParameterDefinitions:
+  - name: ContainerName
+    type: STRING
+    default: "job-{{Job.Name}}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, "{{Env.Param.ContainerName}}"]

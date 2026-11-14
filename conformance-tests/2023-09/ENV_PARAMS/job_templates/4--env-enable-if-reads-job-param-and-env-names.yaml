@@ -1,0 +1,28 @@
+# Template Schemas §7.3.2 (RFC 0010): a Job Environment's enableIf may read the document's
+# non-PATH Param.*, Job.Name, and Job.EnvNames.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: TestJob
+parameterDefinitions:
+- name: Mode
+  type: STRING
+  default: "on"
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: ""
+  enableIf: "Param.Mode == 'on' and 'Docker' not in Job.EnvNames and Job.Name != ''"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+steps:
+- name: A
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

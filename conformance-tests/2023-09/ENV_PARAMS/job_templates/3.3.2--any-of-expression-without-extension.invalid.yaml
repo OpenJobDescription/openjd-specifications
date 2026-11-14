@@ -1,0 +1,21 @@
+# Template Schemas §3.3.2 (RFC 0010): an anyOf written as one {{ }} expression, a <ListExpressionString>, needs the
+# ENV_PARAMS extension. This Job Template lists only EXPR, so it is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Flavor
+  type: STRING
+  default: a
+steps:
+- name: Render
+  hostRequirements:
+    attributes:
+    - name: conformance:attr.flavor
+      anyOf: "{{ [Param.Flavor] }}"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

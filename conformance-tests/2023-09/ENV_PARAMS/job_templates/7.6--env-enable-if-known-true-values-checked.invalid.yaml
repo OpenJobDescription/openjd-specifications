@@ -1,0 +1,35 @@
+# Template Schemas §3.2.2 and §7.6 rule 5 (RFC 0010): Conda's own enableIf "Param.F or true" is known at template
+# validation to be true, so Conda is not disabled for Render, and Render's literal value colmap, outside Packages's
+# allowedValues, is checked then (constraint 6). Rejected at template validation. JT-157 is the same with an enableIf
+# that is not known, which template validation accepts.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: KnownTrueEnvironmentValues
+parameterDefinitions:
+- name: F
+  type: BOOL
+  default: true
+jobEnvironments:
+- name: Conda
+  enableIf: "Param.F or true"
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    allowedValues: [numpy, ffmpeg]
+    default: numpy
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]
+steps:
+- name: Render
+  dependencies:
+  - environment: Conda
+    parameters:
+      Packages: colmap
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [render]

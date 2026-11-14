@@ -1,0 +1,26 @@
+# Template Schemas §7.6 rule 5 and Expression Language §2.1.6 (RFC 0010): at template validation the STRING Job
+# Parameter Mode is unresolved[string]. A string is never null or false, so "Param.Mode and false" is known to be
+# false, and an ALWAYS Environment cannot be disabled: rejected at template validation.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: KnownStringAndFalse
+parameterDefinitions:
+- name: Mode
+  type: STRING
+  default: "on"
+jobEnvironments:
+- name: Audit
+  activation: ALWAYS
+  enableIf: "Param.Mode and false"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Audit]
+steps:
+- name: A
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

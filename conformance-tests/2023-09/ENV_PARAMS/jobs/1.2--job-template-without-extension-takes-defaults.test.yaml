@@ -1,0 +1,34 @@
+# RFC 0010 §Backward compatibility, Template Schemas §1.2 item 3 (extensions
+# are per document): a Job Template that does not list ENV_PARAMS runs with an
+# attached ALWAYS Environment from a document that does; every Environment
+# parameter takes its default.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WithoutExtensionTakesDefaults
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    activation: ALWAYS
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: pkgdefault
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda Packages=pkgdefault
+  - TASK A

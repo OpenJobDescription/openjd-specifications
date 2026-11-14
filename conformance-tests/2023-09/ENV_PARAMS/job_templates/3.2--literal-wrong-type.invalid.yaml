@@ -1,0 +1,30 @@
+# Template Schemas §3.2 constraint 6 (RFC 0010): every value must be of its parameter's type; for an entry
+# naming a Job Environment this is checked at template validation against literal values. The literal
+# "abc" is not an INT.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: License
+  envParameterDefinitions:
+  - name: Seats
+    type: INT
+    default: 1
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  dependencies:
+  - environment: License
+    parameters:
+      Seats: abc
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

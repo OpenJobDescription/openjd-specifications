@@ -1,0 +1,44 @@
+# Template Schemas §3.2.1 item 3 (RFC 0010): a disabled entry whose name two attached Environments share is not an
+# error. It refers to each of them and declines each one whose activation is BY_DEFAULT, so neither is entered. Only an
+# enabled entry with an ambiguous name is rejected (JB-21).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: DisabledEntryAmbiguousName
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      enableIf: false
+      required: false
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda1]
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda2]
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A
+  forbidden:
+  - ENTER Conda1
+  - ENTER Conda2

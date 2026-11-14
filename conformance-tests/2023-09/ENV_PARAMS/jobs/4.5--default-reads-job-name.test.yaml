@@ -1,0 +1,63 @@
+# Template Schemas §4.5 item 1 and §7.3.2 (RFC 0010): a default may read Job.Name, which is the Job's resolved name, in
+# a Job Environment and in an attached Environment Template. A Step that supplies the parameter does not take the
+# default.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: "Shot {{Param.Shot}}"
+  parameterDefinitions:
+  - name: Shot
+    type: STRING
+    default: "010"
+  jobEnvironments:
+  - name: Tagged
+    envParameterDefinitions:
+    - name: Tag
+      type: STRING
+      default: "{{Job.Name}}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Tagged, "Tag={{Env.Param.Tag}}"]
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+  - name: B
+    dependencies:
+    - environment: Tagged
+      parameters:
+        Tag: own
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, B]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Docker
+    envParameterDefinitions:
+    - name: ContainerName
+      type: STRING
+      default: "job-{{Job.Name}}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Docker, "ContainerName={{Env.Param.ContainerName}}"]
+parameters:
+  Shot: "020"
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Docker ContainerName=job-Shot 020
+  - ENTER Tagged Tag=Shot 020
+  - ENTER Tagged Tag=own
+  - TASK A
+  - TASK B

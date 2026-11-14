@@ -1,0 +1,36 @@
+# RFC 0010 / Template Schemas §3.2.1 item 1, §4 activation: an attached
+# ON_REQUEST Environment that lists ENV_PARAMS but declares no parameters
+# ignores the parameters of a required: false entry, and the entry still
+# requests it, so the Step's Session enters it.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalOnRequestWithoutDefinitionsSupplied
+  steps:
+  - name: A
+    dependencies:
+    - environment: Lic
+      required: false
+      parameters:
+        Product: maya
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Lic
+    activation: ON_REQUEST
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Lic, requested]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Lic requested
+  - TASK A

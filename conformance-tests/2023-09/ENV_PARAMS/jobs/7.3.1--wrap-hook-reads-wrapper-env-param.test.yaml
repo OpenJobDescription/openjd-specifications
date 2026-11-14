@@ -1,0 +1,51 @@
+# RFC 0010 / Template Schemas §7.3.1 ("A wrapping Environment's wrap hooks
+# (RFC 0008) read the wrapping Environment's own parameters through
+# Env.Param.*"): a wrapping Environment's onWrapTaskRun prints the Image value
+# the Step supplied, in place of the Step's onRun.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: WrapHookReadsWrapperEnvParam
+  steps:
+  - name: A
+    dependencies:
+    - environment: Docker
+      parameters:
+        Image: img1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, WRAP_ACTIONS, EXPR]
+  environment:
+    name: Docker
+    activation: ALWAYS
+    envParameterDefinitions:
+    - name: Image
+      type: STRING
+      default: imgdefault
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys;sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        onWrapTaskRun:
+          command: echo
+          args: [WRAP, Docker, "Image={{Env.Param.Image}}"]
+        onWrapEnvExit:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys;sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+runOn: [posix, windows]
+expected:
+  output:
+  - WRAP Docker Image=img1
+  forbidden:
+  - TASK A
+  - WRAP Docker Image=imgdefault

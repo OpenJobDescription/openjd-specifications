@@ -1,0 +1,114 @@
+# Template Schemas §3 *dependencies* (RFC 0010): an implementation that limits a Step's dependencies must accept at
+# least 50 environment entries. A Step with 50 required: false entries, each naming an Environment that may be
+# attached, is valid.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: FiftyEntries
+steps:
+- name: A
+  dependencies:
+  - environment: Optional01
+    required: false
+  - environment: Optional02
+    required: false
+  - environment: Optional03
+    required: false
+  - environment: Optional04
+    required: false
+  - environment: Optional05
+    required: false
+  - environment: Optional06
+    required: false
+  - environment: Optional07
+    required: false
+  - environment: Optional08
+    required: false
+  - environment: Optional09
+    required: false
+  - environment: Optional10
+    required: false
+  - environment: Optional11
+    required: false
+  - environment: Optional12
+    required: false
+  - environment: Optional13
+    required: false
+  - environment: Optional14
+    required: false
+  - environment: Optional15
+    required: false
+  - environment: Optional16
+    required: false
+  - environment: Optional17
+    required: false
+  - environment: Optional18
+    required: false
+  - environment: Optional19
+    required: false
+  - environment: Optional20
+    required: false
+  - environment: Optional21
+    required: false
+  - environment: Optional22
+    required: false
+  - environment: Optional23
+    required: false
+  - environment: Optional24
+    required: false
+  - environment: Optional25
+    required: false
+  - environment: Optional26
+    required: false
+  - environment: Optional27
+    required: false
+  - environment: Optional28
+    required: false
+  - environment: Optional29
+    required: false
+  - environment: Optional30
+    required: false
+  - environment: Optional31
+    required: false
+  - environment: Optional32
+    required: false
+  - environment: Optional33
+    required: false
+  - environment: Optional34
+    required: false
+  - environment: Optional35
+    required: false
+  - environment: Optional36
+    required: false
+  - environment: Optional37
+    required: false
+  - environment: Optional38
+    required: false
+  - environment: Optional39
+    required: false
+  - environment: Optional40
+    required: false
+  - environment: Optional41
+    required: false
+  - environment: Optional42
+    required: false
+  - environment: Optional43
+    required: false
+  - environment: Optional44
+    required: false
+  - environment: Optional45
+    required: false
+  - environment: Optional46
+    required: false
+  - environment: Optional47
+    required: false
+  - environment: Optional48
+    required: false
+  - environment: Optional49
+    required: false
+  - environment: Optional50
+    required: false
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

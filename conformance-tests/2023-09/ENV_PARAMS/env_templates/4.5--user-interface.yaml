@@ -1,0 +1,19 @@
+# Template Schemas §4.5 (RFC 0010): userInterface is permitted on an Environment parameter, with the same
+# shape as on a <JobParameterDefinition> of that type; it is informational and does not change how the Job runs.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+    userInterface:
+      control: LINE_EDIT
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]

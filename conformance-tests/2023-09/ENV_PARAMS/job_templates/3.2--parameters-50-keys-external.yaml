@@ -1,0 +1,68 @@
+# Template Schemas §3.2 constraint 4 (RFC 0010): parameters may contain up to 50 entries. For an entry
+# that names no Job Environment, template validation checks only constraints 1-4, 8, and 9, so 50 keys
+# for the external Environment Tool are valid at template validation.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+steps:
+- name: Render
+  dependencies:
+  - environment: Tool
+    parameters:
+      P01: v
+      P02: v
+      P03: v
+      P04: v
+      P05: v
+      P06: v
+      P07: v
+      P08: v
+      P09: v
+      P10: v
+      P11: v
+      P12: v
+      P13: v
+      P14: v
+      P15: v
+      P16: v
+      P17: v
+      P18: v
+      P19: v
+      P20: v
+      P21: v
+      P22: v
+      P23: v
+      P24: v
+      P25: v
+      P26: v
+      P27: v
+      P28: v
+      P29: v
+      P30: v
+      P31: v
+      P32: v
+      P33: v
+      P34: v
+      P35: v
+      P36: v
+      P37: v
+      P38: v
+      P39: v
+      P40: v
+      P41: v
+      P42: v
+      P43: v
+      P44: v
+      P45: v
+      P46: v
+      P47: v
+      P48: v
+      P49: v
+      P50: v
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

@@ -1,0 +1,190 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# ----
+# Demonstrates
+# ----
+# An external Docker Environment that each Step of a Job configures, combining
+# the ENV_PARAMS extension (RFC 0010) with WRAP_ACTIONS (RFC 0008). The
+# container starts in onEnter, and every inner Environment action and Task of
+# the Session runs inside it via the wrap hooks.
+#
+# The Environment has activation: ON_REQUEST, so only the Sessions of Steps
+# that request it through an `environment: Docker` dependency enter it. Its
+# exclusiveGroup, SoftwareProvider, is shared with the Conda sample, so where a
+# scheduler attaches both, each Step's Sessions enter only the first one
+# attached that is enabled for the Step. The Environment also
+# declares hostRequirements: a Linux host (docker), and at least one GPU for
+# exactly the Steps whose Gpus value is non-empty. Those combine with each
+# Step's own requirements.
+#
+# The Environment declares three parameters:
+#
+#   Image   The container image. Defaults to the template-level DockerImage
+#           Job Parameter for Steps that request Docker without choosing an
+#           image.
+#   Mounts  Host paths the Step reads or writes (LIST[PATH]). Each directory,
+#           or the parent directory of each file, is bind-mounted at the same
+#           path inside the container, after path mapping, so the Step's
+#           {{Param.*}} paths work unchanged inside it. The Session Working
+#           Directory is always mounted.
+#   Gpus    The value for `docker run --gpus`, such as "all". Empty means no
+#           GPUs.
+#
+# A Step configures it with, for example:
+#
+#   dependencies:
+#     - environment: Docker
+#       required: false
+#       parameters:
+#         Image: "docker.io/colmap/colmap:latest"
+#         Mounts: "{{ [RawParam.WorkDir] }}"
+#         Gpus: "all"
+#
+# See job_templates/video-sfm-composite.yaml.
+#
+# ----
+# Requirements
+# ----
+# - bash shell
+# - docker, with permission for the job user to run containers
+# - for Gpus, the NVIDIA Container Toolkit on GPU hosts
+# - linux
+# - Mounted paths must not contain commas, which docker's --mount syntax
+#   uses as a separator.
+#
+# -----
+# Contributors to this template:
+#   Mark Wiebe (https://github.com/mwiebe)
+
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- WRAP_ACTIONS
+- EXPR
+- FEATURE_BUNDLE_1
+parameterDefinitions:
+- name: DockerImage
+  type: STRING
+  description: The container image for Steps that do not choose their own.
+  default: "docker.io/library/ubuntu:24.04"
+environment:
+  name: Docker
+  description: >
+    Runs the Session's actions inside a container started from the image the
+    Session's Step asked for.
+  activation: ON_REQUEST
+  exclusiveGroup: SoftwareProvider
+  envParameterDefinitions:
+  - name: Image
+    type: STRING
+    minLength: 1
+    default: "{{Param.DockerImage}}"
+  - name: Mounts
+    type: LIST[PATH]
+    default: []
+  - name: Gpus
+    type: STRING
+    default: ""
+  hostRequirements:
+    attributes:
+    - name: attr.worker.os.family
+      anyOf: [linux]
+    amounts:
+    # Resolved per Step with that Step's Gpus value: a GPU is required only
+    # for Steps that ask to use one. For other Steps min resolves to None, and
+    # an amount with neither min nor max is discarded.
+    - name: amount.worker.gpu
+      min: "{{ 1 if Env.Param.Gpus != '' else None }}"
+  script:
+    actions:
+      onEnter:
+        command: bash
+        # Values travel as argv, never as script text. Mounts expands to one
+        # argument per path, with path mapping applied.
+        args:
+        - "{{Env.File.Enter}}"
+        - "{{Env.Param.Image}}"
+        - "{{Env.Param.Gpus}}"
+        - "{{Env.Param.Mounts}}"
+      # The wrapped action arrives as argv after "--", so it needs no quoting.
+      onWrapEnvEnter:
+        command: bash
+        args:
+        - "{{Env.File.Wrap}}"
+        - "{{ flatten([['-e', e] for e in WrappedAction.Environment]) }}"
+        - "--"
+        - "{{WrappedAction.Command}}"
+        - "{{WrappedAction.Args}}"
+      onWrapTaskRun:
+        command: bash
+        args:
+        - "{{Env.File.Wrap}}"
+        - "{{ flatten([['-e', e] for e in WrappedAction.Environment]) }}"
+        - "--"
+        - "{{WrappedAction.Command}}"
+        - "{{WrappedAction.Args}}"
+      onWrapEnvExit:
+        command: bash
+        args:
+        - "{{Env.File.Wrap}}"
+        - "{{ flatten([['-e', e] for e in WrappedAction.Environment]) }}"
+        - "--"
+        - "{{WrappedAction.Command}}"
+        - "{{WrappedAction.Args}}"
+      onExit:
+        command: bash
+        # onExit also runs when onEnter failed before it started a container.
+        args: ["-c", 'if [ -n "${DOCKER_CONTAINER_ID:-}" ]; then docker container stop -t 30 "$DOCKER_CONTAINER_ID"; fi']
+    embeddedFiles:
+    - name: Enter
+      type: TEXT
+      data: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        # argv: <image> <gpus> [<path> ...]
+        IMAGE="$1"
+        GPUS="$2"
+        shift 2
+
+        SESSION_DIR={{ repr_sh(Session.WorkingDirectory) }}
+        # --init runs a minimal init as PID 1, so that the container stops as
+        # soon as onExit asks it to. A bare sleep as PID 1 ignores SIGTERM, and
+        # every stop would wait out its timeout.
+        # --user runs the container as the job user, so that files the Step
+        # writes to mounted paths belong to that user, not root.
+        RUN_ARGS=(--rm --detach --init --user "$(id -u):$(id -g)" --workdir "$SESSION_DIR" --entrypoint sleep)
+        if [ -n "$GPUS" ]; then
+            RUN_ARGS+=(--gpus "$GPUS")
+        fi
+
+        # Mount each directory, or each file's parent directory, at the same
+        # path. A path that does not exist yet (an output) gets its parent
+        # created and mounted. Skip duplicates, which docker rejects.
+        declare -A MOUNTED=()
+        for dir in "$SESSION_DIR" "$@"; do
+            if [ ! -d "$dir" ]; then
+                dir="$(dirname -- "$dir")"
+                mkdir -p -- "$dir"
+            fi
+            if [ -z "${MOUNTED[$dir]+x}" ]; then
+                MOUNTED[$dir]=1
+                RUN_ARGS+=(--mount "type=bind,src=$dir,dst=$dir")
+            fi
+        done
+
+        echo "openjd_status: Starting container from $IMAGE"
+        DOCKER_CONTAINER_ID=$(docker container run "${RUN_ARGS[@]}" "$IMAGE" infinity)
+        echo "openjd_env: DOCKER_CONTAINER_ID=$DOCKER_CONTAINER_ID"
+    - name: Wrap
+      type: TEXT
+      data: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        # argv: [-e KEY=value ...] -- <command> [args ...]
+        exec_cmd=(docker container exec)
+        while [ "$#" -gt 0 ] && [ "$1" != "--" ]; do
+            exec_cmd+=("$1")
+            shift
+        done
+        shift
+        exec "${exec_cmd[@]}" "$DOCKER_CONTAINER_ID" "$@"

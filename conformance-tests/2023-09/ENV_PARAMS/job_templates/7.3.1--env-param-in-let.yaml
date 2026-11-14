@@ -1,0 +1,27 @@
+# Template Schemas §7.3.1 and §3.6.2 <EnvironmentScript>.let (RFC 0010): Env.Param.* is available in the
+# declaring Environment's script let bindings.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+  script:
+    let:
+    - pkgs = Env.Param.Packages
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{pkgs}}"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

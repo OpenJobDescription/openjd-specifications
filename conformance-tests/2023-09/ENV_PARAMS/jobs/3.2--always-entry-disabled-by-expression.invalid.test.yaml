@@ -1,0 +1,39 @@
+# RFC 0010 / Template Schemas §3.2 *enableIf*: no Step can leave an ALWAYS Environment out, so a Step's disabled entry
+# for one is an error. A's entry for Lic has enableIf "Param.Mode == 'on'", an expression, so the template passes
+# template validation (JT-182), but with Mode=off it resolves to false when the Job is created, and the Job is
+# rejected, naming A and Lic.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: AlwaysEntryDisabledByExpression
+  parameterDefinitions:
+  - name: Mode
+    type: STRING
+    allowedValues: ["on", "off"]
+  jobEnvironments:
+  - name: Lic
+    activation: ALWAYS
+    envParameterDefinitions:
+    - name: Product
+      type: STRING
+      default: pdefault
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Lic, "Product={{Env.Param.Product}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Lic
+      enableIf: "Param.Mode == 'on'"
+      parameters:
+        Product: arnold
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+parameters:
+  Mode: "off"
+runOn: [posix, windows]

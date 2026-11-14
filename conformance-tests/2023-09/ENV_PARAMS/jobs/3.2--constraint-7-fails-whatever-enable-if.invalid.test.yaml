@@ -1,0 +1,40 @@
+# Template Schemas §3.2 (checked-at paragraph) and §7.6 rule 5, constraint 7 and item 5: Conda is an ALWAYS Job
+# Environment with two parameters without default. A's only entry has an expression enableIf and supplies only
+# Packages. Enabled, the entry leaves Channels unsupplied (constraint 7); disabled, it is an error, because no Step can
+# leave an ALWAYS Environment out (§3.2 *enableIf*). The Job fails for every value, so it is rejected, and an
+# implementation may already report it at template validation (README item 18).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: Constraint7Certain
+  parameterDefinitions:
+  - name: Use
+    type: STRING
+    allowedValues: ["yes", "no"]
+    default: "yes"
+  jobEnvironments:
+  - name: Conda
+    activation: ALWAYS
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+    - name: Channels
+      type: STRING
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "{{Env.Param.Packages}}", "{{Env.Param.Channels}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      enableIf: "Param.Use == 'yes'"
+      parameters:
+        Packages: ffmpeg
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]

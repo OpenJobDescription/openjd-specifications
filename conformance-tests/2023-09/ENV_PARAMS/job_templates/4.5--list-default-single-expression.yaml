@@ -1,0 +1,29 @@
+# Template Schemas §4.5 item 1 (RFC 0010): a list default that is a single {{ }} expression is evaluated
+# with the parameter's type as its target type, and is valid.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Pkg
+  type: STRING
+  default: numpy
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Channels
+    type: LIST[STRING]
+    default: "{{ [Param.Pkg, 'extra'] }}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

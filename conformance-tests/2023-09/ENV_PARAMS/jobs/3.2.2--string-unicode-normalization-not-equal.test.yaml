@@ -1,0 +1,51 @@
+# RFC 0010 / Template Schemas §3.2.2 (equal values): a STRING is compared by its code points, with no Unicode
+# normalization. Step A supplies "café" with the one code point U+00E9 (4 code points) and Step B "café" as "e"
+# followed by U+0301 (5 code points). They are not equal, so B's Task does not run in the Environment entered with A's
+# value. The values are printed as their lengths, which keeps the output ASCII.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: StringNormalizationNotEqual
+  jobEnvironments:
+  - name: Lex
+    envParameterDefinitions:
+    - name: Word
+      type: STRING
+    variables:
+      LEX_WORD_LENGTH: "{{ len(Env.Param.Word) }}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Lex, "Length=[{{ len(Env.Param.Word) }}]"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Lex
+      parameters:
+        Word: "caf\u00e9"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_A_LENGTH=['+os.environ['LEX_WORD_LENGTH']+']')"]
+  - name: B
+    dependencies:
+    - dependsOn: A
+    - environment: Lex
+      parameters:
+        Word: "cafe\u0301"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_B_LENGTH=['+os.environ['LEX_WORD_LENGTH']+']')"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Lex Length=[4]
+  - ENTER Lex Length=[5]
+  - TASK_A_LENGTH=[4]
+  - TASK_B_LENGTH=[5]
+  forbidden:
+  - TASK_B_LENGTH=[4]

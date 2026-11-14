@@ -1,0 +1,36 @@
+# Template Schemas §3.3 item 2 and §3.3.2 (RFC 0010): an anyOf written as one expression that resolves to
+# null is omitted, and an attribute requirement left with neither anyOf nor allOf is discarded. The Job
+# Environment's only requirement is such an attribute, Model is empty, so the Environment adds no
+# requirements and the Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: AnyOfExpressionNullDiscarded
+  jobEnvironments:
+  - name: Gpu
+    activation: ALWAYS
+    envParameterDefinitions:
+    - name: Model
+      type: STRING
+      default: ""
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.gpu.model
+        anyOf: "{{ [Env.Param.Model] if Env.Param.Model != '' else None }}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Gpu]
+  steps:
+  - name: Render
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, Render]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Gpu
+  - TASK Render

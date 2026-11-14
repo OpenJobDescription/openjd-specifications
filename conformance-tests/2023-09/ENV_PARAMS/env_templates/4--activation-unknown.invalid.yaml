@@ -1,0 +1,14 @@
+# Template Schemas §4 item 4 constraint 1 (RFC 0010): an implementation MUST reject a <EnvironmentActivation> it does
+# not recognize, so activation: SOMETIMES is rejected.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Conda
+  activation: SOMETIMES
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]

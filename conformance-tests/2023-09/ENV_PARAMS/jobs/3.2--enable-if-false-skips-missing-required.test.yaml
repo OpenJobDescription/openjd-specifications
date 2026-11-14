@@ -1,0 +1,25 @@
+# RFC 0010 / Template Schemas §3.2 item 3 ("the name is not resolved"), §3.2.1:
+# enableIf is decided before the name is resolved, so an entry with literal
+# enableIf: false and required: true naming an Environment that nothing attaches
+# is not an error, and behaves as no entry.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnableIfFalseSkipsMissing
+  steps:
+  - name: A
+    dependencies:
+    - environment: Missing
+      required: true
+      enableIf: false
+      parameters:
+        Packages: ffmpeg=7
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A

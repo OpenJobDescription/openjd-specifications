@@ -1,0 +1,70 @@
+# RFC 0010 §Basic Examples, "One parameterized Job Environment serving several
+# Steps" (Template Schemas §4 activation, §4.5): BeautyPass enters RenderLicense
+# with arnold and the default 1 seat, VolumePass with redshift and 2 seats, and
+# Composite, which does not request it, never enters it (its Task does not see
+# the Environment's variable).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: PluginSelectedRenders
+  jobEnvironments:
+  - name: RenderLicense
+    activation: ON_REQUEST
+    envParameterDefinitions:
+    - name: Product
+      type: STRING
+      allowedValues: [arnold, redshift, vray]
+    - name: Seats
+      type: INT
+      default: 1
+      minValue: 1
+    variables:
+      LICENSED_PRODUCT: "{{Env.Param.Product}}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, RenderLicense, "Product={{Env.Param.Product}}", "Seats={{Env.Param.Seats}}"]
+        onExit:
+          command: echo
+          args: [EXIT, RenderLicense, "Product={{Env.Param.Product}}"]
+  steps:
+  - name: BeautyPass
+    dependencies:
+    - environment: RenderLicense
+      parameters:
+        Product: arnold
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, BeautyPass]
+  - name: VolumePass
+    dependencies:
+    - dependsOn: BeautyPass
+    - environment: RenderLicense
+      parameters:
+        Product: redshift
+        Seats: 2
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, VolumePass]
+  - name: Composite
+    dependencies:
+    - dependsOn: BeautyPass
+    - dependsOn: VolumePass
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('COMPOSITE_LICENSE='+os.environ.get('LICENSED_PRODUCT','none'))"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER RenderLicense Product=arnold Seats=1
+  - EXIT RenderLicense Product=arnold
+  - ENTER RenderLicense Product=redshift Seats=2
+  - EXIT RenderLicense Product=redshift
+  - COMPOSITE_LICENSE=none

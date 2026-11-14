@@ -1,0 +1,13 @@
+# Template Schemas §1.1 item 3 (RFC 0010): the requirement is on listing ENV_PARAMS, not on using it. This Job
+# Template lists ENV_PARAMS without EXPR and uses no ENV_PARAMS field, and is still rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+name: TestJob
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

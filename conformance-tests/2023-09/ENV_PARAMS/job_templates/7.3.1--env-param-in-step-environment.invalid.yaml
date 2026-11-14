@@ -1,0 +1,33 @@
+# Template Schemas §4 Env.* scope and §7.3.1 (RFC 0010): Env.Param.* is available only within the
+# Environment that declares the parameter. A Step Environment reading the Job Environment Conda's
+# Env.Param.Packages is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]
+steps:
+- name: Render
+  stepEnvironments:
+  - name: Setup
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: ["{{Env.Param.Packages}}"]
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

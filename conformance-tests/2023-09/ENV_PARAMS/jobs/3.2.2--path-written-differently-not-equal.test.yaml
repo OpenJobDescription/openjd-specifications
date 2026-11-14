@@ -1,0 +1,50 @@
+# RFC 0010 / Template Schemas §3.2.2 (equal values), §4.5 item 3: a PATH value is compared by its unmapped string, as
+# given, so Step A's /data/x and Step B's /data/./x are not equal although they name the same file. B's Task does not
+# run in the Environment entered with A's value, and it sees /data/./x through Env.RawParam.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: PathWrittenDifferently
+  jobEnvironments:
+  - name: Data
+    envParameterDefinitions:
+    - name: Root
+      type: PATH
+    variables:
+      DATA_ROOT: "{{Env.RawParam.Root}}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Data, "Root=[{{Env.RawParam.Root}}]"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Data
+      parameters:
+        Root: /data/x
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_A_ROOT=['+os.environ['DATA_ROOT']+']')"]
+  - name: B
+    dependencies:
+    - dependsOn: A
+    - environment: Data
+      parameters:
+        Root: /data/./x
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_B_ROOT=['+os.environ['DATA_ROOT']+']')"]
+runOn: [posix]
+expected:
+  output:
+  - ENTER Data Root=[/data/x]
+  - ENTER Data Root=[/data/./x]
+  - TASK_A_ROOT=[/data/x]
+  - TASK_B_ROOT=[/data/./x]
+  forbidden:
+  - TASK_B_ROOT=[/data/x]

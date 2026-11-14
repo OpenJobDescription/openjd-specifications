@@ -1,0 +1,42 @@
+# RFC 0010 rationale `Job.EnvNames`, Template Schemas §7.3.1: a Job Template's own fallback Environment is entered
+# only where no Environment named Conda is attached. A Conda Environment written before the extension, which cannot
+# have an exclusiveGroup, is attached, so InstallTools is disabled and every Session enters Conda.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: FallbackWhenCondaAttached
+  jobEnvironments:
+  - name: InstallTools
+    enableIf: "'Conda' not in Job.EnvNames"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, InstallTools]
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: CondaPackages
+    type: STRING
+    default: ""
+  environment:
+    name: Conda
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda
+  - TASK A
+  forbidden:
+  - ENTER InstallTools

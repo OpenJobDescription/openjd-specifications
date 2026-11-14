@@ -1,0 +1,53 @@
+# RFC 0010 / Template Schemas §3.2.2 (equal values): an INT parameter supplied
+# as 1 by one Step and as "1" by another resolves to the INT 1 for both. Whether
+# the Steps share a Session is not observable as a requirement, so only "both
+# accepted, both print 1" is checked. The Steps' Tag values differ, so each
+# Step enters Lic with its own values, and Tag identifies which entry printed
+# each line.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: IntOneAndStringOne
+  jobEnvironments:
+  - name: Lic
+    envParameterDefinitions:
+    - name: Seats
+      type: INT
+    - name: Tag
+      type: STRING
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Lic, "Seats={{Env.Param.Seats}}", "Tag={{Env.Param.Tag}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Lic
+      parameters:
+        Seats: 1
+        Tag: a
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+  - name: B
+    dependencies:
+    - dependsOn: A
+    - environment: Lic
+      parameters:
+        Seats: "1"
+        Tag: b
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, B]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Lic Seats=1 Tag=a
+  - ENTER Lic Seats=1 Tag=b
+  - TASK A
+  - TASK B

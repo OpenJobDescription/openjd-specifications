@@ -1,0 +1,47 @@
+# Template Schemas §1.1 jobEnvironments: the Environments attached to the Job from Environment Templates come before the
+# Job Template's jobEnvironments, in the order they are attached, and a Session enters them in that order. Each onEnter
+# appends its name to ORDER through openjd_env, and the Task prints it.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: AttachedEnvironmentsEnteredFirst
+  jobEnvironments:
+  - name: J1
+    script:
+      actions:
+        onEnter:
+          command: bash
+          args: ["-c", "echo \"openjd_env: ORDER=${ORDER:-}J1\""]
+  - name: J2
+    script:
+      actions:
+        onEnter:
+          command: bash
+          args: ["-c", "echo \"openjd_env: ORDER=${ORDER:-}J2\""]
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: bash
+          args: ["-c", "echo \"A_ORDER=[$ORDER]\""]
+environments:
+- specificationVersion: environment-2023-09
+  environment:
+    name: Q1
+    script:
+      actions:
+        onEnter:
+          command: bash
+          args: ["-c", "echo \"openjd_env: ORDER=${ORDER:-}Q1\""]
+- specificationVersion: environment-2023-09
+  environment:
+    name: Q2
+    script:
+      actions:
+        onEnter:
+          command: bash
+          args: ["-c", "echo \"openjd_env: ORDER=${ORDER:-}Q2\""]
+runOn: [posix]
+expected:
+  output:
+  - A_ORDER=[Q1Q2J1J2]

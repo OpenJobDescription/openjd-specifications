@@ -1,0 +1,25 @@
+# Template Schemas §7.3.1 and §4 (RFC 0010): Env.Param.* is not available in an Action's timeout, which with
+# FEATURE_BUNDLE_1 is resolved when the Job is created, before any Session enters the Environment. A timeout that
+# reads Env.Param.T is rejected at template validation.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR, FEATURE_BUNDLE_1]
+name: EnvParamInTimeout
+jobEnvironments:
+- name: E
+  envParameterDefinitions:
+  - name: T
+    type: INT
+    default: 60
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, E]
+        timeout: "{{Env.Param.T}}"
+steps:
+- name: A
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

@@ -1,0 +1,40 @@
+# RFC 0010 / Template Schemas §4.5 (Env.RawParam.<name> has no path mapping
+# applied): a PATH parameter whose default is "{{RawParam.Dir}}" (a PATH Job
+# Parameter) reads unmapped as Env.RawParam.Dir. The Step supplies nothing.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: PathValueUnmappedPosix
+  parameterDefinitions:
+  - name: Dir
+    type: PATH
+  jobEnvironments:
+  - name: Mnt
+    envParameterDefinitions:
+    - name: Dir
+      type: PATH
+      default: "{{RawParam.Dir}}"
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print(r'ENV_RAW_DIR:{{Env.RawParam.Dir}}')"]
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+parameters:
+  Dir: /original/data
+pathMapping:
+- source_path_format: POSIX
+  source_path: /original
+  destination_path: /mapped
+runOn: [posix]
+expected:
+  output:
+  - ENV_RAW_DIR:/original/data
+  forbidden:
+  - ENV_RAW_DIR:/mapped/data

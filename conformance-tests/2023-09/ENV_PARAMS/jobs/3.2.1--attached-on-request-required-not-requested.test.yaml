@@ -1,0 +1,34 @@
+# RFC 0010 / Template Schemas §3.2 constraint 7, §4 activation: an attached
+# ON_REQUEST Environment with a required parameter that no Step requests is
+# entered by no Session, so no Step must supply the parameter; the Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: AttachedOnRequestNotRequested
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Lic
+    activation: ON_REQUEST
+    envParameterDefinitions:
+    - name: Product
+      type: STRING
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Lic, "Product={{Env.Param.Product}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A
+  forbidden:
+  - ENTER Lic

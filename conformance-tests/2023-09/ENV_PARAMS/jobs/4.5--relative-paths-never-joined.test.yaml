@@ -1,0 +1,60 @@
+# Template Schemas §4.5 items 1 and 3 (RFC 0010): an Environment parameter PATH or LIST[PATH] value is used as given and
+# never joined with the current working directory or any other directory, unlike a submitted Job Parameter value. This
+# holds for a relative format-string default, a relative literal LIST[PATH] default, and a relative format-string value,
+# in a Job Environment and in an attached Environment Template.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: RelativePathsNeverJoined
+  parameterDefinitions:
+  - name: Sub
+    type: STRING
+    default: s
+  jobEnvironments:
+  - name: Own
+    envParameterDefinitions:
+    - name: P
+      type: PATH
+      default: "rel/{{Param.Sub}}"
+    - name: L
+      type: LIST[PATH]
+      default: [rel/a, ./b]
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Own, "P={{Env.RawParam.P}}", "L={{ Env.RawParam.L.join(',') }}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Mnt
+      parameters:
+        Dir: "{{ 'rel' }}/{{Param.Sub}}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Mnt
+    envParameterDefinitions:
+    - name: Dir
+      type: PATH
+      default: "{{ 'unused' }}"
+    - name: Extra
+      type: PATH
+      default: "{{ 'rel' }}/extra"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Mnt, "Dir={{Env.RawParam.Dir}}", "Extra={{Env.RawParam.Extra}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Mnt Dir=rel/s Extra=rel/extra
+  - ENTER Own P=rel/s L=rel/a,./b
+  - TASK A

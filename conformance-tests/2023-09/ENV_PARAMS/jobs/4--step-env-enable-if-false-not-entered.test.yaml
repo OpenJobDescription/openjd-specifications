@@ -1,0 +1,35 @@
+# RFC 0010 / Template Schemas §7.3.2: a Step Environment whose enableIf, reading the Step's
+# let, is false is not entered by the Step's Session.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: StepEnvEnableIf
+  parameterDefinitions:
+  - name: UseScratch
+    type: STRING
+    allowedValues: ["yes", "no"]
+  steps:
+  - name: A
+    let:
+    - wanted = Param.UseScratch == 'yes'
+    stepEnvironments:
+    - name: Scratch
+      enableIf: "wanted"
+      script:
+        actions:
+          onEnter:
+            command: echo
+            args: [ENTER, Scratch]
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+parameters:
+  UseScratch: "no"
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A
+  forbidden:
+  - ENTER Scratch

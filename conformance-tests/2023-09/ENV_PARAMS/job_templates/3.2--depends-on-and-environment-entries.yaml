@@ -1,0 +1,36 @@
+# Template Schemas §3.2 (RFC 0010): a <StepDependency> is one of the dependsOn or environment objects, so
+# one dependencies list may hold entries of both forms.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]
+steps:
+- name: First
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["first"]
+- name: Render
+  dependencies:
+  - dependsOn: First
+  - environment: Conda
+    parameters:
+      Packages: ffmpeg
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

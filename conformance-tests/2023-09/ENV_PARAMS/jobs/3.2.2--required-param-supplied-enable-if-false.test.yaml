@@ -1,0 +1,35 @@
+# Template Schemas §3.2 constraint 7 and §3.2.2 (RFC 0010): the BY_DEFAULT Job Environment E applies to Step A, which
+# supplies X, its parameter without default. E's enableIf, "Env.Param.X == 'b'", is evaluated with the concrete value
+# a and is false, so E is disabled for A: the Job runs and A's Sessions do not enter E.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: RequiredParamSuppliedDisabled
+  jobEnvironments:
+  - name: E
+    enableIf: "Env.Param.X == 'b'"
+    envParameterDefinitions:
+    - name: X
+      type: STRING
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, E, "X={{Env.Param.X}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: E
+      parameters:
+        X: a
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A
+  forbidden:
+  - ENTER E

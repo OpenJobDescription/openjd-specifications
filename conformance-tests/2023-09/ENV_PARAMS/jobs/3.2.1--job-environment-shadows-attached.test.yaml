@@ -1,0 +1,44 @@
+# RFC 0010 / Template Schemas §3.2 item 3, §3.2.1 item 4: a name resolves to
+# the Job Template's own jobEnvironments entry first. The attached Environment of
+# the same name (which declares no parameters) is not reached by the entry, so
+# its lack of the parameter is not an error; as a BY_DEFAULT Environment it is still
+# entered.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: JobEnvironmentShadowsAttached
+  jobEnvironments:
+  - name: X
+    envParameterDefinitions:
+    - name: P
+      type: STRING
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, JobX, "P={{Env.Param.P}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: X
+      parameters:
+        P: pvalue
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  environment:
+    name: X
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, AttachedX]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER JobX P=pvalue
+  - ENTER AttachedX

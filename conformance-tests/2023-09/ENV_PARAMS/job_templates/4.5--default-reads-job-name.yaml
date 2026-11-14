@@ -1,0 +1,25 @@
+# Template Schemas §4.5 item 1 and §7.3.2 (RFC 0010): a default may reference RawParam.*, the non-PATH Param.* of the
+# same document's Job Parameters, and Job.Name, so a default reading Job.Name is valid.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Tag
+    type: STRING
+    default: "{{Job.Name}}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter", "{{Env.Param.Tag}}"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

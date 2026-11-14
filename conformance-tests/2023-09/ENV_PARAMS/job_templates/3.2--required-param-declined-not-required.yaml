@@ -1,0 +1,37 @@
+# Template Schemas §3.2 *enableIf* and constraint 7 (RFC 0010): Step A declines the BY_DEFAULT Job Environment E with an
+# entry whose enableIf is false, so E does not apply to A and A need not supply X, a parameter without default that E's
+# own enableIf reads. Step B supplies X. Valid.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: RequiredParamDeclined
+jobEnvironments:
+- name: E
+  enableIf: "Env.Param.X == 'a'"
+  envParameterDefinitions:
+  - name: X
+    type: STRING
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, E]
+steps:
+- name: A
+  dependencies:
+  - environment: E
+    enableIf: false
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]
+- name: B
+  dependencies:
+  - environment: E
+    parameters:
+      X: a
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, B]

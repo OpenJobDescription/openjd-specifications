@@ -1,0 +1,56 @@
+# Template Schemas §3.2 *enableIf* and §4 item 6: every enableIf is evaluated in template scope, where `path` values
+# have POSIX semantics whatever the Job's submission path format (Expression Language §1.2.1). Win holds 'C:\x\leaf', in
+# which a backslash is not a separator under POSIX semantics, so path(Param.Win).name is the whole string. Each
+# enableIf below is true only under POSIX semantics: an entry's, a Job Environment's, and a Step Environment's that
+# reads a Step let binding, which has its template-scope value. On a POSIX runner every interpretation agrees, so
+# the test distinguishes the rule only on a runner whose host or submission path format is Windows.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnableIfPosixPaths
+  parameterDefinitions:
+  - name: Win
+    type: STRING
+    default: 'C:\x\leaf'
+  jobEnvironments:
+  - name: Requested
+    activation: ON_REQUEST
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Requested]
+  - name: JobEnv
+    enableIf: "path(Param.Win).name == Param.Win"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, JobEnv]
+  steps:
+  - name: A
+    let:
+    - leaf = path(Param.Win).name
+    dependencies:
+    - environment: Requested
+      enableIf: "path(Param.Win).parts == [Param.Win]"
+    stepEnvironments:
+    - name: StepEnv
+      enableIf: "leaf == Param.Win"
+      script:
+        actions:
+          onEnter:
+            command: echo
+            args: [ENTER, StepEnv]
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Requested
+  - ENTER JobEnv
+  - ENTER StepEnv
+  - TASK A

@@ -1,0 +1,36 @@
+# Template Schemas §3.2.2 item 2 (RFC 0010): Lic's enableIf reads Env.Param.Seats, and A's value for the INT Seats
+# resolves to "many", which does not convert. The enableIf sees only concrete values, so it is not evaluated, Lic is not
+# disabled for A, and the value is an error under constraint 6 when the Job is created.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnableIfReadsUnconvertible
+  parameterDefinitions:
+  - name: N
+    type: STRING
+  jobEnvironments:
+  - name: Lic
+    activation: ON_REQUEST
+    enableIf: "Env.Param.Seats > 0"
+    envParameterDefinitions:
+    - name: Seats
+      type: INT
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Lic, "Seats={{Env.Param.Seats}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Lic
+      parameters:
+        Seats: "{{Param.N}}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+parameters:
+  N: many
+runOn: [posix, windows]
