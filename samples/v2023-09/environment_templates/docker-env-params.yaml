@@ -133,7 +133,8 @@ environment:
         - "{{WrappedAction.Args}}"
       onExit:
         command: bash
-        args: ["-c", 'docker container stop -t 30 "$DOCKER_CONTAINER_ID"']
+        # onExit also runs when onEnter failed before it started a container.
+        args: ["-c", 'if [ -n "${DOCKER_CONTAINER_ID:-}" ]; then docker container stop -t 30 "$DOCKER_CONTAINER_ID"; fi']
     embeddedFiles:
     - name: Enter
       type: TEXT
