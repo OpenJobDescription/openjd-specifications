@@ -1,0 +1,27 @@
+# Expression Language section 2.3.2: "For negative numbers, the sign is
+# included in the output. With digit and hash formats, the sign precedes the
+# zero-padded digits and counts toward the width", and "If the number exceeds
+# the padding width, the full number is used without truncation".
+#
+# The smallest int, -9223372036854775808, is wider than the two-`#` pattern,
+# so it is written in full with a single sign. The literal is written as
+# `-9223372036854775807 - 1` because 9223372036854775808 is out of the int
+# range.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'RESULT:{{ with_number("f_##", -9223372036854775807 - 1) }}')
+expected:
+  output:
+  - RESULT:f_-9223372036854775808

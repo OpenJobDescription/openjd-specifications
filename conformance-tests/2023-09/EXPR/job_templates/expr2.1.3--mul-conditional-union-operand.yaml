@@ -1,0 +1,27 @@
+# Expression Language "Conditional Expressions with Unknown Conditions" and
+# section 2.1.3: with an unresolved condition, `Param.Count if Param.UseCount
+# else ["a"]` is `unresolved[int | list[string]]`, "since either could be the
+# runtime result". `* 2` on the list[string] is list repetition, and indexing
+# that list runs correctly whenever UseCount is false (it gives 'a' for the
+# default values). Type checking "must never reject a pair the concrete value
+# would accept", so the template is valid.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Count
+  type: INT
+  default: 5
+- name: UseCount
+  type: BOOL
+  default: false
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - -c
+        - print(r'{{ ((Param.Count if Param.UseCount else ["a"]) * 2)[0] }}')

@@ -1,0 +1,39 @@
+# Template Schemas section 4, `openjd_redacted_env`: "<value> shall be
+# redacted with a fixed length string for this and any future occurrences from
+# the emitted STDOUT message." The redacted value here starts with a multibyte
+# character (U+00E9, two bytes in UTF-8); it is redacted like any other value,
+# and the run succeeds.
+#
+# The environment's variables are set before onEnter runs, so PYTHONIOENCODING
+# makes Python write UTF-8 on every platform, whatever the console code page.
+# The secret is written with \u escapes so this file stays ASCII.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - REDACTED_ENV_VARS
+  name: RedactionMultibyteLeadingChar
+  jobEnvironments:
+  - name: SecretEnv
+    variables:
+      PYTHONIOENCODING: utf-8
+    script:
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - "print('openjd_redacted_env: SECRET=\u00e9clair_token')"
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - "print('The value is \u00e9clair_token')"
+expected:
+  output:
+  - The value is ********
+  forbidden:
+  - clair_token
