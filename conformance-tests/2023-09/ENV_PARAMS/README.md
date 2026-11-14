@@ -132,8 +132,8 @@ a disabled entry, is an error instead. A Job Environment or Environment Template
   Step's Tasks never run in an Environment entered with values that are not equal to the Step's.
 - **Path values** (§4.5): PATH and LIST[PATH] values are used as given, never joined with a directory and not required to be absolute, checked unmapped, path-mapped in `Env.Param.*` and not in `Env.RawParam.*`.
 - **`Job.EnvNames`** (§7.3.1): the names of every Job Environment, own and attached, whatever its `activation`, in
-  the Job's Environment order (the attached ones first, in the order they are attached; §1.1 item 7), excluding Step
-  Environments, with a name repeated when two attached Environments share it.
+  the Job's Environment order (the attached ones first, in the order they are attached; §1.1 *jobEnvironments*),
+  excluding Step Environments, with a name repeated when two attached Environments share it.
 - **`enableIf` on the entry** (§3.2 *enableIf*): a disabled entry requests and supplies nothing, and a missing
   `required: true` Environment is not an error. Its name is still resolved: it declines a `BY_DEFAULT` Environment, so
   the Step's Sessions do not enter it, for an `ALWAYS` Environment it is an error, and for an Environment from a
@@ -700,7 +700,7 @@ permitted but not required, so for those only the values both Tasks see are chec
 |---|---|---|---|
 | JB-47 | `7.3.1--env-names-job-environments-in-order.test.yaml` | EP, EX | No attached Environments; Job Environments `B`, `A`; the Task prints `B,A`. |
 | JB-48 | `7.3.1--env-names-excludes-step-environments.test.yaml` | EP, EX | A Step Environment's name does not appear. |
-| JB-49 | `7.3.1--env-names-includes-attached.test.yaml` | EP, EX | Attached `Q`, then `R`, and Job Environments `J1`, `J2`; the line is `Q,R,J1,J2`: the attached Environments come first, in the order they are attached (§1.1 item 7). |
+| JB-49 | `7.3.1--env-names-includes-attached.test.yaml` | EP, EX | Attached `Q`, then `R`, and Job Environments `J1`, `J2`; the line is `Q,R,J1,J2`: the attached Environments come first, in the order they are attached (§1.1 *jobEnvironments*). |
 | JB-50 | `7.3.1--env-names-includes-unrequested-on-request.test.yaml` | EP, EX | An `ON_REQUEST` Environment the Step does not request is listed. |
 | JB-51 | `7.3.1--env-names-repeats-shared-attached-name.test.yaml` | EP, EX | Two attached Environments named `X` and no entry naming `X`; the line is `X,X`. |
 | JB-52 | `7.3.1--env-names-in-environment-script.test.yaml` | EP, EX | An attached Environment `E`'s `onEnter` prints `Job.EnvNames`, `E,J`, which includes the Job Template's Environment `J` after it. |
@@ -937,8 +937,9 @@ See the top-level [conformance README](../../README.md) for the standard runner 
 
 These rules, or parts of rules, have no planned test with a definite expected outcome. Each says why.
 
-1. **Where attached Environments fall in `Job.EnvNames`, relative to the Job Template's own.** Resolved: §1.1 item 7
-   now says that the Environments attached from Environment Templates come before the `jobEnvironments`, in the order
+1. **Where attached Environments fall in `Job.EnvNames`, relative to the Job Template's own.** Resolved: §1.1
+   *jobEnvironments* now says that the Environments attached from Environment Templates come before the
+   `jobEnvironments`, in the order
    they are attached, and that a Session enters them in that order. §7.3.1 lists `Job.EnvNames` in the same order.
    JB-49 and JB-52 assert it, and the base suite's `1.1--attached-environments-entered-first` tests the order in which
    a Session enters them.

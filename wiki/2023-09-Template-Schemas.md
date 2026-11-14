@@ -2069,8 +2069,9 @@ Where:
        Parameter name or with a parameter of another Environment; they do not conflict.
 4. *activation* — Which Sessions of the Job enter this Environment. `<EnvironmentActivation>` is one of:
     * `ALWAYS` — Every Session of the Job enters this Environment, in its position in the Job's Environment order
-      ([§1.1](#11-job-template) item 7). No Step can leave it out. A Step's disabled *environment* entry for it is an
-      error, and so is its *enableIf* being `false` for a Step. Either error names the Step and the Environment. It is
+      ([§1.1](#11-job-template) *jobEnvironments*). No Step can leave it out. A Step's disabled *environment* entry for
+      it is an error, and so is its *enableIf* being `false` for a Step. Either error names the Step and the
+      Environment. It is
       reported at the earliest stage at which it is known (see [§7.6](#76-expression-fields) rule 5): at template
       validation where the *enableIf* is known there to be `false`, and otherwise when the Job is created. For a
       disabled entry, template validation reports it only for an entry that names a *jobEnvironments* entry. A `true`
@@ -2128,8 +2129,9 @@ Where:
 7. *exclusiveGroup* — A name shared by Environments of which a Step's Sessions enter at most one, such as Environments
    that each provide software in a different way. See: [&lt;Identifier&gt;](#71-identifier). For each Step, of the
    Environments its Sessions would otherwise enter that have the same *exclusiveGroup* and are not disabled by their
-   *enableIf*, only the first in the Job's Environment order ([§1.1](#11-job-template) item 7) is entered. They are
-   taken in that order, and once one is entered, the *enableIf* of the later ones is not evaluated for the Step. The
+   *enableIf*, only the first in the Job's Environment order ([§1.1](#11-job-template) *jobEnvironments*) is entered.
+   They are taken in that order, and once one is entered, the *enableIf* of the later ones is not evaluated for the
+   Step. The
    later ones are *superseded* for the Step: its Sessions do not enter them, and they are disabled for it (see
    [§3.2.2](#322-effective-environment-parameter-values)). Attached Environments come first in the Job's Environment
    order, so an attached Environment can supersede one of the Job Template's *jobEnvironments*. The order in which
@@ -2728,8 +2730,9 @@ specification for the extended grammar, type system, and evaluation semantics.
 |`<name>` (let binding)|Names bound by `let` in `<StepTemplate>`, `<StepScript>`, `<SimpleAction>`, or `<EnvironmentScript>`. Names must start with a lowercase letter or underscore (see `<UserIdentifier>`). The type is determined by the expression. Available with the `EXPR` extension.|See [Let Binding Scope Summary](#362-let-binding-scope-summary) for detailed scoping rules.|
 
 `Job.EnvNames` lists the Environments attached from Environment Templates, in the order they are attached, followed by
-the Job Template's `jobEnvironments`, in the order the Job Template lists them (see [§1.1](#11-job-template) item 7). It
-lists them whatever their `activation`. Step Environments are not included. A name appears once per Environment, so it
+the Job Template's `jobEnvironments`, in the order the Job Template lists them (see [§1.1](#11-job-template)
+*jobEnvironments*). It lists them whatever their `activation`. Step Environments are not included. A name appears once
+per Environment, so it
 appears twice if two attached Environments share it. An Environment that its `enableIf` disables for some or every Step
 is still listed. `Job.EnvNames` is a list, so it is usable only within a `{{ }}` expression or an expression field. It
 is not available in an Environment parameter `default` or in the Job Template's `name`. Apart from those two, it is

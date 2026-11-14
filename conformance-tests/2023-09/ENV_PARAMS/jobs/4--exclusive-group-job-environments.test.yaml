@@ -1,4 +1,4 @@
-# Template Schemas §4 item 7, §1.1 item 7 (RFC 0010): the group applies to Job Environments too, in the Job's
+# Template Schemas §4 item 7, §1.1 jobEnvironments (RFC 0010): the group applies to Job Environments too, in the Job's
 # Environment order. A and B are BY_DEFAULT Job Environments in one group, listed A then B, so every Step's Sessions
 # enter only A.
 template:

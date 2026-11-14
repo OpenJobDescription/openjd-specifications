@@ -313,8 +313,8 @@ that does not list it behaves as `ALWAYS`, and a Step's own host requirements in
 keep the base rules.
 
 The item descriptions of *jobEnvironments*, *stepEnvironments*, *let*, and *dependencies* each gain a sentence so that
-they stay true with the extension. §1.1 item 7 also states the Job's Environment order, which applies with or without
-the extension: attached Environments first, in the order they are attached, then the `jobEnvironments`.
+they stay true with the extension. §1.1 *jobEnvironments* also states the Job's Environment order, which applies with or
+without the extension: attached Environments first, in the order they are attached, then the `jobEnvironments`.
 
 ### Backward compatibility
 
@@ -380,8 +380,9 @@ them as changes to the base specification:
    windows]`, which the old text allowed, is now invalid at template validation. No host could run it, and the base
    conformance suite already rejects it. A list that contains a format string is checked after resolution, when its
    values are known; with `EXPR` an element may also resolve to `null` and be skipped.
-3. **The Job's Environment order.** [§1.1](../wiki/2023-09-Template-Schemas.md#11-job-template) item 7 now states that
-   a Session enters the Environments attached from Environment Templates before the Job Template's `jobEnvironments`,
+3. **The Job's Environment order.** [§1.1](../wiki/2023-09-Template-Schemas.md#11-job-template) *jobEnvironments* now
+   states that a Session enters the Environments attached from Environment Templates before the Job Template's
+   `jobEnvironments`,
    in the order they are attached. The base specification did not say. `openjd run` and Deadline Cloud already behave
    this way, and render management systems must now do so.
 4. **`$schema` and `extensions` in an Environment Template.**

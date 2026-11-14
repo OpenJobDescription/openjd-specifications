@@ -1,5 +1,5 @@
-# Template Schemas §1.1 item 7: the Environments attached to the Job from Environment Templates come before the Job
-# Template's jobEnvironments, in the order they are attached, and a Session enters them in that order. Each onEnter
+# Template Schemas §1.1 jobEnvironments: the Environments attached to the Job from Environment Templates come before the
+# Job Template's jobEnvironments, in the order they are attached, and a Session enters them in that order. Each onEnter
 # appends its name to ORDER through openjd_env, and the Task prints it.
 template:
   specificationVersion: jobtemplate-2023-09

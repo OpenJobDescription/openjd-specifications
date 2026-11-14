@@ -1,4 +1,4 @@
-# RFC 0010 / Template Schemas §7.3.1 Job.EnvNames and §1.1 item 7: the list
+# RFC 0010 / Template Schemas §7.3.1 Job.EnvNames and §1.1 jobEnvironments: the list
 # includes attached Environments, which come before the Job Template's
 # jobEnvironments, in the order they are attached, as a Session enters them.
 template:
