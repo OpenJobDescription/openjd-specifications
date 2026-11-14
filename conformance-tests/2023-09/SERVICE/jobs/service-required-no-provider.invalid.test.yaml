@@ -1,0 +1,27 @@
+# Template Schemas §1.2.2 item 2: the Job Template requires `Ext` but no
+# attached Environment Template defines a Service of that name. The
+# submission must be rejected; the template itself is valid on its own.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: RequiredUnsatisfied
+  externalServices:
+  - name: Ext
+    ports:
+    - name: main
+  steps:
+  - name: Use
+    dependencies:
+    - service: Ext
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_RAN', {{ Service.Ext.main.port }})"]
+
+environments:
+- specificationVersion: environment-2023-09
+  environment:
+    name: Unrelated
+    variables:
+      FOO: bar

@@ -1,0 +1,58 @@
+# Section 1.2 item 6 constraint 5 (RFC 0009) / RFC 0010 "Resolving external
+# Environments": an Environment Template Service's disabled entry whose name
+# matches the Environments of two earlier attachments is ambiguous, an error
+# as it is for a Step. The two attachments that both define Shared are
+# otherwise valid, since nothing else names Shared, and Cache declines its
+# own client Environment, so the ambiguous entry is the only error. Neither
+# attachment lists ENV_PARAMS, so a disabled entry that resolved to one of
+# them would have no effect, but the name is resolved first and matches two
+# (RFC 0010, Template Schemas §3.2.1 item 3).
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: ExternalServiceDeclinesAmbiguousEarlierEnvironment
+  steps:
+  - name: Use
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_MUST_NOT_RUN')"]
+
+environments:
+- specificationVersion: environment-2023-09
+  environment:
+    name: Shared
+    variables:
+      SHARED_FIRST: "yes"
+- specificationVersion: environment-2023-09
+  environment:
+    name: Shared
+    variables:
+      SHARED_SECOND: "yes"
+- specificationVersion: environment-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  services:
+  - name: Cache
+    dependencies:
+    - environment: CacheClient
+      enableIf: false
+    # Two earlier attachments define Shared.
+    - environment: Shared
+      enableIf: false
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import time; print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  environment:
+    name: CacheClient
+    dependencies:
+    - service: Cache
+    variables:
+      CACHE_PORT: "{{ Service.Cache.main.port }}"

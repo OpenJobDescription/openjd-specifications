@@ -1,0 +1,28 @@
+# Section 1.2 item 6 constraint 5 / Section 9 item 4: a Service in an
+# Environment Template's `services` may depend on another Service in the list
+# with `service: <name>`, and then reference its endpoint, as in a
+# Job Template's `services`.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+services:
+- name: Back
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]
+- name: Front
+  dependencies:
+  - service: Back
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Back.main.connectAddress }}", "{{ Service.Back.main.port }}"]

@@ -1,0 +1,66 @@
+# Template Schemas §9.4 COMMAND / §9.7.1: onRun starts listening only after a
+# delay, and the Service's onHealthCheck, run concurrently with onRun every
+# readinessIntervalSeconds, exits 0 once a TCP connection succeeds. The Task
+# is not scheduled until then, so it never sees a refused connection.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: CommandHealthCheck
+  services:
+  - name: Slow
+    ports:
+    - name: main
+    healthCheck:
+      type: COMMAND
+      readinessIntervalSeconds: 1
+      readinessTimeoutSeconds: 60
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Slow.main.bindAddress }}", "{{ Service.Slow.main.port }}"]
+          cancelation:
+            mode: TERMINATE
+        onHealthCheck:
+          command: python
+          args: ["-c", "import socket,sys; socket.create_connection((sys.argv[1], int(sys.argv[2])), timeout=1).close(); print('CHECK_OK')", "{{ Service.Slow.main.connectAddress }}", "{{ Service.Slow.main.port }}"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys, time
+          host, port = sys.argv[1], int(sys.argv[2])
+          print("SLOW_WARMING_UP", flush=True)
+          time.sleep(1.5)
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("SLOW_LISTENING", flush=True)
+          while True:
+              c, _ = s.accept()
+              # The onHealthCheck probe connects and closes without
+              # sending; recv may return b"" or raise on an abortive close.
+              try:
+                  data = c.recv(64)
+              except OSError:
+                  data = b""
+              if data:
+                  c.sendall(b"hello")
+              c.close()
+  steps:
+  - name: Use
+    dependencies:
+    - service: Slow
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import socket,sys; c=socket.create_connection((sys.argv[1], int(sys.argv[2])), timeout=10); c.sendall(b'hello?'); print('TASK_GOT', c.recv(64).decode(), flush=True)", "{{ Service.Slow.main.connectAddress }}", "{{ Service.Slow.main.port }}"]
+
+expected:
+  output:
+  - SLOW_WARMING_UP
+  - SLOW_LISTENING
+  - CHECK_OK
+  - TASK_GOT hello

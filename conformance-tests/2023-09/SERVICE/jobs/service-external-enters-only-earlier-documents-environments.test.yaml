@@ -1,0 +1,82 @@
+# RFC 0009 "Services run inside Environments": a Service chooses its
+# Environments among those of its own document and of the Environment
+# Templates attached before it. Three Environment Templates are attached in
+# order: one with the Environment Earlier, one with the Service Cache and its
+# client Environment CacheClient (which Cache declines), and one with the
+# Environment Later. The Job Template has the Job Environment JobEnv.
+# CacheClient is BY_DEFAULT. Earlier, Later, and JobEnv come from documents
+# that do not list ENV_PARAMS, so they behave as ALWAYS (RFC 0010). Cache's
+# Session enters Earlier and none of Later and JobEnv, while the Task's
+# Session enters all four.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: ExternalServiceEntersOnlyEarlierDocuments
+  jobEnvironments:
+  - name: JobEnv
+    variables:
+      SEEN_JOB_ENV: "yes"
+  steps:
+  - name: Use
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os; [print('TASK_' + v + '=' + os.environ.get(v, 'unset')) for v in ['SEEN_EARLIER', 'SEEN_CACHE_CLIENT', 'SEEN_LATER', 'SEEN_JOB_ENV']]"]
+
+environments:
+- specificationVersion: environment-2023-09
+  environment:
+    name: Earlier
+    variables:
+      SEEN_EARLIER: "yes"
+- specificationVersion: environment-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  services:
+  - name: Cache
+    dependencies:
+    # CacheClient lists this Service, so its Sessions decline it.
+    - environment: CacheClient
+      enableIf: false
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Report }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Report
+        type: TEXT
+        data: |
+          import os, time
+          for var in ["SEEN_EARLIER", "SEEN_CACHE_CLIENT", "SEEN_LATER", "SEEN_JOB_ENV"]:
+              print("SERVICE_" + var + "=" + os.environ.get(var, "unset"), flush=True)
+          print("openjd_service_ready: reported", flush=True)
+          time.sleep(600)
+  environment:
+    name: CacheClient
+    dependencies:
+    - service: Cache
+    variables:
+      SEEN_CACHE_CLIENT: "yes"
+      CACHE_PORT: "{{ Service.Cache.main.port }}"
+- specificationVersion: environment-2023-09
+  environment:
+    name: Later
+    variables:
+      SEEN_LATER: "yes"
+
+expected:
+  output:
+  - SERVICE_SEEN_EARLIER=yes
+  - SERVICE_SEEN_CACHE_CLIENT=unset
+  - SERVICE_SEEN_LATER=unset
+  - SERVICE_SEEN_JOB_ENV=unset
+  - TASK_SEEN_EARLIER=yes
+  - TASK_SEEN_CACHE_CLIENT=yes
+  - TASK_SEEN_LATER=yes
+  - TASK_SEEN_JOB_ENV=yes

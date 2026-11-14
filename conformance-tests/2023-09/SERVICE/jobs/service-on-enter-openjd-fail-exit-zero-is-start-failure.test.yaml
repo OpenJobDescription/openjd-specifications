@@ -1,0 +1,49 @@
+# RFC 0009 <ServiceActions> (Template Schemas §9.7, How Jobs Are Run "Service
+# failure and restart"): an openjd_fail message on a Service's onEnter stdout
+# marks the action failed when it exits, whatever its exit status. onEnter
+# here exits 0 after printing openjd_fail; that is a start failure. With the
+# default maxRestarts of 0 the Service is FAILED, the scope fails before any
+# Task runs, and onExit still runs because an action of the Service ran
+# (lifecycle constraint 7).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: OnEnterOpenjdFailExitZeroIsStartFailure
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('ENTER_RAN', flush=True); print('openjd_fail: no license', flush=True)"]
+        onRun:
+          command: python
+          args: ["-c", "import time; print('RUN_MUST_NOT_START', flush=True); print('openjd_service_ready: up', flush=True); time.sleep(60)"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "print('STORE_EXIT_RAN')"]
+  steps:
+  - name: Work
+    dependencies:
+    - service: Store
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_MUST_NOT_RUN')"]
+
+expected:
+  taskFailure: {}
+  output:
+  - ENTER_RAN
+  - "openjd_fail: no license"
+  - STORE_EXIT_RAN
+  forbidden:
+  - RUN_MUST_NOT_START
+  - TASK_MUST_NOT_RUN

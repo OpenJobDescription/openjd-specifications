@@ -1,0 +1,33 @@
+# RFC 0009 "Modifications to the Expression Language" (Expression Language
+# §2.2.6): with the SERVICE extension, repr_sh accepts an int (its decimal
+# form) and a list[int] (the decimal forms joined with single spaces), so a
+# port number or WrappedService.Ports can be passed to a shell command without
+# a string() conversion.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: ReprShInt
+  steps:
+  - name: Step1
+    let:
+    - 'int_val = repr_sh(6379)'
+    - 'int_list = repr_sh([80, 443])'
+    - 'neg_val = repr_sh(-1)'
+    - 'empty_list = repr_sh([])'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print("INT:{{ int_val }}")
+            print("INT_LIST:{{ int_list }}")
+            print("NEG:{{ neg_val }}")
+            print("EMPTY:[{{ empty_list }}]")
+expected:
+  output:
+  - "INT:6379"
+  - "INT_LIST:80 443"
+  - "NEG:-1"
+  - "EMPTY:[]"

@@ -1,0 +1,51 @@
+# Template Schemas §1.2.2 item 2: the attached `Ext` declares port `api`, not
+# the required `main`. The match fails and the submission is rejected.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: RequiredUnsatisfied
+  externalServices:
+  - name: Ext
+    ports:
+    - name: main
+  steps:
+  - name: Use
+    dependencies:
+    - service: Ext
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_RAN', {{ Service.Ext.main.port }})"]
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  services:
+  - name: Ext
+    ports:
+    - name: api
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Ext.api.bindAddress }}", "{{ Service.Ext.api.port }}", "EXT_PAYLOAD"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port, tag = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready:", tag, flush=True)
+          while True:
+              c, _ = s.accept()
+              c.sendall(tag.encode())
+              c.close()

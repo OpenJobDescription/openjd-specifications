@@ -1,0 +1,37 @@
+# Section 3.2 constraint 3 / Section 4 item 3 (RFC 0009): Store's enabled
+# `environment: Client` entry for the BY_DEFAULT Environment Client, which
+# lists Store, is the edge Store -> Store, a cycle, and is rejected: an
+# explicit entry is not ignored. The entry asks for nothing the default does
+# not, so the graph is that of
+# 4--service-enters-by-default-environment-that-lists-it.invalid, the same
+# cycle without an entry.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Client
+  dependencies:
+  - service: Store
+  variables:
+    GREETING: hello
+services:
+- name: Store
+  dependencies:
+  - environment: Client
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port }}"]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

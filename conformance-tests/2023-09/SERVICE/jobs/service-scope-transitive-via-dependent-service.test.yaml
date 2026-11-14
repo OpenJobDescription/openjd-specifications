@@ -1,0 +1,133 @@
+# Template Schemas §9.1 rule 2 / How Jobs Are Run constraints 2, 4, and 6:
+# Front depends on Service Back, and only Step Use depends on Service Front.
+# Back's scope is therefore Use, transitively, although Use never names Back:
+# Back is READY before Front starts (Front's onRun connects to it), both are
+# stopped when Use completes, Front before Back, and Step After finds both
+# endpoints refused. Use's Task records the endpoints in a file in the host's
+# temp directory keyed by Job.Name; After's Task deletes it.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: TransitiveScope
+  services:
+  - name: Front
+    dependencies:
+    - service: Back
+    ports:
+    - name: api
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Front.api.bindAddress }}", "{{ Service.Front.api.port }}", "{{ Service.Back.main.connectAddress }}", "{{ Service.Back.main.port }}"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "import socket; socket.create_connection(('{{ Service.Back.main.connectAddress }}', {{ Service.Back.main.port }}), timeout=5).close(); print('FRONT_EXIT_BACK_STILL_UP')"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port, bhost, bport = sys.argv[1], int(sys.argv[2]), sys.argv[3], int(sys.argv[4])
+          b = socket.create_connection((bhost, bport), timeout=10)
+          upstream = b.recv(64).decode()
+          b.close()
+          print("FRONT_SAW_BACK", upstream, flush=True)
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready: front up", flush=True)
+          while True:
+              c, _ = s.accept()
+              c.sendall(("FRONT+" + upstream + "\n" + bhost + "\n" + str(bport)).encode())
+              c.close()
+  - name: Back
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Back.main.bindAddress }}", "{{ Service.Back.main.port }}", "BACK"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "print('BACK_EXIT')"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port, tag = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready:", tag, flush=True)
+          while True:
+              c, _ = s.accept()
+              c.sendall(tag.encode())
+              c.close()
+  steps:
+  - name: Use
+    dependencies:
+    - service: Front
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Service.Front.api.connectAddress }}", "{{ Service.Front.api.port }}", "{{ Job.Name }}"]
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import os, socket, sys, tempfile
+          host, port, job = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          c = socket.create_connection((host, port), timeout=10)
+          reply, bhost, bport = c.recv(128).decode().split("\n")
+          c.close()
+          print("USE_GOT", reply, flush=True)
+          with open(os.path.join(tempfile.gettempdir(), "openjd-" + job + ".port"), "w") as f:
+              f.write(host + "\n" + str(port) + "\n" + bhost + "\n" + bport)
+  - name: After
+    dependencies:
+    - dependsOn: Use
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Job.Name }}"]
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import os, socket, sys, tempfile
+          path = os.path.join(tempfile.gettempdir(), "openjd-" + sys.argv[1] + ".port")
+          with open(path) as f:
+              fhost, fport, bhost, bport = f.read().split("\n")
+          os.remove(path)
+          def gone(h, p):
+              try:
+                  socket.create_connection((h, int(p)), timeout=5).close()
+                  return False
+              except OSError:
+                  return True
+          print("FRONT_GONE", gone(fhost, fport), "BACK_GONE", gone(bhost, bport), flush=True)
+
+expected:
+  output:
+  - FRONT_SAW_BACK BACK
+  - USE_GOT FRONT+BACK
+  - FRONT_EXIT_BACK_STILL_UP
+  - BACK_EXIT
+  - FRONT_GONE True BACK_GONE True
+  forbidden:
+  - GONE False

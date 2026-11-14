@@ -1,0 +1,26 @@
+# Section 4.3 item 5: the onWrapService* hooks require WRAP_ACTIONS; a
+# document declaring only SERVICE, ENV_PARAMS, and EXPR cannot define them.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Wrapper
+  script:
+    actions:
+      onEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceRun:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceHealthCheck:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceExit:
+        command: python
+        args: ["-c", "print()"]

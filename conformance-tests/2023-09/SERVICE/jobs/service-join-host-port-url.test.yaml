@@ -1,0 +1,52 @@
+# RFC 0009 "Address forms" / Expression Language §2.2.4: wherever an address
+# and a port are joined into one string -- here a URL authority -- templates
+# compose it with join_host_port so that an IPv6 connectAddress is bracketed.
+# A python http.server Service answers a Task's urllib request.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: JoinHostPortUrl
+  services:
+  - name: Web
+    ports:
+    - name: http
+    healthCheck:
+      type: TCP_CONNECT
+      readinessTimeoutSeconds: 60
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Web.http.bindAddress }}", "{{ Service.Web.http.port }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import sys
+          from http.server import BaseHTTPRequestHandler, HTTPServer
+          class Handler(BaseHTTPRequestHandler):
+              def do_GET(self):
+                  body = ("HELLO_FROM_SERVICE path=" + self.path).encode()
+                  self.send_response(200)
+                  self.send_header("Content-Length", str(len(body)))
+                  self.end_headers()
+                  self.wfile.write(body)
+              def log_message(self, *args):
+                  pass
+          HTTPServer((sys.argv[1], int(sys.argv[2])), Handler).serve_forever()
+  steps:
+  - name: Fetch
+    dependencies:
+    - service: Web
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import sys, urllib.request; print('URL', sys.argv[1]); print('BODY', urllib.request.urlopen(sys.argv[1], timeout=10).read().decode(), flush=True)", "http://{{ join_host_port(Service.Web.http.connectAddress, Service.Web.http.port) }}/status"]
+
+expected:
+  output:
+  - "URL http://"
+  - BODY HELLO_FROM_SERVICE path=/status

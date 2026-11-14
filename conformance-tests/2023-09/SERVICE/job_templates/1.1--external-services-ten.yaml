@@ -1,0 +1,58 @@
+# Section 1.1 item 9 constraint 2: `externalServices` may contain 10
+# elements. Each is listed by the Step (Section 9.1 rule 4); only one is
+# referenced.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+externalServices:
+- name: Ext1
+  ports:
+  - name: main
+- name: Ext2
+  ports:
+  - name: main
+- name: Ext3
+  ports:
+  - name: main
+- name: Ext4
+  ports:
+  - name: main
+- name: Ext5
+  ports:
+  - name: main
+- name: Ext6
+  ports:
+  - name: main
+- name: Ext7
+  ports:
+  - name: main
+- name: Ext8
+  ports:
+  - name: main
+- name: Ext9
+  ports:
+  - name: main
+- name: Ext10
+  ports:
+  - name: main
+steps:
+- name: Use
+  dependencies:
+  - service: Ext1
+  - service: Ext2
+  - service: Ext3
+  - service: Ext4
+  - service: Ext5
+  - service: Ext6
+  - service: Ext7
+  - service: Ext8
+  - service: Ext9
+  - service: Ext10
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Ext10.main.port }}"]

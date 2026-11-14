@@ -1,0 +1,15 @@
+# RFC 0009 "Modifications to the Expression Language": repr_sh(int) and
+# repr_sh(list[int]) are added by the SERVICE extension. A document that
+# declares EXPR alone does not have them; the call is a type error.
+specificationVersion: jobtemplate-2023-09
+extensions: [EXPR]
+name: ReprShIntWithoutService
+steps:
+- name: Step1
+  let:
+  - 'port_text = repr_sh(6379)'
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print('{{ port_text }}')"]
