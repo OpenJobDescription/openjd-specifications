@@ -150,7 +150,9 @@ environment:
         # --init runs a minimal init as PID 1, so that the container stops as
         # soon as onExit asks it to. A bare sleep as PID 1 ignores SIGTERM, and
         # every stop would wait out its timeout.
-        RUN_ARGS=(--rm --detach --init --workdir "$SESSION_DIR" --entrypoint sleep)
+        # --user runs the container as the job user, so that files the Step
+        # writes to mounted paths belong to that user, not root.
+        RUN_ARGS=(--rm --detach --init --user "$(id -u):$(id -g)" --workdir "$SESSION_DIR" --entrypoint sleep)
         if [ -n "$GPUS" ]; then
             RUN_ARGS+=(--gpus "$GPUS")
         fi
