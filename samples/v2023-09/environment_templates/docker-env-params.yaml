@@ -146,7 +146,10 @@ environment:
         shift 2
 
         SESSION_DIR={{ repr_sh(Session.WorkingDirectory) }}
-        RUN_ARGS=(--rm --detach --workdir "$SESSION_DIR" --entrypoint sleep)
+        # --init runs a minimal init as PID 1, so that the container stops as
+        # soon as onExit asks it to. A bare sleep as PID 1 ignores SIGTERM, and
+        # every stop would wait out its timeout.
+        RUN_ARGS=(--rm --detach --init --workdir "$SESSION_DIR" --entrypoint sleep)
         if [ -n "$GPUS" ]; then
             RUN_ARGS+=(--gpus "$GPUS")
         fi

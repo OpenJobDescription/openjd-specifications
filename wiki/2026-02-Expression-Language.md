@@ -1588,15 +1588,18 @@ that admits `null`, such as `unresolved[string?]`, or of type `any`, may be `nul
 returns: with `O` of type `unresolved[string?]`, `O and false` is `null` or `false`, so it is not
 known.
 
-For `and`, `or`, and `not`, then, a result is known exactly when every value that the unknown
-operands could take, given their types, gives the same result, as for a conditional whose branches
-give the same value: `c if U else c` is `c` (see Conditional Expressions with Unknown Conditions).
-Other operators do not use this rule: an arithmetic or comparison operator with an unknown operand
-gives an unknown result, so `Param.N * 0 == 0` is not known. Template Schemas uses these results
-only before the values are known, to decide which errors to report early
+For `and`, `or`, and `not`, then, the table and the paragraph above give the result one operator at
+a time: an operator's result is known when every value that its unknown operands could take, given
+their types and each taken on its own, gives the same result. Results are not compared across
+operators, so with a BOOL Job Parameter `F`, `Param.F and not Param.F` is `U and U`, which is not
+known, although every value of `F` makes it `false`. A conditional whose branches give the same
+value is treated the same way: `c if U else c` is `c` (see Conditional Expressions with Unknown
+Conditions). Other operators do not use this rule: an arithmetic or comparison operator with an
+unknown operand gives an unknown result, so `Param.N * 0 == 0` is not known. Template Schemas uses
+these results only before the values are known, to decide which errors to report early
 ([§7.6](2023-09-Template-Schemas#76-expression-fields) rule 5). Once the values are known, the
-expression is evaluated again, and its result is what that evaluation gives. So `U and false`,
-which is known to be `false` early, still fails when it is evaluated if evaluating `U` fails.
+expression is evaluated again, and its result is what that evaluation gives. So `U and false`, which
+is known to be `false` early, still fails when it is evaluated if evaluating `U` fails.
 
 #### 2.1.7. Subscript Operator
 

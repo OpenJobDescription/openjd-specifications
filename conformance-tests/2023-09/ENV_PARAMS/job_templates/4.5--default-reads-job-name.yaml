@@ -1,6 +1,5 @@
-# Template Schemas §4.5 item 1 (RFC 0010): a default may reference Param.* and RawParam.* of the same
-# document's Job Parameters "and no other scope", so a default reading Job.Name is rejected even with
-# EXPR.
+# Template Schemas §4.5 item 1 and §7.3.2 (RFC 0010): a default may reference RawParam.*, the non-PATH Param.* of the
+# same document's Job Parameters, and Job.Name, so a default reading Job.Name is valid.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - ENV_PARAMS
@@ -16,7 +15,7 @@ jobEnvironments:
     actions:
       onEnter:
         command: echo
-        args: ["enter"]
+        args: ["enter", "{{Env.Param.Tag}}"]
 steps:
 - name: Render
   script:

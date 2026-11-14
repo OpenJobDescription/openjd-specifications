@@ -1,0 +1,38 @@
+# Template Schemas §3.2.1 item 3 and §3.2 enableIf (RFC 0010): a disabled entry whose name two attached Environments
+# share refers to each of them. For one whose activation is ALWAYS it is the error of any disabled entry naming an
+# ALWAYS Environment, so the submission is rejected.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: DisabledEntryAmbiguousAlways
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      enableIf: false
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    activation: ALWAYS
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda1]
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda2]
+runOn: [posix, windows]
