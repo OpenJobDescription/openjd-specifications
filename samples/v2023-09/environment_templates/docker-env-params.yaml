@@ -38,9 +38,9 @@
 #       parameters:
 #         Image: "docker.io/colmap/colmap:latest"
 #         Mounts: "{{ [RawParam.WorkDir] }}"
-#         Gpus: "all"
 #
-# See job_templates/video-sfm-composite.yaml.
+# A Step whose software uses GPUs also sets, for example, Gpus: "all". See
+# job_templates/video-sfm-composite.yaml.
 #
 # ----
 # Requirements

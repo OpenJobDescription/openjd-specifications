@@ -35,9 +35,12 @@
 # them substituted into the script text, as the RFC recommends.
 #
 # The Docker entries also tell the container which host paths to mount (the
-# Job's PATH parameters, path-mapped on the host) and, for SolveSfM, to pass
-# the host's GPUs. The Mounts value is the same for every Step, so it is
-# written once with a YAML anchor (&mounts) and reused.
+# Job's PATH parameters, path-mapped on the host). The Mounts value is the
+# same for every Step, so it is written once with a YAML anchor (&mounts) and
+# reused.
+#
+# SolveSfM runs COLMAP on the CPU, so it needs no GPU and no display, and
+# its hosts need no NVIDIA driver or container toolkit.
 #
 # Steps whose values differ never run under one entry of an Environment (a
 # Session may exit it and enter it again with the other Step's values), so
@@ -57,7 +60,7 @@
 # - bash shell, linux
 # - On the hosts, through an attached Conda or Docker Environment or preinstalled:
 #   - ffmpeg
-#   - COLMAP 3.x
+#   - COLMAP 3.x or 4.x (a build with or without CUDA)
 #   - Autodesk Maya with mayapy (not available from conda-forge; the Conda
 #     packages for Composite assume a studio channel that provides it)
 #
@@ -154,11 +157,6 @@ steps:
     parameters:
       Image: "docker.io/colmap/colmap:latest"
       Mounts: *mounts
-      Gpus: "all"
-  hostRequirements:
-    amounts:
-    - name: amount.worker.gpu
-      min: 1
   script:
     actions:
       onRun:
@@ -174,13 +172,34 @@ steps:
         WORK="$1"
         SFM="$WORK/sfm"
         mkdir -p "$SFM/sparse"
+        # Extract and match SIFT features on the CPU. With use_gpu on, the
+        # default, COLMAP needs a CUDA device, or in a build without CUDA an
+        # OpenGL context and a display. COLMAP 3.13 renamed the option groups
+        # SiftExtraction and SiftMatching to FeatureExtraction and
+        # FeatureMatching.
+        HELP="$(colmap feature_extractor --help 2>&1)"
+        if [[ "$HELP" == *--FeatureExtraction.use_gpu* ]]; then
+          EXTRACT=FeatureExtraction MATCH=FeatureMatching
+        else
+          EXTRACT=SiftExtraction MATCH=SiftMatching
+        fi
         colmap feature_extractor --database_path "$SFM/db.db" \
-          --image_path "$WORK/frames" --ImageReader.single_camera 1
-        colmap sequential_matcher --database_path "$SFM/db.db"
+          --image_path "$WORK/frames" --ImageReader.single_camera 1 \
+          "--$EXTRACT.use_gpu" 0
+        colmap sequential_matcher --database_path "$SFM/db.db" \
+          "--$MATCH.use_gpu" 0
         colmap mapper --database_path "$SFM/db.db" \
           --image_path "$WORK/frames" --output_path "$SFM/sparse"
+        # The mapper writes one model for each part of the video it can join
+        # up (sparse/0, sparse/1, ...). Keep the one with the most images;
+        # images.bin starts with its image count, a little-endian uint64.
+        BEST="" MOST=0
+        for MODEL in "$SFM"/sparse/*/; do
+          N="$(od -An -t u8 -N 8 "$MODEL/images.bin" | tr -d ' ')"
+          if [ "$N" -gt "$MOST" ]; then BEST="$MODEL" MOST="$N"; fi
+        done
         mkdir -p "$SFM/text"
-        colmap model_converter --input_path "$SFM/sparse/0" \
+        colmap model_converter --input_path "$BEST" \
           --output_path "$SFM/text" --output_type TXT
 
 - name: Composite
