@@ -397,6 +397,7 @@ lists the extensions the document under test declares, where it matters (`EP` = 
 | JT-156 | `3.2--literal-value-violation-env-enable-if-false.yaml` | EP, EX | A literal value outside `allowedValues` for a Job Environment whose `enableIf` is the literal `false` is valid: values are checked only for an Environment whose `enableIf` is not `false` (§3.2.2). |
 | JT-157 | `3.2--literal-value-violation-env-enable-if-undetermined.yaml` | EP, EX | The same with an expression `enableIf`: the check depends on it, so template validation reports nothing (§7.6 rule 5). JB-108 and JB-109 run it. |
 | JT-206 | `3.2--fifty-environment-entries.yaml` | EP, EX | A Step with 50 `required: false` `environment:` entries is valid: an implementation that limits *dependencies* must accept at least 50 such entries (§3 *dependencies*). |
+| JT-212 | `3.2.2--grouped-job-environment-literal-value-deferred.yaml` | EP, EX | A Job Environment with an `exclusiveGroup` is never known to be entered at template validation, so a Step's literal value outside its `allowedValues` is not checked there, and the template is valid (§3.2.2 item 1, §4). |
 
 #### `<StepDependency>` `step:` entries (§3.2 item 2)
 
@@ -481,7 +482,6 @@ is held to constraints 5 to 7 there, and the values of an Environment known to b
 | JT-187 | `4--exclusive-group-on-step-environment.invalid.yaml` | EP, EX | `exclusiveGroup` on a `stepEnvironments` entry is rejected. |
 | JT-188 | `4--exclusive-group-not-identifier.invalid.yaml` | EP, EX | An `exclusiveGroup` that is not an `<Identifier>` is rejected. |
 | JT-189 | `4--exclusive-group-job-environment-required-param.invalid.yaml` | EP, EX | A `BY_DEFAULT` Job Environment with an `exclusiveGroup` applies to every Step whether or not it is superseded, so its unsupplied required parameter is a constraint 7 error at template validation. |
-| JT-212 | `3.2.2--grouped-job-environment-literal-value-deferred.yaml` | EP, EX | A Job Environment with an `exclusiveGroup` is never known to be entered at template validation, so a Step's literal value outside its `allowedValues` is not checked there, and the template is valid (§3.2.2 item 1, §4). |
 
 ### `env_templates/` — Environment Template validation
 
@@ -511,6 +511,7 @@ is held to constraints 5 to 7 there, and the values of an Environment known to b
 | ET-20 | `4.5--default-reads-path-param.invalid.yaml` | EP | A `default` reading `Param.<PATH>` is rejected. |
 | ET-21 | `4.5--default-reads-raw-path-param.yaml` | EP | A `default` reading `RawParam.<PATH>` is valid. |
 | ET-22 | `4.5--default-reads-env-names.invalid.yaml` | EP, EX | A `default` reading `Job.EnvNames` is rejected. |
+| ET-52 | `4.5--default-reads-job-name.yaml` | EP, EX | An Environment Template's `default` may read `Job.Name` (§4.5 item 1, §7.3.2). |
 | ET-23 | `4.5--literal-default-violates-constraint.invalid.yaml` | EP | A literal `default` outside `allowedValues` is rejected. |
 | ET-24 | `4.5--list-default-not-single-expression.invalid.yaml` | EP, EX | A list `default` that is a format string other than one `{{ }}` expression is rejected. |
 | ET-25 | `4.5--list-path-default-empty.yaml` | EP, EX | `type: LIST[PATH]` with `default: []` is valid, as in the Docker sample. |
@@ -539,7 +540,6 @@ is held to constraints 5 to 7 there, and the values of an Environment known to b
 | ET-39 | `4--env-enable-if-reads-own-env-param.yaml` | EP, EX | An Environment Template's `enableIf` may read its own `Env.Param.*`. |
 | ET-40 | `4--env-enable-if-reads-own-job-parameter.yaml` | EP, EX | It may read the Environment Template's own Job Parameters. |
 | ET-41 | `4--env-enable-if-reads-step-name.invalid.yaml` | EP, EX | `Step.Name` is rejected. |
-| ET-52 | `4.5--default-reads-job-name.yaml` | EP, EX | An Environment Template's `default` may read `Job.Name` (§4.5 item 1, §7.3.2). |
 
 ### `jobs/` — job creation and execution
 
@@ -577,6 +577,7 @@ Attached Environment Templates are given in the test's `environments` list.
 | JB-195 | `4.5--value-length-disabled-environment-not-checked.test.yaml` | EP, EX | The value of JB-193 for an Environment whose `enableIf` is `false` for the Step, and reads no parameter, is not checked; the Job runs without entering it (§4.5 items 2 and 5, §3.2.2 item 3). |
 | JB-191 | `3.2.2--task-chunking-chunks-see-step-values.test.yaml` | EP, EX, TASK_CHUNKING | Each chunk of a Step's Tasks runs in an Environment entered with the Step's value (§3.2.2). |
 | JB-192 | `3.2.2--redacted-env-vars-value-from-env-param.test.yaml` | EP, EX, REDACTED_ENV_VARS | An `onEnter` sets a redacted variable from its own parameter, and the Task sees it redacted (§3.2.2, §4). The effective value itself is not hidden. |
+| JB-203 | `4.5--default-reads-job-name.test.yaml` | EP, EX; env EP, EX | A `default` reading `Job.Name` gives the Job's resolved name, in a Job Environment and in an attached Environment Template; a Step that supplies the parameter does not take it (§4.5 item 1, §7.3.2). |
 
 #### Equal values and Session sharing (§3.2.2)
 
@@ -624,6 +625,8 @@ permitted but not required, so for those only the values both Tasks see are chec
 | JB-29 | `3.2.1--external-list-value-not-single-expression.invalid.test.yaml` | EP, EX | A format string other than one `{{ }}` expression for an attached LIST[STRING] parameter is rejected. |
 | JB-30 | `3.2.1--several-attached-each-own-values.test.yaml` | EP | One Step requests two attached Environments; each `onEnter` prints the value of its own entry. |
 | JB-87 | `3.2.1--external-required-false-present-receives-values.test.yaml` | EP | A `required: false` entry that resolves to an attached `ON_REQUEST` Environment enters it with the entry's value. |
+| JB-204 | `3.2.1--disabled-entry-ambiguous-name-declines-each.test.yaml` | EP, EX; env EP, EX | A disabled entry whose name two attached `BY_DEFAULT` Environments share is not an error: it declines both, and neither is entered (§3.2.1 item 3). |
+| JB-205 | `3.2.1--disabled-entry-ambiguous-name-always.invalid.test.yaml` | EP, EX; env EP, EX | A disabled entry whose name two attached Environments share, one of them `ALWAYS`, is rejected, as a disabled entry for an `ALWAYS` Environment is (§3.2.1 item 3, §3.2 *enableIf*). |
 
 #### Constraint 7 over the combined Job (§3.2, §3.2.1)
 
@@ -729,6 +732,7 @@ permitted but not required, so for those only the values both Tasks see are chec
 | JB-163 | `4.5--path-relative-windows-drive.test.yaml` | EP, EX | The drive-relative `C:dir` is accepted. |
 | JB-164 | `4.5--path-relative-windows-rooted.test.yaml` | EP, EX | The drive-less rooted `\dir` is accepted. |
 | JB-200 | `4.5--path-allowed-values-mapped-only.invalid.test.yaml` | EP, EX | `runOn: [posix]`. `allowedValues` lists the path a mapping rule would produce, not the value as given; the unmapped value is not allowed, so the submission is rejected (§4.5 item 3). The contrast of JB-62. |
+| JB-206 | `4.5--relative-paths-never-joined.test.yaml` | EP, EX; env EP, EX | Relative PATH and LIST[PATH] format-string and literal `default`s, and a relative format-string value, in a Job Environment and in an attached Environment Template, are used as given and never joined with a directory (§4.5 items 1 and 3). |
 
 #### Host requirements (§3.3.3, §4 item 5)
 
@@ -823,10 +827,6 @@ sentinels.
 | JB-83 | `3.2--example-choose-conda-when-alone.test.yaml` | EP, EX | The same Job Template with only `Conda` attached enters it with `colmap=3.11`. No longer a Basic Example. |
 | JB-84 | `3.3.3--example-environment-host-requirements.test.yaml` | EP; env EP, EX, FB1 | *An Environment that states what hosts it needs*: one Step requests `Docker` with `Gpus: all` and one without; both run (requirements resolve per Step without conflict, and the GPU amount, whose `min` resolves to `None`, is discarded for the Step without `Gpus`). |
 | JB-85 | `3.2.2--example-execution-per-step-values.test.yaml` | EP | *Execution*: `DecodeFrames` and `SolveSfM` each enter `Conda` once with their own `Packages`, and `onExit` follows each. |
-| JB-203 | `4.5--default-reads-job-name.test.yaml` | EP, EX; env EP, EX | A `default` reading `Job.Name` gives the Job's resolved name, in a Job Environment and in an attached Environment Template; a Step that supplies the parameter does not take it (§4.5 item 1, §7.3.2). |
-| JB-204 | `3.2.1--disabled-entry-ambiguous-name-declines-each.test.yaml` | EP, EX; env EP, EX | A disabled entry whose name two attached `BY_DEFAULT` Environments share is not an error: it declines both, and neither is entered (§3.2.1 item 3). |
-| JB-205 | `3.2.1--disabled-entry-ambiguous-name-always.invalid.test.yaml` | EP, EX; env EP, EX | A disabled entry whose name two attached Environments share, one of them `ALWAYS`, is rejected, as a disabled entry for an `ALWAYS` Environment is (§3.2.1 item 3, §3.2 *enableIf*). |
-| JB-206 | `4.5--relative-paths-never-joined.test.yaml` | EP, EX; env EP, EX | Relative PATH and LIST[PATH] format-string and literal `default`s, and a relative format-string value, in a Job Environment and in an attached Environment Template, are used as given and never joined with a directory (§4.5 items 1 and 3). |
 
 ## Validation index
 
@@ -973,8 +973,9 @@ These rules, or parts of rules, have no planned test with a definite expected ou
 9. **Two attached Environment Templates with one Environment name.** §3.2.1 item 3 (ambiguous names) and the
    `Job.EnvNames` row ("it appears twice if two attached Environments share it") imply a submission may attach two
    Environments with the same name, but the base specification does not say whether attaching them is itself
-   allowed. JB-21 passes either way. JB-51 assumes the attachment is accepted when no entry names the shared name; a
-   runner that rejects duplicate attached names outright would fail it.
+   allowed. JB-21 passes either way. JB-51 assumes the attachment is accepted when no entry names the shared name, and
+   JB-204 and JB-205 assume it with a disabled entry naming the shared name; a runner that rejects duplicate attached
+   names outright would fail JB-51 and JB-204.
 10. **Which document's `EXPR` admits a URI PATH value.** Resolved: `ENV_PARAMS` requires `EXPR`, so every document
     involved lists it. JB-63 tests a URI PATH value.
 11. **Whether `enableIf` coerces to `bool`.** Resolved: both *enableIf* fields are expression fields (§7.6), whose

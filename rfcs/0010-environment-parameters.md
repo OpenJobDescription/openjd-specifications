@@ -30,7 +30,7 @@ and runs unchanged where none is provided, while existing Environment Templates 
 A few supporting fields let an Environment decide where it is used. It can say whether Sessions enter it unless a Step
 declines it, only when a Step asks for it, or always. It can skip the Steps it has nothing to do for, and give way to an
 alternative that was attached before it, so that each Step uses one software provider. It can also state the hosts it
-needs, and a Job Template can read which Environments were attached. Basic Examples 3 to 5 show these fields.
+needs. Basic Examples 3 to 5 show these fields. A Job Template can also read which Environments were attached.
 
 Readers new to Sessions, Environments and Environment Templates should start with [How Jobs Are
 Run](https://github.com/OpenJobDescription/openjd-specifications/wiki/How-Jobs-Are-Run).
@@ -378,8 +378,8 @@ them as changes to the base specification:
    [§3.3.2.1](../wiki/2023-09-Template-Schemas.md#3321-attributecapabilityname) now states that a host has exactly one
    value of each, so an *allOf* for either has at most one element. A list of literals, such as `allOf: [linux,
    windows]`, which the old text allowed, is now invalid at template validation. No host could run it, and the base
-   conformance suite already rejects it. A list of format strings is checked after resolution, since with `EXPR` an item
-   that resolves to `null` is skipped.
+   conformance suite already rejects it. A list that contains a format string is checked after resolution, when its
+   values are known; with `EXPR` an element may also resolve to `null` and be skipped.
 3. **The Job's Environment order.** [§1.1](../wiki/2023-09-Template-Schemas.md#11-job-template) item 7 now states that
    a Session enters the Environments attached from Environment Templates before the Job Template's `jobEnvironments`,
    in the order they are attached. The base specification did not say. `openjd run` and Deadline Cloud already behave

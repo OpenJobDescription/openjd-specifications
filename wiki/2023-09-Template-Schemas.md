@@ -1477,10 +1477,11 @@ allow users to define their own custom capabilities.
 
 A host has exactly one value of each of these two capabilities, so an *allOf* for either of them must have at most one
 element. An *allOf* written as a list of more than one element, none of which contains `{{ }}`, is an error at template
-validation. Otherwise, as for a list of format strings, some of which may resolve to `null` and be skipped ([Expression
-Language §1.3.2](2026-02-Expression-Language#132-evaluation-within-template-schemas)), and with the `ENV_PARAMS`
-extension for an *allOf* written as a `<ListExpressionString>`, the number of elements is checked after resolution, when
-the Job is created, and more than one is an error. A custom attribute capability may have several values.
+validation. Otherwise the number of elements is checked after resolution, when the Job is created, and more than one is
+an error. This covers a list in which some element contains `{{ }}`, whose values are not known before then and whose
+elements may resolve to `null` and be skipped ([Expression Language
+§1.3.2](2026-02-Expression-Language#132-evaluation-within-template-schemas)), and, with the `ENV_PARAMS` extension, an
+*allOf* written as a `<ListExpressionString>`. A custom attribute capability may have several values.
 
 ##### 3.3.2.2. `<AttributeCapabilityValue>`
 
@@ -2781,9 +2782,10 @@ as possible. See the [Expression Language](2026-02-Expression-Language) specific
 When any document of a submission, the Job Template or an attached Environment Template, lists the `ENV_PARAMS`
 extension, Job creation takes these steps in order. A rule that the extension adds for the content of a document still
 applies only to a document that lists it ([§1.2](#12-environment-template) item 3): an Environment from a document that
-does not list it behaves as [&lt;Environment&gt;](#4-environment) *activation* says, and step 8 keeps the base rules for
-a Step's own requirements in a Job Template that does not list it. The steps fix when each check is made. When a
-submission has several errors, which of them an implementation reports, and in what order, is not specified.
+does not list it behaves as [&lt;Environment&gt;](#4-environment) *activation* says, and a Step's own requirements in a
+Job Template that does not list it keep the base rules ([§3.3](#33-hostrequirements); step 8). The steps fix when each
+check is made. When a submission has several errors, which of them an implementation reports, and in what order, is not
+specified.
 
 1. The Environment Templates attached to the Job are determined. `Job.EnvNames` is concrete before any TEMPLATE-scope
    expression of the Job, including a Step's `let` bindings, is evaluated.
