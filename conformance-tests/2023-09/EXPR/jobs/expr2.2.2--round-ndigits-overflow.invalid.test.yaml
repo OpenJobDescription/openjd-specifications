@@ -1,0 +1,21 @@
+# round(x, ndigits) with ndigits <= 0 returns int, so a result outside the
+# 64-bit signed range is an integer overflow error, as for round(x). The value
+# comes from a parameter, so the error fires when the job is evaluated.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: X
+    type: FLOAT
+    default: 1e300
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'{{ round(Param.X, -1) }}')
