@@ -850,8 +850,8 @@ SERVICE/
   disabled entry resolves to its own document's Environment first
   (`service-external-own-environment-hides-earlier-same-name`), and otherwise
   among earlier attachments' Environments, whatever their `activation`. A name
-  that two earlier attachments share is not an error: the entry refers to each,
-  declining each `BY_DEFAULT` one
+  that two or more earlier attachments share is not an error: the entry refers
+  to each, declining each `BY_DEFAULT` one
   (`service-external-declines-ambiguous-earlier-environments`), having no
   effect on one from a document without `ENV_PARAMS`
   (`service-external-disabled-entry-for-ambiguous-pre-extension-environments`),
