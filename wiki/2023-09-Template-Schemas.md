@@ -261,8 +261,8 @@ When a submission combines a Job Template with one or more Environment Templates
    is rejected. A wrapping Environment in a Step's `stepEnvironments` is never entered by a Service Session and is
    not subject to this check.
 
-Items 2 and 4, the `ENV_PARAMS` checks of RFC 0010 that need the attached Environments (made at the steps of [its
-§7.4.1](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#processing-stages-and-expression-fields)
+Items 2 and 4, the `ENV_PARAMS` checks of RFC 0010 that need the attached Environments (made at the steps of [RFC 0010's
+Template Schemas §7.4.1](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#processing-stages-and-expression-fields)
 and applied to Services as to Steps), the cycles of [&lt;StepDependency&gt;](#32-stepdependency) constraint 3 whose
 edges depend on the attached Environments, [&lt;EnvironmentActions&gt;](#43-environmentactions) `WRAP_ACTIONS`
 constraint 6 for an attached wrapping Environment, a Service's scope where it depends on the attached Environments, and
@@ -2742,8 +2742,8 @@ schedulers must reject templates that list `SERVICE` without both.
 
 A Service is a long-lived process that a scheduler starts before scheduling the Tasks in its scope, keeps running for
 the lifetime of its scope (see [Service scope](#91-service-scope)), and stops once the scope no longer needs it. A
-Service publishes one or more named ports that the runtime allocates on the Service's host, and every entity that
-depends on the Service can discover the resulting endpoint via the `Service.*` format-string scope. Unlike an
+Service publishes one or more named ports that the runtime allocates on the Service's host, and every entity that lists
+the Service in its `dependencies` can discover the resulting endpoint via the `Service.*` format-string scope. Unlike an
 Environment, a Service may be placed on a different Worker Host than the Tasks that use it, in a Session of its own (see
 [How Jobs Are Run](How-Jobs-Are-Run#services) for the lifecycle, readiness and health, and failure semantics).
 

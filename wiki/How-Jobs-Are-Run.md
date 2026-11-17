@@ -82,14 +82,15 @@ The following diagram provides an overview of the steps taken to run a Session.
 
 ## Services
 
-When the SERVICE extension is in use (introduced in
-[RFC 0009](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0009-service.md)), a Job can
+When the SERVICE extension is in use (introduced in [RFC
+0009](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0009-service.md)), a Job can
 additionally declare **Services**. A **Service** is a long-lived process that the scheduler starts *before* scheduling
 any Task in its scope, keeps running for the lifetime of its scope, and stops once the scope no longer needs it. The
-**scope** of a **Service** is the set of Steps whose Tasks depend on it, declared in the template's `dependencies`
-lists (see [Section 9.1](2023-09-Template-Schemas#91-service-scope)). A **Service** publishes one or more named ports; the scheduler allocates a concrete
-address and port on the **Service**'s host and makes them available to every entity that depends on it through the
-`Service.*` format-string scope, so that a Task on any Worker Host knows where to connect.
+**scope** of a **Service** is the set of Steps whose Tasks depend on it, declared in the template's `dependencies` lists
+(see [Section 9.1](2023-09-Template-Schemas#91-service-scope)). A **Service** publishes one or more named ports; the
+scheduler allocates a concrete address and port on the **Service**'s host and makes them available to every entity that
+lists it in its `dependencies` through the `Service.*` format-string scope, so that a Task on any Worker Host knows
+where to connect.
 
 Unlike an **Environment**, a **Service** is not tied to the host that runs Tasks. It runs in a **Session** of its own,
 the **Service Session**, on a **Service host** chosen by the scheduler subject to the **Service**'s host requirements,
@@ -158,7 +159,7 @@ A scheduler must satisfy the following constraints; how it satisfies them is its
    scheduler exits that Step's **Environments** in the **Sessions** that ran it before stopping the **Service**, so an
    **Environment**'s `onExit` that reaches the **Service** still finds it **READY**.
 7. Before a **Service Session** ends: any running **Action** is canceled with its own cancelation method; `onExit` runs
-   if it is defined and any **Action** of the **Service** has run; and every **Environment** entered is exited in
+   if it is defined and any **Action** of the **Service** has run; then every **Environment** entered is exited in
    reverse order, as at the end of any **Session**. Then the working directory is deleted and the host's allocated
    amounts and ports are released. Nothing orders a **Step** outside the scope after this; whether a **Step** that
    depends on a **Step** in the scope, but not on the **Service**, can see files the **Service** wrote is
