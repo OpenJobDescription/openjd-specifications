@@ -660,8 +660,10 @@ SERVICE/
     ├── service-stop-order-dependent-service-stopped-first.test.yaml
     │  # External Services (§1.2.2) and externalServices (§9.8)
     ├── service-external-client-environment-uses-service-functions.test.yaml
+    ├── service-external-declines-ambiguous-earlier-environments.test.yaml
     ├── service-external-declines-earlier-attachment-environment.test.yaml
     ├── service-external-declines-earlier-attachment-wrapper.test.yaml
+    ├── service-external-disabled-entry-for-ambiguous-pre-extension-environments.test.yaml
     ├── service-external-disabled-entry-for-earlier-on-request-environment.test.yaml
     ├── service-external-disabled-entry-for-pre-extension-environment.test.yaml
     ├── service-external-disabled-entry-matching-nothing-ignored.test.yaml
@@ -697,7 +699,7 @@ SERVICE/
     ├── service-wrapper-on-request-for-steps-with-service.test.yaml
     │  # Runs the runner must reject
     ├── service-combined-host-requirements-conflict.invalid.test.yaml
-    ├── service-external-declines-ambiguous-earlier-environment.invalid.test.yaml
+    ├── service-external-declines-ambiguous-earlier-always-environment.invalid.test.yaml
     ├── service-external-declines-earlier-attachment-always-environment.invalid.test.yaml
     ├── service-external-disabled-entry-for-pre-extension-wrapper.invalid.test.yaml
     ├── service-max-restarts-exhausted.invalid.test.yaml
@@ -847,10 +849,15 @@ SERVICE/
   Job (`service-external-disabled-entry-for-pre-extension-wrapper`). Its
   disabled entry resolves to its own document's Environment first
   (`service-external-own-environment-hides-earlier-same-name`), and otherwise
-  among earlier attachments' Environments, whatever their `activation`, where
-  two matches are an error
-  (`service-external-declines-ambiguous-earlier-environment`) and one for an
-  `ON_REQUEST` Environment has no effect
+  among earlier attachments' Environments, whatever their `activation`. A name
+  that two earlier attachments share is not an error: the entry refers to each,
+  declining each `BY_DEFAULT` one
+  (`service-external-declines-ambiguous-earlier-environments`), having no
+  effect on one from a document without `ENV_PARAMS`
+  (`service-external-disabled-entry-for-ambiguous-pre-extension-environments`),
+  and being an error for an `ALWAYS` one
+  (`service-external-declines-ambiguous-earlier-always-environment`), as for a
+  Step. A disabled entry for an `ON_REQUEST` Environment has no effect
   (`service-external-disabled-entry-for-earlier-on-request-environment`). One
   that names the Job Template's Environment, a later attachment's (even
   `ALWAYS`), or no Environment at all has no effect, whatever `required` says
@@ -998,9 +1005,10 @@ runner contract. The behavior specific to `SERVICE`:
    Template's within that document. It must resolve an attached Service's
    disabled `environment:` entries among the Environments of its own document
    and of earlier attachments (§1.2 item 6 constraint 5), the document's own
-   first, rejecting one that declines an `ALWAYS` Environment or matches two
-   earlier attachments' Environments and ignoring one that matches none or
-   names an Environment from a document that does not list `ENV_PARAMS`.
+   first, rejecting one that declines an `ALWAYS` Environment and ignoring one
+   that matches none or names an Environment from a document that does not
+   list `ENV_PARAMS`. A name that two earlier attachments share refers to each
+   of them, as for a Step.
 3. Before any Task of a Step runs, every Service whose scope includes the Step
    must be started in a Service Session of its own — after the Steps in its
    `dependencies` have completed and the Services in it are READY,
