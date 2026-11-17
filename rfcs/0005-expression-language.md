@@ -661,14 +661,18 @@ These rules complete the table:
   permanent. Python has deprecated unrecognized escapes since 3.6 and plans to make them an error, but
   EXPR will not change their meaning or reject them.
 - A malformed escape is a syntax error. That is `\x`, `\u` or `\U` with too few hex digits; `\N`
-  without `{name}`, or with a name it doesn't accept (see the next item); a `\U` value above
+  without `{name}`, or with a name that `\N` doesn't accept (see the next item); a `\U` value above
   `\U0010FFFF`; and a `\u` or `\U` value from U+D800 to U+DFFF. Python allows that last range in a
-  string, but those surrogate code points are not characters, so a string cannot hold them.
+  string, but those surrogate code points are not characters, so a string cannot hold them. Two
+  escapes are never combined into one character, so the surrogate pair `'\uD83D\uDE00'` is an error
+  too; write `'\U0001F600'`.
 - `\N{name}` accepts a character's name from the Unicode Character Database, including the names of
   characters named by rule such as `CJK UNIFIED IDEOGRAPH-4E00` and `HANGUL SYLLABLE GA`, and its
-  name aliases. Names are compared without regard to case. Which names exist depends on the Unicode
-  version, so use Unicode data equivalent to a current CPython release; implementations may differ on
-  names added in recent Unicode versions.
+  name aliases. It doesn't accept a named sequence, a name for a sequence of several characters.
+  Names are compared without regard to case, as in CPython 3.13 (CPython 3.12 requires upper case
+  for a name given by rule). Which names exist depends on the Unicode version. Implementations should
+  use Unicode 15.0 or later, and may differ on names that later versions add and on names given by
+  rule other than `CJK UNIFIED IDEOGRAPH` and `HANGUL SYLLABLE` names.
 - A digit escape is never a regular expression group reference. `'\1'` is the single character U+0001, so
   a group reference has to be written raw, as `r'\1'`. `re_sub` rejects both forms: `r'\1'` as a group
   reference, and `'\1'` because its replacement contains a control character (see `re_sub` in RFC 0006).

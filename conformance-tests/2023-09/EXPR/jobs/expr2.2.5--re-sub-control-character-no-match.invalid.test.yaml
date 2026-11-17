@@ -1,0 +1,18 @@
+# Expression Language §2.2.5: re_sub checks the replacement whether or not the pattern
+# matches, so a control character in the replacement is an error even when nothing is
+# replaced.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r"VALUE:{{ repr_py(re_sub('abc', 'x', '\x01')) }}|")

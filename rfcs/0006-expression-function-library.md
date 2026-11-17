@@ -558,14 +558,15 @@ semantics of Python's `str.title` and `str.capitalize`:
 | `re_split(s: string, pattern: string) -> list[string]` | Split string by regex pattern |
 | `re_split(s: string, pattern: string, maxsplit: int) -> list[string]` | Split string by regex pattern, at most maxsplit times |
 
-The `re_sub` replacement must not contain a control character. A control character is one in the Unicode
-general category `Cc` (U+0000 to U+001F and U+007F to U+009F), except tab (U+0009), newline (U+000A) and
-carriage return (U+000D), which are allowed. This catches a group reference written in a non-raw string:
-`'\1'` decodes to U+0001 before `re_sub` sees it (see String Literal Formats in RFC 0005), so `re_sub("ab", "(a)", "\1")` is an error
-rather than a replacement with an invisible character. Write the replacement text you want literally, as
-in `re_sub("a,b", ",", "\n")`, which gives `"a\nb"`. Because tab, newline and carriage return are allowed,
-`'\11'`, `'\12'` and `'\15'` (which decode to them) are not caught, and neither is an octal escape that
-decodes to a printable character, such as `'\101'` for `A`.
+The `re_sub` replacement must not contain a control character. A control character is one in the
+Unicode general category `Cc` (U+0000 to U+001F and U+007F to U+009F), except tab (U+0009), newline
+(U+000A) and carriage return (U+000D), which are allowed. Only the replacement is checked, whether or
+not the pattern matches; control characters in `s` and `pattern` are allowed. The rule catches a group
+reference written in a non-raw string: `'\1'` decodes to U+0001 before `re_sub` sees it (see String
+Literal Formats in RFC 0005), so `re_sub("ab", "(a)", "\1")` is an error rather than a replacement with
+an invisible character. Write the replacement text you want literally, as in
+`re_sub("a,b", ",", "\n")`, which gives `"a\nb"`. A non-raw group reference that decodes to an allowed or printable character is not caught: `'\11'`,
+`'\12'` and `'\15'` decode to tab, newline and carriage return, and `'\101'` decodes to `A`.
 
 Write patterns as raw strings. In a non-raw string, `'\b'` is a backspace (see String Literal Formats
 in RFC 0005) rather than the word boundary anchor, and `'\1'` is U+0001.

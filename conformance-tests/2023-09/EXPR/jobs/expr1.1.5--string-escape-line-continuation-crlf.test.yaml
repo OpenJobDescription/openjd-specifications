@@ -15,10 +15,10 @@ template:
           command: python
           args:
           - -c
-          - "print(r\"LF:{{ repr_py('ab\\\ncd') }}|\")\nprint(r\"CRLF:{{ repr_py('ab\\\r\ncd') }}|\")\nprint(r\"CR:{{ repr_py('ab\\\rcd') }}|\")\nprint(r\"CRLF_TRIPLE:{{ repr_py('''ab\\\r\ncd''') }}|\")\n"
+          - "print(r\"ONLY_LF:{{ repr_py('ab\\\ncd') }}|\")\nprint(r\"CRLF:{{ repr_py('ab\\\r\ncd') }}|\")\nprint(r\"CR:{{ repr_py('ab\\\rcd') }}|\")\nprint(r\"CRLF_TRIPLE:{{ repr_py('''ab\\\r\ncd''') }}|\")\n"
 expected:
   output:
-  - LF:'abcd'|
+  - ONLY_LF:'abcd'|
   - CRLF:'abcd'|
   - CR:'abcd'|
   - CRLF_TRIPLE:'abcd'|
