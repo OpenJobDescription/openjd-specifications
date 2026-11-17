@@ -860,11 +860,11 @@ environment variables](#passing-the-endpoint-through-environment-variables)).
   cache](#a-queue-supplied-cache-with-client-configuration) example.
 * [Stdout/Stderr Messages](../wiki/How-Jobs-Are-Run.md#stdoutstderr-messages) adds `openjd_service_ready`, says that
   `openjd_fail` from a Service's `onRun` is itself an instance failure, lets a Service's `onEnter` emit `openjd_env` and
-  `openjd_unset_env` for the Service's own later actions, says which messages are honored in a Service Session and
-  that the Session environment variables are set there, and adds the `onWrapService*` hooks to the wrap scripts whose
-  stdout is scanned. The base specification says only that `openjd_fail` "indicates why an Action has failed";
-  existing runtimes already fail an action that emits it whatever its exit status, and this RFC states the rule for
-  Service actions so that the three behave alike.
+  `openjd_unset_env` for the Service's own later actions, says which messages are honored in a Service Session and that
+  the Session environment variables are set there, and adds the `onWrapService*` hooks to the wrap scripts whose stdout
+  is scanned. The base specification says only that `openjd_fail` "indicates why an Action has failed"; existing
+  runtimes already fail an action that emits it whatever its exit status, and this RFC states the rule for Service
+  actions so that `onEnter`, `onRun`, and `onExit` behave alike.
 
 ### `attr.worker.preemptible`
 
