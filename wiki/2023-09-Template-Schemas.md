@@ -2005,7 +2005,8 @@ require of it, also satisfies this requirement.)
 >    and `onWrapEnvEnter`, `onWrapEnvExit`, and the four `onWrapService*` hooks if any Service Session enters
 >    it. The check is over the actions a kind of session may run, not the actions a particular template
 >    defines. A hook for a kind of action that never runs inside the wrapper is permitted and wraps nothing,
->    so a wrapper that defines all seven hooks may be attached to any queue. A wrapping environment in a
+>    so a wrapper that defines all seven hooks may be attached to any queue. A future extension that adds a kind of
+>    action adds its hook to the table. A wrapping environment in a
 >    Step's `stepEnvironments` is entered only by task sessions, and so needs the three hooks of rule 1. Which
 >    Service Sessions enter a Job Environment is stated in [&lt;Environment&gt;](#4-environment) item 3. The
 >    check uses what is known at each stage: it is reported at template validation when the wrapper is in a Job
