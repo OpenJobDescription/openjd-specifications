@@ -32,6 +32,7 @@ template:
             print(r"HEX:{{ repr_py('\x41\x7e') }}|")
             print(r"U16:{{ '\u00e9' == '\xe9' }}|{{ len('\u00e9') }}|")
             print(r"U32:{{ '\U0001F600' == '\N{GRINNING FACE}' }}|{{ len('\U0001F600') }}|")
+            print(r"NOT_ESCAPES:{{ len(r'\ud800') }}|{{ len('\\ud800') }}|{{ len('\\\U0000d7ff') }}|")
             print(r"SURROGATE_EDGES:{{ len('\ud7ff\ue000\U0000d7ff\U0000e000') }}|")
             print(r"NAMED:{{ '\N{BULLET}' == '\u2022' }}|{{ '\N{bullet}' == '\u2022' }}|{{ '\N{cjk unified ideograph-4e00}' == '\u4e00' }}|")
             print(r"CONT:{{ repr_py('ab\
@@ -59,6 +60,7 @@ expected:
   - HEX:'A~'|
   - U16:true|1|
   - U32:true|1|
+  - NOT_ESCAPES:6|6|2|
   - SURROGATE_EDGES:4|
   - NAMED:true|true|true|
   - CONT:'abcd'|
