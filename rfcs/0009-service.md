@@ -777,8 +777,9 @@ discarded, and one-expression host requirements (its [Host
 requirements](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#host-requirements))
 apply to a Service's own `hostRequirements` as they do to a Step's, so that implementations read them the same way.
 [§3.3](../wiki/2023-09-Template-Schemas.md#33-hostrequirements) now describes requirements for a Service as well as a
-Step. Its constraint 1, that at least one of *amounts* or *attributes* is given, does not apply to a Service, since
-every document that lists `SERVICE` also lists `ENV_PARAMS`, under which RFC 0010 allows an empty `hostRequirements`.
+Step. Its constraint 1, that at least one of *amounts* or *attributes* is given, does not apply to a Service: §9 item 5
+applies RFC 0010's rule for an empty `hostRequirements`, and every document that lists `SERVICE` also lists
+`ENV_PARAMS`. When this pull request is rebased onto RFC 0010, a Service is added to that constraint's exception.
 
 ### Wrap hooks
 
@@ -1107,10 +1108,11 @@ Treating it as terminal while retrying an *onRun* crash would fail a Job for exa
 
 The prototype is commit `7140a119`, the head of the `service-extension` branch of
 [mwiebe/openjd-rs](https://github.com/mwiebe/openjd-rs/tree/service-extension), developed alongside this RFC and built
-on RFC 0010's `env-params-prototype` branch at commit `1e68c2b`. RFC 0010 changes made after that commit are not yet
-carried into it. It implements the extension in `openjd-model`, `openjd-expr`, `openjd-sessions`, and `openjd-cli`,
-where `openjd run` is a single-host scheduler for Services. Its `openjd check` and `openjd run` pass all 372 tests under
-`conformance-tests/2023-09/SERVICE` at this RFC's head.
+on RFC 0010's `env-params-prototype` branch at commit `1e68c2b`. With that base the prototype passes the ENV_PARAMS
+conformance tests of RFC 0010 at `45e5c53`, and later RFC 0010 changes are not yet carried into it. It implements the
+extension in `openjd-model`, `openjd-expr`, `openjd-sessions`, and `openjd-cli`, where `openjd run` is a single-host
+scheduler for Services. Its `openjd check` and `openjd run` pass all 372 tests under `conformance-tests/2023-09/SERVICE`
+at this RFC's head.
 
 These parts of the proposal changed while the prototype was developed alongside it:
 
@@ -1160,8 +1162,9 @@ These were hard to implement or are left open:
    specification's order is clear; the prototype's scheduler would need restructuring to follow it in every case.
 3. **Questions the specification leaves to implementations.** Whether a port released by one Service Session may be
    given to a later one in the same Job, and what a runner without Task retries, such as `openjd run`, does with a Task
-   that fails against an UNREADY `KEEP` Service. The prototype never gives a released port to a different Service within
-   a run, though a Service's own fixed `port` is granted again to its later Sessions, and it fails the run.
+   that fails against an UNREADY `KEEP` Service. For ports, the prototype never gives a released number to a different
+   Service within a run, though a Service's own fixed `port` is granted again to its later Sessions. A Task that fails
+   against an UNREADY `KEEP` Service fails the run.
 
 ## Implementation Impact
 
