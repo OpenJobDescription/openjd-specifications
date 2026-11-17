@@ -787,21 +787,23 @@ runs inside the container or under the remote launcher that wraps the Tasks.
 [§4.3](../wiki/2023-09-Template-Schemas.md#43-environmentactions) item 5 adds the four `onWrapService*` hooks, and its
 `WRAP_ACTIONS` constraint 6 replaces RFC 0008's rule 1 when `SERVICE` is declared: a wrapper must define the hook for
 every kind of action that a kind of Session entering it may run. Constraint 6 gives the table of actions and hooks and
-says when the check is made. §4.3's rule that an Environment defines `onEnter` or `onExit` is also met by an Environment
-that defines at least one wrap hook and every hook that the `WRAP_ACTIONS` constraints require of it, which with
-`SERVICE` may be the hooks for Service Sessions without `onWrapTaskRun`.
-[§4.3.1](../wiki/2023-09-Template-Schemas.md#431-wrap-hook-template-variables) adds the `WrappedService.*` variables,
-the port names, numbers, bind addresses, and protocols that a wrapper needs to forward the Service's ports, and what a
-wrapper that gives the process its own network namespace must do. The list of format string scopes in
-[§4](../wiki/2023-09-Template-Schemas.md#4-environment) adds `Service.*` and `WrappedService.*`, and says that every
-`Wrapped*` group is in scope throughout a hook's `<Action>`, including its `timeout` and `cancelation`, and it extends
-to `WrappedService.*` the rule that rejects a `Wrapped*` reference outside its hooks. `WrappedAction.*` is available in
-the `onWrapService*` hooks as in RFC 0008's, and §4.3.1 gives a Docker example that forwards each port, with a variant
-that binds only `bindAddress`. The [Sessions](../wiki/How-Jobs-Are-Run.md#sessions) section of How Jobs Are Run says
-that a wrapper that a Service Session enters defines the `onWrapService*` hooks as well. For a wrapper attached from an
-Environment Template, constraint 6 and the check of the `onWrapService*` hooks are both made when the Job is created,
-from the combined Job ([§1.2.2](../wiki/2023-09-Template-Schemas.md#122-services-from-environment-templates) item 4; see
-[Backward compatibility](#backward-compatibility)).
+says when the check is made, that a failed `onWrapService*` hook has the effect the wrapped action's failure would have,
+and that the wrapped `openjd_env` and `openjd_service_ready` lines are read from the wrap script's stdout. §4.3's rule
+that an Environment defines `onEnter` or `onExit` is also met by an Environment that defines at least one wrap hook and
+every hook that the `WRAP_ACTIONS` constraints require of it, which with `SERVICE` may be the hooks for Service Sessions
+without `onWrapTaskRun`. [§4.3.1](../wiki/2023-09-Template-Schemas.md#431-wrap-hook-template-variables) adds the
+`WrappedService.*` variables, the port names, numbers, bind addresses, and protocols that a wrapper needs to forward the
+Service's ports, and what a wrapper that gives the process its own network namespace must do. The list of format string
+scopes in [§4](../wiki/2023-09-Template-Schemas.md#4-environment) adds `Service.*` and `WrappedService.*`, and says that
+every `Wrapped*` group is in scope throughout a hook's `<Action>`, including its `timeout` and `cancelation`, and it
+extends to `WrappedService.*` the rule that rejects a `Wrapped*` reference outside its hooks. `WrappedAction.*` is
+available in the `onWrapService*` hooks as in RFC 0008's, and §4.3.1 gives a Docker example that forwards each port,
+with a variant that binds only `bindAddress`. The [Sessions](../wiki/How-Jobs-Are-Run.md#sessions) section of How Jobs
+Are Run says that a wrapper that a Service Session enters defines the `onWrapService*` hooks as well. For a wrapper
+attached from an Environment Template, constraint 6 and the check of the `onWrapService*` hooks are both made when the
+Job is created, from the combined Job
+([§1.2.2](../wiki/2023-09-Template-Schemas.md#122-services-from-environment-templates) item 4; see [Backward
+compatibility](#backward-compatibility)).
 
 ### Reading the endpoint
 
@@ -810,8 +812,8 @@ Service (see [Endpoint as three scalar values](#endpoint-as-three-scalar-values)
 environment variables](#passing-the-endpoint-through-environment-variables)).
 
 * [§7.3.1](../wiki/2023-09-Template-Schemas.md#731-value-references) adds `Service.<name>.<port>.port`, `bindAddress`,
-  and `connectAddress`, and `Service.File.<name>`. It also extends the scope of PATH `Param.*` values,
-  `Session.WorkingDirectory`, and the path mapping values to a Service's *variables* and actions.
+  and `connectAddress`, and `Service.File.<name>`. It also extends PATH `Param.*` values to a Service's *variables* and
+  script, and `Session.WorkingDirectory` and the path mapping values to its script.
 * [§9](../wiki/2023-09-Template-Schemas.md#9-service-extension-service), after its item list, gives the format string
   scopes of a Service and the visibility rule: an entity sees a Service's `port` and `connectAddress` only if it lists
   the Service in its `dependencies`, only the Service itself sees `bindAddress`, and `Service.*` is never in scope in a
@@ -822,8 +824,8 @@ environment variables](#passing-the-endpoint-through-environment-variables)).
   `<ServiceScript>.let` (and §7.3.1's let binding row names them), and lets the `let` of a Step script, a simple action,
   and an Environment script read the `Service.*` values in scope.
 * [§7.4](../wiki/2023-09-Template-Schemas.md#74-template-processing-stages) adds `Service.*` to the values unknown
-  before task execution, and a paragraph on service execution, the stage at which a Service's own actions are resolved
-  on the service host.
+  before task execution, evaluates `<Service>.let` at job creation, and adds a paragraph on service execution, the stage
+  at which a Service's own actions are resolved on the service host.
 * The Expression Language adds `Service.File.<name>` and a [Service
   Symbols](../wiki/2026-02-Expression-Language.md#service-symbols) table to
   [§1.2.2](../wiki/2026-02-Expression-Language.md#122-built-in-symbol-types).
@@ -874,10 +876,10 @@ mid-scope, and How Jobs Are Run advises authors of stateful Services to require 
 
 ### Validation
 
-[§9.9](../wiki/2023-09-Template-Schemas.md#99-validation) indexes every rule the extension adds and the section that
-states it, and says which rules are checked when the Job is created or at submission rather than at template
-validation. The conformance suite's [README](../conformance-tests/2023-09/SERVICE/README.md) describes the rules its
-tests verify and lists every test.
+[§9.9](../wiki/2023-09-Template-Schemas.md#99-validation) indexes the rules the extension adds and the section that
+states it, and says which rules are checked when the Job is created or at submission rather than at template validation.
+The conformance suite's [README](../conformance-tests/2023-09/SERVICE/README.md) describes the rules its tests verify
+and lists every test.
 
 ## Design Choice Rationale
 
@@ -1224,8 +1226,9 @@ reference into an undiagnosable implicit edge, for the reasons given in
 
 An earlier draft gave external Services an implicit scope of every Step, so that a queue's Service ran for every Job
 whether or not the Job used it. Rejected for the same reason: it was an edge no document declared. Under the scope
-rules, a queue Service runs for a Job exactly when some Step falls in its scope: the Step lists it, or the Step's
-Sessions enter an Environment that lists it.
+rules, a queue Service runs for a Job exactly when some Step falls in its scope by the rules of
+[§9.1](../wiki/2023-09-Template-Schemas.md#91-service-scope): for example, the Step lists it, the Step's Sessions enter
+an Environment that lists it, or the Step is in the scope of a Service that depends on it.
 
 ### `runScope` as a list of Session kinds
 
