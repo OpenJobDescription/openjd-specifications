@@ -227,8 +227,8 @@ declares a requirement for it in `externalServices` (see [&lt;ServiceRequirement
 When a submission combines a Job Template with one or more Environment Templates:
 
 1. Every attached Service is part of the combined Job, and the attached Environments are placed in `jobEnvironments` as
-   today (see [Job Template](#11-job-template) *jobEnvironments*). The limit of 10 applies to each document's list; the
-   scheduler bounds the total through how many Environment Templates it attaches.
+   today (see [Job Template](#11-job-template) *jobEnvironments*, as RFC 0010 states their order). The limit of 10
+   applies to each document's list; the scheduler bounds the total through how many Environment Templates it attaches.
 2. Each entry of `externalServices` must match exactly one Service with the same `name` among the attached Environment
    Templates' *services*, and that Service must declare every port the requirement lists, with the same `protocol`. If
    no attached Service has the name, if two or more do, if the matched Service lacks a listed port, or if a port's
@@ -3247,7 +3247,7 @@ host requirements, and a scope that depends on which Environments a Step's Sessi
 | The `dependencies` graph, including the edges from entering an Environment that lists a Service, is acyclic, with no exception for a Service's own client Environment | [&lt;StepDependency&gt;](#32-stepdependency) constraint 3; [Environment Template](#12-environment-template) item 6 constraint 4 |
 | A Service's combined host requirements do not conflict | [&lt;Service&gt;](#9-service-extension-service) item 5 |
 | Every inline Service has a non-empty scope, and every `externalServices` entry is listed by some Step, Service, or Job Environment | [Service scope](#91-service-scope) rule 4 |
-| Service, requirement, and port names are identifiers other than `File`, unique within their lists, and no requirement shares a `name` with an inline Service | [&lt;ServiceName&gt;](#92-servicename); [Job Template](#11-job-template) *externalServices* constraint 4 |
+| Service, requirement, and port names are identifiers other than `File`, unique within their lists, and no requirement shares a `name` with an inline Service | [&lt;ServiceName&gt;](#92-servicename); [&lt;ServicePort&gt;](#93-serviceport) item 1; [&lt;ServiceRequirementPort&gt;](#981-servicerequirementport) item 1; [Section 9](#9-service-extension-service) item 6 constraint 3; [&lt;ServiceRequirement&gt;](#98-servicerequirement) item 2 constraint 3; [Job Template](#11-job-template) items 8 and 9 constraint 3 and *externalServices* constraint 4; [Environment Template](#12-environment-template) item 6 constraint 3 |
 | `externalServices` appears only in a Job Template | [Job Template](#11-job-template) *externalServices* constraint 5 |
 | `healthCheck` is consistent with `<ServiceActions>`, with `ports`, and with its own `type` | [&lt;Service&gt;](#9-service-extension-service) item 7; [&lt;ServiceHealthCheck&gt;](#94-servicehealthcheck) items 2, 3, and 6; [&lt;ServiceActions&gt;](#97-serviceactions) item 3 |
 | No two ports of a Service with the same `protocol` have the same `port` number | [&lt;Service&gt;](#9-service-extension-service) item 6 constraint 4 |

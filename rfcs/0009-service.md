@@ -682,13 +682,14 @@ the new parts:
   ports](#external-services-are-declared-with-their-ports)).
 
 [§1.1](../wiki/2023-09-Template-Schemas.md#11-job-template) items 8 and 9 add `services` and `externalServices` to the
-Job Template, and *steps* becomes item 10. [§1.2](../wiki/2023-09-Template-Schemas.md#12-environment-template) items 5
-and 6 make an Environment Template's `environment` optional and add `services`, with at least one of the two required,
-and the [opening paragraph](../wiki/2023-09-Template-Schemas.md#template-schemas-version-2023-09) of Template Schemas
-says that an Environment Template may describe Services. Item 6 constraint 4 makes the `dependencies` of an Environment
-Template's Services one acyclic graph, which includes an edge from each of them whose Sessions enter the document's own
-Environment to each Service that Environment lists. Item 6 constraint 5 limits an Environment Template's Service to
-`service:` entries and disabled `environment:` entries (see [Services run inside
+Job Template, and *steps* becomes item 10. Item 7 says that the Job Environments are also entered and exited in their
+order by every Service Session that enters them. [§1.2](../wiki/2023-09-Template-Schemas.md#12-environment-template)
+items 5 and 6 make an Environment Template's `environment` optional and add `services`, with at least one of the two
+required, and the [opening paragraph](../wiki/2023-09-Template-Schemas.md#template-schemas-version-2023-09) of Template
+Schemas says that an Environment Template may describe Services. Item 6 constraint 4 makes the `dependencies` of an
+Environment Template's Services one acyclic graph, which includes an edge from each of them whose Sessions enter the
+document's own Environment to each Service that Environment lists. Item 6 constraint 5 limits an Environment Template's
+Service to `service:` entries and disabled `environment:` entries (see [Services run inside
 Environments](#services-run-inside-environments)). The new
 [§1.2.2](../wiki/2023-09-Template-Schemas.md#122-services-from-environment-templates) says how the scheduler applies
 such Services to every Job submitted through it, matches each `externalServices` entry to exactly one attached Service,
@@ -799,8 +800,8 @@ to `WrappedService.*` the rule that rejects a `Wrapped*` reference outside its h
 the `onWrapService*` hooks as in RFC 0008's, and §4.3.1 gives a Docker example that forwards each port, with a variant
 that binds only `bindAddress`. The [Sessions](../wiki/How-Jobs-Are-Run.md#sessions) section of How Jobs Are Run says
 that a wrapper that a Service Session enters defines the `onWrapService*` hooks as well. For a wrapper attached from an
-Environment Template, constraint 6 is checked when the Job is created, and the check of the `onWrapService*` hooks is
-made at submission ([§1.2.2](../wiki/2023-09-Template-Schemas.md#122-services-from-environment-templates) item 4; see
+Environment Template, constraint 6 and the check of the `onWrapService*` hooks are both made when the Job is created,
+from the combined Job ([§1.2.2](../wiki/2023-09-Template-Schemas.md#122-services-from-environment-templates) item 4; see
 [Backward compatibility](#backward-compatibility)).
 
 ### Reading the endpoint
@@ -1144,9 +1145,9 @@ These parts of the proposal changed because of the prototype:
 6. **Smaller rules the prototype made explicit.** `openjd_fail` from `onRun` is itself an instance failure; every
    `Wrapped*` group is in scope in a hook's `timeout` and `cancelation`; a Step's Environments are exited before a
    Service whose scope ends with the Step is stopped; a Service's embedded files stay in place until its Session ends;
-   the `STDOUT` heartbeat deadline is re-armed by each line; the Services that list a relaunched Service are stopped
-   and restarted in dependency order; `repr_sh` accepts `int` and `list[int]`; and RFC 0010's rules for empty,
-   discarded, and one-expression host requirements apply to a Service's own `hostRequirements`.
+   the `STDOUT` heartbeat deadline is re-armed by each line; the Services that list a Service that begins a new Service
+   Session are stopped and restarted in dependency order; `repr_sh` accepts `int` and `list[int]`; and RFC 0010's rules
+   for empty, discarded, and one-expression host requirements apply to a Service's own `hostRequirements`.
 
 These were hard to implement or are left open:
 
@@ -1158,7 +1159,8 @@ These were hard to implement or are left open:
    specification's order is clear; the prototype's scheduler would need restructuring to follow it in every case.
 3. **Questions the specification leaves to implementations.** Whether a port released by one Service Session may be
    given to a later one in the same Job, and what a runner without Task retries, such as `openjd run`, does with a Task
-   that fails against an UNREADY `KEEP` Service. The prototype never reuses a port within a run, and fails the run.
+   that fails against an UNREADY `KEEP` Service. The prototype never gives a released port to a different Service within
+   a run, though a Service's own fixed `port` is granted again to its later Sessions, and it fails the run.
 
 ## Implementation Impact
 
