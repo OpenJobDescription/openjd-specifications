@@ -708,12 +708,12 @@ kinds](#dependencies-are-declared-and-one-list-names-both-kinds)).
   when the Service is READY. It says how the key combines with RFC 0010's `step` and `environment` forms, which an
   `ENV_PARAMS` document may use, and gives the constraints: what each key may name, no two entries naming one Step or
   one Service, exactly one key per entry (replacing RFC 0010's constraint 1), and, in constraint 3, the one acyclic
-  graph over a Job Template's Steps and Services. That graph has an edge from each entity to each entry it lists, and
-  from each Step and Service whose Sessions enter a Job Environment to each Service that Environment lists, with no
-  exception. Constraint 3 also says at which stage a cycle is reported. RFC 0010's pull request also adds numbered
-  constraints to §3.2. RFC 0010 merges first, and when this pull request is rebased onto it, these constraints will be
-  numbered after RFC 0010's, and this RFC's references to "§3.2 constraint 3" and "constraint 4" will be updated to
-  match.
+  graph over a Job Template's Steps and Services. That graph has an edge from each entity to each Step and Service entry
+  it lists, and from each Step and Service whose Sessions enter a Job Environment to each Service that Environment
+  lists, with no exception. Constraint 3 also says at which stage a cycle is reported. RFC 0010's pull request also adds
+  numbered constraints to §3.2. RFC 0010 merges first, and when this pull request is rebased onto it, these constraints
+  will be numbered after RFC 0010's, and this RFC's references to "§3.2 constraint 3" and "constraint 4" will be updated
+  to match.
 * [§3](../wiki/2023-09-Template-Schemas.md#3-steptemplate) item 4 says that a Step's `dependencies` may name Services,
   and the paragraph after the item list that a Step need not repeat a Step dependency that a Service it lists already
   carries. *stepEnvironments* constraint 3 points to the rule that a Step Environment has no `dependencies` of its own.
@@ -930,11 +930,12 @@ the name stays the same either way, so nothing that references the port changes.
 
 ### `restartPolicy.completedTasks` is per-Service and required when relaunch is allowed
 
-The two motivating examples pull in opposite directions: a cache loses nothing of consequence when
-it restarts, while a coordinator that loses its state has invalidated every result produced against
-it. No single behavior is correct, so the policy is per-Service, and because neither answer is safe
-to assume the field has no default: an author who allows a relaunch must say what a relaunch means
-for completed Tasks. When `maxRestarts` is 0 no relaunch can happen and the field is not needed.
+The two motivating examples pull in opposite directions: a cache loses nothing of consequence when it restarts, while a
+coordinator that loses its state has invalidated every result produced against it. No single behavior is correct, so the
+policy is per-Service, and because neither answer is safe to assume the field has no default: an author who allows a
+relaunch must say what a relaunch means for completed Tasks. When `maxRestarts` is 0 no relaunch can happen and the
+field is needed only when a Service this one lists begins a new Service Session, where an omitted value is read as
+`RERUN`.
 
 The same distinction decides what happens to Tasks running at the moment of failure (requeued under
 `RERUN`, left to finish or fail on their own under `KEEP`) and whether a scheduler may suspend an
