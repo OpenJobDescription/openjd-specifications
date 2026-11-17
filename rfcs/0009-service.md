@@ -680,17 +680,21 @@ the new parts:
 Job Template, and *steps* becomes item 10. [§1.2](../wiki/2023-09-Template-Schemas.md#12-environment-template) items 5
 and 6 make an Environment Template's `environment` optional and add `services`, with at least one of the two required,
 and the [opening paragraph](../wiki/2023-09-Template-Schemas.md#template-schemas-version-2023-09) of Template Schemas
-says that an Environment Template may describe Services. Item 6 constraint 5 limits an Environment Template's Service
-to `service:` entries and disabled `environment:` entries (see [Services run inside
-Environments](#services-run-inside-environments)). The new
+says that an Environment Template may describe Services. Item 6 constraint 4 makes the `dependencies` of an Environment Template's Services one acyclic graph, which includes an
+edge from each of them whose Sessions enter the document's own Environment to each Service that Environment lists.
+Item 6 constraint 5 limits an Environment Template's Service to `service:` entries and disabled `environment:` entries
+(see [Services run inside Environments](#services-run-inside-environments)). The new
 [§1.2.2](../wiki/2023-09-Template-Schemas.md#122-services-from-environment-templates) says how the scheduler applies
 such Services to every Job submitted through it, matches each `externalServices` entry to exactly one attached Service,
-keeps same-named Services of different documents apart, and checks attached wrapping Environments, and it lists the
+keeps same-named Services of different documents apart, and checks attached wrapping Environments. It also says that
+each Job gets its own instance of an external Service and that the limit of 10 Services applies to each document, and
+it lists the
 only checks that need the combined Job (see [External Services via the Environment Template, not a new template
 type](#external-services-via-the-environment-template-not-a-new-template-type) and [Service names are per
 document](#service-names-are-per-document)).
 
-The [§5](../wiki/2023-09-Template-Schemas.md#5-action) table of default timeouts gains the four Service actions, and
+The [§5](../wiki/2023-09-Template-Schemas.md#5-action) table of default timeouts gains the four Service actions, with a
+note that a `timeout` on `onRun` is measured from launch and that its expiry is an instance failure, and
 [§6](../wiki/2023-09-Template-Schemas.md#6-embeddedfile) adds `Service.File.<name>` for a Service's embedded files.
 
 ### Depending on a Service
@@ -705,7 +709,10 @@ kinds](#dependencies-are-declared-and-one-list-names-both-kinds)).
   one Service, exactly one key per entry (replacing RFC 0010's constraint 1), and, in constraint 3, the one acyclic
   graph over a Job Template's Steps and Services. That graph has an edge from each entity to each entry it lists, and
   from each Step and Service whose Sessions enter a Job Environment to each Service that Environment lists, with no
-  exception. Constraint 3 also says at which stage a cycle is reported.
+  exception. Constraint 3 also says at which stage a cycle is reported. RFC 0010's pull request also adds numbered
+  constraints to §3.2. RFC 0010 merges first, and when this pull request is rebased onto it, these constraints will be
+  numbered after RFC 0010's, and this RFC's references to "§3.2 constraint 3" and "constraint 4" will be updated to
+  match.
 * [§3](../wiki/2023-09-Template-Schemas.md#3-steptemplate) item 4 says that a Step's `dependencies` may name Services,
   and the paragraph after the item list that a Step need not repeat a Step dependency that a Service it lists already
   carries. *stepEnvironments* constraint 3 points to the rule that a Step Environment has no `dependencies` of its own.
@@ -715,8 +722,10 @@ kinds](#dependencies-are-declared-and-one-list-names-both-kinds)).
   Steps it waits for, the Services whose endpoints it reads, and the Environments it requests or declines, and which
   values its `environment:` entries may read.
 * [§9.1](../wiki/2023-09-Template-Schemas.md#91-service-scope) defines a Service's scope from these lists, says when it
-  is determined, and rejects an inline Service or an `externalServices` entry whose scope is empty. An external Service
-  whose scope is empty is never started.
+  is determined, and rejects an inline Service or an `externalServices` entry whose scope is empty. A scope is normally
+  determined at template validation, and when the Job is created only where it depends on which Environments a Step's
+  Sessions enter and that is not known before then; an inline Service whose scope is empty is rejected at the same
+  stage. An external Service whose scope is empty is never started.
 
 ### Services run inside Environments
 
@@ -759,8 +768,8 @@ discarded, and one-expression host requirements (its [Host
 requirements](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#host-requirements)) apply to a
 Service's own `hostRequirements` as they do to a Step's, so that implementations read them the same way.
 [§3.3](../wiki/2023-09-Template-Schemas.md#33-hostrequirements) now describes requirements for a Service as well as a
-Step. Its constraint 1, that at least one of *amounts* or *attributes* is given, applied "in a Job Template" and now
-applies wherever the object is provided, since a Service in an Environment Template also has `hostRequirements`.
+Step. Its constraint 1, that at least one of *amounts* or *attributes* is given, does not apply to a Service, since every
+document that lists `SERVICE` also lists `ENV_PARAMS`, under which RFC 0010 allows an empty `hostRequirements`.
 
 ### Wrap hooks
 
@@ -791,7 +800,9 @@ environment variables](#passing-the-endpoint-through-environment-variables)).
 * [§9](../wiki/2023-09-Template-Schemas.md#9-service-extension-service), after its item list, gives the format string
   scopes of a Service and the visibility rule: an entity sees a Service's `port` and `connectAddress` only if it lists
   the Service in its `dependencies`, only the Service itself sees `bindAddress`, and `Service.*` is never in scope in a
-  field resolved at job creation.
+  field resolved at job creation. A Service's own `variables`, and those its `onEnter` sets, are not passed to the
+  entities in its scope ([§9](../wiki/2023-09-Template-Schemas.md#9-service-extension-service) item 9); they read the
+  endpoint, not the Service's environment.
 * [§3.6.2](../wiki/2023-09-Template-Schemas.md#362-let-binding-scope-summary) adds rows for `<Service>.let` and
   `<ServiceScript>.let`, and lets the `let` of a Step script, a simple action, and an Environment script read the
   `Service.*` values in scope.
@@ -1078,9 +1089,10 @@ Treating it as terminal while retrying an *onRun* crash would fail a Job for exa
 
 The prototype is the `service-extension` branch of
 [mwiebe/openjd-rs](https://github.com/mwiebe/openjd-rs/tree/service-extension), developed alongside this RFC and built
-on RFC 0010's `env-params-prototype` branch. It implements the extension in `openjd-model`, `openjd-expr`,
-`openjd-sessions`, and `openjd-cli`, where `openjd run` is a single-host scheduler for Services. Its `openjd check`,
-`openjd summary`, and `openjd run` pass all 372 tests under `conformance-tests/2023-09/SERVICE` at this RFC's head.
+on RFC 0010's `env-params-prototype` branch at commit `1e68c2b`. RFC 0010 changes made after that commit are not yet
+carried into it. It implements the extension in `openjd-model`, `openjd-expr`, `openjd-sessions`, and `openjd-cli`,
+where `openjd run` is a single-host scheduler for Services. Its `openjd check` and `openjd run` pass all 372 tests under
+`conformance-tests/2023-09/SERVICE` at this RFC's head.
 
 These parts of the proposal changed because of the prototype:
 
@@ -1089,8 +1101,8 @@ These parts of the proposal changed because of the prototype:
    Environment, by kind and by request. The RFC dropped `runScope`, and a Service Session now chooses its Environments
    by RFC 0010's rules, as a Task Session does (see [`runScope` as a list of Session
    kinds](#runscope-as-a-list-of-session-kinds)).
-2. **No exception for a client Environment.** The prototype first kept a Service's Sessions out of an Environment that
-   lists the Service. Each later rule about which Sessions enter an Environment needed its own text for that exception:
+2. **No exception for a client Environment.** Earlier drafts, and the prototype, kept a Service's Sessions out of an
+   Environment that lists the Service. Each later rule about which Sessions enter an Environment needed its own text for that exception:
    RFC 0010's split of `ALWAYS` from `BY_DEFAULT`, a disabled entry, an `exclusiveGroup`. The RFC dropped the exception,
    so entering such an Environment is a cycle that §3.2 constraint 3 rejects, naming the Environment, and the template
    says how the Service stays out (see [An exception for an Environment that lists the
@@ -1106,18 +1118,19 @@ These parts of the proposal changed because of the prototype:
    Environment of the Job, an Environment that a later document added could list a Service and close a cycle that no
    single document contains. With this rule, every cycle is within one document (see [Service Sessions enter the Job's
    Environments by the Steps' rule](#service-sessions-enter-the-jobs-environments-by-the-steps-rule)).
-5. **An Environment Template's Service may decline an earlier attachment's Environment.** An audit of the earlier-documents
-   rule found that an earlier attachment's `BY_DEFAULT` Environment with a parameter that has no default, or a wrapper
-   without the `onWrapService*` hooks, failed every Job that used a later attachment's Service, so two Environment
-   Templates could be incompatible only because of their attachment order.
+5. **An Environment Template's Service may decline an earlier attachment's Environment.** An audit of the
+   earlier-documents rule found that an earlier attachment's `BY_DEFAULT` Environment with a parameter that has no
+   default, or a `BY_DEFAULT` wrapper without the `onWrapService*` hooks, failed every Job that used a later
+   attachment's Service, so two Environment Templates could be incompatible only because of their attachment order.
    [§1.2](../wiki/2023-09-Template-Schemas.md#12-environment-template) item 6 constraint 5 now lets the Service decline
-   such an Environment with a disabled entry.
+   such an Environment with a disabled entry. An `ALWAYS` wrapper, or one from a document that does not list
+   `ENV_PARAMS`, still cannot be declined.
 6. **Smaller rules the prototype made explicit.** `openjd_fail` from `onRun` is itself an instance failure; every
    `Wrapped*` group is in scope in a hook's `timeout` and `cancelation`; a Step's Environments are exited before a
    Service whose scope ends with the Step is stopped; a Service's embedded files stay in place until its Session ends;
    the `STDOUT` heartbeat deadline is re-armed by each line; the Services that list a relaunched Service are stopped
-   and restarted in dependency order; `repr_sh` accepts `int` and `list[int]`; and RFC 0010's rules for empty and
-   discarded host requirements apply to a Service's own `hostRequirements`.
+   and restarted in dependency order; `repr_sh` accepts `int` and `list[int]`; and RFC 0010's rules for empty,
+   discarded, and one-expression host requirements apply to a Service's own `hostRequirements`.
 
 These were hard to implement or are left open:
 

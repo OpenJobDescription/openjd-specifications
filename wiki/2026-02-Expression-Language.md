@@ -1831,7 +1831,8 @@ the port element is a string, so `int(split_host_port(Param.Endpoint)[1])` gives
 Malformed brackets such as `"[::1"` or `"[::1]x:80"` are an error. A zone identifier is carried
 through verbatim: `join_host_port("fe80::1%eth0", 80)` returns `"[fe80::1%eth0]:80"`, and
 `split_host_port` returns the host with the zone attached. `is_ipv6("::1")`, `is_ipv6("[::1]")`, and
-`is_ipv6("fe80::1%eth0")` are all `true`; `is_ipv4("10.0.0.1")` is `true`.
+`is_ipv6("fe80::1%eth0")` are all `true`; `is_ipv4("10.0.0.1")` is `true`. These four functions are available only in
+a document that lists the `SERVICE` extension; `EXPR` alone does not provide them.
 
 Note: Splitting an empty string returns a list containing one empty string, not an empty list
 (e.g., `''.split(',')` returns `['']`). This matches Python's `str.split()` behavior.

@@ -261,7 +261,7 @@ When a submission combines a Job Template with one or more Environment Templates
    not subject to this check.
 
 Items 2 and 4, the `ENV_PARAMS` checks of RFC 0010 that need the attached Environments (made at the steps of its
-§7.4.1, and applied to Services as to Steps), the cycles of
+§7.4.1 (see [RFC 0010](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#processing-stages-and-expression-fields)), and applied to Services as to Steps), the cycles of
 [&lt;StepDependency&gt;](#32-stepdependency) constraint 3 whose edges depend on the attached Environments, and
 resolving a Service's disabled entries against the Environment Templates attached before its own (item 6 constraint 5)
 are the only checks that require the combined Job; everything else is checked when each document is validated on its
@@ -1182,7 +1182,8 @@ Where:
 
 With the constraints:
 
-1. If this object is provided, then at least one of the *amounts* or *attributes* properties must be defined.
+1. If this object is provided in a Job Template, then at least one of the *amounts* or *attributes* properties must be
+   defined.
 2. The sum of the lengths of the *amounts* and *attributes* arrays must not exceed 50 elements.
 3. No two elements in the *amounts* array may have the same value for the *name* property, after the *name* format
    strings have been resolved.
@@ -2057,7 +2058,10 @@ process its own network namespace must forward each port in `WrappedService.Port
 process, and must ensure the process can bind `bindAddress` inside that namespace. A wildcard `bindAddress` (`0.0.0.0`,
 `::`) works in either case; a loopback `bindAddress` reaches a forwarded port only with host networking. For example, a
 Docker wrapper without host networking passes
-`{{ flatten([['-p', string(WrappedService.Ports[i]) + ':' + string(WrappedService.Ports[i]) + '/' + lower(WrappedService.Protocols[i])] for i in range(len(WrappedService.Ports))]) }}`.
+`{{ flatten([['-p', string(WrappedService.Ports[i]) + ':' + string(WrappedService.Ports[i]) + '/' + lower(WrappedService.Protocols[i])] for i in range(len(WrappedService.Ports))]) }}`,
+which publishes each port on every interface of the host. A wrapper that restricts the host-side binding to the
+allocated interface writes `join_host_port(WrappedService.BindAddresses[i], WrappedService.Ports[i]) + ':' + ...` in
+place of the first `string(WrappedService.Ports[i])`.
 `WrappedService.Ports` is `list[int]`; with the `SERVICE` extension `repr_sh` accepts `int` and `list[int]` (see the
 [Expression Language](2026-02-Expression-Language#226-script-embedding-and-serialization)), so a wrapper may also pass
 the whole list as `repr_sh(WrappedService.Ports)`.
@@ -2436,7 +2440,7 @@ specification for the extended grammar, type system, and evaluation semantics.
 |`Task.File.<name>`|The filesystem location to which the Task Embedded File with key `<name>` has been written.| Available within the Step Script Actions and Embedded Files.|
 |`Env.File.<name>`|The filesystem location to which the Environment Attachment with key `<name>` has been written.|Available within the Environment Script Actions and Embedded Files.|
 |`Service.File.<name>`|The filesystem location to which the Service Embedded File with key `<name>` has been written. Requires the `SERVICE` extension.|Available within the Service Script Actions and Embedded Files of the declaring Service.|
-|`Service.<name>.<port>.port`|The port number allocated (or requested) for port `<port>` of Service `<name>`, in the space of that port's `protocol`. The same number is used for binding and for connecting. This is an `int` type. Requires the `SERVICE` extension.|Available within the declaring Service, and within every Service, Step (its Script and its Step Environments), and Job Environment whose `dependencies` list `service: <name>`; a Job Environment that lists an inline Service puts in its scope every Step whose Sessions enter it. A Service a Job Template requires follows the same rule, minus the declaring Service. See [&lt;Service&gt;](#9-service-extension-service) for the scoping rules.|
+|`Service.<name>.<port>.port`|The port number allocated (or requested) for port `<port>` of Service `<name>`, in the space of that port's `protocol`. The same number is used for binding and for connecting. This is an `int` type. Requires the `SERVICE` extension.|Available within the declaring Service, and within every Service, Step (its Script and its Step Environments), and Job Environment whose `dependencies` list `service: <name>`. A Service a Job Template requires follows the same rule, minus the declaring Service. See [&lt;Service&gt;](#9-service-extension-service) for the scoping rules.|
 |`Service.<name>.<port>.bindAddress`|The interface address that the service process must bind to so that entities in the Service's scope can reach it: a hostname, an IPv4 literal, or an unbracketed IPv6 literal. This is a `string` type. Requires the `SERVICE` extension.|Available within the declaring Service only; never for a required external Service.|
 |`Service.<name>.<port>.connectAddress`|The hostname or IP address that entities in the Service's scope use to reach port `<port>` of Service `<name>`: a hostname, an IPv4 literal, or an unbracketed IPv6 literal. Join it with a port using `join_host_port` (see [Expression Language](2026-02-Expression-Language#224-string-functions)), which adds the brackets an IPv6 literal needs in a URL. This is a `string` type. Requires the `SERVICE` extension.|As `Service.<name>.<port>.port`.|
 |`Session.WorkingDirectory`|The agent is expected to create a local temporary scratch directory for the duration of a Session. This builtin provides the location of that temporary directory. This is the working directory that the Worker Agent uses when running the task.|This is available within all Environment Script Actions & Embedded Files, all Step Script Actions and Embedded Files, and, with the `SERVICE` extension, all Service Script Actions and Embedded Files.|
@@ -2877,8 +2881,8 @@ then. The order of the `services` list carries no meaning:
    are themselves unused is unused.
 
 These rules apply to every Service of the combined Job, inline or external, with one difference: rule 4 rejects an
-inline Service with an empty scope at template validation, while an external Service with an empty scope is simply never
-started (see [Services from Environment Templates](#122-services-from-environment-templates)). An `externalServices`
+inline Service with an empty scope, at template validation or, when the scope is determined only then, when the Job is
+created, while an external Service with an empty scope is simply never started (see [Services from Environment Templates](#122-services-from-environment-templates)). An `externalServices`
 entry is subject to rule 4 like an inline Service: one that no Step, Service, or Job Environment of the Job Template
 lists is rejected at template validation, naming the entry. A Job Environment that lists a Service and that no Step's
 Sessions enter, such as an `ON_REQUEST` one that no Step requests, puts no Step in the Service's scope; for an inline
@@ -3027,8 +3031,9 @@ Where:
       canceled and requeued.
 
    A Task returned to the queue by `RERUN` has not failed: the requeue does not use one of the Task's own retries. A
-   Task can therefore run again on top of its own retries, once for each restart of this Service and once for each new
-   Service Session a Service it lists forces on it, each bounded by that Service's *maxRestarts*.
+   Task can therefore run again on top of its own retries: once for each restart of this Service, which this Service's
+   *maxRestarts* bounds, and once for each new Service Session that a Service it lists forces on it, which the listed
+   Service's *maxRestarts* bounds.
 
    If *maxRestarts* is greater than 0, *completedTasks* must be provided (for a *maxRestarts* given as a format string,
    checked when it is resolved at job creation). When *maxRestarts* is 0 it may be omitted, and then matters only when a
