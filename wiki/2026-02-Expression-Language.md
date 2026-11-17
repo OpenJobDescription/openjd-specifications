@@ -737,7 +737,7 @@ Non-raw strings use Python's escape sequences. This table is the complete list:
 
 | Escape | Meaning |
 |--------|---------|
-| `\` followed by a newline | Line continuation: the backslash and the newline are both removed |
+| `\` followed by a line break (LF, CR LF or CR) | Line continuation: the backslash and the line break are both removed |
 | `\\` | Backslash |
 | `\'` | Single quote |
 | `\"` | Double quote |
@@ -764,10 +764,14 @@ These rules complete the table:
   permanent. Python has deprecated unrecognized escapes since 3.6 and plans to make them an error, but
   EXPR will not change their meaning or reject them.
 - A malformed escape is a syntax error. That is `\x`, `\u` or `\U` with too few hex digits; `\N`
-  without `{name}`, or with a name that is not a Unicode character name or name alias (compared without
-  regard to case); a `\U` value above `\U0010FFFF`; and a `\u` or `\U` value from U+D800 to U+DFFF.
-  Python allows that last range in a string, but those surrogate code points are not characters, so a
-  string cannot hold them.
+  without `{name}`, or with a name it doesn't accept (see the next item); a `\U` value above
+  `\U0010FFFF`; and a `\u` or `\U` value from U+D800 to U+DFFF. Python allows that last range in a
+  string, but those surrogate code points are not characters, so a string cannot hold them.
+- `\N{name}` accepts a character's name from the Unicode Character Database, including the names of
+  characters named by rule such as `CJK UNIFIED IDEOGRAPH-4E00` and `HANGUL SYLLABLE GA`, and its
+  name aliases. Names are compared without regard to case. Which names exist depends on the Unicode
+  version, so use Unicode data equivalent to a current CPython release; implementations may differ on
+  names added in recent Unicode versions.
 - A digit escape is never a regular expression group reference. `'\1'` is the single character U+0001, so
   a group reference has to be written raw, as `r'\1'`. `re_sub` rejects both forms: `r'\1'` as a group
   reference, and `'\1'` because its replacement contains a control character (see §2.2.5).
@@ -1849,6 +1853,9 @@ rather than a replacement with an invisible character. Write the replacement tex
 in `re_sub("a,b", ",", "\n")`, which gives `"a\nb"`. Because tab, newline and carriage return are allowed,
 `'\11'`, `'\12'` and `'\15'` (which decode to them) are not caught, and neither is an octal escape that
 decodes to a printable character, such as `'\101'` for `A`.
+
+Write patterns as raw strings. In a non-raw string, `'\b'` is a backspace (§1.1.5) rather than the
+word boundary anchor, and `'\1'` is U+0001.
 
 The regex syntax is the intersection of Python's `re` module and Rust's `regex` crate,
 ensuring cross-platform compatibility. Supported features:
