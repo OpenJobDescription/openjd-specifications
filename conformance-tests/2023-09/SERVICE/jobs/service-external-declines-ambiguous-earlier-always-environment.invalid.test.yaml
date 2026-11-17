@@ -1,15 +1,14 @@
-# Section 1.2 item 6 constraint 5 (RFC 0009) / RFC 0010 "Resolving external
-# Environments": an Environment Template Service's disabled entry whose name
-# matches the Environments of two earlier attachments is ambiguous, an error
-# as it is for a Step. The two attachments that both define Shared are
-# otherwise valid, since nothing else names Shared, and Cache declines its
-# own client Environment, so the ambiguous entry is the only error. Neither
-# attachment lists ENV_PARAMS, so a disabled entry that resolved to one of
-# them would have no effect, but the name is resolved first and matches two
-# (RFC 0010, Template Schemas §3.2.1 item 3).
+# Section 1.2 item 6 constraint 5 (RFC 0009) / RFC 0010 Template Schemas
+# §3.2.1 item 3: an Environment Template Service's disabled entry whose name
+# two earlier attachments share refers to each of them, as for a Step, and is
+# an error for each one with `activation: ALWAYS`. The first attachment's
+# Shared is ALWAYS and the second's is BY_DEFAULT, so the entry declines the
+# second and is an error for the first. Both list ENV_PARAMS, nothing else
+# names Shared, and Cache declines its own client Environment, so declining
+# the ALWAYS one is the only error.
 template:
   specificationVersion: jobtemplate-2023-09
-  name: ExternalServiceDeclinesAmbiguousEarlierEnvironment
+  name: ExternalServiceDeclinesAmbiguousEarlierAlwaysEnvironment
   steps:
   - name: Use
     script:
@@ -20,13 +19,17 @@ template:
 
 environments:
 - specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
   environment:
     name: Shared
+    activation: ALWAYS
     variables:
       SHARED_FIRST: "yes"
 - specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
   environment:
     name: Shared
+    activation: BY_DEFAULT
     variables:
       SHARED_SECOND: "yes"
 - specificationVersion: environment-2023-09
@@ -36,7 +39,8 @@ environments:
     dependencies:
     - environment: CacheClient
       enableIf: false
-    # Two earlier attachments define Shared.
+    # Two earlier attachments define Shared, and the first is ALWAYS, which
+    # cannot be declined.
     - environment: Shared
       enableIf: false
     ports:
