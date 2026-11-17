@@ -1677,7 +1677,9 @@ rate = Param.Rate if Param.Rate > 0 else fail("must be positive")
 Note: `round(x, ndigits)` with positive `ndigits` preserves trailing zeros in the decimal
 representation. For example, `round(3.5, 2)` produces a value that converts to the string
 `"3.50"`, not `"3.5"`. With non-positive `ndigits`, the result is an integer (e.g.,
-`round(1234.5, -1)` returns `1230`).
+`round(1234.5, -1)` returns `1230`). Rounding is half-to-even on the exact value of `x`, as
+Python's `round` does: `round(2.675, 2)` is `2.67`, because the float 2.675 is slightly less than
+2.675. An `int` result outside the 64-bit signed range is an error.
 
 #### 2.2.3. List Functions
 

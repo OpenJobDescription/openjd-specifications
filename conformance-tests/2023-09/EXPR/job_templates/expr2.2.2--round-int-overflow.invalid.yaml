@@ -1,0 +1,16 @@
+# round(int, ndigits) is exact: 9223372036854775807 rounded to tens is
+# 9223372036854775810, outside the 64-bit signed range, so it is an integer
+# overflow error.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ round(9223372036854775807, -1) }}')"
