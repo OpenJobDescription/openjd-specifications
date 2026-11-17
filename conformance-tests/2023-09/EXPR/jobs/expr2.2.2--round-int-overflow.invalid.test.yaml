@@ -1,5 +1,5 @@
-# round(int, ndigits) is exact, and a result outside the 64-bit signed range
-# is an integer overflow error: 9223372036854775807 rounded to tens is
+# An int result of round(int, ndigits) outside the 64-bit signed range is an
+# integer overflow error: 9223372036854775807 rounded to tens is
 # 9223372036854775810. The value comes from a parameter, so the error fires
 # when the job is evaluated.
 template:
