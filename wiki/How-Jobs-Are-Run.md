@@ -239,7 +239,10 @@ scheduler takes steps 1–4; steps 5–8 govern the outcomes those steps can pro
    `RERUN` **Service** here; one that wants its completed Tasks kept gives `completedTasks: KEEP` whatever its
    `maxRestarts`.
 
-A Task failure never fails a **Service**.
+A Task failure never fails a **Service**. Because a lost host takes the **Service**'s state with it, authors of stateful
+**Services** should require non-preemptible capacity with the `attr.worker.preemptible` host requirement, and should
+choose `completedTasks: RERUN` unless the state can be regenerated. Authors should prefer a `COMMAND` or `STDOUT` health
+check when a plain TCP connect does not show that the service can do useful work.
 
 ### Services from Environment Templates
 
