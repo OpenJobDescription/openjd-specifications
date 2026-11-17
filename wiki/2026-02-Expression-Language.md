@@ -733,20 +733,44 @@ The grammar supports Python's string literal formats:
 | Raw double-quoted | `r"hello\n"` | Raw string (backslashes are literal) |
 | Raw triple-quoted | `r'''hello'''` or `r"""hello"""` | Raw multi-line string |
 
-All Python escape sequences are supported in non-raw strings:
+Non-raw strings use Python's escape sequences. This table is the complete list:
 
 | Escape | Meaning |
 |--------|---------|
+| `\` followed by a newline | Line continuation: the backslash and the newline are both removed |
 | `\\` | Backslash |
 | `\'` | Single quote |
 | `\"` | Double quote |
-| `\n` | Newline |
-| `\r` | Carriage return |
-| `\t` | Tab |
-| `\xhh` | Character with hex value hh |
-| `\uhhhh` | Unicode character with 16-bit hex value |
-| `\Uhhhhhhhh` | Unicode character with 32-bit hex value |
+| `\a` | Bell (U+0007) |
+| `\b` | Backspace (U+0008) |
+| `\f` | Form feed (U+000C) |
+| `\n` | Newline (U+000A) |
+| `\r` | Carriage return (U+000D) |
+| `\t` | Tab (U+0009) |
+| `\v` | Vertical tab (U+000B) |
+| `\ooo` | Character with octal value ooo: as many octal digits as follow, up to 3 |
+| `\xhh` | Character with hex value hh: exactly 2 hex digits |
+| `\uhhhh` | Unicode character with 16-bit hex value: exactly 4 hex digits |
+| `\Uhhhhhhhh` | Unicode character with 32-bit hex value: exactly 8 hex digits |
 | `\N{name}` | Unicode character by name |
+
+These rules complete the table:
+
+- An octal escape reads at most 3 digits, so `'\1234'` is `'S4'`, and `'\18'` is U+0001 followed by
+  `8`. A value above `\377` is the character with that code point, so `'\400'` is U+0100 and `'\777'` is
+  U+01FF. Python 3.12 and later warn about this form, but in EXPR it is valid and keeps that meaning.
+- An unrecognized escape keeps its backslash: `'\d'` is the two characters `\d`, and `len('\q')` is 2.
+  This includes `\8`, `\9`, and a backslash before any character not in the table. This rule is
+  permanent. Python has deprecated unrecognized escapes since 3.6 and plans to make them an error, but
+  EXPR will not change their meaning or reject them.
+- A malformed escape is a syntax error. That is `\x`, `\u` or `\U` with too few hex digits; `\N`
+  without `{name}`, or with a name that is not a Unicode character name or name alias (compared without
+  regard to case); a `\U` value above `\U0010FFFF`; and a `\u` or `\U` value from U+D800 to U+DFFF.
+  Python allows that last range in a string, but those surrogate code points are not characters, so a
+  string cannot hold them.
+- A digit escape is never a regular expression group reference. `'\1'` is the single character U+0001, so
+  a group reference has to be written raw, as `r'\1'`. `re_sub` rejects both forms: `r'\1'` as a group
+  reference, and `'\1'` because its replacement contains a control character (see §2.2.5).
 
 In raw strings (prefixed with `r` or `R`), backslashes are treated as literal characters
 and escape sequences are not processed. This is useful for regular expressions and
@@ -1812,10 +1836,19 @@ semantics of Python's `str.title` and `str.capitalize`:
 | `re_match(s: string, pattern: string) -> list[string]?` | Match at START of string, return captured groups or null |
 | `re_search(s: string, pattern: string) -> list[string]?` | Match ANYWHERE in string, return captured groups or null |
 | `re_findall(s: string, pattern: string) -> list[string] \| list[list[string]]` | Find all non-overlapping matches; returns full matches if no groups, list of captured group values (not full matches) if one group, list of group lists if multiple groups |
-| `re_sub(s: string, pattern: string, repl: string) -> string` | Replace all regex matches with replacement. The `repl` string is literal text — group references (`\1`, `\g<1>`, `$1`, `${1}`) are not supported and are errors. |
+| `re_sub(s: string, pattern: string, repl: string) -> string` | Replace all regex matches with replacement. The `repl` string is literal text — group references (`\1`, `\g<1>`, `$1`, `${1}`) are not supported and are errors. A `repl` that contains a control character is also an error (see the note below). |
 | `re_escape(s: string) -> string` | Escape regex metacharacters for literal matching |
 | `re_split(s: string, pattern: string) -> list[string]` | Split string by regex pattern |
 | `re_split(s: string, pattern: string, maxsplit: int) -> list[string]` | Split string by regex pattern, at most maxsplit times |
+
+The `re_sub` replacement must not contain a control character. A control character is one in the Unicode
+general category `Cc` (U+0000 to U+001F and U+007F to U+009F), except tab (U+0009), newline (U+000A) and
+carriage return (U+000D), which are allowed. This catches a group reference written in a non-raw string:
+`'\1'` decodes to U+0001 before `re_sub` sees it (§1.1.5), so `re_sub("ab", "(a)", "\1")` is an error
+rather than a replacement with an invisible character. Write the replacement text you want literally, as
+in `re_sub("a,b", ",", "\n")`, which gives `"a\nb"`. Because tab, newline and carriage return are allowed,
+`'\11'`, `'\12'` and `'\15'` (which decode to them) are not caught, and neither is an octal escape that
+decodes to a printable character, such as `'\101'` for `A`.
 
 The regex syntax is the intersection of Python's `re` module and Rust's `regex` crate,
 ensuring cross-platform compatibility. Supported features:

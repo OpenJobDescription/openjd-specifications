@@ -630,20 +630,44 @@ The grammar supports Python's string literal formats:
 | Raw double-quoted | `r"hello\n"` | Raw string (backslashes are literal) |
 | Raw triple-quoted | `r'''hello'''` or `r"""hello"""` | Raw multi-line string |
 
-All Python escape sequences are supported in non-raw strings:
+Non-raw strings use Python's escape sequences. This table is the complete list:
 
 | Escape | Meaning |
 |--------|---------|
+| `\` followed by a newline | Line continuation: the backslash and the newline are both removed |
 | `\\` | Backslash |
 | `\'` | Single quote |
 | `\"` | Double quote |
-| `\n` | Newline |
-| `\r` | Carriage return |
-| `\t` | Tab |
-| `\xhh` | Character with hex value hh |
-| `\uhhhh` | Unicode character with 16-bit hex value |
-| `\Uhhhhhhhh` | Unicode character with 32-bit hex value |
+| `\a` | Bell (U+0007) |
+| `\b` | Backspace (U+0008) |
+| `\f` | Form feed (U+000C) |
+| `\n` | Newline (U+000A) |
+| `\r` | Carriage return (U+000D) |
+| `\t` | Tab (U+0009) |
+| `\v` | Vertical tab (U+000B) |
+| `\ooo` | Character with octal value ooo: as many octal digits as follow, up to 3 |
+| `\xhh` | Character with hex value hh: exactly 2 hex digits |
+| `\uhhhh` | Unicode character with 16-bit hex value: exactly 4 hex digits |
+| `\Uhhhhhhhh` | Unicode character with 32-bit hex value: exactly 8 hex digits |
 | `\N{name}` | Unicode character by name |
+
+These rules complete the table:
+
+- An octal escape reads at most 3 digits, so `'\1234'` is `'S4'`, and `'\18'` is U+0001 followed by
+  `8`. A value above `\377` is the character with that code point, so `'\400'` is U+0100 and `'\777'` is
+  U+01FF. Python 3.12 and later warn about this form, but in EXPR it is valid and keeps that meaning.
+- An unrecognized escape keeps its backslash: `'\d'` is the two characters `\d`, and `len('\q')` is 2.
+  This includes `\8`, `\9`, and a backslash before any character not in the table. This rule is
+  permanent. Python has deprecated unrecognized escapes since 3.6 and plans to make them an error, but
+  EXPR will not change their meaning or reject them.
+- A malformed escape is a syntax error. That is `\x`, `\u` or `\U` with too few hex digits; `\N`
+  without `{name}`, or with a name that is not a Unicode character name or name alias (compared without
+  regard to case); a `\U` value above `\U0010FFFF`; and a `\u` or `\U` value from U+D800 to U+DFFF.
+  Python allows that last range in a string, but those surrogate code points are not characters, so a
+  string cannot hold them.
+- A digit escape is never a regular expression group reference. `'\1'` is the single character U+0001, so
+  a group reference has to be written raw, as `r'\1'`. `re_sub` rejects both forms: `r'\1'` as a group
+  reference, and `'\1'` because its replacement contains a control character (see `re_sub` in RFC 0006).
 
 In raw strings (prefixed with `r` or `R`), backslashes are treated as literal characters
 and escape sequences are not processed. This is useful for regular expressions and
