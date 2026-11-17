@@ -125,18 +125,18 @@ host**, in addition to once per **Session** that runs Tasks.
 ### Service lifecycle
 
 One launch of a **Service**'s `onRun` action is an **instance**; a **Service** has one instance at a time, and a
-relaunch creates a new one. A **Service** is always in one of four states: **UNREADY** (no instance is **READY**: none has been launched, the
-current one has not yet passed a health-check probe, or the previous one failed and a relaunch is pending), **READY**
-(the current instance has passed a health-check probe, has not since failed `failureThreshold` consecutive probes, and
-has not exited), **UNHEALTHY** (the current instance has failed `failureThreshold` consecutive health-check probes and
-is being stopped; a transient state in which, for every other purpose including Task scheduling, the **Service** is not
-**READY**), or **FAILED** (the **Service** will not be relaunched and its scope has failed). A **Service** is
-**UNREADY** from Job creation. Starting a **Service** means opening a **Service Session** on a host that satisfies the
-**Service**'s host requirements and, within it, entering the **Environments** its **Sessions** enter, running
-`onEnter` if defined, launching `onRun`, and probing it with its health check. When a probe succeeds, the **Service** is
-**READY**, and the health check keeps probing it for as long as `onRun` runs: `failureThreshold` consecutive failed
-probes after **READY** make the instance **UNHEALTHY**, which is an instance failure (see
-[Service failure and restart](#service-failure-and-restart)).
+relaunch creates a new one. A **Service** is always in one of four states: **UNREADY** (no instance is **READY**: none
+has been launched, the current one has not yet passed a health-check probe, or the previous one failed and a relaunch is
+pending or in progress), **READY** (the current instance has passed a health-check probe, has not since failed
+`failureThreshold` consecutive probes, and has not exited), **UNHEALTHY** (the current instance has failed
+`failureThreshold` consecutive health-check probes and is being stopped; a transient state in which, for every other
+purpose including Task scheduling, the **Service** is not **READY**), or **FAILED** (the **Service** will not be
+relaunched and its scope has failed). A **Service** is **UNREADY** from Job creation. Starting a **Service** means
+opening a **Service Session** on a host that satisfies the **Service**'s host requirements and, within it, entering the
+**Environments** its **Sessions** enter, running `onEnter` if defined, launching `onRun`, and probing it with its health
+check. When a probe succeeds, the **Service** is **READY**, and the health check keeps probing it for as long as `onRun`
+runs: `failureThreshold` consecutive failed probes after **READY** make the instance **UNHEALTHY**, which is an instance
+failure (see [Service failure and restart](#service-failure-and-restart)).
 
 A scheduler must satisfy the following constraints; how it satisfies them is its own concern.
 

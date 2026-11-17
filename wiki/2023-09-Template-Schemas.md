@@ -1091,10 +1091,10 @@ A string subject to the following constraints:
 
 ### 3.2. `<StepDependency>`
 
-This entity is used by the template author to specify a Step in the same Job that a Step depends upon or, with the
-`SERVICE` extension, a Service that a Step, a Service, or a Job Environment depends upon. It appears in the
-*dependencies* of a [&lt;StepTemplate&gt;](#3-steptemplate), of a [&lt;Service&gt;](#9-service-extension-service), and
-of a Job [&lt;Environment&gt;](#4-environment).
+This entity is used by the template author to specify a Step in the same Job that a Step depends upon. With the
+`SERVICE` extension, it may also specify a Step that a Service depends upon, or a Service that a Step, a Service, or a
+Job Environment depends upon. It appears in the *dependencies* of a [&lt;StepTemplate&gt;](#3-steptemplate), of a
+[&lt;Service&gt;](#9-service-extension-service), and of a Job [&lt;Environment&gt;](#4-environment).
 
 A `<StepDependency>` is one of the objects:
 
@@ -1108,7 +1108,8 @@ service: "<ServiceName>" # @extension SERVICE
 Where:
 
 1. *dependsOn* — Provides the name of another step in the same job upon which this step depends. The Task(s) of this
-   Step may be scheduled only when the depended-upon Step has fully completed successfully.
+   Step may be scheduled only when the depended-upon Step has fully completed successfully. With the `SERVICE`
+   extension, a Service may also list a Step; the dependency is satisfied when that Step has completed successfully.
 2. *service* — The name of a Service of the same document's `services` or, in a Job Template, of its `externalServices`.
    The dependency is satisfied when the Service is READY (see [How Jobs Are Run](How-Jobs-Are-Run#service-lifecycle)).
    Listing a Service puts the listing entity in the Service's scope (see [Service scope](#91-service-scope)) and makes
@@ -1960,8 +1961,9 @@ onExit: <Action> # @optional
    reasonable default expectation should be that OpenJobDescription sessions are able to end and
    cleanup within a bound amount of time.
 
-Subject to the constraint that at least one of *onEnter* or *onExit* must be provided. (With the
-`WRAP_ACTIONS` extension, a complete set of wrap hooks also satisfies this requirement.)
+Subject to the constraint that at least one of *onEnter* or *onExit* must be provided. (With the `WRAP_ACTIONS`
+extension, the set of wrap hooks that the `WRAP_ACTIONS` constraints below require of the environment also satisfies
+this requirement.)
 
 > **`WRAP_ACTIONS` extension constraints.**
 >
@@ -2009,8 +2011,9 @@ Subject to the constraint that at least one of *onEnter* or *onExit* must be pro
 >    and a wrapped `onRun`'s `openjd_service_ready` line are recognized on the wrap script's stdout, as for every
 >    `openjd_*` message under `WRAP_ACTIONS`. A failed `onWrapService*` hook has the effect the wrapped action's
 >    failure would have, an `onWrapServiceHealthCheck` invocation's exit status being one probe result (see
->    [&lt;ServiceHealthCheck&gt;](#94-servicehealthcheck)). For a wrapping environment in a document that does not
->    declare `SERVICE`, see [Services from Environment Templates](#122-services-from-environment-templates) item 4.
+>    [&lt;ServiceHealthCheck&gt;](#94-servicehealthcheck)). For a wrapping environment attached from an Environment
+>    Template, including one from a document that does not declare `SERVICE`, see
+>    [Services from Environment Templates](#122-services-from-environment-templates) item 4.
 
 #### 4.3.1. Wrap hook template variables
 
@@ -2018,7 +2021,8 @@ Each wrap hook receives the wrapped `<Action>`'s fields as read-only template va
 runtime. The variables have identical names and semantics across all hooks, so helper scripts can
 be reused unchanged.
 
-**Available in `onWrapEnvEnter`, `onWrapTaskRun`, and `onWrapEnvExit`:**
+**Available in every wrap hook (`onWrapEnvEnter`, `onWrapTaskRun`, `onWrapEnvExit`, and, with the `SERVICE` extension,
+the four `onWrapService*` hooks):**
 
 | Variable                          | Type           | Description |
 |-----------------------------------|----------------|-------------|
@@ -2061,8 +2065,8 @@ process, and must ensure the process can bind `bindAddress` inside that namespac
 Docker wrapper without host networking passes
 `{{ flatten([['-p', string(WrappedService.Ports[i]) + ':' + string(WrappedService.Ports[i]) + '/' + lower(WrappedService.Protocols[i])] for i in range(len(WrappedService.Ports))]) }}`,
 which publishes each port on every interface of the host. A wrapper that restricts the host-side binding to the
-allocated interface writes `join_host_port(WrappedService.BindAddresses[i], WrappedService.Ports[i]) + ':' + ...` in
-place of the first `string(WrappedService.Ports[i])`.
+allocated interface writes `join_host_port(WrappedService.BindAddresses[i], WrappedService.Ports[i])` in place
+of the first `string(WrappedService.Ports[i])`.
 `WrappedService.Ports` is `list[int]`; with the `SERVICE` extension `repr_sh` accepts `int` and `list[int]` (see the
 [Expression Language](2026-02-Expression-Language#226-script-embedding-and-serialization)), so a wrapper may also pass
 the whole list as `repr_sh(WrappedService.Ports)`.
@@ -2449,7 +2453,7 @@ specification for the extended grammar, type system, and evaluation semantics.
 |`Step.Name`|The name of the current Step. This is a `string` type. Requires the `EXPR` extension.|Available within the Step Template scope: `stepEnvironments`, `hostRequirements`, `parameterSpace`, and `script`.|
 |`Session.HasPathMappingRules`|This value can be used to determine whether path mapping rules are available to the Session. Without the `EXPR` extension, it is string valued, with values "true" or "false". With the `EXPR` extension enabled, it is a `bool` type. "true"/`True` means that the path mapping JSON contains path mapping rules. "false"/`False` means that the contents of the path mapping JSON are the empty object.|This is available within all Environment Script Actions & Embedded Files, all Step Script Actions and Embedded Files, and, with the `SERVICE` extension, all Service Script Actions and Embedded Files.|
 |`Session.PathMappingRulesFile`|This is a string whose value is the location of a JSON file on the worker node's local disk that contains the path mapping rule substitutions for the Session.|This is available within all Environment Script Actions & Embedded Files, all Step Script Actions and Embedded Files, and, with the `SERVICE` extension, all Service Script Actions and Embedded Files.|
-|`<name>` (let binding)|Names bound by `let` in `<StepTemplate>`, `<StepScript>`, `<SimpleAction>`, or `<EnvironmentScript>`. Names must start with a lowercase letter or underscore (see `<UserIdentifier>`). The type is determined by the expression. Available with the `EXPR` extension.|See [Let Binding Scope Summary](#362-let-binding-scope-summary) for detailed scoping rules.|
+|`<name>` (let binding)|Names bound by `let` in `<StepTemplate>`, `<StepScript>`, `<SimpleAction>`, `<EnvironmentScript>`, or, with the `SERVICE` extension, `<Service>` or `<ServiceScript>`. Names must start with a lowercase letter or underscore (see `<UserIdentifier>`). The type is determined by the expression. Available with the `EXPR` extension.|See [Let Binding Scope Summary](#362-let-binding-scope-summary) for detailed scoping rules.|
 
 ### 7.4. Template Processing Stages
 
@@ -2468,10 +2472,10 @@ service host: all `Param.*`, `Session.*`, `Service.File.*`, and in-scope `Servic
 are resolved when the scheduler places the Service, and may change if the Service is relocated. See
 [&lt;Service&gt;](#9-service-extension-service).
 
-The `@fmtstring` and `@fmtstring[host]` annotations in this specification indicate which stage
-a format string is resolved in. A format string annotated `@fmtstring` (without `[host]`) is
-resolved at job creation time. A format string annotated `@fmtstring[host]` is resolved at task
-execution time on the worker host.
+The `@fmtstring` and `@fmtstring[host]` annotations in this specification indicate which stage a format string is
+resolved in. A format string annotated `@fmtstring` (without `[host]`) is resolved at job creation time. A format string
+annotated `@fmtstring[host]` is resolved at task execution time on the worker host or, for a Service's own fields with
+the `SERVICE` extension, at service execution on the service host.
 
 With the `EXPR` extension enabled, expressions that reference values not yet known at a given
 stage are type-checked using the declared types of those values, catching type errors as early
@@ -3218,12 +3222,13 @@ Where:
 This section indexes the rules the `SERVICE` extension adds; each is stated in full where the pointer leads. Every rule
 is checked at template validation, except that the [numeric `@fmtstring` fields](#951-numeric-fmtstring-fields) are
 checked when resolved at job creation, the rules marked *(submission)* need the combined Job and are checked at
-submission, and these are checked when the Job is created: a cycle with an edge not known at template validation (see
-[&lt;StepDependency&gt;](#32-stepdependency) constraint 3), an Environment Template Service's disabled entry that
-does not name its own document's *environment* (see [Environment Template](#12-environment-template) item 6 constraint
-5), and, like the checks `ENV_PARAMS` adds for a Step, any other check that depends on an *enableIf* not known at
-template validation or on an attached Environment, such as the wrap hook check, a Service's combined host requirements,
-and a scope that depends on which Environments a Step's Sessions enter.
+submission (which is Job creation, [§7.4](#74-template-processing-stages), with the attached Environment Templates), and
+these are checked when the Job is created: a cycle with an edge not known at template validation (see
+[&lt;StepDependency&gt;](#32-stepdependency) constraint 3), an Environment Template Service's disabled entry that does
+not name its own document's *environment* (see [Environment Template](#12-environment-template) item 6 constraint 5),
+and, like the checks `ENV_PARAMS` adds for a Step, any other check that depends on an *enableIf* not known at template
+validation or on an attached Environment, such as the wrap hook check for a Job Template's wrapper, a Service's combined
+host requirements, and a scope that depends on which Environments a Step's Sessions enter.
 
 | Rule | Stated in |
 |---|---|
