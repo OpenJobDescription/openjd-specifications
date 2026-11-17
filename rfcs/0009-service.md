@@ -158,7 +158,7 @@ services:
       completedTasks: RERUN  # In-memory state is lost on relaunch; prior results cannot be trusted.
     script:
       actions:
-        # One-time initialization survives a relaunch of onRun.
+        # One-time initialization survives a relaunch of onRun in the same Service Session.
         onEnter:
           command: coordinator
           args:
@@ -306,10 +306,10 @@ steps:
               --valkey-host "$VALKEY_HOST" --valkey-port "$VALKEY_PORT"
 ```
 
-A Job Template can instead read the queue's Service directly by declaring the Service's name and the
-ports it uses in `externalServices`. `Service.Cache.*` is then available under the same rule as for
-an inline Service, and the scheduler rejects a submission to a queue that does not attach a matching
-Service. Only the parts that differ from the Valkey example's Job Template are shown.
+A Job Template can instead read the queue's Service directly by declaring the Service's name and the ports it uses in
+`externalServices`. `Service.Cache.*` is then available under the same rule as for an inline Service, and the scheduler
+rejects a submission to a queue that does not attach a matching Service. Starting from the Valkey example's Job
+Template, its `services` list is replaced by the requirement below, and only the parts that differ are shown.
 
 ```yaml
 # The queue runs the Service; the template states only the contract.
@@ -466,8 +466,8 @@ Environment's defaults for it, exactly as a Step that says nothing does.
 
 ### Execution order
 
-For a Job with one Service `S`, one `jobEnvironment` `E`, and one Step, which depends on `S`, with
-Tasks `T1..Tn` running in two Sessions on two Worker Hosts, the scheduler proceeds:
+For a Job with one Service `S`, one `jobEnvironment` `E`, and one Step, which depends on `S`, with Tasks `T1..Tn`
+running in two Sessions on two Worker Hosts, one order the rules permit is:
 
 ```
 Service host                   Worker host A            Worker host B
@@ -486,7 +486,8 @@ E.onExit
 ```
 
 The Service runs in a Session of its own on the service host, inside the same Environment `E` that
-the Tasks run in. No Task of a Step that depends on `S` is scheduled until `S` is READY.
+the Tasks run in. No Task of a Step that depends on `S` is scheduled until `S` is READY. The worker hosts may
+enter `E` earlier, since `E` does not list `S`, but they run no Task until then.
 
 ## Motivation
 
@@ -509,9 +510,9 @@ An `<Environment>` almost fits but differs in four ways that a schema needs to m
 2. **Lifetime.** An Environment's actions run to completion at Session start and end. A Service's
    main action runs for the *whole* lifetime of its scope, which is a set of Steps rather than one
    Session, and the scheduler must keep it alive across all of the scope's Sessions.
-3. **Endpoint publication.** A Service exposes one or more ports. The runtime allocates a concrete
-   address and port and makes them discoverable, on any host, both to the service process (so it
-   knows what to bind) and to every entity in its scope (so they know where to connect).
+3. **Endpoint publication.** A Service exposes one or more ports. The runtime allocates a concrete address and port and
+   makes them discoverable, on any host, both to the service process (so it knows what to bind) and to every entity that
+   lists it in its `dependencies` (so they know where to connect).
 4. **Readiness, health, and failure.** A scheduler must know when the service is accepting
    connections before it schedules the Tasks in the Service's scope, must notice when a running
    service stops answering, and must react when it dies or hangs: relaunch it, or fail the scope.
@@ -522,20 +523,19 @@ A Service borrows the rest of its shape from existing entities: `description`, `
 embedded files, and the `<Action>` model with its cancelation methods from `<Environment>`, and
 `hostRequirements` from `<StepTemplate>`.
 
-A Service also needs what the Tasks need. The Valkey binary, the coordinator's Python environment,
-or the renderer in server mode is provisioned today by the Job's Environments (a Conda or Rez
-Environment, or a container under `WRAP_ACTIONS`), and a Service that could not use them would force
-every Service author to reimplement that provisioning. Services therefore run inside the Job's
-Environments, and wrapping Environments wrap Service actions as they wrap Task actions. A Service
-Session chooses its Environments exactly as a Task Session does, by RFC 0010's rules. An Environment
-that configures clients of a Service reads that Service's endpoint, so it waits for the Service to be
-READY, and the Service's own Sessions must stay out of it: the template author makes it opt-in for
-the Steps that need it, or has the Service decline it, and a template that lets the Service enter
-it is rejected as a dependency cycle. Where a Job Template's Service needs software the Steps do
-not, it supplies its own values to a parameterized Environment, or requests one that RFC 0010's
-`activation: ON_REQUEST` makes opt-in, with an `environment:` entry in its `dependencies`, exactly as
-a Step does. This is why `SERVICE` builds on `ENV_PARAMS`: a Service's software configuration is its
-own to choose, written the same way as a Step's.
+A Service also needs what the Tasks need. The Valkey binary, the coordinator's Python environment, or the renderer in
+server mode is provisioned today by the Job's Environments (a Conda or Rez Environment, or a container under
+`WRAP_ACTIONS`), and a Service that could not use them would force every Service author to reimplement that
+provisioning. Services therefore run inside the Job's Environments, and wrapping Environments wrap Service actions as
+they wrap Task actions. A Service Session chooses its Environments exactly as a Task Session does, by RFC 0010's rules,
+among those of its own document and of the documents attached before it. An Environment that configures clients of a
+Service reads that Service's endpoint, so it waits for the Service to be READY, and the Service's own Sessions must stay
+out of it: the template author makes it opt-in for the Steps that need it, or has the Service decline it, and a template
+that lets the Service enter it is rejected as a dependency cycle. Where a Job Template's Service needs software the
+Steps do not, it supplies its own values to a parameterized Environment, or requests one that RFC 0010's
+`activation: ON_REQUEST` makes opt-in, with an `environment:` entry in its `dependencies`, exactly as a Step does. This is why
+`SERVICE` builds on `ENV_PARAMS`: a Service's software configuration is its own to choose, written the same way as a
+Step's.
 
 ### Use cases
 
@@ -667,15 +667,14 @@ the new parts:
   objects be format strings resolved at job creation, so that a Job Parameter or a `<Service>.let` binding can supply
   them.
 * [§9.6](../wiki/2023-09-Template-Schemas.md#96-servicescript) `<ServiceScript>` and
-  [§9.7](../wiki/2023-09-Template-Schemas.md#97-serviceactions) `<ServiceActions>`: `onEnter` for setup that survives
-  a relaunch, the long-lived `onRun`, `onHealthCheck` for a `COMMAND` probe, and `onExit` (see [`onEnter` / `onRun` /
-  `onExit` rather than a single `onRun`](#onenter--onrun--onexit-rather-than-a-single-onrun) and [`onHealthCheck` is
-  an action of the Service](#onhealthcheck-is-an-action-of-the-service)). §9.7 also says which `openjd_*` messages each
-  action may emit, and that `openjd_env` from `onEnter` reaches only the Service's own later actions.
-  [§9.7.1](../wiki/2023-09-Template-Schemas.md#971-concurrency-of-onhealthcheck-with-onrun) gives the rules for
+  [§9.7](../wiki/2023-09-Template-Schemas.md#97-serviceactions) `<ServiceActions>`: `onEnter` for setup that survives a
+  relaunch within the same Service Session, the long-lived `onRun`, `onHealthCheck` for a `COMMAND` probe, and `onExit`
+  (see [`onEnter` / `onRun` / `onExit` rather than a single `onRun`](#onenter--onrun--onexit-rather-than-a-single-onrun)
+  and [`onHealthCheck` is an action of the Service](#onhealthcheck-is-an-action-of-the-service)). §9.7 also says which
+  `openjd_*` messages each action may emit, and that `openjd_env` from `onEnter` reaches only the Service's own later
+  actions. [§9.7.1](../wiki/2023-09-Template-Schemas.md#971-concurrency-of-onhealthcheck-with-onrun) gives the rules for
   `onHealthCheck` running while `onRun` runs, the only two actions of one Session that run at once: embedded files,
-  stdout, log attribution, when invocations may run, what happens to one in flight when `onRun` exits, and wrap
-  scripts.
+  stdout, log attribution, when invocations may run, what happens to one in flight when `onRun` exits, and wrap scripts.
 * [§9.8](../wiki/2023-09-Template-Schemas.md#98-servicerequirement) `<ServiceRequirement>` and
   [§9.8.1](../wiki/2023-09-Template-Schemas.md#981-servicerequirementport) `<ServiceRequirementPort>`: how a Job
   Template names an external Service and the ports it reads (see [External Services are declared with their
@@ -810,9 +809,9 @@ A Step script reads a Service's endpoint through the `Service.*` scope, which th
 Service (see [Endpoint as three scalar values](#endpoint-as-three-scalar-values) and [Passing the endpoint through
 environment variables](#passing-the-endpoint-through-environment-variables)).
 
-* [§7.3.1](../wiki/2023-09-Template-Schemas.md#731-value-references) adds `Service.<name>.<port>.port`,
-  `bindAddress`, and `connectAddress`, and `Service.File.<name>`. It also extends the scope of PATH `Param.*` values,
-  `Session.WorkingDirectory`, and the path mapping values to a Service's actions.
+* [§7.3.1](../wiki/2023-09-Template-Schemas.md#731-value-references) adds `Service.<name>.<port>.port`, `bindAddress`,
+  and `connectAddress`, and `Service.File.<name>`. It also extends the scope of PATH `Param.*` values,
+  `Session.WorkingDirectory`, and the path mapping values to a Service's *variables* and actions.
 * [§9](../wiki/2023-09-Template-Schemas.md#9-service-extension-service), after its item list, gives the format string
   scopes of a Service and the visibility rule: an entity sees a Service's `port` and `connectAddress` only if it lists
   the Service in its `dependencies`, only the Service itself sees `bindAddress`, and `Service.*` is never in scope in a
@@ -1111,7 +1110,7 @@ carried into it. It implements the extension in `openjd-model`, `openjd-expr`, `
 where `openjd run` is a single-host scheduler for Services. Its `openjd check` and `openjd run` pass all 372 tests under
 `conformance-tests/2023-09/SERVICE` at this RFC's head.
 
-These parts of the proposal changed because of the prototype:
+These parts of the proposal changed while the prototype was developed alongside it:
 
 1. **No `runScope`.** Earlier drafts gave an Environment a `runScope`, the kinds of Session (`TASK`, `SERVICE`) that
    enter it. Building SERVICE on the ENV_PARAMS prototype meant two mechanisms deciding which Sessions enter an
@@ -1223,10 +1222,10 @@ the dependency graph in format strings, cannot express an opaque consumer, and t
 reference into an undiagnosable implicit edge, for the reasons given in
 [Dependencies are declared](#dependencies-are-declared-and-one-list-names-both-kinds).
 
-An earlier draft gave external Services an implicit scope of every Step, so that a queue's Service
-ran for every Job whether or not the Job used it. Rejected for the same reason: it was an edge no
-document declared. Under the one rule, a queue Service runs for a Job exactly when the Environment
-defined alongside it, or the Job Template, lists it.
+An earlier draft gave external Services an implicit scope of every Step, so that a queue's Service ran for every Job
+whether or not the Job used it. Rejected for the same reason: it was an edge no document declared. Under the scope
+rules, a queue Service runs for a Job exactly when some Step falls in its scope: the Step lists it, or the Step's
+Sessions enter an Environment that lists it.
 
 ### `runScope` as a list of Session kinds
 
@@ -1238,9 +1237,7 @@ asked: an Environment "for Services only" is one that each Service requests and 
 grow with every extension that adds a kind of Session. The one rule that was about kinds, that an Environment reading a
 Service's endpoint cannot run in that Service's Session, is not a rule of its own either: it is the cycle check of
 [`<StepDependency>`](../wiki/2023-09-Template-Schemas.md#32-stepdependency) constraint 3. RFC 0010 rejects a list of
-Session kinds for `activation` for the same reason; see its
-[`activation`](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#activation)
-and [`activation` as a list of Session
+Session kinds for `activation` for the same reason; see its [`activation` as a list of Session
 kinds](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#activation-as-a-list-of-session-kinds).
 
 ### An exception for an Environment that lists the Service
