@@ -1,6 +1,6 @@
 * Feature Name: Service
 * Author(s): Mark Wiebe <[mwiebe](https://github.com/mwiebe)>
-* RFC Tracking Issue: (pending)
+* RFC Tracking Issue: https://github.com/OpenJobDescription/openjd-specifications/issues/193
 * Start Date: 2026-09-17
 * Specification Version: 2023-09 extension SERVICE
 * Accepted On: (pending)
@@ -30,31 +30,6 @@ scheduler chooses the host and the numbers when it places the Service.
 Services run inside the Job's Environments, so the same Conda, Rez, or container Environments that
 provision the Tasks provision the Services too. A queue can supply a Service to every Job submitted
 through it by defining the Service in an Environment Template.
-
-## Overview
-
-The `SERVICE` extension adds the following, each specified in the section linked:
-
-* **Declaring a Service.** The `<Service>` entity and the `services` list that holds it, with its
-  ports, health check, restart policy, and actions: [`<Service>`](#service).
-* **Depending on a Service.** `dependencies` with the `service` key on Steps, Services, and Job
-  Environments, which determines a Service's scope: [`<StepDependency>`](#stepdependency) and
-  [Service scope](#service-scope).
-* **Reading the endpoint.** The `Service.*` format-string scope and the `join_host_port` family of
-  functions: [The `Service.*` scope](#the-service-scope) and
-  [Modifications to the Expression Language](#modifications-to-the-expression-language).
-* **Running a Service.** Lifecycle, failure, and restart rules, and how Services run inside the
-  Job's Environments: [How Jobs Are Run](#modifications-to-how-jobs-are-run).
-* **Environments and Services.** Which of the Job's Environments a Service Session enters, an
-  Environment's `dependencies` on the Services whose clients it configures, and the
-  `onWrapService*` wrap hooks under `WRAP_ACTIONS`: [`<Environment>`](#environment) and
-  [Services run inside Environments](#services-run-inside-environments).
-* **Queue-supplied Services.** `services` in an Environment Template, and `externalServices` for a
-  Job Template that reads such a Service's endpoint: [Environment Template](#environment-template)
-  and [`<ServiceRequirement>`](#servicerequirement).
-* **Validation.** An index of every rule the extension adds: [Validation](#validation).
-* **`attr.worker.preemptible`**, a standard attribute capability not gated by the extension:
-  [Host requirements](#host-requirements).
 
 ## Basic Examples
 
@@ -592,36 +567,18 @@ own to choose, written the same way as a Step's.
    Tasks only once a threshold number of hosts is available for them, and that the Tasks' hosts can
    reach one another; both are outside this RFC (see [Future Work](#future-work)).
 
-### Backward compatibility
-
-This RFC is additive and gated by the `SERVICE` extension name declared under RFC 0002:
-
-- `SERVICE` requires `EXPR` and `ENV_PARAMS`: a template that lists `SERVICE` MUST also list both,
-  and a scheduler MUST reject one that does not. `ENV_PARAMS` supplies the `environment:` entry by
-  which a Service requests an Environment and supplies its parameter values, an Environment's
-  `activation`, `enableIf`, and `exclusiveGroup`, and the rule that combines a Service's host
-  requirements with those of the Environments its Sessions enter. RFC 0010 specifies those for
-  Steps, and this RFC applies them to Services unchanged, reading "Step" as "Service" (see
-  [Services run inside Environments](#services-run-inside-environments)).
-- No existing field changes meaning. One combination is newly rejected at submission: a wrapping
-  Environment (RFC 0008) that a Service Session enters but that does not define the
-  `onWrapService*` hooks, such as one from a document without `SERVICE`, in a Job that has any
-  Service ([Environment Template](#environment-template) item 4). A queue wrapper that lists
-  neither `SERVICE` nor `ENV_PARAMS`, such as one written before both extensions, behaves as
-  `activation: ALWAYS` under RFC 0010, and no Service can decline it. Such a queue rejects every
-  Job whose Job Template has a Service that runs, and every Job that uses a Service of an
-  Environment Template attached after the wrapper, until the wrapper's author defines the hooks,
-  or lists `ENV_PARAMS` and makes the wrapper `ON_REQUEST` or keeps that extension's default,
-  `BY_DEFAULT`, for each Service to decline (see [Environment Template](#environment-template)
-  item 4). Each of these lists `ENV_PARAMS`: the hooks need `SERVICE`, which requires it, and
-  `activation` is part of it. So a wrapper that must
-  still be entered by every Session that may enter it also sets `activation: ALWAYS`.
-- An Environment Template needs the `extensions` key to list `SERVICE`. RFC 0010 adds it, and
-  `$schema`, to every Environment Template, whether or not it lists `ENV_PARAMS` (its
-  [Changes that apply without the extension](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#changes-that-apply-without-the-extension)
-  item 4). This RFC adds neither key; it adds `SERVICE` to the names `extensions` may list.
-
 ## Specification
+
+The normative text of this extension is the wiki edits in this pull request: [Template
+Schemas](../wiki/2023-09-Template-Schemas.md), [Expression Language](../wiki/2026-02-Expression-Language.md), and [How
+Jobs Are Run](../wiki/How-Jobs-Are-Run.md). This section summarizes each change and links to the wiki section that holds
+the formal text; where the two differ, the wiki governs. A section number (§) in this RFC refers to Template Schemas
+unless another page is named.
+
+`SERVICE` builds on RFC 0010 (`ENV_PARAMS`), whose wiki edits are in its own pull request. Where this RFC says that a
+Service follows RFC 0010 as a Step does, it means the rules of
+[RFC 0010](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md)
+and the wiki sections it links, with "Step" read as "Service".
 
 ### Terminology
 
@@ -629,1332 +586,268 @@ This RFC is additive and gated by the `SERVICE` extension name declared under RF
 |------|------------|
 | **Scheduler** | The system that accepts Job and Environment Templates, creates Jobs from them, and dispatches Sessions and Services to Worker Hosts. |
 | **Service** | An entity declared in a `services` list: a long-lived process that publishes one or more network ports and is kept alive by the scheduler for the lifetime of its scope. |
-| **Scope** | The set of Steps whose Tasks depend on a Service, determined at template validation from the `dependencies` lists. See [Service scope](#service-scope). |
-| **Service Session** | The Session on the service host in which a Service's actions run: a working directory, the Job Environments that the Service's Sessions enter (see [Services run inside Environments](#services-run-inside-environments)) entered around the Service's actions, and the Service's actions themselves. It is a Session as described in *How Jobs Are Run*, containing one Service instead of Tasks. |
+| **Scope** | The set of Steps whose Tasks depend on a Service, determined from the `dependencies` lists ([§9.1](../wiki/2023-09-Template-Schemas.md#91-service-scope)). |
+| **Service Session** | The Session on the service host in which a Service's actions run: a working directory, the Job Environments that the Service's Sessions enter (see [Services run inside Environments](#services-run-inside-environments)) entered around the Service's actions, and the Service's actions themselves. It is a Session as described in How Jobs Are Run, containing one Service instead of Tasks. |
 | **Service host** | The Worker Host the scheduler places a Service on. It may or may not be a host that also runs Tasks. |
-| **UNREADY / READY / UNHEALTHY / FAILED** | The four Service states the scheduler tracks. See [Service lifecycle](#service-lifecycle). |
+| **UNREADY / READY / UNHEALTHY / FAILED** | The four Service states the scheduler tracks ([Service lifecycle](../wiki/How-Jobs-Are-Run.md#service-lifecycle)). |
 | **Instance** | One launch of a Service's `onRun` action. A Service has one instance at a time; a restart creates a new instance. |
 | **External Service** | A Service supplied to a Job by the scheduler from an Environment Template, rather than declared in the Job Template. A Job Template that reads an external Service's endpoint declares a **requirement** for it in `externalServices`. |
 | **Inline Service** | A Service declared in the Job Template's own `services` list, as opposed to an external Service. |
-| **Environment selection** | Which Environments a Session enters, as RFC 0010 decides it from each Environment's `activation`, `enableIf`, and `exclusiveGroup` and from the entity's `environment:` entries (RFC 0010, [Which Sessions enter an Environment](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#which-sessions-enter-an-environment)). A Service's Sessions are selected exactly as a Step's are, with "Step" read as "Service", among the Environments that [Services run inside Environments](#services-run-inside-environments) makes available to the Service. |
-| **Request, decline, applies** | As RFC 0010 defines them for a Step, extended to Services: a Service requests an Environment with an enabled `environment:` entry in its `dependencies`, declines a `BY_DEFAULT` one with a disabled entry, and an Environment applies to it by its `activation` and those entries, among the Environments it chooses from (see [Services run inside Environments](#services-run-inside-environments)). |
-
-### Schema modifications
-
-> Changes to [the template schema](https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas).
-
-#### Job Template
-
-> A modification to [`1.1. Job Template`](https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#11-job-template)
-
-```diff
-  specificationVersion: "jobtemplate-2023-09"
-  $schema: <string> # @optional
-  extensions: [ <ExtensionName>, ... ] # @optional
-  name: <JobName> # @fmtstring
-  description: <Description> # @optional
-  parameterDefinitions:  [ <JobParameterDefinition>, ... ] # @optional
-  jobEnvironments: [ <Environment>, ... ] # @optional
-+ services: [ <Service>, ... ] # @optional @extension SERVICE
-+ externalServices: [ <ServiceRequirement>, ... ] # @optional @extension SERVICE
-  steps: [<StepTemplate>, ...]
-```
-
-New properties:
-
-* *services* — The Services that the Jobs created from this Job Template run. See
-  [`<Service>`](#service). Constraints:
-    1. Minimum number of elements: If provided, then this list must contain at least one element.
-    2. Maximum number of elements: 10.
-    3. No two Services in this list may have the same value for the `name` property.
-    4. The `dependencies` of the Job Template's Steps and Services form one graph, which must be
-       acyclic (see [`<StepDependency>`](#stepdependency)).
-    5. See *externalServices* constraint 4.
-    6. Every Service in this list has a non-empty scope (see [Service scope](#service-scope)).
-* *externalServices* — The external Services (see [Environment Template](#environment-template))
-  whose endpoints this Job Template reads directly, each with the ports it uses; the scheduler
-  matches each at submission to exactly one attached Service of that name. See
-  [`<ServiceRequirement>`](#servicerequirement). Constraints:
-    1. Minimum number of elements: If provided, then this list must contain at least one element.
-    2. Maximum number of elements: 10.
-    3. No two requirements in this list may have the same value for the `name` property.
-    4. No requirement in this list may have the same `name` as a Service in *services*: a Service
-       is either declared or required.
-    5. Permitted only in a Job Template.
-
-Extension list addition to item 3 (*extensions*): `SERVICE` (this RFC).
-
-#### Environment Template
-
-> A modification to [`1.2. Environment Template`](https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#12-environment-template)
-
-```diff
-  specificationVersion: environment-2023-09
-  $schema: <string> # @optional
-  extensions: [ <ExtensionName>, ... ] # @optional
-  parameterDefinitions: [ <JobParameterDefinition>, ... ] # @optional
-- environment: <Environment>
-+ environment: <Environment> # @optional
-+ services: [ <Service>, ... ] # @optional @extension SERVICE
-```
-
-*$schema* and *extensions* are as RFC 0010 adds them (see [Backward
-compatibility](#backward-compatibility)). An extension listed in *extensions* applies to the
-content of that document only, so a Job Template need not list `SERVICE` for its Steps to enter
-an attached Environment that lists an attached Service; reading the endpoint itself needs
-`externalServices`, which requires `SERVICE`. New and changed properties:
-
-* *environment* — Now optional. The definition of an Environment that the Environment Template
-  defines. When *services* is also provided, the Environment may list those Services in its
-  `dependencies`, which makes their endpoints visible to it (see [`<Environment>`](#environment)).
-* *services* — The Services that the Environment Template defines (see below). Constraints:
-    1. Minimum number of elements: If provided, then this list must contain at least one element.
-    2. Maximum number of elements: 10.
-    3. No two Services in this list may have the same value for the `name` property.
-    4. The `dependencies` of the Services in this list form one graph, which must be acyclic. The
-       graph also has an edge from each of these Services whose Sessions enter the document's
-       *environment* to each Service that Environment lists (see
-       [`<StepDependency>`](#stepdependency) constraint 3).
-    5. Every entry of a Service's `dependencies` uses the `service` key and names a Service in this
-       list, or is a disabled `environment:` entry: one whose `enableIf` is the literal `false` and
-       that has no *parameters*. The document has no Steps, and its author writes the document's
-       *environment* as well as its Services, so for that Environment a Service needs no other
-       `environment:` entry: an expression `enableIf` could evaluate to `true` and request or supply
-       values, which the author can give the Environment directly. Requesting an earlier
-       attachment's Environment, or supplying values to it, is not provided for: a request would
-       make the Service depend on another document's Environment being attached, and values would
-       depend on its parameter definitions, while a decline depends only on the Environment's name
-       and `activation`. A disabled entry requests nothing and supplies no values; for a
-       `BY_DEFAULT` Environment it is RFC 0010's decline, which keeps the Service's Sessions out of
-       it. It serves both for the document's own *environment*, which would otherwise be a
-       cycle when it lists the Service, and for an Environment of an Environment Template attached
-       earlier that the Service does not need (see
-       [Services run inside Environments](#services-run-inside-environments)). The entry's name
-       resolves by RFC 0010's rules for a Step's entry
-       ([Resolving external Environments](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#resolving-external-environments)),
-       with the Service's own document in place of the Job Template and the Environment Templates
-       attached before it in place of the attached ones: to the document's own *environment* if it
-       has that name, and otherwise among the earlier attachments' Environments, whatever their
-       `activation`. RFC 0010 then gives the entry's effect from the `activation` of the Environment
-       it names, which makes declining an `ALWAYS` one an error. An Environment from a document
-       that does not list `ENV_PARAMS` behaves as `ALWAYS` with no `enableIf`, but RFC 0010 gives a
-       disabled entry for it no effect instead of an error
-       ([Environments from documents without `ENV_PARAMS` are `ALWAYS`](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#environments-from-documents-without-env_params-are-always)),
-       so the Service's Sessions still enter it. A later attachment's Environments and the Job
-       Template's are not among them, so an entry that names only one of those resolves to no
-       Environment and, as RFC 0010 gives for a disabled entry, has no effect. An entry that names
-       the document's own *environment* is checked at template validation, and any other entry when
-       the Job is created, from the combined Job.
-
-At least one of *environment* or *services* must be provided.
-
-**Services from Environment Templates.** An Environment Template that defines *services* defines
-Services that the scheduler applies to every Job Template submitted through it, just as its
-*environment* defines an Environment applied to every submission. From the Job Template's point of
-view these are **external Services**. Each Job that uses an external Service gets its own instance
-of it. An external Service's scope is computed over the combined Job by the same rules as an inline
-Service's (see [Service scope](#service-scope)): typically the Environment defined alongside it lists
-it, which puts in its scope every Step whose Sessions enter that Environment, and the Service
-declines that Environment for its own Sessions; or a Step of the Job Template lists it through
-`externalServices`. An attached Service that nothing in the combined Job lists has an empty scope and
-is never started; this is not an error, since the queue cannot know which Jobs will use it.
-
-A `Service.*` reference resolves within its own document: in an Environment Template to the
-document's *services*, in a Job Template to its *services* or *externalServices* (see
-[The `Service.*` scope](#the-service-scope)). No reference crosses a document boundary except
-through a requirement, so every `Service.*` reference in every template is checkable without
-knowledge of the scheduler's configuration. A Job Template that reads an external Service's endpoint
-declares a requirement for it in `externalServices` (see
-[`<ServiceRequirement>`](#servicerequirement)).
-
-When a submission combines a Job Template with one or more Environment Templates:
-
-1. Every attached Service is part of the combined Job, and the attached Environments are placed in
-   `jobEnvironments` as today. The limit of 10 applies to each document's list; the scheduler bounds
-   the total through how many Environment Templates it attaches.
-2. Each entry of `externalServices` MUST match exactly one Service with the same `name` among the
-   attached Environment Templates' *services*, and that Service MUST declare every port the
-   requirement lists, with the same `protocol`. If no attached Service has the name, if two or more
-   do, if the matched Service lacks a listed port, or if a port's protocol differs, the submission
-   MUST be rejected, naming the requirement and the cause. Matching uses the requirement alone; the
-   scheduler reads nothing else from the Job Template.
-3. Service names are per document. A Job Template's `Service.*` references resolve to its own
-   `services` and `externalServices`, and an attached Service that happens to share a name with an
-   inline Service is neither visible to the Job Template nor a conflict; it runs if the Environment
-   defined alongside it lists it, and reaches the Job's Tasks through that Environment. Two attached
-   Services with the same `name` are an error only when a requirement names it. A scheduler MUST
-   keep same-named Services from different documents distinct (for example, by qualifying each with
-   its document).
-4. A wrapping Environment (RFC 0008) wraps every action that runs inside it (wrap hook rule 1 of
-   [`<Environment>`](#environment)), so one that a Service Session enters MUST define the
-   `onWrapService*` hooks. Whether a Service Session enters an attached Environment is known only
-   for the combined Job, so for an attached wrapping Environment the check is made at submission:
-   if the Sessions of any Service with a non-empty scope enter a wrapping Environment of the
-   combined Job's `jobEnvironments` that does not define all four `onWrapService*` hooks, the
-   submission MUST be rejected, naming the Environment, the document that defines it, and the
-   Service. A document that does not declare `SERVICE` cannot define those hooks, so a wrapping
-   Environment from such a document is rejected in any Job that has a Service whose Sessions enter
-   it. The remedy is for that document to declare `SERVICE` and define the hooks, or to declare
-   `ENV_PARAMS` and `EXPR` and either make the wrapper `ON_REQUEST`, so that only the Steps that
-   request it enter it, or leave it `BY_DEFAULT`, so that any Service may decline it with a
-   disabled entry (for an Environment Template's Service, the one *services* constraint 5
-   permits). A document that declares `SERVICE` also lists `ENV_PARAMS`, so its wrapper defaults
-   to `BY_DEFAULT` too. Only a wrapper that defines the hooks and sets `activation: ALWAYS` is
-   entered by every Session that may enter it, that is every Task Session and the Sessions of
-   every Service of its own or a later document (see
-   [Services run inside Environments](#services-run-inside-environments)): an `ON_REQUEST`
-   wrapper is left out of every Session that does not request it, and a `BY_DEFAULT` one may be
-   declined by a Step as well as a Service. No Service can decline an `ALWAYS` wrapper, nor one
-   from a document that does not list `ENV_PARAMS`: RFC 0010 makes such a wrapper behave as
-   `activation: ALWAYS` with no `enableIf`, and a Service's disabled entry for it has no effect, as
-   a Step's does, so the Service's Sessions still enter it and the submission is rejected. A
-   wrapping Environment in a Step's `stepEnvironments` is never entered by a Service Session and is
-   not subject to this check.
-
-Items 2 and 4, and the `ENV_PARAMS` checks that need the attached Environments, are the only checks
-that require the combined Job; everything else is checked when each document is validated on its
-own. The `ENV_PARAMS` checks are those that need the attached Environments, made at the steps of
-RFC 0010's Template Schemas §7.4.1 (which also says how they apply when only some documents list
-`ENV_PARAMS`) and applied to Services as to Steps: resolving `environment:` entries (RFC 0010 §3.2.1); RFC 0010's
-`<StepDependency>` constraints 5 and 6 for entries that resolve to attached Environments, and
-constraint 7 for every attached Environment that applies to a Step or Service; evaluating
-the `enableIf` of attached Environments; every check that depends on an `enableIf` or *parameters*
-value that reads `Job.EnvNames`; and, for Services as for Steps, the combined host requirement
-conflicts of RFC 0010 §3.3.3 that involve an attached Environment. This RFC adds the cycles of
-[`<StepDependency>`](#stepdependency) constraint 3 whose edges depend on the attached Environments,
-such as through an `exclusiveGroup`, wrap hook rule 1 for attached wrapping Environments, and, for
-a Service of an Environment Template, resolving its disabled entries against the Environment
-Templates attached before it (*services* constraint 5).
-
-#### `<StepTemplate>`
-
-> A modification to
-> [`3. <StepTemplate>`](https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#3-steptemplate)
-
-The `<StepTemplate>` object is unchanged. One of its items changes under `SERVICE`:
-
-* *dependencies* — The Steps and, with `SERVICE`, the Services this Step depends on, and the
-  Environments it requests (RFC 0010); each entry is a [`<StepDependency>`](#stepdependency). Each
-  names a Step of the same Job Template, a Service that must be READY, or an Environment that this
-  Step's Sessions enter and may supply parameter values to; an `environment:` entry does not delay
-  scheduling. The Step's Tasks may be scheduled only when every listed Step has completed
-  successfully and every Service in whose scope the Step falls is READY. A Step need not repeat a
-  Step dependency that a Service it lists already carries.
-
-##### `<StepDependency>`
-
-> A modification to
-> [`3.2. <StepDependency>`](https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#32-stepdependency)
-
-A `<StepDependency>` names a Step or, with `SERVICE`, a Service that the entity listing it depends
-on, or an Environment that it requests (RFC 0010). It appears in the `dependencies` of a
-`<StepTemplate>`, of a [`<Service>`](#service), and of a Job [`<Environment>`](#environment). RFC
-0010 makes it one of three objects; this RFC adds a fourth:
-
-```diff
-  # <StepDependency> is one of:
-  dependsOn: "<StepName>"
-+ # or, with the SERVICE extension:
-+ service: "<ServiceName>" # @extension SERVICE
-  # or, with the ENV_PARAMS extension (RFC 0010):
-  step: "<StepName>"
-  # or, with the ENV_PARAMS extension (RFC 0010):
-  environment: "<EnvironmentName>"
-  required: <bool> # @optional
-  enableIf: <Expression> # @optional @expr bool
-  parameters: <EnvironmentParameterValues> # @optional
-```
-
-`step:` is RFC 0010's synonym of `dependsOn:`, and everything this RFC says of a `dependsOn` entry
-applies to it. Since `SERVICE` requires `ENV_PARAMS`, a template that uses Services can always use
-`step:`, and the examples here do.
-
-Where:
-
-1. *dependsOn* — The name of a Step in the same Job Template, as today. The dependency is satisfied
-   when that Step has completed successfully.
-2. *service* — The name of a Service of the same document's `services` or, in a Job Template, of its
-   `externalServices`. The dependency is satisfied when the Service is READY. Listing a Service puts
-   the listing entity in the Service's scope (see [Service scope](#service-scope)) and makes the
-   Service's values visible to it (see [The `Service.*` scope](#the-service-scope)).
-3. *environment*, *required*, *enableIf*, *parameters* — As RFC 0010 defines them. Permitted in the
-   `dependencies` of a `<StepTemplate>` and of a `<Service>`; not in the `dependencies` of an
-   `<Environment>`, since an Environment does not request another Environment. A `<Service>` in an
-   Environment Template may have only the disabled entries that
-   [Environment Template](#environment-template) *services* constraint 5 permits. A Service's
-   entries work exactly as a Step's do under RFC 0010
-   ([Requesting an Environment from a Step](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#requesting-an-environment-from-a-step)
-   and the wiki sections it links), with "Step" read as "Service": they request, decline, and supply
-   values to Environments, and the Service is held to the same rules. This RFC adds only which
-   Environments a Service may enter, and so which an entry's name can match (see
-   [Services run inside Environments](#services-run-inside-environments)), and the scopes an entry's
-   values may read (see [`<Service>`](#service) item 4).
-
-Constraints:
-
-1. *dependsOn* MUST name a Step of the same Job Template, and *service* a Service of the same
-   document's `services` or, in a Job Template, of its `externalServices`; neither may name the
-   entity listing it.
-2. No two entries of one `dependencies` list may name the same Step or the same Service. This rule
-   and RFC 0010's rule that no two *environment* entries name the same Environment are separate
-   rules about separate keys: a Step, a Service, and an Environment may share a name, and an entry's
-   key says which it means.
-3. The `dependencies` lists of a Job Template's Steps, Services, and Job Environments form one graph
-   whose nodes are the Steps and Services. Its edges run from each entity to each `dependsOn`, `step`,
-   and `service` entry in its list (Step to Step, Step to Service, Service to Step, and Service to
-   Service), and from each Step and each Service whose Sessions enter a Job Environment to each
-   Service that Environment lists (see [Service scope](#service-scope) rule 3 and
-   [Services run inside Environments](#services-run-inside-environments)). An *environment* entry is
-   not an edge of its own and orders nothing, but it decides which Sessions enter an Environment,
-   and so which edges of the second kind exist. The graph MUST be acyclic, with no exception. In
-   particular, a Service `X` whose Sessions enter an Environment that lists `X`, whether by the
-   Environment's `activation` or through `X`'s own *environment* entry, is the edge `X` → `X`, a
-   cycle: `X`'s Sessions would wait for `X` to be READY. So are two Services each of whose Sessions
-   enter a client Environment that lists the other. Keeping the graph acyclic is the template
-   author's responsibility; [Services run inside Environments](#services-run-inside-environments)
-   gives the usual ways. A cycle is rejected naming it, and for an edge that comes from entering an
-   Environment, naming that Environment. Whether an edge of the second kind exists depends on
-   which Sessions enter the Environment, so the check uses what is known at each stage: at
-   template validation, an edge is known when the Sessions are known to enter the Environment by
-   RFC 0010's rules for what is known before the Job is created (its Template Schemas §4, after the
-   item list, and §7.6 rule 5; see
-   [Which Sessions enter an Environment](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#which-sessions-enter-an-environment)),
-   under which a Job Environment with an `exclusiveGroup` is not known to be entered by a validator
-   without the Environment Templates. A cycle is reported there when all its edges are known. Any
-   other cycle is checked when the Job is created, including one whose edges depend on the attached
-   Environments. No edge points from a document to a later one (see
-   [Services run inside Environments](#services-run-inside-environments)), so a cycle never spans
-   documents.
-4. Exactly one of *dependsOn*, *step*, *service*, or *environment* MUST be present; an entry that
-   gives more than one, or none, is a validation error. *required*, *enableIf*, and *parameters* are
-   permitted only with *environment*. This constraint replaces RFC 0010's `<StepDependency>`
-   constraint 1.
-
-#### `<Environment>`
-
-> A modification to [`4. <Environment>`](https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#4-environment)
-
-```diff
-  name: <EnvironmentName>
-  description: <Description> # @optional
-+ dependencies: [ <StepDependency>, ... ] # @optional @extension SERVICE
-  script: <EnvironmentScript> # @optional
-  variables: <EnvironmentVariables> # @optional
-```
-
-The properties RFC 0010 adds under `ENV_PARAMS` follow *dependencies* and are unchanged.
-
-New properties:
-
-* *dependencies* — The Services this Environment depends on, each a
-  [`<StepDependency>`](#stepdependency) with the `service` key. An Environment lists the Services
-  whose clients it configures, and listing one makes its endpoint visible to the Environment. Every
-  entity whose Sessions enter the Environment depends on each Service it lists: a Step is in the
-  Service's scope ([Service scope](#service-scope) rule 3), and a Service gains an edge to it in the
-  dependency graph ([`<StepDependency>`](#stepdependency) constraint 3), so it starts only once the
-  listed Service is READY. A Service whose Sessions would enter an Environment that lists it is
-  therefore a cycle and is rejected; the template keeps the Service's Sessions out of its client
-  Environments (see [Services run inside Environments](#services-run-inside-environments)).
-  Constraints:
-    1. Minimum number of elements: If provided, then this list must contain at least one element.
-    2. Every entry MUST use the `service` key and name a Service of the same document's
-       `services` or, in a Job Template, of its `externalServices`. An Environment does not depend
-       on a Step, and does not request another Environment.
-    3. No two entries may name the same Service.
-    4. Not permitted on a `stepEnvironments` entry, which follows its Step's *dependencies*.
-
-> A modification to [`4.3. <EnvironmentActions>`](https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#43-environmentactions)
-
-```diff
-  onEnter: <Action> # @optional
-  onWrapEnvEnter: <Action>    # @optional @extension WRAP_ACTIONS
-  onWrapTaskRun: <Action>     # @optional @extension WRAP_ACTIONS
-  onWrapEnvExit: <Action>     # @optional @extension WRAP_ACTIONS
-+ onWrapServiceEnter: <Action>       # @optional @extension WRAP_ACTIONS SERVICE
-+ onWrapServiceRun: <Action>         # @optional @extension WRAP_ACTIONS SERVICE
-+ onWrapServiceHealthCheck: <Action> # @optional @extension WRAP_ACTIONS SERVICE
-+ onWrapServiceExit: <Action>        # @optional @extension WRAP_ACTIONS SERVICE
-  onExit: <Action> # @optional
-```
-
-New properties, available only when both `WRAP_ACTIONS` (RFC 0008) and `SERVICE` are in use:
-
-* *onWrapServiceEnter*, *onWrapServiceRun*, *onWrapServiceHealthCheck*, *onWrapServiceExit* — When
-  this Environment is a wrapping Environment in a Service Session, these run instead of the
-  Service's *onEnter*, *onRun*, *onHealthCheck*, and *onExit* respectively, exactly as
-  `onWrapTaskRun` runs instead of a Task's `onRun`. Each receives the wrapped action's fields
-  through the same `WrappedAction.*` variables RFC 0008 defines, plus a `WrappedService.*` group
-  (the analogue of `WrappedEnv.Name` and `WrappedStep.Name`). As RFC 0008 established for
-  `WrappedAction.*`, every one of these groups is in scope throughout the hook's `<Action>` — its
-  `command` and `args`, and its `timeout` and `cancelation` fields, which resolve at run time (so a
-  hook may forward `timeout: "{{WrappedAction.Timeout}}"`):
-
-  | Variable | Type | Description |
-  |---|---|---|
-  | `WrappedService.Name` | `string` | The `name` of the Service being wrapped. |
-  | `WrappedService.PortNames` | `list[string]` | The `name` of each of the Service's ports, in declaration order. |
-  | `WrappedService.Ports` | `list[int]` | The allocated port number of each port, in the same order. |
-  | `WrappedService.BindAddresses` | `list[string]` | The `bindAddress` of each port, in the same order. |
-  | `WrappedService.Protocols` | `list[string]` | The `protocol` of each port (`TCP` or `UDP`), in the same order. |
-
-  The four lists are parallel: index *i* of each describes the Service's *i*-th declared port. A
-  wrapper that launches the service process in its own network namespace (a container without host
-  networking) uses them to forward every port with its protocol; a Docker wrapper that restricts the
-  host-side binding to the allocated interface passes
-  `{{ flatten([['-p', join_host_port(WrappedService.BindAddresses[i], WrappedService.Ports[i]) + ':' + string(WrappedService.Ports[i]) + '/' + lower(WrappedService.Protocols[i])] for i in range(len(WrappedService.Ports))]) }}`
-  in its `args`; the simpler form that binds every interface is shown in the wiki's §4.3.1.
-  `WrappedService.Ports` is `list[int]`, and this RFC extends `repr_sh` to `int` and `list[int]`
-  under `SERVICE` (see
-  [Modifications to the Expression Language](#modifications-to-the-expression-language)), so a
-  wrapper may pass the list as `repr_sh(WrappedService.Ports)` without converting each entry.
-
-RFC 0008's rules extend to the new hooks as follows:
-
-1. *Every action that runs inside a wrapping Environment is wrapped by it.* A wrapping Environment
-   is one that defines any wrap hook, and an action runs inside it when it runs in a Session that
-   has entered the Environment and not yet exited it. Each kind of action has one wrap hook:
-
-   | Action | Wrap hook |
-   |--------|-----------|
-   | An inner Environment's `onEnter` | `onWrapEnvEnter` |
-   | A Task's `onRun` | `onWrapTaskRun` |
-   | An inner Environment's `onExit` | `onWrapEnvExit` |
-   | A Service's `onEnter` | `onWrapServiceEnter` |
-   | A Service's `onRun` | `onWrapServiceRun` |
-   | A Service's `onHealthCheck` | `onWrapServiceHealthCheck` |
-   | A Service's `onExit` | `onWrapServiceExit` |
-
-   A wrapping Environment MUST define the hook for every kind of action that a kind of Session
-   entering it may run inside it: `onWrapEnvEnter`, `onWrapTaskRun`, and `onWrapEnvExit` if any
-   Task Session enters it, and `onWrapEnvEnter`, `onWrapEnvExit`, and the four `onWrapService*`
-   hooks if any Service Session enters it. The check is over the actions a kind of Session may run,
-   not the actions a particular template defines, so a wrapper is checked once for each kind of
-   Session that enters it. A hook for a kind of action that never runs inside the wrapper is
-   permitted and wraps nothing, so a wrapper that defines all seven hooks may be attached to any
-   queue. A wrapping Environment in a Step's `stepEnvironments` is entered only by Task Sessions,
-   and so needs RFC 0008's three hooks.
-
-   Which kinds of Session enter a Job Environment follows from RFC 0010's rules, which apply to
-   Steps and Services alike, and from which documents' Environments a Service may enter (see
-   [Services run inside Environments](#services-run-inside-environments)). The check uses what is
-   known at each stage (RFC 0010 §7.6 rule 5): it is
-   reported at template validation when the wrapper is in a Job Template and an entity of the
-   offending kind is known to enter it, and is otherwise made when the Job is created, naming the
-   Environment and the kind of Session. For an attached wrapping Environment, see
-   [Environment Template](#environment-template) item 4.
-
-   RFC 0008's rule that a wrapper defines all three of its hooks is the Task-Session case of this
-   rule. A future extension that adds a kind of action adds its hook to the table.
-2. *Stdout.* As in RFC 0008, the runtime scans the wrap script's stdout, so a wrapped *onEnter*'s
-   `openjd_env` messages and a wrapped *onRun*'s `openjd_service_ready` message are honored when the
-   wrap script forwards the wrapped process's stdout verbatim. `onWrapServiceHealthCheck` runs
-   concurrently with `onWrapServiceRun` (see [Concurrency with `onRun`](#concurrency-with-onrun)).
-3. *Failure.* A failed `onWrapServiceRun` is an instance failure, a failed `onWrapServiceEnter` is a
-   start failure, and a failed `onWrapServiceExit` is an *onExit* failure, exactly as the wrapped
-   action's failure would be. The exit status of an `onWrapServiceHealthCheck` invocation is one
-   probe result, exactly as the wrapped *onHealthCheck*'s would be (see
-   [`<ServiceHealthCheck>`](#servicehealthcheck)).
-4. *Networking.* `bindAddress` and `connectAddress` are determined for the service host's network
-   namespace. A wrapper that runs the service process in that namespace (a launcher, `ssh`, or a
-   container with host networking) needs no port handling. A wrapper that gives the process its own
-   network namespace MUST forward each port in `WrappedService.Ports` with the protocol in
-   `WrappedService.Protocols`, so that a connection to `connectAddress`:`port` from any host in the
-   scope reaches the process, and MUST ensure the process can bind `bindAddress` inside that
-   namespace. A wildcard `bindAddress` (`0.0.0.0`, `::`) works in either case; a loopback
-   `bindAddress` reaches a forwarded port only with host networking.
-
-#### `<Service>`
-
-> A new top-level section, inserted after
-> [`8. <SimpleAction>`](https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#8-simpleaction),
-> renumbering *Additional Information* and *License* to sections 10 and 11.
-
-Available when using the `SERVICE` extension.
-
-A Service is a long-lived process that a scheduler starts before scheduling the Tasks in its
-scope, keeps running for the lifetime of its scope, and stops once the scope no longer needs it.
-A Service publishes one or more named network ports that the runtime allocates, and every
-entity that depends on the Service can discover the resulting endpoint via the `Service.*`
-format-string scope.
-
-A `<Service>` is the object:
-
-```yaml
-name: <ServiceName>
-description: <Description> # @optional
-let: <LetBindings> # @optional @extension EXPR
-dependencies: [ <StepDependency>, ... ] # @optional
-hostRequirements: <HostRequirements> # @optional
-ports: [ <ServicePort>, ... ]
-healthCheck: <ServiceHealthCheck> # @optional
-restartPolicy: <ServiceRestartPolicy> # @optional
-variables: <EnvironmentVariables> # @optional
-script: <ServiceScript>
-```
-
-Where:
-
-1. *name* — The Service's identifier, the first component of `Service.*` references to it. See
-   [`<ServiceName>`](#servicename).
-2. *description* — A description to apply to the Service. It has no functional purpose, but may
-   appear in UI elements.
-3. *let* — An ordered list of expression bindings evaluated once, at job creation, like a
-   `<StepTemplate>`'s *let*. Bindings may reference `Param.*`, `RawParam.*`, `Job.Name`, and
-   `Job.EnvNames` (RFC 0010), but not `Session.*` or `Service.*`, which are not known until the
-   Service is placed. Bound names are available in *hostRequirements*, *variables*, and
-   *script*, as a Step's bindings are in its `stepEnvironments`, and in the *parameters* values and
-   *enableIf* of *dependencies* entries. Available with the `EXPR` extension.
-4. *dependencies* — The Steps and Services this Service depends on, and the Environments it
-   requests, each a [`<StepDependency>`](#stepdependency). The Service is started only once every
-   `dependsOn` and `service` entry is satisfied and is stopped before any Service it lists
-   (lifecycle constraints 2 and 4). List a Step for a Service that consumes the output of a batch
-   Step, so that it does not hold a host while the batch runs; the dependency orders the Service
-   after the Step, and the Step's output reaches the service host as it reaches any later Step,
-   through a `PATH` Job Parameter or other shared storage the scheduler provides. List a Service for
-   one whose endpoint this Service reads. List an Environment, with an `environment:` entry, to
-   supply its parameters for the Service's Sessions, to request an `ON_REQUEST` Environment for
-   software the Service needs and the Steps do not, or, with `enableIf: false`, to decline a
-   `BY_DEFAULT` one such as a client Environment of this Service. The entries work exactly as a
-   Step's do (see [`<StepDependency>`](#stepdependency) item 3). The *parameters* values and
-   *enableIf* of an `environment:` entry may reference `RawParam.*`, `Param.*` other than PATH and
-   LIST[PATH], `Job.Name`, `Job.EnvNames`, and the names bound by the Service's *let*; `Step.Name`,
-   which RFC 0010 makes available to a Step's entries, is not available, since a Service belongs to
-   no Step. Constraints:
-    1. Minimum number of elements: If provided, then this list must contain at least one element.
-    2. Each entry satisfies [`<StepDependency>`](#stepdependency) constraints 1, 2, and 4.
-    3. In the graph of [`<StepDependency>`](#stepdependency) constraint 3, a Service that lists a
-       Step in its own scope, directly or through other Services, is a cycle; a Service that a Job
-       Environment lists, directly or through other Services, has in its scope every Step whose
-       Sessions enter that Environment, and so can list none of them.
-    4. On a Service in an Environment Template, an `environment:` entry is permitted only as
-       [Environment Template](#environment-template) *services* constraint 5 permits it.
-5. *hostRequirements* — Requirements on the Worker Host's capabilities that must be satisfied for
-   the Service to be placed on the host. The Service's **combined host requirements** are these
-   together with the *hostRequirements* of every Environment its Sessions enter, each resolved with
-   the Service's effective values, combined by the rules of RFC 0010 §3.3.3; a conflict between
-   them rejects the submission, naming the Service. A Service Session is placed only on a host that
-   satisfies the combined requirements, and their amount capabilities are allocated to the Service
-   Session for the lifetime of the Service. They are independent of the *hostRequirements* of any
-   Step whose Tasks use the Service.
-6. *ports* — The named ports that the Service exposes. See [`<ServicePort>`](#serviceport).
-    1. Minimum number of elements: 1.
-    2. Maximum number of elements: 10.
-    3. No two ports may have the same `name`.
-    4. No two ports with the same `protocol` may have the same `port` number; a service that speaks
-       TCP and UDP on one number gives it explicitly on both ports, and ports whose `port` is not
-       provided are allocated independently in each protocol's space.
-7. *healthCheck* — The probe by which the scheduler determines that an instance of the Service is
-   ready to accept traffic and, once it is, that it remains healthy. If not provided, defaults to
-   `{ type: TCP_CONNECT }` applied to every TCP port. A Service none of whose ports is TCP MUST
-   provide a *healthCheck* of type `STDOUT` or `COMMAND`; a `TCP_CONNECT` check, given or
-   defaulted, would have no port to probe. See [`<ServiceHealthCheck>`](#servicehealthcheck).
-8. *restartPolicy* — What the scheduler does when the Service's `onRun` action exits before the
-   scope ends. If not provided, defaults to `{ maxRestarts: 0 }`: the Service is never relaunched,
-   and its exit fails the scope. See [`<ServiceRestartPolicy>`](#servicerestartpolicy).
-9. *variables* — A set of environment variable name/value pairs, with the values being Format
-   Strings resolved when the Service is started, that are set in the process environment of every
-   action of the Service's *script*, including *onHealthCheck*. It has the same schema as the
-   *variables* property of
-   [`<Environment>`](https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#4-environment).
-   Neither these variables nor those the Service's *onEnter* sets with `openjd_env` (see
-   [`<ServiceActions>`](#serviceactions)) are propagated to the entities in the Service's scope.
-10. *script* — The actions that the Service runs on its host. See
-    [`<ServiceScript>`](#servicescript).
-
-The format string scopes available to format strings within a `<Service>` are:
-
-1. `Param.*` and `RawParam.*` — Values of Job Parameters. `PATH`-typed `Param.*` values are
-   available in the Service's *variables* and *script* (actions, embedded files, and
-   `<ServiceScript>.let`), where they carry the service host's path mapping applied, exactly as in
-   an Environment or Step Script; they are not available in `<Service>.let` or *hostRequirements*,
-   which are resolved at job creation before a host is chosen.
-2. `Session.*` — Values such as the Service Session's working directory. `Session.WorkingDirectory`
-   refers to the Service Session's own working directory on the service host, not to the Session of
-   any Task. A Service Session receives path mapping rules like any Session:
-   `Session.HasPathMappingRules` and `Session.PathMappingRulesFile` describe the rules for the
-   service host, and the rules file is written to the Service Session's working directory.
-3. `Service.File.<name>` — The filesystem location of an embedded file defined within this
-   Service's *script*. See [`<ServiceScript>`](#servicescript).
-4. `Service.<name>.<port>.*` — The endpoint of this Service's own ports and, under the visibility
-   rule in [The `Service.*` scope](#the-service-scope), of the Services this Service lists in its
-   *dependencies*.
-5. `Job.Name`.
-6. Names bound by `let` in the `<Service>` and in the `<ServiceScript>`.
-
-##### Service scope
-
-The scope of a Service is the set of Steps whose Tasks depend on it. For a Service declared in a
-Job Template it is determined at template validation from the template's `dependencies` lists,
-except where it depends on which Environments a Step's Sessions enter and that is known only at job
-creation (RFC 0010 §7.6 rule 5), when it is determined at job creation; the order of the `services`
-list carries no meaning:
-
-1. A Step that lists Service `X` in its `dependencies` is in the scope of `X`.
-2. When Service `Y` depends on Service `X`, every Step in `Y`'s scope is in `X`'s scope. `Y`
-   depends on `X` when it lists `X`, and when `Y`'s Sessions enter a Job Environment that lists `X`
-   (see [`<Environment>`](#environment) *dependencies*). This applies transitively: a Step is in
-   `X`'s scope when it depends on `X` through any chain of Services.
-3. When a `jobEnvironments` entry lists Service `X` in its `dependencies`, every Step whose
-   Sessions enter that Environment, as RFC 0010 decides for each Step, is in `X`'s scope. A Step
-   Environment has no `dependencies` of its own; it follows its Step's.
-4. A Service in whose scope no Step falls is unused, and the template MUST be rejected at template
-   validation, naming the Service. A Service listed only by Services that are themselves unused is
-   unused.
-
-These rules apply to every Service of the combined Job, inline or external, with one difference:
-rule 4 rejects an inline Service with an empty scope at template validation, while an external
-Service with an empty scope is simply never started (see
-[Environment Template](#environment-template)). An `externalServices` entry is subject to rule 4
-like an inline Service: one that no Step, Service, or Job Environment of the Job Template lists is
-rejected at template validation, naming the entry. A Job Environment that lists a Service and that
-no Step's Sessions enter, such as an `ON_REQUEST` one that no Step requests, puts no Step in the
-Service's scope; for an inline Service that nothing else lists, rule 4 then rejects it. A Service
-is started before any Task of a Step in its scope and stopped once no such Task remains to be run (see
-[Service lifecycle](#service-lifecycle)): one whose scope is one Step lives as long as that Step,
-and one whose scope is every Step as long as the Job.
-
-##### `<ServiceName>`
-
-An [`<Identifier>`](https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#71-identifier)
-subject to the additional constraint that it MUST NOT be `File`, which is reserved for the
-`Service.File.*` embedded-file references.
-
-##### `<ServicePort>`
-
-A `<ServicePort>` is the object:
-
-```yaml
-name: <Identifier>
-port: <posinteger> | <posintstring> # @optional @fmtstring
-protocol: enum("TCP", "UDP") # @optional
-```
-
-Where:
-
-1. *name* — The name of the port. It is the second component of `Service.<service>.<port>.*`
-   references. Must not be `File`.
-2. *port* — If provided, the Service requires this specific port number on its host, in the space
-   of the port's *protocol*; if the scheduler cannot provide it on the chosen host, that is a start
-   failure (see [Failure and restart](#failure-and-restart)), and relocation to another host may
-   succeed. If not provided, the runtime allocates an available port of the port's *protocol*.
-   Range: 1–65535. Authors SHOULD omit this and let the runtime allocate, so that multiple Services
-   and Sessions can share a host.
-3. *protocol* — The transport protocol the service process binds the port with, and which the
-   scheduler uses for any publishing or forwarding it performs to make the port reachable (a
-   container port mapping, a firewall rule, a NAT entry). One of `TCP` or `UDP`. Default: `TCP`.
-
-Every port, TCP or UDP, is bound and published on the same service host.
-
-##### `<ServiceHealthCheck>`
-
-A `<ServiceHealthCheck>` is one of the following objects, discriminated by *type*:
-
-```yaml
-type: "TCP_CONNECT"
-ports: [ <Identifier>, ... ] # @optional
-readinessIntervalSeconds: <posinteger> | <posintstring> # @optional @fmtstring
-readinessTimeoutSeconds: <posinteger> | <posintstring> # @optional @fmtstring
-healthIntervalSeconds: <posinteger> | <posintstring> # @optional @fmtstring
-failureThreshold: <posinteger> | <posintstring> # @optional @fmtstring
-```
-
-```yaml
-type: "COMMAND"
-readinessIntervalSeconds: <posinteger> | <posintstring> # @optional @fmtstring
-readinessTimeoutSeconds: <posinteger> | <posintstring> # @optional @fmtstring
-healthIntervalSeconds: <posinteger> | <posintstring> # @optional @fmtstring
-failureThreshold: <posinteger> | <posintstring> # @optional @fmtstring
-```
-
-```yaml
-type: "STDOUT"
-readinessTimeoutSeconds: <posinteger> | <posintstring> # @optional @fmtstring
-healthIntervalSeconds: <posinteger> | <posintstring> # @optional @fmtstring
-failureThreshold: <posinteger> | <posintstring> # @optional @fmtstring
-```
-
-A health check is one probe mechanism applied in two phases. Before the instance is READY the probe
-decides readiness: the first probe runs as soon as `onRun` is launched, a probe runs every
-*readinessIntervalSeconds* after it, and the first success makes the instance READY. After the
-instance is READY the probe decides health: a probe runs every *healthIntervalSeconds*, and
-*failureThreshold* consecutive failures make the instance UNHEALTHY, which is an instance failure
-(see [Failure and restart](#failure-and-restart)). A single successful probe resets the count. While
-the count is below the threshold the instance stays READY and nothing changes. For `TCP_CONNECT` and
-`COMMAND`, an interval is measured from the end of the previous probe. For a `STDOUT` heartbeat, the
-runtime arms a deadline *healthIntervalSeconds* after the later of READY and the most recent
-`openjd_service_ready` line; a line before the deadline is a successful probe and re-arms it, and a
-deadline that passes without a line is a failed probe and arms the next.
-
-Where:
-
-1. *type* — The probe mechanism:
-    * `TCP_CONNECT` — A probe succeeds when a TCP connection to each of the listed ports (by
-      default, every TCP port the Service declares) succeeds. The connection is made from the
-      service host to the allocated `port` on the loopback interface, or on `bindAddress` when it
-      is not a wildcard address (`0.0.0.0` or `::`, which cannot be connected to on every operating
-      system), and is closed immediately.
-    * `COMMAND` — A probe is one invocation of the Service's *onHealthCheck* action (see
-      [`<ServiceActions>`](#serviceactions)), run in the Service Session concurrently with `onRun`
-      (see [Concurrency with `onRun`](#concurrency-with-onrun)), and succeeds when the invocation
-      exits with status 0 while `onRun` is still running. The action's own `timeout` (default: 30
-      seconds) bounds one invocation; an invocation that exceeds it is canceled and is one failed
-      probe, as is any exit status other than 0. Neither is by itself a failure of the Service.
-    * `STDOUT` — A probe is a line of the form `openjd_service_ready: <message>` written to stdout
-      by the `onRun` action, with the same syntax as the other `openjd_*` messages. The first such
-      line makes the instance READY; `<message>` has no functional purpose but MAY be surfaced in
-      UIs. Later lines are heartbeat probes when *healthIntervalSeconds* is given (see the opening
-      paragraph) and have no effect otherwise, the health of the instance then being that its
-      `onRun` process is still running.
-2. *ports* (`TCP_CONNECT` only) — The names of the ports to probe. Each must be declared in the
-   Service's *ports* and have `protocol: TCP`; naming a UDP port is a validation error, since a
-   UDP port cannot accept a connection. Defaults to every TCP port the Service declares.
-3. *readinessIntervalSeconds* (`TCP_CONNECT` and `COMMAND` only) — Seconds between probes before
-   the instance is READY. Default: 1 for `TCP_CONNECT`, 5 for `COMMAND`. A `STDOUT` check that
-   gives this field MUST be rejected at template validation.
-4. *readinessTimeoutSeconds* — The maximum time, measured from the launch of the `onRun` action,
-   that the scheduler waits for the instance to become READY. It runs continuously, including while
-   a probe is in progress. If exceeded, the instance has failed (see [Failure and
-   restart](#failure-and-restart)). Default: 300.
-5. *healthIntervalSeconds* — Seconds between probes after the instance is READY. Default: 30 for
-   `TCP_CONNECT` and `COMMAND`. For `STDOUT` there is no default: when given, it is the heartbeat
-   interval described under *type*; when omitted, no heartbeat is expected.
-6. *failureThreshold* — The number of consecutive failed probes after READY (for a `STDOUT`
-   heartbeat, consecutive intervals without a line) that make the instance UNHEALTHY. Default: 3.
-   A `STDOUT` check that gives this field without *healthIntervalSeconds* MUST be rejected at
-   template validation, since there is no probe for it to count.
-
-The health check applies to every instance: after a restart, the new `onRun` must pass a probe
-before Tasks in the scope are (re)scheduled, and is monitored in the same way once it has.
-
-##### `<ServiceRestartPolicy>`
-
-A `<ServiceRestartPolicy>` is the object:
-
-```yaml
-maxRestarts: <integer> | <intstring> # @optional @fmtstring
-completedTasks: enum("KEEP", "RERUN") # @optional
-```
-
-Where:
-
-1. *maxRestarts* — The maximum number of times the scheduler will relaunch the Service after an
-   instance failure or a start failure (see [Failure and restart](#failure-and-restart)). The
-   initial launch is not a restart, so the default of 0 means the Service is launched exactly once
-   and never relaunched, and a Service with `maxRestarts: 2` is launched at most three times. Must
-   be 0 or greater.
-2. *completedTasks* — Whether the results of the Tasks in the Service's scope depend on the state
-   of the Service instance they ran against. It decides what happens, when a new instance is
-   launched, to Tasks that completed successfully against a previous instance and to Tasks that were
-   running at the time. (Tasks not yet started are simply scheduled once the new instance is READY.)
-    * `KEEP` — The results do not depend on the instance: the Service holds no state that Tasks
-      depend on, or only state they can regenerate (a cache). Completed Tasks remain complete, and
-      running Tasks continue, failing and retrying under the scheduler's ordinary Task retry rules
-      if the outage affects them.
-    * `RERUN` — The results depend on the instance's state, which a new instance does not have (a
-      coordinator that hands out work). Completed Tasks are returned to the scheduling queue and run
-      again, and running Tasks are canceled and requeued.
-
-   A Task returned to the queue by `RERUN` has not failed: the requeue does not use one of the
-   Task's own retries, which count only failures of the Task itself. Under `RERUN`, a Task can
-   therefore run again on top of its own retries: once for each restart of this Service, which
-   *maxRestarts* bounds, and once for each new Service Session a Service it lists forces on it (step
-   8 of [Failure and restart](#failure-and-restart)), which that Service's *maxRestarts* bounds. An
-   author who wants a tighter bound on how often a Task runs lowers those limits.
-
-   If *maxRestarts* is greater than 0, *completedTasks* MUST be provided (for a *maxRestarts* given
-   as a format string, checked when it is resolved at job creation). When *maxRestarts* is 0 it MAY
-   be omitted, and then matters only when a Service this one lists begins a new Service Session (see
-   [Failure and restart](#failure-and-restart), step 8). A Service may be suspended only if its
-   *completedTasks* is `KEEP` (lifecycle constraint 9).
-
-##### Numeric `@fmtstring` fields
-
-> A new subsection of `9.5. <ServiceRestartPolicy>` in the wiki, since it governs the three objects above.
-
-The numeric fields marked `@fmtstring` in the three objects above — `<ServicePort>.port`; the
-`<ServiceHealthCheck>` fields `readinessIntervalSeconds`, `readinessTimeoutSeconds`,
-`healthIntervalSeconds`, and `failureThreshold`; and `<ServiceRestartPolicy>.maxRestarts` — may be
-given as a format string whose result is the integer, so that a Job Parameter or a `<Service>.let`
-binding can supply them. They are resolved at job creation, with the scope of the `<Service>`'s *let*
-([`<Service>`](#service) item 3). When the value is a single whole-field expression (`"{{ ... }}"`
-with no surrounding text) its target type is `int?`: a `null` result is treated as if the field were
-not provided, and a non-null result MUST satisfy the field's range.
-
-##### `<ServiceScript>`
-
-A `<ServiceScript>` is the object:
-
-```yaml
-let: <LetBindings> # @optional @extension EXPR
-actions: <ServiceActions>
-embeddedFiles: [ <EmbeddedFile>, ... ] # @optional
-```
-
-1. *let* — An ordered list of expression bindings evaluated once, on the service host, when the
-   Service is started; this is the host-context counterpart of the `<Service>`'s *let*, and may
-   reference `Session.*`, `Service.File.*`, and in-scope `Service.<name>.<port>.*`. Bound names are
-   available in *actions* and *embeddedFiles*.
-2. *actions* — The actions to run at the different stages of the Service's lifecycle.
-3. *embeddedFiles* — Files embedded into the Service that are materialized to the Service
-   Session's working directory before each of the Service's actions runs. The path of an embedded
-   file is available as `Service.File.<name>`.
-
-##### `<ServiceActions>`
-
-A `<ServiceActions>` is the object:
-
-```yaml
-onEnter: <Action> # @optional
-onRun: <Action>
-onHealthCheck: <Action> # @optional
-onExit: <Action> # @optional
-```
-
-Where:
-
-1. *onEnter* — A one-time setup action run before the first `onRun` of the Service in a Service
-   Session; it runs once per Service Session, not once per instance. It is an ordinary action, like
-   an Environment's `onEnter`: it runs to completion and its `timeout` and `cancelation` apply as
-   for any `<Action>`. A non-zero exit or a timeout is a start failure (see [Failure and
-   restart](#failure-and-restart)). Setup that must survive a relaunch of *onRun* belongs here.
-2. *onRun* — The long-lived action whose process *is* the service. The scheduler starts it, probes
-   it for readiness and then for health, and expects it to run until canceled; an exit before then
-   is an instance failure (see [Failure and restart](#failure-and-restart)). The scheduler stops the
-   Service by canceling *onRun* according to its `cancelation` method.
-3. *onHealthCheck* — A short action the scheduler runs repeatedly, while *onRun* is running, as the
-   probe of a `healthCheck` of type `COMMAND`; its exit status is the probe result (see
-   [`<ServiceHealthCheck>`](#servicehealthcheck) and
-   [Concurrency with `onRun`](#concurrency-with-onrun)). MUST be defined if and only if the health
-   check type is `COMMAND`. It SHOULD be read-only with respect to the Service Session's working
-   directory, which it shares with *onRun*.
-4. *onExit* — A cleanup action run after the Service's other actions have stopped for the last
-   time in a Service Session, whether the Service stopped normally, failed, or was canceled, and
-   whether or not *onRun* was ever launched. It runs to completion. A non-zero exit is reported but
-   does not change the outcome of the scope.
-
-###### Concurrency with `onRun`
-
-*onHealthCheck* is the only action in the specification that runs while another action of the
-same Session, *onRun*, is running. Several existing rules silently assume one action at a time; the
-following rules say where that assumption holds and where it does not:
-
-1. **Embedded files.** Materializing embedded files for one action MUST NOT modify any file that a
-   still-running action of the same Session was given. Implementations may either materialize each
-   invocation's files to a distinct location, so that `Service.File.<name>` resolves to a different
-   path in each invocation, or materialize them once to one path and leave them in place, which is
-   safe because their content is constant: a Service Session's format-string values do not change
-   for its lifetime. Either way, a file materialized for one action MUST remain in place, unchanged,
-   until the Service Session ends: materializing a later action's files never removes or replaces
-   an earlier action's. A path that *onEnter* captured (for example by exporting
-   `Service.File.<name>` with `openjd_env`) therefore stays valid for *onRun* and *onExit*, even
-   when their own `Service.File.<name>` resolves elsewhere.
-2. **Stdout.** The stdout of *onHealthCheck* is captured to the log but no `openjd_*` message on
-   it is honored: its result is its exit status.
-3. **Log attribution.** Every line of stdout or stderr captured in a Service Session MUST be
-   attributable to the action that produced it. How attribution is recorded is
-   implementation-defined: a structured log may carry the action name as a field, and an
-   implementation producing a single plain-text log SHOULD tag each *onHealthCheck* line with the
-   action name (for example, `[onHealthCheck] connection refused`) while leaving *onRun*'s lines
-   untagged. The same applies under `WRAP_ACTIONS`, where the wrap script's own output is also part
-   of each stream. An implementation MAY suppress or collapse the output of invocations that succeed,
-   provided the full output of every invocation that fails or is canceled for exceeding its
-   `timeout` is retained.
-4. **At most one invocation at a time.** *onHealthCheck* invocations never overlap one another and
-   never run while *onEnter* or *onExit* is running.
-5. **`onRun` exit wins.** An invocation in progress when *onRun* exits is canceled and its result
-   discarded (lifecycle constraint 10); one in progress when the Service Session ends is canceled
-   before *onExit* runs.
-6. **Wrap hooks.** Under `WRAP_ACTIONS`, `onWrapServiceHealthCheck` runs while `onWrapServiceRun`
-   is running. Wrap scripts used in a Service Session MUST tolerate concurrent invocation. Wrappers
-   that execute into an existing context (`docker exec`, `ssh`) do; a wrapper that creates a
-   per-invocation exclusive resource does not.
-
-Default timeouts for these actions (extending the table in `<Action>`):
-
-| Action container | Action | Default |
-|---|---|---|
-| `<ServiceActions>` | `onEnter` | *no timeout* |
-| `<ServiceActions>` | `onRun` | *no timeout* (a timeout, if given, is measured from launch and its expiry is an instance failure) |
-| `<ServiceActions>` | `onHealthCheck` | 30 seconds |
-| `<ServiceActions>` | `onExit` | 300 seconds (five minutes) |
-
-Implementations MUST watch the stdout of *onEnter*, *onRun*, and *onExit* for the standard
-`openjd_status`, `openjd_progress`, and `openjd_fail` messages, and the stdout of *onRun* for
-`openjd_service_ready` when the health check's *type* is `STDOUT` (for *onHealthCheck*, see
-[Concurrency with `onRun`](#concurrency-with-onrun) rule 2). An `openjd_fail` message on *onRun*'s
-stdout is itself an instance failure: the runtime MUST cancel *onRun* at once with its `cancelation`
-method, as it does an UNHEALTHY instance, and the message is the failure's reason (see
-[Failure and restart](#failure-and-restart) step 2). An `openjd_fail` message on *onEnter*'s or
-*onExit*'s stdout marks that action failed when it exits, whatever its exit status — a start failure
-or an *onExit* failure respectively — and the message is that failure's reason. (The base
-specification says only that `openjd_fail` "indicates why an Action has failed"; existing runtimes
-already fail an action that emits it regardless of exit status, and this RFC states the rule for
-Service actions so that the three actions behave alike.)
-
-The environment variables that *How Jobs Are Run* defines for every Session, currently
-`OPENJD_SESSION_WORKING_DIR`, are set in the process environment of every action of a Service
-Session with their usual meanings; the working directory is the Service Session's own.
-
-**Environment variables within a Service.** Implementations MUST additionally watch the stdout of
-*onEnter* for `openjd_env`, `openjd_redacted_env`, and `openjd_unset_env`, with the same syntax and
-redaction rules as for an Environment's `onEnter`, including that `openjd_redacted_env` sets the
-variable only when the document declares the `REDACTED_ENV_VARS` extension, while its value is
-redacted from the log regardless. A variable set this way is set in the process environment of every
-subsequent action of the same Service Session — every instance of *onRun*, *onHealthCheck*, and
-*onExit* — and is retained across relaunches of *onRun* within the Session (for precedence, see
-[Services run inside Environments](#services-run-inside-environments)). These messages are ignored
-when emitted by *onRun*, *onHealthCheck*, or *onExit*.
-
-##### `<ServiceRequirement>`
-
-> A new section under `9. <Service>`, with `<ServiceRequirementPort>` as its subsection.
-
-Available when using the `SERVICE` extension, in a Job Template's `externalServices` only.
-
-A `<ServiceRequirement>` declares that the Job Template reads the endpoint of an external Service
-(see [Environment Template](#environment-template)): a Service that an attached Environment
-Template defines, named `name`, with at least the ports listed. It is the Job Template's half of a
-contract the scheduler checks at submission, and it makes the Service's endpoint available to the
-template's format strings without the template declaring the Service itself.
-
-A `<ServiceRequirement>` is the object:
-
-```yaml
-name: <ServiceName>
-ports: [ <ServiceRequirementPort>, ... ]
-```
-
-Where:
-
-1. *name* — The `name` of the external Service required. See [`<ServiceName>`](#servicename) and the
-   Job Template's *externalServices* constraint 4.
-2. *ports* — The ports of the Service that the Job Template uses. See
-   [`<ServiceRequirementPort>`](#servicerequirementport). Constraints:
-    1. Minimum number of elements: 1.
-    2. Maximum number of elements: 10.
-    3. No two ports may have the same `name`.
-
-The scheduler matches each requirement at submission ([Environment Template](#environment-template)
-item 2). An entry puts nothing in the Service's scope by itself; a Step, Service, or Job Environment
-that uses the Service lists it in `dependencies` as it would an inline Service, and an entry that
-nothing lists is rejected at template validation ([Service scope](#service-scope) rule 4).
-
-###### `<ServiceRequirementPort>`
-
-A `<ServiceRequirementPort>` is the object:
-
-```yaml
-name: <Identifier>
-protocol: enum("TCP", "UDP") # @optional
-```
-
-Where:
-
-1. *name* — The `name` of a port the external Service declares. It is the second component of
-   `Service.<service>.<port>.*` references. Must not be `File`.
-2. *protocol* — The transport protocol the Job Template expects the port to carry, matched against
-   the attached Service's port at submission ([Environment Template](#environment-template) item 2).
-   One of `TCP` or `UDP`. Default: `TCP`.
-
-#### Host requirements
-
-> A modification to the attribute capability table in
-> [`3.3.2.1. <AttributeCapabilityName>`](https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#3321-attributecapabilityname)
-
-```diff
-  |**Capability Name**|**Values**|**Description**|
-  |---|---|---|
-  |attr.worker.os.family|linux, windows, macos|The family of operating system on the host.|
-  |attr.worker.cpu.arch |x86_64, arm64|The architecture of the CPUs on the host.|
-+ |attr.worker.preemptible|true, false|Whether the host's capacity may be reclaimed by the infrastructure provider while work is running on it (for example, EC2 Spot Instances). A host that does not advertise this attribute has an unknown value; a requirement of `anyOf: ["false"]` does not match such a host.|
-```
-
-This attribute is not gated by the `SERVICE` extension; it is a reserved standard name that any Step
-may require, and Workers SHOULD advertise it. This RFC introduces it because a long-lived Service is
-the first entity in the specification whose correctness depends on not being preempted mid-scope.
-
-#### Format strings
-
-> A modification to
-> [`7.3.1. Value References`](https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#731-value-references)
-
-##### The `Service.*` scope
-
-New value references, all annotated `@fmtstring[host]` because a Service's endpoint is not known
-until the scheduler places the Service, and may change if the Service is relocated:
-
-| Value | Type | Description | Scope |
-|---|---|---|---|
-| `Service.<name>.<port>.port` | `int` | The port number allocated (or requested) for port `<port>` of Service `<name>`, in the space of that port's `protocol`. The same number is used for binding and for connecting. | Within the declaring Service, and within every entity that depends on it, per the rules below. |
-| `Service.<name>.<port>.bindAddress` | `string` | The interface address the service process MUST bind to so that entities in the Service's scope can reach it. Typically `0.0.0.0` (or `::`) for a distributed scheduler and `127.0.0.1` for a single-host runner. | Within the declaring Service only; never for a required external Service. |
-| `Service.<name>.<port>.connectAddress` | `string` | The hostname or IP address that entities in the Service's scope use to reach it. See [Address forms](#address-forms). | Within every entity that depends on the Service, per the rules below. Also within the declaring Service, for self-reference (e.g. to print its own URL). |
-| `Service.File.<name>` | `path` | The filesystem location to which the Service embedded file with key `<name>` has been written. | Within the Service Script actions and embedded files of the declaring Service. |
-
-A Step, Service, or Job Environment may reference `Service.<name>.<port>.port` and
-`Service.<name>.<port>.connectAddress` if and only if it lists `service: <name>` in its
-`dependencies`; a Step's Step Environments share the Step's list, and the Service `<name>` itself
-sees all three values. For a required Service, `<port>` must be one the requirement lists. In
-detail, `Service.<name>.<port>.*` for a Service `<name>` declared in the document's `services` or,
-in a Job Template, declared by an entry of `externalServices`, is in scope in:
-
-1. The Service `<name>` itself (all three values), when it is declared in `services`.
-2. Any Service in the same `services` list that lists `service: <name>` in its `dependencies`
-   (`port` and `connectAddress` only): its actions, *variables*, embedded files, and
-   `<ServiceScript>.let`.
-3. In a Job Template, any Step that lists `service: <name>` in its `dependencies`: its `script`
-   (actions, embedded files, `let`) and each of its `stepEnvironments` entries (*variables*,
-   actions, embedded files, `let`).
-4. In a Job Template, any `jobEnvironments` entry that lists `service: <name>` in its `dependencies`
-   (*variables*, actions, embedded files, `let`), whether `<name>` is inline or required.
-5. In an Environment Template: the document's `environment` when it lists `service: <name>` in its
-   `dependencies`.
-
-A reference from a Step, Service, or Job Environment that does not list the dependency is a
-validation error, whether the Service is inline or required, and the message SHOULD name the fix:
-for example, *Step 'Render' references `Service.Cache.main.port` but does not list `service: Cache`
-in `dependencies`*.
-
-`Service.*` is never in scope in a field resolved at job creation, before any Service is placed: a
-`hostRequirements` object, neither a Step's nor a Service's; a `<Service>`'s or a `<StepTemplate>`'s
-`let`; an `<Action>`'s `timeout`; a cancelation method's `notifyPeriodInSeconds`; and the
-[numeric `@fmtstring` fields](#numeric-fmtstring-fields) of `<ServicePort>`, `<ServiceHealthCheck>`,
-and `<ServiceRestartPolicy>`.
-
-A template that references a `Service.*` value outside the scopes above, or that references a
-Service or port name that it neither declares nor requires, is invalid and MUST be rejected before
-the Job is created.
-
-###### Address forms
-
-`bindAddress` and `connectAddress` are each a hostname, an IPv4 literal, or an IPv6 literal, in bare
-form: an IPv6 literal is never bracketed. Schedulers SHOULD provide a hostname for `connectAddress`
-when one resolves from every host in the Service's scope. Wherever an address and a port are joined
-into one string (a URL authority, a `--listen host:port` flag) an IPv6 literal must be bracketed, so
-templates MUST compose such strings with `join_host_port` (see [Modifications to the Expression
-Language](#modifications-to-the-expression-language)) rather than `{{ addr }}:{{ port }}`.
-
-##### Template processing stages
-
-> A modification to
-> [`7.4. Template Processing Stages`](https://github.com/OpenJobDescription/openjd-specifications/wiki/2023-09-Template-Schemas#74-template-processing-stages)
-
-`Service.*` values are unknown at template validation and at job creation, and known at task
-execution (and at service execution, for the Service's own actions). They type-check as
-`unresolved[int]`, `unresolved[string]`, and `unresolved[path]` at the earlier stages. A
-`<Service>`'s *let* is evaluated at job creation, with `<StepTemplate>` bindings; a
-`<ServiceScript>`'s *let* is evaluated at service execution on the service host, as
-`<EnvironmentScript>` and `<StepScript>` bindings are at task execution.
-
-### Modifications to the Expression Language
-
-> Additions to
-> [Expression Language](https://github.com/OpenJobDescription/openjd-specifications/wiki/2026-02-Expression-Language),
-> §1.2.2 (built-in symbol types) and §2.2.4 (string functions)
-
-**Service symbols.** `Service.File.<name>` (`path`) joins the file-location symbols, and a "Service
-Symbols" table lists `Service.<name>.<port>.port` (`int`), `bindAddress` (`string`), and
-`connectAddress` (`string`), all resolved at task or service execution and typed `unresolved[...]`
-at earlier stages, with the scopes in [The `Service.*` scope](#the-service-scope).
-
-**Host and port functions.** Four string functions are added. They are available only in documents
-that declare `SERVICE`; `EXPR` alone does not provide them:
-
-| Signature | Description |
-|---|---|
-| `join_host_port(host: string, port: int) -> string` | Join a host and a port as `host:port`, enclosing `host` in square brackets when it is an IPv6 literal (contains a colon and is not already bracketed). Suitable as a URL authority or a `host:port` flag value. |
-| `split_host_port(s: string) -> list[string]?` | The inverse: split `host:port` or `[host]:port` into `[host, port]`, with the brackets removed from an IPv6 literal. Returns `null` when `s` has no port, including an unbracketed IPv6 literal such as `2001:db8::5`. Malformed brackets (`[::1`, `[::1]x:80`) are an evaluation error. The port is a string; convert it with `int()`. |
-| `is_ipv4(s: string) -> bool` | True if `s` is an IPv4 literal. |
-| `is_ipv6(s: string) -> bool` | True if `s` is an IPv6 literal, bracketed or not, with or without a zone identifier (`fe80::1%eth0`). |
-
-`join_host_port("cache.example", 6379)` is `"cache.example:6379"`;
-`join_host_port("2001:db8::5", 6379)` is `"[2001:db8::5]:6379"`;
-`split_host_port("[2001:db8::5]:6379")` is `["2001:db8::5", "6379"]`. A zone identifier is carried
-through verbatim: `join_host_port("fe80::1%eth0", 80)` is `"[fe80::1%eth0]:80"`. These follow Go's
-`net.JoinHostPort` and `net.SplitHostPort`, except that a bare IPv6 literal splits to `null` rather
-than an error and an already-bracketed host is not bracketed again. Under method syntax,
-`addr.join_host_port(port)`.
-
-**`repr_sh` of integers.** §2.2.6 gains two signatures, available — like the four functions above —
-only in documents that declare `SERVICE`:
-
-| Signature | Description |
-|---|---|
-| `repr_sh(n: int) -> string` | The integer's decimal string form (`repr_sh(6379)` is `6379`; an integer never needs quoting). |
-| `repr_sh(args: list[int]) -> string` | The decimal forms joined with single spaces (`repr_sh([80, 443])` is `80 443`). |
-
-These exist so that a port number, or `WrappedService.Ports`, can be passed to a shell command
-without a `string()` conversion first.
-
-### Modifications to How Jobs Are Run
-
-> Additions to [How Jobs Are Run](https://github.com/OpenJobDescription/openjd-specifications/wiki/How-Jobs-Are-Run)
-
-#### Service lifecycle
-
-A Service is in exactly one of four states, tracked by the scheduler:
-
-| State | Meaning |
-|---|---|
-| **UNREADY** | No instance is READY. Either no instance has been launched yet, an instance is launched but has not yet passed a health-check probe, or the previous instance failed and a relaunch is pending or in progress. |
-| **READY** | The current instance has passed a health-check probe, has not since failed `failureThreshold` consecutive probes, and has not exited. |
-| **UNHEALTHY** | The current instance has failed `failureThreshold` consecutive health-check probes and is being stopped: the scheduler has canceled *onRun* and is waiting for it to exit, after which the restart decision applies. A transient state; for every other purpose, including Task scheduling, the Service is not READY. |
-| **FAILED** | The Service will not be relaunched, and its scope fails: every Task in the scope that has not completed successfully fails without a Task retry (see [Failure and restart](#failure-and-restart) step 4). |
-
-A Service is UNREADY from Job creation. A Service's actions run in a **Service Session** on a
-service host. Starting a Service means opening a Service Session and, within it, entering in order
-the Job Environments the Service's Sessions enter (see
-[Services run inside Environments](#services-run-inside-environments)), running *onEnter* if
-defined, launching *onRun*, and probing it with its health check. When a probe succeeds the Service is READY, and the
-health check keeps probing it for as long as *onRun* runs.
-
-A scheduler MUST satisfy the following constraints; how it satisfies them is its own concern.
-
-**Ordering.**
-
-1. All of a Service's ports are allocated, and `bindAddress` and `connectAddress` determined,
-   before any action of its Service Session runs.
-2. No action of a Service Session (including the `onEnter` of an Environment it enters) begins until
-   every entry in the Service's `dependencies` is satisfied: every listed Step has completed and
-   every listed Service is READY. Services neither of which depends on the other, directly or
-   transitively, MAY start concurrently.
-3. No Task of a Step is scheduled until every Service whose scope includes that Step is READY. Once
-   they are, Tasks are scheduled exactly as today, with no change to how Sessions are formed.
-4. A Service is *stopped* before any Service it depends on is stopped; Services neither of which
-   depends on the other MAY be stopped concurrently.
-
-**Sessions.**
-
-5. A Service has at most one live Service Session at a time, and at most one running *onRun*
-   within it. Before *onRun* is launched again in the same Session, the previous *onRun* process
-   MUST have exited, whether on its own or because the scheduler canceled it.
-6. A Service Session ends when the Service's scope completes (no Step in the scope has a Task that
-   could still run, whether because every Task completed or because the scope failed or was
-   canceled), when the Service is relocated, or when the Session fails to start (see
-   [Failure and restart](#failure-and-restart)). A Service whose scope completes MUST have its
-   Session ended whatever its state, including UNREADY, UNHEALTHY, and FAILED, so that partial state
-   is cleaned up. A Service is stopped once nothing in its scope can still use it: when a scope
-   completes with a Step, the scheduler exits that Step's Environments in the Task Sessions that
-   ran it before stopping the Service, so an Environment's `onExit` that reaches the Service (a
-   client flushing to a store) still finds it READY — the order the [execution order
-   example](#execution-order) shows.
-7. Before a Service Session ends: any running action is canceled with its own `cancelation`
-   method; *onExit* runs if it is defined and any action of the Service has run; and every
-   Environment entered is exited in reverse order, as at the end of any Session. Then the working
-   directory is deleted and the host's allocated amounts and ports are released. Nothing orders a
-   Step outside the scope after this; whether a Step that depends on a Step in the scope, but not on
-   the Service, can see files the Service wrote is implementation-defined.
-8. A Service that is started again after its Session has ended begins a new Service Session: new
-   host selection, new ports, new working directory, Environments re-entered, *onEnter* re-run.
-
-**Timing.**
-
-9. A scheduler MAY start a Service at any time consistent with the ordering constraints, including
-   lazily, when it is first prepared to schedule a Task in the Service's scope, and MAY decline to
-   start a Service whose scope will schedule no Task (for example, a Job canceled before any Task
-   could be scheduled). Once started, a Service is kept READY until its scope completes or it
-   fails, with one exception. A scheduler MAY **suspend** a Service while no Task in its scope is
-   running or can be scheduled (a paused Job, or a Job waiting on a resource). A suspension is not
-   a failure: the Service Session ends as constraint 7 requires, the Service becomes UNREADY, no
-   restart is consumed, completed Tasks keep their results, and the Service is started
-   again in a new Service Session (constraint 8) when the scheduler is next prepared to schedule a
-   Task in the scope. A Service MUST NOT be suspended unless its `completedTasks` is `KEEP`, nor
-   while any Service that lists it has a Service Session; a Service that other Services depend on
-   is therefore suspended only after they are, which requires them to be `KEEP` Services too.
-
-**Health.**
-
-10. A health-check probe in flight when *onRun* exits is canceled, with its `cancelation` method
-    when it is an action, and its result is discarded, whether the instance was READY or not. No
-    probe result observed after *onRun* has exited makes an instance READY or keeps it READY; the
-    instance has failed (see [Failure and restart](#failure-and-restart)).
-
-#### Services run inside Environments
-
-A Service Session enters Environments by the rules RFC 0010 gives for a Step's Sessions (see
-[Which Sessions enter an Environment](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#which-sessions-enter-an-environment)),
-applied to the Service exactly as to a Step, with "Step" read as "Service". The one difference is
-which Environments it chooses among: those of its own document and of the Environment Templates
-attached before that document, in the Job's Environment order (RFC 0010 §1.1 item 7). So a Job
-Template's Service may enter any of the combined Job's `jobEnvironments`, as a Step's Sessions may,
-while a Service from an Environment Template enters none of the Job Template's Environments or of
-a later attachment's. The rule differs for Services because a Step always belongs to the Job
-Template, the last document: with it, no dependency edge points from a document to a later one, so
-a cycle never spans documents and each author can keep their own document acyclic. The
-Environments a Service Session enters keep their order in `jobEnvironments`. A Service belongs to
-no Step, so no Step's `stepEnvironments` are entered, whatever the Service's scope: under RFC 0010
-a Step Environment has no `activation`, and only its own Step's Sessions enter it.
-
-An Environment that lists a Service waits for that Service to be READY, so the Service's own
-Sessions must not enter it. There is no exception for this: if they would enter it, the template has
-the cycle `X` → `X` and is rejected ([`<StepDependency>`](#stepdependency) constraint 3). The author
-keeps the Service out with RFC 0010's ordinary means: make the client Environment `ON_REQUEST` and
-request it from the Steps that need it, or have the Service decline a `BY_DEFAULT` one with an
-`environment:` entry whose `enableIf` is `false`. Two Services whose Sessions each enter a client
-Environment of the other are a cycle too, and are rejected in the same way; the author avoids it by
-the same means.
-
-An Environment Template's Service may have disabled `environment:` entries and no other
-`environment:` entries. One declines a `BY_DEFAULT` Environment the Service chooses among: its own
-document's, or an earlier attachment's, such as a wrapper from a document that lists `ENV_PARAMS`
-but not `SERVICE`, or one with a parameter that has no `default`. The name resolves as
-[Environment Template](#environment-template) *services* constraint 5 gives: declining an `ALWAYS`
-Environment and matching two earlier attachments' Environments are errors, and matching none has no
-effect. An entry that names an earlier attachment's Environment from a document that does not list
-`ENV_PARAMS` has no effect either: RFC 0010 makes that Environment behave as `ALWAYS`, so the
-Service's Sessions enter it. Where they must not, its author lists `ENV_PARAMS` and `EXPR` and
-leaves it `BY_DEFAULT` or makes it `ON_REQUEST`, which also lets Steps leave it out. A wrapper that
-must stay in every Session that may enter it instead lists `SERVICE`, defines the
-`onWrapService*` hooks, and sets `activation: ALWAYS`.
-
-The Environments a Service Session enters are all entered before the Service's *onEnter* and exited,
-in reverse, after its *onExit*. Environment variables set by an Environment's `variables` or
-`openjd_env` apply to every action of the Service, later Environments taking precedence over earlier
-ones, with the Service's own *variables* taking precedence over all of them and variables set by the
-Service's *onEnter* taking precedence over both.
-
-Under the `WRAP_ACTIONS` extension, a wrapping Environment that a Service Session enters wraps
-the Service's actions with its `onWrapService*` hooks, and the inner Environments of the
-Service Session with `onWrapEnvEnter` and `onWrapEnvExit` as in any Session (see
-[`<Environment>`](#environment)). The Service's process then runs inside the container or under
-the remote launcher that the wrapping Environment provides, without the Service knowing it.
-
-An Environment entered for a Service runs its `onEnter` once per Service Session, on the service
-host, in addition to once per Task Session.
-
-#### Failure and restart
-
-Two kinds of failure lead to the restart decision:
-
-* An **instance failure** occurs when *onRun* exits (with any status) while the Service's scope
-  still has work — a Task that has not completed, or that could still run — other than because the
-  scheduler canceled it; when *onRun* emits an `openjd_fail` message (the runtime cancels it, step
-  2, and the message is the failure's reason); when `readinessTimeoutSeconds` elapses before the
-  instance is READY; when the instance becomes UNHEALTHY (see
-  [`<ServiceHealthCheck>`](#servicehealthcheck)); or when the scheduler loses the service host
-  (step 6). An exit observed after the scope has completed is not a
-  failure, whether or not the scheduler's cancelation had yet reached the process; the Service
-  Session simply ends.
-* A **start failure** occurs when a Service Session fails before *onRun* is launched: a requested
-  *port* cannot be allocated on the chosen host, an Environment's `onEnter` fails, or the Service's
-  *onEnter* exits non-zero, times out, or emits `openjd_fail`. The Session ends (constraint 7
-  applies: *onExit* runs if *onEnter* ran, Environments are exited).
-
-On either failure the Service becomes UNREADY (an UNHEALTHY instance, once its *onRun* has exited)
-and the scheduler takes steps 1–4; steps 5–8 govern the outcomes those steps can produce.
-
-1. If `restartPolicy.completedTasks` is `RERUN`, cancels every running Task in the Service's scope;
-   each is returned to the queue to run again once the Service is READY, and this is not counted as
-   a Task failure. If it is `KEEP`, running Tasks continue. A Task that needs the Service while it
-   is not READY, or that holds the endpoint of a relocated instance, fails on its own and is retried
-   under the scheduler's ordinary Task retry rules, re-resolving `Service.*` when it runs again; a
-   Task that no longer needs the Service completes normally.
-2. Cancels *onRun* if it is still running (the readiness-timeout, UNHEALTHY, and `openjd_fail`
-   cases) and waits for it to exit; constraint 5 forbids a second *onRun* in the Session before
-   then.
-3. If the number of relaunches so far is less than `restartPolicy.maxRestarts`:
-    1. If `restartPolicy.completedTasks` is `RERUN`, returns every successfully completed Task in
-       the scope to the queue.
-    2. Relaunches the Service. After a start failure or host loss it MUST begin a new Service
-       Session (constraint 8). After an instance failure on a host that is still available, it MAY
-       relaunch *onRun* within the existing Service Session (same working directory, same ports,
-       *onEnter* not re-run), preserving the state *onEnter* established; it SHOULD begin a new
-       Service Session, which allocates new ports, when the failure may be a port conflict (*onRun*
-       exited without ever becoming READY); or it MAY relocate (step 5).
-4. Otherwise, the Service becomes FAILED and its scope fails. Every Task in the scope that has not
-   completed successfully fails, and is not retried under the scheduler's Task retry rules, since a
-   retry would need the Service: a running Task is canceled, and a Task not yet run is not
-   scheduled. Tasks that completed successfully keep that result. Every Step in the scope then
-   fails, because it has Tasks that failed, and with it the Job when the scope is every Step. The
-   Service Session is then ended per constraint 6.
-5. **Relocation.** Relaunching in a new Service Session on a different host is relocation. It counts
-   as one relaunch, is governed by `restartPolicy` including `completedTasks`, and changes every
-   `Service.<name>.*` value. When relocating away from a host that is still available, constraint 7
-   applies to the old Session in full.
-6. **Host loss.** A scheduler loses a service host when it determines, by its own means (a missed
-   heartbeat, a preemption notice, an instance termination), that the host is gone or unreachable.
-   This is an instance failure. The scheduler MUST NOT wait for *onExit*, Environment exits, or
-   working-directory cleanup there; it releases the host's allocations and proceeds to steps 1–4. If
-   the host later reappears, the scheduler SHOULD terminate any surviving service process and remove
-   the working directory, but the Service's state is not affected either way.
-7. **`RERUN` and Step dependencies.** `RERUN` returns the completed Tasks of every Step in the
-   Service's scope to the queue (step 3.1), so each of those Steps returns to a pending state. A
-   Step that depends on a returned Step, directly or transitively, returns to pending as well, since
-   the work it consumed is produced again; Step dependencies are then resolved again from scratch. A
-   Service that had been stopped because its scope completed, and whose scope includes a returned
-   Step, is started again, in a new Service Session, when that Step next becomes schedulable.
-8. **Dependents of a relaunched Service.** When a Service begins a new Service Session (after a
-   start failure, host loss, suspected port conflict, suspension, or relocation), every Service that
-   lists it, directly or transitively, holds endpoint values that are no longer valid. The scheduler
-   MUST stop each such dependent in the order of constraint 4 (dependents before the Services they
-   list) and start each again in a new Service Session once every Service it lists is READY. This
-   stop does not consume the dependent's restarts, and the dependent's `completedTasks`
-   applies to its own scope exactly as for any instance that is stopped and started again (its Tasks
-   that completed against the old instance are returned under `RERUN`, kept under `KEEP`). A
-   relaunch within the same Service Session keeps the same ports and requires nothing of dependents.
-   A dependent whose `restartPolicy` gives no `completedTasks` is stopped and started again as a
-   `RERUN` Service here, since it has not said that its state survives a new instance; a dependent
-   that wants its completed Tasks kept gives `completedTasks: KEEP` whatever its `maxRestarts`.
-
-A Task failure never fails a Service. Because a lost host takes the
-Service's state with it, authors of stateful Services SHOULD require non-preemptible capacity with
-`attr.worker.preemptible`, and SHOULD choose `completedTasks: RERUN` unless the state can be
-regenerated; authors SHOULD prefer a `COMMAND` or `STDOUT` health check when a plain TCP connect is
-not a sufficient indicator that the service can do useful work.
-
-#### Validation
-
-This section indexes the rules this RFC adds; each is stated in full where the pointer leads. Every
-rule is checked at template validation, except that the
-[numeric `@fmtstring` fields](#numeric-fmtstring-fields) are checked when resolved at job creation;
-the rules marked *(submission)* need the combined Job and are checked at submission; and the rules
-marked *(enableIf)* are checked at job creation for whatever depends on an `enableIf` that is not a
-boolean scalar, or on an attached Environment.
-
-| Rule | Stated in |
-|---|---|
-| Every `Service.*` reference names a declared or required Service and port, appears only where permitted, and the referencing entity lists the Service in its `dependencies` | [The `Service.*` scope](#the-service-scope) |
-| No `Service.*` value in a field resolved at job creation | [The `Service.*` scope](#the-service-scope) |
-| An Environment's `dependencies` holds only `service` entries and is absent from `stepEnvironments` | [`<Environment>`](#environment) *dependencies* constraints 2–4 |
-| A wrapping Environment defines the hook for every kind of action that a kind of Session entering it may run *(enableIf)* | [`<Environment>`](#environment) wrap hook rule 1 |
-| Every `dependencies` entry is well formed, `environment:` entries appear only on Steps and Services, and on an Environment Template's Services only disabled ones, none declining an Environment whose `activation` is `ALWAYS` or matching two earlier attachments' Environments *(enableIf)* | [`<StepDependency>`](#stepdependency) constraints 1, 2, and 4 and item 3; [`<Service>`](#service) item 4 constraint 4; [Environment Template](#environment-template) *services* constraint 5 |
-| A Service's `environment:` entries read only the scopes available to a Service | [`<Service>`](#service) item 4 |
-| The `dependencies` graph, including the edges from entering an Environment that lists a Service, is acyclic, with no exception for a Service's own client Environment *(enableIf)* | [`<StepDependency>`](#stepdependency) constraint 3; [Environment Template](#environment-template) *services* constraint 4 |
-| A Service's combined host requirements do not conflict *(enableIf)* | [`<Service>`](#service) item 5 |
-| Every inline Service, and every `externalServices` entry, is listed by some Step, Service, or Job Environment | [Service scope](#service-scope) rule 4 |
-| Service, requirement, and port names are `<Identifier>`s other than `File`, unique within their lists, and no requirement shares a `name` with an inline Service | [`<ServiceName>`](#servicename); [Job Template](#job-template) *externalServices* constraint 4 |
-| `externalServices` appears only in a Job Template | [Job Template](#job-template) *externalServices* constraint 5 |
-| `healthCheck` is consistent with `<ServiceActions>`, with `ports`, and with its own `type` | [`<Service>`](#service) item 7; [`<ServiceHealthCheck>`](#servicehealthcheck) items 2, 3, and 6; [`<ServiceActions>`](#serviceactions) item 3 |
-| No two ports of a Service with the same `protocol` have the same `port` number | [`<Service>`](#service) item 6 constraint 4 |
-| `completedTasks` is provided when `maxRestarts` is greater than 0 | [`<ServiceRestartPolicy>`](#servicerestartpolicy) item 2 |
-| A template that lists `SERVICE` also lists `EXPR` and `ENV_PARAMS` | [Backward compatibility](#backward-compatibility) |
-| An attached wrapping Environment that a Service Session enters defines the `onWrapService*` hooks *(submission)* | [Environment Template](#environment-template) item 4 |
-| Each `externalServices` entry matches exactly one attached Service *(submission)* | [Environment Template](#environment-template) item 2 |
-
-These checks appear in the wiki as §9.9.
-
-#### Placement
-
-Placement is entirely up to the scheduler, subject to the Service's combined host requirements
-([`<Service>`](#service) item 5). A
-single-host runner such as `openjd run` starts the Service alongside the Tasks on the same host with
-`bindAddress` and `connectAddress` both on loopback.
-
-Whatever the placement, `connectAddress` and `port`, over the port's `protocol`, MUST reach the
-service process from every host in the scope. How the scheduler achieves that (a shared network, an
-overlay, port forwarding, a proxy) is not visible in the template.
-
-#### Stdout/Stderr messages
-
-> Addition to the list in *Stdout/Stderr Messages*, and a note on `openjd_fail` in a Service Session
-> (see [`<ServiceActions>`](#serviceactions)): from a Service's *onRun* the message is an instance
-> failure in itself, on which the runtime cancels *onRun* and reports the message as the reason; from
-> *onEnter* or *onExit* it marks the action failed when it exits, whatever the exit status.
-
-* `openjd_service_ready: <message>` where `<message>` is any string — Interpreted only when emitted
-  by the `onRun` action of a Service whose health check *type* is `STDOUT`, as that type's probe. It
-  indicates that the service is accepting traffic on all of its declared ports: the first line makes
-  the instance READY, and later lines are heartbeats when the check gives `healthIntervalSeconds`
-  (see [`<ServiceHealthCheck>`](#servicehealthcheck)).
+| **Environment selection** | Which Environments a Session enters, as RFC 0010 decides it from each Environment's `activation`, `enableIf`, and `exclusiveGroup` and from the entity's `environment:` entries (RFC 0010, [Which Sessions enter an Environment](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#which-sessions-enter-an-environment)). A Service's Sessions are selected exactly as a Step's are, among the Environments that [Services run inside Environments](#services-run-inside-environments) makes available to the Service. |
+| **Request, decline, applies** | As RFC 0010 defines them for a Step, extended to Services: a Service requests an Environment with an enabled `environment:` entry in its `dependencies`, declines a `BY_DEFAULT` one with a disabled entry, and an Environment applies to it by its `activation` and those entries. |
+
+### Extension name and the documents that list it
+
+[§1.1](../wiki/2023-09-Template-Schemas.md#11-job-template) item 3 adds `SERVICE` to the extension names.
+[§9](../wiki/2023-09-Template-Schemas.md#9-service-extension-service) says that a template that lists `SERVICE` must
+also list `EXPR` and `ENV_PARAMS`: a Service requests and configures Environments with RFC 0010's `environment:`
+entries, and its host requirements combine with theirs by RFC 0010's rules.
+
+An Environment Template needs the `extensions` key to list `SERVICE`.
+[§1.2](../wiki/2023-09-Template-Schemas.md#12-environment-template) items 2 and 3 add `$schema` and `extensions` to it,
+as RFC 0010's wiki edit does (its [Changes that apply without the
+extension](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#changes-that-apply-without-the-extension)
+item 4), so that this pull request reads correctly on its own. An extension listed there applies to that document only,
+so a Job Template need not list `SERVICE` for its Steps to enter an attached Environment that lists an attached
+Service. Reading the endpoint itself needs `externalServices`, which requires `SERVICE`.
+
+### Backward compatibility
+
+This RFC is additive and gated by the `SERVICE` extension name declared under RFC 0002:
+
+- A template that lists `SERVICE` must also list `EXPR` and `ENV_PARAMS`, and a scheduler must reject one that does
+  not. `ENV_PARAMS` supplies the `environment:` entry by which a Service requests an Environment and supplies its
+  parameter values, an Environment's `activation`, `enableIf`, and `exclusiveGroup`, and the rule that combines a
+  Service's host requirements with those of the Environments its Sessions enter. RFC 0010 specifies those for Steps,
+  and this RFC applies them to Services unchanged (see [Services run inside
+  Environments](#services-run-inside-environments)).
+- No existing field changes meaning. One combination is newly rejected at submission: a wrapping Environment (RFC 0008)
+  that a Service Session enters but that does not define the `onWrapService*` hooks, such as one from a document
+  without `SERVICE`, in a Job that has any Service
+  ([§1.2.2](../wiki/2023-09-Template-Schemas.md#122-services-from-environment-templates) item 4). A queue wrapper that
+  lists neither `SERVICE` nor `ENV_PARAMS`, such as one written before both extensions, behaves as `activation: ALWAYS`
+  under RFC 0010, and no Service can decline it. Such a queue rejects every Job whose Job Template has a Service that
+  runs, and every Job that uses a Service of an Environment Template attached after the wrapper, until the wrapper's
+  author defines the hooks, or lists `ENV_PARAMS` and makes the wrapper `ON_REQUEST` or keeps that extension's
+  default, `BY_DEFAULT`, for each Service to decline. Each of these lists `ENV_PARAMS`: the hooks need `SERVICE`, which
+  requires it, and `activation` is part of it. So a wrapper that must still be entered by every Session that may enter
+  it also sets `activation: ALWAYS`.
+- `attr.worker.preemptible` is a new standard attribute name that any Step may require, with or without the extension
+  (see [`attr.worker.preemptible`](#attrworkerpreemptible)).
+
+### Declaring a Service
+
+[§9](../wiki/2023-09-Template-Schemas.md#9-service-extension-service) is a new top-level section, inserted after §8,
+that defines the `<Service>` object, so *Additional Information* and *License* become
+[§10](../wiki/2023-09-Template-Schemas.md#10-additional-information) and
+[§11](../wiki/2023-09-Template-Schemas.md#11-license). A Service has a name, a `let`, `dependencies`,
+`hostRequirements`, named `ports`, a `healthCheck`, a `restartPolicy`, `variables`, and a `script` of four actions. It
+reuses the sub-schemas of an Environment and a Step (`<LetBindings>`, `<EnvironmentVariables>`, `<EmbeddedFile>`,
+`<Action>`, `<HostRequirements>`), so authors meet nothing new except what a long-lived process needs (see [A new
+entity rather than extending `<Environment>`](#a-new-entity-rather-than-extending-environment)). Its subsections define
+the new parts:
+
+* [§9.2](../wiki/2023-09-Template-Schemas.md#92-servicename) `<ServiceName>`: an identifier other than `File`, which
+  `Service.File.*` reserves.
+* [§9.3](../wiki/2023-09-Template-Schemas.md#93-serviceport) `<ServicePort>`: a name, an optional fixed number, and a
+  protocol, plus the form of `bindAddress` and `connectAddress`. Ports are named so that the scheduler can choose the
+  numbers (see [Ports are named](#ports-are-named)), and an IPv6 address is never bracketed, so templates join an
+  address and a port with `join_host_port`.
+* [§9.4](../wiki/2023-09-Template-Schemas.md#94-servicehealthcheck) `<ServiceHealthCheck>`: one probe, `TCP_CONNECT`,
+  `COMMAND`, or `STDOUT`, that decides readiness and then health (see [Health is declared, not
+  inferred](#health-is-declared-not-inferred)).
+* [§9.5](../wiki/2023-09-Template-Schemas.md#95-servicerestartpolicy) `<ServiceRestartPolicy>`: `maxRestarts`, and
+  `completedTasks`, which says whether the Tasks' results depend on the instance and is required when a relaunch is
+  allowed (see [`restartPolicy.completedTasks` is per-Service and required when relaunch is
+  allowed](#restartpolicycompletedtasks-is-per-service-and-required-when-relaunch-is-allowed)).
+  [§9.5.1](../wiki/2023-09-Template-Schemas.md#951-numeric-fmtstring-fields) lets the numeric fields of these three
+  objects be format strings resolved at job creation, so a Job Parameter can supply them.
+* [§9.6](../wiki/2023-09-Template-Schemas.md#96-servicescript) `<ServiceScript>` and
+  [§9.7](../wiki/2023-09-Template-Schemas.md#97-serviceactions) `<ServiceActions>`: `onEnter` for setup that survives
+  a relaunch, the long-lived `onRun`, `onHealthCheck` for a `COMMAND` probe, and `onExit` (see [`onEnter` / `onRun` /
+  `onExit` rather than a single `onRun`](#onenter--onrun--onexit-rather-than-a-single-onrun) and [`onHealthCheck` is
+  an action of the Service](#onhealthcheck-is-an-action-of-the-service)). §9.7 also says which `openjd_*` messages each
+  action may emit, and that `openjd_env` from `onEnter` reaches only the Service's own later actions.
+  [§9.7.1](../wiki/2023-09-Template-Schemas.md#971-concurrency-of-onhealthcheck-with-onrun) gives the rules for
+  `onHealthCheck` running while `onRun` runs, the only two actions of one Session that run at once: embedded files,
+  stdout, log attribution, and wrap scripts.
+* [§9.8](../wiki/2023-09-Template-Schemas.md#98-servicerequirement) `<ServiceRequirement>` and
+  [§9.8.1](../wiki/2023-09-Template-Schemas.md#981-servicerequirementport) `<ServiceRequirementPort>`: how a Job
+  Template names an external Service and the ports it reads (see [External Services are declared with their
+  ports](#external-services-are-declared-with-their-ports)).
+
+[§1.1](../wiki/2023-09-Template-Schemas.md#11-job-template) items 8 and 9 add `services` and `externalServices` to the
+Job Template, and *steps* becomes item 10. [§1.2](../wiki/2023-09-Template-Schemas.md#12-environment-template) items 5
+and 6 make an Environment Template's `environment` optional and add `services`, with at least one of the two required,
+and the [opening paragraph](../wiki/2023-09-Template-Schemas.md#template-schemas-version-2023-09) of Template Schemas
+says that an Environment Template may describe Services. Item 6 constraint 5 limits an Environment Template's Service
+to `service:` entries and disabled `environment:` entries (see [Services run inside
+Environments](#services-run-inside-environments)). The new
+[§1.2.2](../wiki/2023-09-Template-Schemas.md#122-services-from-environment-templates) says how the scheduler applies
+such Services to every Job submitted through it, matches each `externalServices` entry to exactly one attached Service,
+keeps same-named Services of different documents apart, and checks attached wrapping Environments, and it lists the
+only checks that need the combined Job (see [External Services via the Environment Template, not a new template
+type](#external-services-via-the-environment-template-not-a-new-template-type) and [Service names are per
+document](#service-names-are-per-document)).
+
+The [§5](../wiki/2023-09-Template-Schemas.md#5-action) table of default timeouts gains the four Service actions, and
+[§6](../wiki/2023-09-Template-Schemas.md#6-embeddedfile) adds `Service.File.<name>` for a Service's embedded files.
+
+### Depending on a Service
+
+A Step, a Service, or a Job Environment that uses a Service lists it in its `dependencies`, in the same list as the Steps
+it depends on (see [Dependencies are declared, and one list names both
+kinds](#dependencies-are-declared-and-one-list-names-both-kinds)).
+
+* [§3.2](../wiki/2023-09-Template-Schemas.md#32-stepdependency) adds the `service` key to `<StepDependency>`, satisfied
+  when the Service is READY. It says how the key combines with RFC 0010's `step` and `environment` forms, which an
+  `ENV_PARAMS` document may use, and gives the constraints: what each key may name, no two entries naming one Step or
+  one Service, exactly one key per entry (replacing RFC 0010's constraint 1), and, in constraint 3, the one acyclic
+  graph over a Job Template's Steps and Services. That graph has an edge from each entity to each entry it lists, and
+  from each Step and Service whose Sessions enter a Job Environment to each Service that Environment lists, with no
+  exception. Constraint 3 also says at which stage a cycle is reported.
+* [§3](../wiki/2023-09-Template-Schemas.md#3-steptemplate) item 4 says that a Step's `dependencies` may name Services,
+  and the paragraph after the item list that a Step need not repeat a Step dependency that a Service it lists already
+  carries. *stepEnvironments* constraint 3 points to the rule that a Step Environment has no `dependencies` of its own.
+* [§4](../wiki/2023-09-Template-Schemas.md#4-environment) item 3 adds `dependencies` to an Environment: the Services
+  whose clients it configures. Every entity whose Sessions enter the Environment depends on each Service it lists.
+* [§9](../wiki/2023-09-Template-Schemas.md#9-service-extension-service) item 4 gives a Service's own `dependencies`: the
+  Steps it waits for, the Services whose endpoints it reads, and the Environments it requests or declines, and which
+  values its `environment:` entries may read.
+* [§9.1](../wiki/2023-09-Template-Schemas.md#91-service-scope) defines a Service's scope from these lists, says when it
+  is determined, and rejects an inline Service or an `externalServices` entry whose scope is empty. An external Service
+  whose scope is empty is never started.
+
+### Services run inside Environments
+
+A Service Session enters Environments by RFC 0010's rules for a Step's Sessions, so the Conda, Rez, or container
+Environments that provision a Job's Tasks provision its Services too. A Service that needs different software, or none
+of an Environment, says so with `environment:` entries as a Step does (see [Service Sessions enter the Job's
+Environments by the Steps' rule](#service-sessions-enter-the-jobs-environments-by-the-steps-rule)).
+[§4](../wiki/2023-09-Template-Schemas.md#4-environment) item 3 and the [Services](../wiki/How-Jobs-Are-Run.md#services)
+section of How Jobs Are Run state this, with one difference from a Step: a Service chooses among the Environments of
+its own document and of the Environment Templates attached before it. A Job Template's Service chooses among all of the
+Job's Environments, and an Environment Template's Service among none of the Job Template's or a later attachment's. A
+Service belongs to no Step, so it enters no Step Environment. How Jobs Are Run also gives the order of environment
+variables in a Service's actions: the Environments' in order, then the Service's own `variables`, then those its
+`onEnter` sets.
+
+An Environment that lists a Service waits for that Service to be READY, so the Service's own Sessions must not enter it.
+There is no exception for this: a template in which they would is rejected as a cycle by §3.2 constraint 3 (see [An
+exception for an Environment that lists the Service](#an-exception-for-an-environment-that-lists-the-service)). The
+author keeps the Service out with RFC 0010's means: an `ON_REQUEST` client Environment that the Steps request, or a
+disabled entry by which the Service declines a `BY_DEFAULT` one.
+
+An Environment Template has no Steps, and its author writes its Environment directly, so
+[§1.2](../wiki/2023-09-Template-Schemas.md#12-environment-template) item 6 constraint 5 allows its Services only
+disabled `environment:` entries, each with a literal `enableIf: false` and no *parameters*. A disabled entry declines
+the document's own `BY_DEFAULT` Environment, which would otherwise be a cycle when it lists the Service, or an earlier
+attachment's `BY_DEFAULT` Environment that the Service does not need. Its name resolves by RFC 0010's rules for a
+Step's entry, with the Service's own document in place of the Job Template and the earlier attachments in place of the
+attached ones. Declining an `ALWAYS` Environment is an error, and an entry for an Environment from a document that does
+not list `ENV_PARAMS` has no effect, as RFC 0010 gives for a Step. Requesting an earlier attachment's Environment, or
+supplying values to it, is not provided for: a request would make the Service depend on another document's Environment
+being attached, and values would depend on its parameter definitions, while a decline depends only on the
+Environment's name and `activation`. The [Services from Environment
+Templates](../wiki/How-Jobs-Are-Run.md#services-from-environment-templates) section of How Jobs Are Run explains these
+rules for queue administrators.
+
+[§9](../wiki/2023-09-Template-Schemas.md#9-service-extension-service) item 5 combines a Service's `hostRequirements`
+with those of the Environments its Sessions enter, by RFC 0010's rules for a Step's combined host requirements, and
+places the Service Session only on a host that satisfies them.
+[§3.3](../wiki/2023-09-Template-Schemas.md#33-hostrequirements) now describes requirements for a Service as well as a
+Step. Its constraint 1, that at least one of *amounts* or *attributes* is given, applied "in a Job Template" and now
+applies wherever the object is provided, since a Service in an Environment Template also has `hostRequirements`.
+
+### Wrap hooks
+
+Under `WRAP_ACTIONS`, a wrapping Environment that a Service Session enters wraps the Service's actions, so a Service
+runs inside the container or under the remote launcher that wraps the Tasks.
+[§4.3](../wiki/2023-09-Template-Schemas.md#43-environmentactions) item 5 adds the four `onWrapService*` hooks, and its
+`WRAP_ACTIONS` constraint 6 replaces RFC 0008's rule 1 when `SERVICE` is declared: a wrapper must define the hook for
+every kind of action that a kind of Session entering it may run. Constraint 6 gives the table of actions and hooks and
+says when the check is made. [§4.3.1](../wiki/2023-09-Template-Schemas.md#431-wrap-hook-template-variables) adds the
+`WrappedService.*` variables, the port names, numbers, bind addresses, and protocols that a wrapper needs to forward
+the Service's ports, and what a wrapper that gives the process its own network namespace must do. The list of format
+string scopes in [§4](../wiki/2023-09-Template-Schemas.md#4-environment) adds `Service.*` and `WrappedService.*`, and
+says that every `Wrapped*` group is in scope throughout a hook's `<Action>`, including its `timeout` and `cancelation`.
+The [Sessions](../wiki/How-Jobs-Are-Run.md#sessions) section of How Jobs Are Run says that a wrapper that a Service
+Session enters defines the `onWrapService*` hooks as well. For a wrapper attached from an Environment Template, the
+check is made at submission ([§1.2.2](../wiki/2023-09-Template-Schemas.md#122-services-from-environment-templates)
+item 4; see [Backward compatibility](#backward-compatibility)).
+
+### Reading the endpoint
+
+A Step script reads a Service's endpoint through the `Service.*` scope, which the scheduler fills in when it places the
+Service (see [Endpoint as three scalar values](#endpoint-as-three-scalar-values) and [Passing the endpoint through
+environment variables](#passing-the-endpoint-through-environment-variables)).
+
+* [§7.3.1](../wiki/2023-09-Template-Schemas.md#731-value-references) adds `Service.<name>.<port>.port`,
+  `bindAddress`, and `connectAddress`, and `Service.File.<name>`. It also extends the scope of PATH `Param.*` values,
+  `Session.WorkingDirectory`, and the path mapping values to a Service's actions.
+* [§9](../wiki/2023-09-Template-Schemas.md#9-service-extension-service), after its item list, gives the format string
+  scopes of a Service and the visibility rule: an entity sees a Service's `port` and `connectAddress` only if it lists
+  the Service in its `dependencies`, only the Service itself sees `bindAddress`, and `Service.*` is never in scope in a
+  field resolved at job creation.
+* [§3.6.2](../wiki/2023-09-Template-Schemas.md#362-let-binding-scope-summary) adds rows for `<Service>.let` and
+  `<ServiceScript>.let`, and lets the `let` of a Step script, a simple action, and an Environment script read the
+  `Service.*` values in scope.
+* [§7.4](../wiki/2023-09-Template-Schemas.md#74-template-processing-stages) adds `Service.*` to the values unknown
+  before task execution, and a paragraph on service execution, the stage at which a Service's own actions are resolved
+  on the service host.
+* The Expression Language adds `Service.File.<name>` and a [Service
+  Symbols](../wiki/2026-02-Expression-Language.md#service-symbols) table to
+  [§1.2.2](../wiki/2026-02-Expression-Language.md#122-built-in-symbol-types).
+  [§2.2.4](../wiki/2026-02-Expression-Language.md#224-string-functions) adds `join_host_port`, `split_host_port`,
+  `is_ipv4`, and `is_ipv6`, with examples, because an IPv6 address must be bracketed wherever an address and a port are
+  joined. [§2.2.6](../wiki/2026-02-Expression-Language.md#226-script-embedding-and-serialization) adds `repr_sh` of an
+  `int` and of a `list[int]`, so that a port number or `WrappedService.Ports` can be passed to a shell command without a
+  `string()` conversion. These functions and signatures are available only in a document that lists `SERVICE`. The
+  same edit removes a duplicated `repr_sh(args: list[path])` row from the §2.2.6 table.
+
+### Running a Service
+
+[How Jobs Are Run](../wiki/How-Jobs-Are-Run.md#services) gains a Services section for authors and implementers:
+
+* [Services](../wiki/How-Jobs-Are-Run.md#services) explains what a Service and its Service Session are, how a Service
+  Session enters Environments, and that placement is up to the scheduler, provided that `connectAddress` and `port`
+  reach the service process from every host in the scope.
+* [Service lifecycle](../wiki/How-Jobs-Are-Run.md#service-lifecycle) defines the four states and the constraints a
+  scheduler must satisfy: ordering against `dependencies`, Tasks held until their Services are READY, stop order, one
+  Session and one `onRun` at a time, when a Service Session ends and what happens before it does, lazy start,
+  suspension of a `KEEP` Service, and probes in flight when `onRun` exits. The Basic Example [Execution
+  order](#execution-order) shows the order.
+* [Service failure and restart](../wiki/How-Jobs-Are-Run.md#service-failure-and-restart) defines instance failures and
+  start failures and the scheduler's steps after one: canceling or keeping running Tasks, relaunching under the restart
+  policy, FAILED, relocation, host loss, `RERUN` and Step dependencies, and the Services that list a relaunched one. It
+  ends with advice for authors of stateful Services (see [`onRun` exiting is always a
+  failure](#onrun-exiting-is-always-a-failure) and [Start failures consume a
+  restart](#start-failures-consume-a-restart)).
+* [Services from Environment Templates](../wiki/How-Jobs-Are-Run.md#services-from-environment-templates) describes
+  queue-supplied Services and their client Environments, as in the [queue-supplied
+  cache](#a-queue-supplied-cache-with-client-configuration) example.
+* [Stdout/Stderr Messages](../wiki/How-Jobs-Are-Run.md#stdoutstderr-messages) adds `openjd_service_ready`, says that
+  `openjd_fail` from a Service's `onRun` is itself an instance failure, lets a Service's `onEnter` emit `openjd_env` and
+  `openjd_unset_env` for the Service's own later actions, says which messages are honored in a Service Session and
+  that the Session environment variables are set there, and adds the `onWrapService*` hooks to the wrap scripts whose
+  stdout is scanned. The base specification says only that `openjd_fail` "indicates why an Action has failed";
+  existing runtimes already fail an action that emits it whatever its exit status, and this RFC states the rule for
+  Service actions so that the three behave alike.
+
+### `attr.worker.preemptible`
+
+[§3.3.2.1](../wiki/2023-09-Template-Schemas.md#3321-attributecapabilityname) adds the standard attribute
+`attr.worker.preemptible`, `true` or `false`. It is not gated by any extension: any Step may require it, and Workers
+should advertise it. A host that does not advertise it does not match `anyOf: ["false"]`. This RFC introduces it
+because a long-lived Service is the first entity in the specification whose correctness depends on not being preempted
+mid-scope, and How Jobs Are Run advises authors of stateful Services to require it.
+
+### Validation
+
+[§9.9](../wiki/2023-09-Template-Schemas.md#99-validation) indexes every rule the extension adds and the section that
+states it, and says which rules are checked when the Job is created or at submission rather than at template
+validation. The conformance suite's [README](../conformance-tests/2023-09/SERVICE/README.md) describes the rules its
+tests verify and lists every test.
 
 ## Design Choice Rationale
 
@@ -1995,8 +888,8 @@ continued health.
 
 `COMMAND` runs an action while *onRun* is running, which nothing else in the specification does. The
 alternative is a wrapper script that backgrounds the binary and polls it, which is the boilerplate
-OpenJD exists to remove; the rules in [Concurrency with `onRun`](#concurrency-with-onrun) are the
-cost of avoiding it.
+OpenJD exists to remove; the rules in [§9.7.1](../wiki/2023-09-Template-Schemas.md#971-concurrency-of-onhealthcheck-with-onrun)
+are the cost of avoiding it.
 [Issue #133](https://github.com/OpenJobDescription/openjd-specifications/issues/133), monitoring for
 Environment actions in general, should adopt the same vocabulary.
 
@@ -2034,7 +927,8 @@ idle Service (only under `KEEP`, since under `RERUN` suspension would discard ev
 The values name what the author knows, whether the Tasks' results depend on the instance, rather
 than what the scheduler does with them. Naming them by Task outcome would not fit: under either
 value a Task that completed against the last instance keeps its result when the Service finally
-fails (step 4 of [Failure and restart](#failure-and-restart)), and under either value a Task whose
+fails (step 4 of [Service failure and restart](../wiki/How-Jobs-Are-Run.md#service-failure-and-restart)), and under
+either value a Task whose
 Service cannot be restarted fails.
 
 A `RERUN` requeue does not count against a Task's retries because the Task did nothing wrong. The
@@ -2175,19 +1069,72 @@ Treating it as terminal while retrying an *onRun* crash would fail a Job for exa
   stanzas with `attempts`. The `KEEP`/`RERUN` distinction has no direct analogue; it is specific to
   batch systems where completed work has a value that a service restart can invalidate.
 
+## Prototype
+
+The prototype is the `service-extension` branch of
+[mwiebe/openjd-rs](https://github.com/mwiebe/openjd-rs/tree/service-extension), developed alongside this RFC and built
+on RFC 0010's `env-params-prototype` branch. It implements the extension in `openjd-model`, `openjd-expr`,
+`openjd-sessions`, and `openjd-cli`, where `openjd run` is a single-host scheduler for Services. Its `openjd check`,
+`openjd summary`, and `openjd run` pass all 372 tests under `conformance-tests/2023-09/SERVICE` at this RFC's head.
+
+These parts of the proposal changed because of the prototype:
+
+1. **No `runScope`.** Earlier drafts gave an Environment a `runScope`, the kinds of Session (`TASK`, `SERVICE`) that
+   enter it. Building SERVICE on the ENV_PARAMS prototype meant two mechanisms deciding which Sessions enter an
+   Environment, by kind and by request. The RFC dropped `runScope`, and a Service Session now chooses its Environments
+   by RFC 0010's rules, as a Task Session does (see [`runScope` as a list of Session
+   kinds](#runscope-as-a-list-of-session-kinds)).
+2. **No exception for a client Environment.** The prototype first kept a Service's Sessions out of an Environment that
+   lists the Service. Each later rule about which Sessions enter an Environment needed its own text for that exception:
+   RFC 0010's split of `ALWAYS` from `BY_DEFAULT`, a disabled entry, an `exclusiveGroup`. The RFC dropped the exception,
+   so entering such an Environment is a cycle that §3.2 constraint 3 rejects, naming the Environment, and the template
+   says how the Service stays out (see [An exception for an Environment that lists the
+   Service](#an-exception-for-an-environment-that-lists-the-service)).
+3. **Services follow RFC 0010 exactly as Steps do.** Rebasing the prototype onto newer ENV_PARAMS prototypes kept
+   raising the same question for each new ENV_PARAMS rule: does it apply to a Service? The RFC now defers to RFC 0010
+   with "Step" read as "Service" instead of restating its rules. In the prototype, a Service is one more requester in
+   the same pass at Job creation as the Steps: an `exclusiveGroup` supersedes its Environments, the limit on
+   `environment:` entries applies per Service, and each Service has its own list of Environment statuses
+   (`CreatedJob::service_environment_statuses`). The order in which Job creation reports a Service's errors relative to
+   the Steps' is left to implementations; the prototype reports them after the Steps' in each §7.4.1 step of RFC 0010.
+4. **A Service enters only Environments of its own and earlier documents.** When a queue's Service could enter every
+   Environment of the Job, an Environment that a later document added could list a Service and close a cycle that no
+   single document contains. With this rule, every cycle is within one document (see [Service Sessions enter the Job's
+   Environments by the Steps' rule](#service-sessions-enter-the-jobs-environments-by-the-steps-rule)).
+5. **An Environment Template's Service may decline an earlier attachment's Environment.** An audit of the earlier-documents
+   rule found that an earlier attachment's `BY_DEFAULT` Environment with a parameter that has no default, or a wrapper
+   without the `onWrapService*` hooks, failed every Job that used a later attachment's Service, so two Environment
+   Templates could be incompatible only because of their attachment order.
+   [§1.2](../wiki/2023-09-Template-Schemas.md#12-environment-template) item 6 constraint 5 now lets the Service decline
+   such an Environment with a disabled entry.
+6. **Smaller rules the prototype made explicit.** `openjd_fail` from `onRun` is itself an instance failure; every
+   `Wrapped*` group is in scope in a hook's `timeout` and `cancelation`; a Step's Environments are exited before a
+   Service whose scope ends with the Step is stopped; a Service's embedded files stay in place until its Session ends;
+   the `STDOUT` heartbeat deadline is re-armed by each line; the Services that list a relaunched Service are stopped
+   and restarted in dependency order; `repr_sh` accepts `int` and `list[int]`; and RFC 0010's rules for empty and
+   discarded host requirements apply to a Service's own `hostRequirements`.
+
+These were hard to implement or are left open:
+
+1. **Two actions at once.** The existing Session runs one action at a time, with one log stream and one cancelation
+   target. Running `onHealthCheck` while `onRun` runs needed a second action slot with its own cancelation, and the
+   attribution rules of [§9.7.1](../wiki/2023-09-Template-Schemas.md#971-concurrency-of-onhealthcheck-with-onrun).
+2. **Stop order on failure.** When a listed Service fails or begins a new Session, the prototype can end its Session
+   before it stops the READY Services that list it, so a dependent's `onExit` can run after the listed Service's. The
+   specification's order is clear; the prototype's scheduler would need restructuring to follow it in every case.
+3. **Questions the specification leaves to implementations.** Whether a port released by one Service Session may be
+   given to a later one in the same Job, and what a runner without Task retries, such as `openjd run`, does with a Task
+   that fails against an UNREADY `KEEP` Service. The prototype never reuses a port within a run, and fails the run.
+
 ## Implementation Impact
 
-- **Rust (openjd-rs)**: A prototype on the [`service-extension`
-  branch](https://github.com/mwiebe/openjd-rs/tree/service-extension) of the `mwiebe/openjd-rs` fork
-  is developed against the `SERVICE` conformance suite that accompanies this RFC and the rest of
-  the 2023-09 suite. It implements the schema, validation, and job-creation rules in
-  `openjd-model`, the host and port functions in `openjd-expr`, the Service Session in
-  `openjd-sessions`, and a single-host scheduler for `openjd run` in `openjd-cli`. The prototype's
-  largest single piece was the Service Session: the existing Session held one current action, one
-  log stream, and one cancellation target, and running `onHealthCheck` alongside `onRun` needed a
-  second action slot with its own cancellation and per-action attribution on captured output. The
-  health phase adds a probe loop that outlives readiness, counts consecutive failures, and turns
-  the threshold into a cancellation of `onRun`.
+- **Rust (openjd-rs)**: The [prototype](#prototype) implements the schema, validation, and job-creation rules in
+  `openjd-model`, the host and port functions in `openjd-expr`, the Service Session in `openjd-sessions`, and a
+  single-host scheduler for `openjd run` in `openjd-cli`. Its largest single piece was the Service Session: the
+  existing Session held one current action, one log stream, and one cancelation target, and running `onHealthCheck`
+  alongside `onRun` needed a second action slot with its own cancelation and per-action attribution on captured
+  output. The health phase adds a probe loop that outlives readiness, counts consecutive failures, and turns the
+  threshold into a cancelation of `onRun`.
 - **Python (openjd-model, openjd-sessions)**: The Python packages are intended to become bindings
   over openjd-rs. The `v0` releases of `openjd-model-for-python` and `openjd-sessions-for-python`
   would therefore not gain this extension; a `v1` built on the bindings would inherit it, exposing
@@ -2255,8 +1202,8 @@ depends on. Selection by kind was mostly a stand-in for selection by who asked: 
 Environment "for Services only" is one that each Service requests and no Step does. A list of kinds
 would also grow with every extension that adds a kind of Session. The one rule that was about
 kinds, that an Environment reading a Service's endpoint cannot run in that Service's Session, is not
-a rule of its own either: it is the cycle check of [`<StepDependency>`](#stepdependency)
-constraint 3. RFC 0010 rejects a list of Session kinds for `activation` for the same reason; see its
+a rule of its own either: it is the cycle check of
+[`<StepDependency>`](../wiki/2023-09-Template-Schemas.md#32-stepdependency) constraint 3. RFC 0010 rejects a list of Session kinds for `activation` for the same reason; see its
 [`activation`](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#activation)
 and [`activation` as a list of Session
 kinds](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#activation-as-a-list-of-session-kinds).
