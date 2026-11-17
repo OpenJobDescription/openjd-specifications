@@ -987,7 +987,7 @@ type-check as `unresolved[...]` at earlier stages.
 
 | Symbol | Type | Description |
 |--------|------|-------------|
-| `Service.<name>.<port>.port` | `int` | The port number allocated (or requested) for port `<port>` of Service `<name>`, in the space of that port's `protocol`. `<name>` is a Service the document declares or, in a Job Template, requires; available to the Service itself and to the Steps, Services, and Job Environments that list `service: <name>` in their `dependencies` |
+| `Service.<name>.<port>.port` | `int` | The port number allocated (or requested) for port `<port>` of Service `<name>`, in the space of that port's `protocol`. `<name>` is a Service the document declares or, in a Job Template, requires; available to the Service itself and to the Steps, Services, and Job Environments that list `service: <name>` in their `dependencies`, and to an Environment Template's `environment` that lists it |
 | `Service.<name>.<port>.bindAddress` | `string` | The interface address the service process binds. Available within the declaring Service only, never for a required Service |
 | `Service.<name>.<port>.connectAddress` | `string` | The hostname or IP address entities that depend on the Service use to reach it; same availability as `port` |
 
