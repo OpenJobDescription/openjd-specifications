@@ -214,9 +214,9 @@ submitted through it, just as its *environment* defines an Environment applied t
 Template's point of view these are **external Services**. Each Job that uses an external Service gets its own instance
 of it. An external Service's scope is computed over the combined Job by the same rules as an inline Service's (see
 [Service scope](#91-service-scope)): typically the Environment defined alongside it lists it, which puts in its scope
-every Step whose Sessions enter that Environment, and the Service declines that Environment for its own Sessions; or a
-Step of the Job Template lists it through `externalServices`. An attached Service that nothing in the
-combined Job lists has an empty scope and is never started; this is not an error.
+every Step whose Sessions enter that Environment, and the Service declines that Environment for its own Sessions; or the
+Job Template lists it through `externalServices`. Either way it runs only when some Step falls in its scope. An attached
+Service that nothing in the combined Job lists has an empty scope and is never started; this is not an error.
 
 A `Service.*` reference resolves within its own document: in an Environment Template to the document's *services*, in a
 Job Template to its *services* or *externalServices* (see [Value References](#731-value-references)). No reference
@@ -235,11 +235,11 @@ When a submission combines a Job Template with one or more Environment Templates
    protocol differs, the submission must be rejected, naming the requirement and the cause. Matching uses the
    requirement alone; the scheduler reads nothing else from the Job Template.
 3. Service names are per document. A Job Template's `Service.*` references resolve to its own `services` and
-   `externalServices`, and an attached Service that happens to share a name with an inline Service is neither visible
-   to the Job Template nor a conflict; it runs if the Environment defined alongside it lists it, and reaches the Job's
-   Tasks through that Environment. Two attached Services with the same `name` are an error only when a requirement
-   names it. A scheduler must keep same-named Services from different documents distinct (for example, by qualifying
-   each with its document).
+   `externalServices`, and an attached Service that happens to share a name with an inline Service is neither visible to
+   the Job Template nor a conflict; it runs when some Step falls in its scope (see [Service scope](#91-service-scope)),
+   for example through the Environment defined alongside it, and reaches the Job's Tasks through that Environment. Two
+   attached Services with the same `name` are an error only when a requirement names it. A scheduler must keep
+   same-named Services from different documents distinct (for example, by qualifying each with its document).
 4. A wrapping Environment (one defining the `WRAP_ACTIONS` hooks) wraps every action that runs inside it (see
    [&lt;EnvironmentActions&gt;](#43-environmentactions) `WRAP_ACTIONS` constraint 6), so one that a Service Session
    enters must define the `onWrapService*` hooks. Whether a Service Session enters an attached Environment is known only
@@ -2182,7 +2182,7 @@ positive integer value in base-10, with optional white space around it
 
    <sup>3</sup> Available with the `SERVICE` extension. A `timeout` on a Service's `onRun` action is
    measured from launch; its expiry is an instance failure of the Service (see
-   [&lt;ServiceActions&gt;](#97-serviceactions)).
+   [How Jobs Are Run](How-Jobs-Are-Run#service-failure-and-restart)).
 
 4. *cancelation* — If defined, provides details regarding how this action should be canceled. If not provided, then it is
    treated as though provided with `<CancelationMethodTerminate>`.
@@ -3050,10 +3050,10 @@ Where:
    Service's *maxRestarts* bounds.
 
    If *maxRestarts* is greater than 0, *completedTasks* must be provided (for a *maxRestarts* given as a format string,
-   checked when it is resolved at job creation). When *maxRestarts* is 0 it may be omitted, and then matters only when a
-   Service this one lists begins a new Service Session, where an omitted value is read as `RERUN` (see [How Jobs Are
-   Run](How-Jobs-Are-Run#service-failure-and-restart)). It also matters for suspension: a Service may be suspended only
-   if its *completedTasks* is `KEEP` (see [How Jobs Are Run](How-Jobs-Are-Run#service-lifecycle)).
+   checked when it is resolved at job creation). When *maxRestarts* is 0 it may be omitted, and then matters in two
+   cases: when a Service this one lists begins a new Service Session, where an omitted value is read as `RERUN` (see
+   [How Jobs Are Run](How-Jobs-Are-Run#service-failure-and-restart)), and for suspension, since a Service may be
+   suspended only if its *completedTasks* is `KEEP` (see [How Jobs Are Run](How-Jobs-Are-Run#service-lifecycle)).
 
 #### 9.5.1. Numeric `@fmtstring` fields
 
@@ -3151,14 +3151,14 @@ when emitted by *onRun*, *onHealthCheck*, or *onExit*.
 *onHealthCheck* is the only action in this specification that runs while another action of the same Session, *onRun*,
 is running. Every other action in a Session runs one at a time. The following rules apply:
 
-1. Materializing embedded files for one action must not modify any file that a still-running action of the same
-   Session was given. Implementations may materialize each invocation's files to a distinct location, so that
-   `Service.File.<name>` resolves to a different path in each invocation, or may materialize every invocation's files to
-   one path and leave them in place, since their content is constant: a Service Session's format string values do not
-   change for its lifetime. Either way, a file materialized for one action must remain in place, unchanged, until the
-   Service Session ends: materializing a later action's files never removes or replaces an earlier action's. A path
-   that *onEnter* captured (for example by exporting `Service.File.<name>` with `openjd_env`) therefore stays valid
-   for *onRun* and *onExit*, even when their own `Service.File.<name>` resolves elsewhere.
+1. Materializing embedded files for one action must not modify any file that a still-running action of the same Session
+   was given. Implementations may materialize each invocation's files to a distinct location, so that
+   `Service.File.<name>` resolves to a different path in each invocation, or may materialize them once, to one path, and
+   leave them in place for every later action, since their content is constant: a Service Session's format string values
+   do not change for its lifetime. Either way, a file materialized for one action must remain in place, unchanged, until
+   the Service Session ends: materializing a later action's files never removes or replaces an earlier action's. A path
+   that *onEnter* captured (for example by exporting `Service.File.<name>` with `openjd_env`) therefore stays valid for
+   *onRun* and *onExit*, even when their own `Service.File.<name>` resolves elsewhere.
 2. The stdout of *onHealthCheck* is captured to the log, but no `openjd_*` message on it is honored: its result is its
    exit status.
 3. Every line of stdout or stderr captured in a Service Session must be attributable to the action that produced it,
