@@ -32,21 +32,19 @@ values identical except for the chunked Task parameter. It takes values from an 
 like "1-3" or 1-3,5,7" depending on whether the chunks are constrained to be contiguous or not.
 
 If exactly one Environment in the session stack defines the wrap hooks (`onWrapEnvEnter`, `onWrapTaskRun`,
-`onWrapEnvExit`, part of the WRAP_ACTIONS extension introduced in
-[RFC 0008](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0008-environment-wrap-actions.md)),
-the lifecycle actions of inner Environments and tasks
-are intercepted: an inner Environment's `onEnter` is replaced by the wrapping Environment's
-`onWrapEnvEnter`, a task's `onRun` is replaced by the wrapping Environment's `onWrapTaskRun`, and an inner
-Environment's `onExit` is replaced by the wrapping Environment's `onWrapEnvExit`. The wrapping Environment's
-own `onEnter` and `onExit` are never wrapped; they always run normally. A wrap hook runs only in place
-of an action the inner Environment defines: if an inner Environment defines no `onExit` (or defines no
-script at all), there is nothing to replace and the corresponding wrap hook does not run for it. If more
-than one Environment
-in the session stack defines any wrap hook, the session is invalid and the scheduler must reject it
-before entering any Environment. If an Environment defines any wrap hook, it must define all three; with the SERVICE
-extension, it must instead define the hook for every kind of action that runs inside it, which for an Environment that
-a **Service Session** enters includes the four `onWrapService*` hooks (see
-[Section 4.3](2023-09-Template-Schemas#43-environmentactions)).
+`onWrapEnvExit`, part of the WRAP_ACTIONS extension introduced in [RFC
+0008](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0008-environment-wrap-actions.md)),
+the lifecycle actions of inner Environments and tasks are intercepted: an inner Environment's `onEnter` is replaced by
+the wrapping Environment's `onWrapEnvEnter`, a task's `onRun` is replaced by the wrapping Environment's `onWrapTaskRun`,
+and an inner Environment's `onExit` is replaced by the wrapping Environment's `onWrapEnvExit`. The wrapping
+Environment's own `onEnter` and `onExit` are never wrapped; they always run normally. A wrap hook runs only in place of
+an action the inner Environment defines: if an inner Environment defines no `onExit` (or defines no script at all),
+there is nothing to replace and the corresponding wrap hook does not run for it. If more than one Environment in the
+session stack defines any wrap hook, the session is invalid and the scheduler must reject it before entering any
+Environment. If an Environment defines any wrap hook, it must define all three; with the SERVICE extension, it must
+instead define the hook for every kind of action that may run inside it, for each kind of **Session** that enters it,
+which for an Environment that a **Service Session** enters includes the four `onWrapService*` hooks (see [Section
+4.3](2023-09-Template-Schemas#43-environmentactions)).
 
 A wrap hook is treated as the action it replaces. A failed `onWrapEnvEnter` is an inner `onEnter`
 failure, a failed `onWrapTaskRun` is a task `onRun` failure, and a failed `onWrapEnvExit` is an inner
@@ -324,7 +322,7 @@ messages to convey information about the **Action** to the render management sys
 * `openjd_fail: <message>` where `<message>` is any string. This provides a human-readable message that indicates why
   an **Action** has failed. With the SERVICE extension, from a **Service**'s `onRun` it is also the signal: the
   runtime cancels `onRun` and treats the exit as an instance failure with this message as its reason (see
-  [Services](#services)).
+  [Service failure and restart](#service-failure-and-restart)).
 * `openjd_env: <var>=<value>` where `<var>` is the string name of an environment variable, and `<value>` is a string. This
   can only be emitted by the **Action** for entering an **Environment**. It defines the value of an environment variable for
   all subsequent **Action**s in the **Session** until the defining **Environment** is exited. With the SERVICE extension,
