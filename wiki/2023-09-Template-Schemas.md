@@ -70,9 +70,10 @@ Where:
       * Minimum number of elements: If provided, then this list must contain at least one element.
       * Maximum number of elements: The list must not contain more than 50
       elements or 200 elements with the `FEATURE_BUNDLE_1` extension.
-7. *jobEnvironments* — An ordered list of the environments that are required to run Tasks in the Jobs created by this Job
-   Template. These are entered in the order provided at the start of every Session for Tasks in the Job, and exited in the
-   reverse order at the end of those Sessions. See: [&lt;Environment&gt;](#4-environment). Constraints:
+7. *jobEnvironments* — An ordered list of the environments that are required to run Tasks in the Jobs created by this
+   Job Template. These are entered in the order provided at the start of every Session for Tasks in the Job, and, with
+   the `SERVICE` extension, of every Service Session that enters them, and exited in the reverse order at the end of
+   those Sessions. See: [&lt;Environment&gt;](#4-environment). Constraints:
       1. No two Environments in this list may have the same value for the `name` property.
       2. The Environments defined in this list must not have the same `name` as an Environment
          defined in any Step within the same Job Template.
@@ -260,9 +261,11 @@ When a submission combines a Job Template with one or more Environment Templates
    is rejected. A wrapping Environment in a Step's `stepEnvironments` is never entered by a Service Session and is
    not subject to this check.
 
-Items 2 and 4, the `ENV_PARAMS` checks of RFC 0010 that need the attached Environments (made at the steps of its
-§7.4.1 (see [RFC 0010](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#processing-stages-and-expression-fields)), and applied to Services as to Steps), the cycles of
-[&lt;StepDependency&gt;](#32-stepdependency) constraint 3 whose edges depend on the attached Environments, and
+Items 2 and 4, the `ENV_PARAMS` checks of RFC 0010 that need the attached Environments (made at the steps of [its
+§7.4.1](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#processing-stages-and-expression-fields)
+and applied to Services as to Steps), the cycles of [&lt;StepDependency&gt;](#32-stepdependency) constraint 3 whose
+edges depend on the attached Environments, [&lt;EnvironmentActions&gt;](#43-environmentactions) `WRAP_ACTIONS`
+constraint 6 for an attached wrapping Environment, a Service's scope where it depends on the attached Environments, and
 resolving a Service's disabled entries against the Environment Templates attached before its own (item 6 constraint 5)
 are the only checks that require the combined Job; everything else is checked when each document is validated on its
 own.
@@ -1789,7 +1792,7 @@ and where the bound names are available:
 | `<StepScript>.let` | `Param.*`, `RawParam.*`, `Task.Param.*`, `Task.RawParam.*`, `Session.*`, `Task.File.*`, `Job.Name`, `Step.Name`, step-level bindings, earlier bindings in same `let`, in-scope `Service.<name>.<port>.*` (`SERVICE` extension) | *actions*, *embeddedFiles* |
 | `<SimpleAction>.let` | `Param.*`, `RawParam.*`, `Task.Param.*`, `Task.RawParam.*`, `Session.*`, `Job.Name`, `Step.Name`, step-level bindings, earlier bindings in same `let`, in-scope `Service.<name>.<port>.*` (`SERVICE` extension) | *script*, *args* |
 | `<EnvironmentScript>.let` | `Param.*`, `RawParam.*`, `Session.*`, `Env.File.*`, `Job.Name`, earlier bindings in same `let`, in-scope `Service.<name>.<port>.*` for the Services the Environment lists (`SERVICE` extension) | *actions*, *embeddedFiles* |
-| `<Service>.let` (`SERVICE` extension) | `Param.*`, `RawParam.*`, `Job.Name`, `Job.EnvNames`, earlier bindings in same `let` | *hostRequirements*, *variables*, *script* (including nested `<ServiceScript>.let`), the *parameters* values and *enableIf* of *dependencies* entries |
+| `<Service>.let` (`SERVICE` extension) | `Param.*`, `RawParam.*`, `Job.Name`, `Job.EnvNames`, earlier bindings in same `let` | *hostRequirements*, *variables*, *script* (including nested `<ServiceScript>.let`), the numeric `@fmtstring` fields of *ports*, *healthCheck*, and *restartPolicy*, the *parameters* values and *enableIf* of *dependencies* entries |
 | `<ServiceScript>.let` (`SERVICE` extension) | `Param.*`, `RawParam.*`, `Session.*`, `Service.File.*`, in-scope `Service.<name>.<port>.*`, `Job.Name`, service-level bindings, earlier bindings in same `let` | *actions*, *embeddedFiles* |
 
 Note: `Task.Param.*` and `Task.RawParam.*` are only available in `<StepScript>` and `<SimpleAction>` contexts because task parameter
@@ -1962,8 +1965,8 @@ onExit: <Action> # @optional
    cleanup within a bound amount of time.
 
 Subject to the constraint that at least one of *onEnter* or *onExit* must be provided. (With the `WRAP_ACTIONS`
-extension, the set of wrap hooks that the `WRAP_ACTIONS` constraints below require of the environment also satisfies
-this requirement.)
+extension, an environment that defines at least one wrap hook, and every hook that the `WRAP_ACTIONS` constraints below
+require of it, also satisfies this requirement.)
 
 > **`WRAP_ACTIONS` extension constraints.**
 >
@@ -2012,8 +2015,9 @@ this requirement.)
 >    `openjd_*` message under `WRAP_ACTIONS`. A failed `onWrapService*` hook has the effect the wrapped action's
 >    failure would have, an `onWrapServiceHealthCheck` invocation's exit status being one probe result (see
 >    [&lt;ServiceHealthCheck&gt;](#94-servicehealthcheck)). For a wrapping environment attached from an Environment
->    Template, including one from a document that does not declare `SERVICE`, see
->    [Services from Environment Templates](#122-services-from-environment-templates) item 4.
+>    Template, this check is made when the Job is created, from the combined Job, and
+>    [Services from Environment Templates](#122-services-from-environment-templates) item 4 adds the check of the
+>    `onWrapService*` hooks, including for a wrapper from a document that does not declare `SERVICE`.
 
 #### 4.3.1. Wrap hook template variables
 
@@ -2765,10 +2769,11 @@ Where:
 2. *description* — A description to apply to the Service. It has no functional purpose, but may appear in UI elements.
    See: [&lt;Description&gt;](#72-description).
 3. *let* — An ordered list of expression bindings evaluated once, at job creation, like a `<StepTemplate>`'s *let*.
-   Bindings may reference `Param.*`, `RawParam.*`, `Job.Name`, and `Job.EnvNames` (`ENV_PARAMS`), but not `Session.*`
-   or `Service.*`, which are not known until the Service is placed. Bound names are available in *hostRequirements*,
-   *variables*, and *script*, as a Step's bindings are in its *stepEnvironments*, and in the *parameters* values and
-   *enableIf* of the Service's *dependencies* entries. See: [&lt;LetBindings&gt;](#36-letbindings).
+   Bindings may reference `Param.*`, `RawParam.*`, `Job.Name`, and `Job.EnvNames` (`ENV_PARAMS`), but not `Session.*` or
+   `Service.*`, which are not known until the Service is placed. Bound names are available in *hostRequirements*,
+   *variables*, and *script*, as a Step's bindings are in its *stepEnvironments*, in the [numeric `@fmtstring`
+   fields](#951-numeric-fmtstring-fields) of its *ports*, *healthCheck*, and *restartPolicy*, and in the *parameters*
+   values and *enableIf* of the Service's *dependencies* entries. See: [&lt;LetBindings&gt;](#36-letbindings).
 4. *dependencies* — The Steps and Services this Service depends on and the Environments it requests, each a
    [&lt;StepDependency&gt;](#32-stepdependency). The Service is started only once every *dependsOn*, *step*, and
    *service* entry is satisfied and is stopped before any Service it lists (see
@@ -3046,18 +3051,19 @@ Where:
    If *maxRestarts* is greater than 0, *completedTasks* must be provided (for a *maxRestarts* given as a format string,
    checked when it is resolved at job creation). When *maxRestarts* is 0 it may be omitted, and then matters only when a
    Service this one lists begins a new Service Session, where an omitted value is read as `RERUN` (see [How Jobs Are
-   Run](How-Jobs-Are-Run#service-failure-and-restart)), and for suspension. A Service may be suspended only if its
-   *completedTasks* is `KEEP` (see [How Jobs Are Run](How-Jobs-Are-Run#service-lifecycle)).
+   Run](How-Jobs-Are-Run#service-failure-and-restart)). It also matters for suspension: a Service may be suspended only
+   if its *completedTasks* is `KEEP` (see [How Jobs Are Run](How-Jobs-Are-Run#service-lifecycle)).
 
 #### 9.5.1. Numeric `@fmtstring` fields
 
 The numeric fields marked `@fmtstring` in [&lt;ServicePort&gt;](#93-serviceport),
 [&lt;ServiceHealthCheck&gt;](#94-servicehealthcheck), and [&lt;ServiceRestartPolicy&gt;](#95-servicerestartpolicy) —
 `port`; `readinessIntervalSeconds`, `readinessTimeoutSeconds`, `healthIntervalSeconds`, and `failureThreshold`; and
-`maxRestarts` — may be given as a format string whose result is the integer. They are resolved at job creation, with the
-scope of the `<Service>`'s *let* ([Section 9](#9-service-extension-service) item 3). When the value is a single
-whole-field expression, its target type is `int?`: a `null` result is treated as if the field were not provided, and a
-non-null result must satisfy the field's range.
+`maxRestarts` — may be given as a format string whose result is the integer, so that a Job Parameter or a
+`<Service>.let` binding can supply them. They are resolved at job creation, with the scope of the `<Service>`'s *let*
+([Section 9](#9-service-extension-service) item 3). When the value is a single whole-field expression, its target type
+is `int?`: a `null` result is treated as if the field were not provided, and a non-null result must satisfy the field's
+range.
 
 ### 9.6. `<ServiceScript>`
 

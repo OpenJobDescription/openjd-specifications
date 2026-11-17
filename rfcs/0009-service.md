@@ -664,7 +664,8 @@ the new parts:
   allowed (see [`restartPolicy.completedTasks` is per-Service and required when relaunch is
   allowed](#restartpolicycompletedtasks-is-per-service-and-required-when-relaunch-is-allowed)).
   [§9.5.1](../wiki/2023-09-Template-Schemas.md#951-numeric-fmtstring-fields) lets the numeric fields of these three
-  objects be format strings resolved at job creation, so a Job Parameter can supply them.
+  objects be format strings resolved at job creation, so that a Job Parameter or a `<Service>.let` binding can supply
+  them.
 * [§9.6](../wiki/2023-09-Template-Schemas.md#96-servicescript) `<ServiceScript>` and
   [§9.7](../wiki/2023-09-Template-Schemas.md#97-serviceactions) `<ServiceActions>`: `onEnter` for setup that survives
   a relaunch, the long-lived `onRun`, `onHealthCheck` for a `COMMAND` probe, and `onExit` (see [`onEnter` / `onRun` /
@@ -714,12 +715,13 @@ Steps it depends on (see [Dependencies are declared, and one list names both
 kinds](#dependencies-are-declared-and-one-list-names-both-kinds)).
 
 * [§3.2](../wiki/2023-09-Template-Schemas.md#32-stepdependency) adds the `service` key to `<StepDependency>`, satisfied
-  when the Service is READY. It says how the key combines with RFC 0010's `step` and `environment` forms, which an
-  `ENV_PARAMS` document may use, and gives the constraints: what each key may name, no two entries naming one Step or
-  one Service, exactly one key per entry (replacing RFC 0010's constraint 1), and, in constraint 3, the one acyclic
-  graph over a Job Template's Steps and Services. That graph has an edge from each entity to each Step and Service entry
-  it lists, and from each Step and Service whose Sessions enter a Job Environment to each Service that Environment
-  lists, with no exception. Constraint 3 also says at which stage a cycle is reported.
+  when the Service is READY, and lets a Service list a Step, satisfied when the Step completes. It says how the key
+  combines with RFC 0010's `step` and `environment` forms, which an `ENV_PARAMS` document may use, and gives the
+  constraints: what each key may name, no two entries naming one Step or one Service, exactly one key per entry
+  (replacing RFC 0010's constraint 1), and, in constraint 3, the one acyclic graph over a Job Template's Steps and
+  Services. That graph has an edge from each entity to each Step and Service entry it lists, and from each Step and
+  Service whose Sessions enter a Job Environment to each Service that Environment lists, with no exception. Constraint 3
+  also says at which stage a cycle is reported.
 * [§3](../wiki/2023-09-Template-Schemas.md#3-steptemplate) item 4 says that a Step's `dependencies` may name Services,
   and the paragraph after the item list that a Step need not repeat a Step dependency that a Service it lists already
   carries. *stepEnvironments* constraint 3 points to the rule that a Step Environment has no `dependencies` of its own.
@@ -785,18 +787,21 @@ runs inside the container or under the remote launcher that wraps the Tasks.
 [§4.3](../wiki/2023-09-Template-Schemas.md#43-environmentactions) item 5 adds the four `onWrapService*` hooks, and its
 `WRAP_ACTIONS` constraint 6 replaces RFC 0008's rule 1 when `SERVICE` is declared: a wrapper must define the hook for
 every kind of action that a kind of Session entering it may run. Constraint 6 gives the table of actions and hooks and
-says when the check is made. §4.3's rule that an Environment defines `onEnter` or `onExit` is also met by the set of
-hooks that the `WRAP_ACTIONS` constraints require, which with `SERVICE` may be the hooks for Service Sessions without
-`onWrapTaskRun`. [§4.3.1](../wiki/2023-09-Template-Schemas.md#431-wrap-hook-template-variables) adds the
-`WrappedService.*` variables, the port names, numbers, bind addresses, and protocols that a wrapper needs to forward
-the Service's ports, and what a wrapper that gives the process its own network namespace must do. The list of format
-string scopes in [§4](../wiki/2023-09-Template-Schemas.md#4-environment) adds `Service.*` and `WrappedService.*`, and
-says that every `Wrapped*` group is in scope throughout a hook's `<Action>`, including its `timeout` and `cancelation`,
-and it extends to `WrappedService.*` the rule that rejects a `Wrapped*` reference outside its hooks.
-The [Sessions](../wiki/How-Jobs-Are-Run.md#sessions) section of How Jobs Are Run says that a wrapper that a Service
-Session enters defines the `onWrapService*` hooks as well. For a wrapper attached from an Environment Template, the
-check is made at submission ([§1.2.2](../wiki/2023-09-Template-Schemas.md#122-services-from-environment-templates)
-item 4; see [Backward compatibility](#backward-compatibility)).
+says when the check is made. §4.3's rule that an Environment defines `onEnter` or `onExit` is also met by an Environment
+that defines at least one wrap hook and every hook that the `WRAP_ACTIONS` constraints require of it, which with
+`SERVICE` may be the hooks for Service Sessions without `onWrapTaskRun`.
+[§4.3.1](../wiki/2023-09-Template-Schemas.md#431-wrap-hook-template-variables) adds the `WrappedService.*` variables,
+the port names, numbers, bind addresses, and protocols that a wrapper needs to forward the Service's ports, and what a
+wrapper that gives the process its own network namespace must do. The list of format string scopes in
+[§4](../wiki/2023-09-Template-Schemas.md#4-environment) adds `Service.*` and `WrappedService.*`, and says that every
+`Wrapped*` group is in scope throughout a hook's `<Action>`, including its `timeout` and `cancelation`, and it extends
+to `WrappedService.*` the rule that rejects a `Wrapped*` reference outside its hooks. `WrappedAction.*` is available in
+the `onWrapService*` hooks as in RFC 0008's, and §4.3.1 gives a Docker example that forwards each port, with a variant
+that binds only `bindAddress`. The [Sessions](../wiki/How-Jobs-Are-Run.md#sessions) section of How Jobs Are Run says
+that a wrapper that a Service Session enters defines the `onWrapService*` hooks as well. For a wrapper attached from an
+Environment Template, constraint 6 is checked when the Job is created, and the check of the `onWrapService*` hooks is
+made at submission ([§1.2.2](../wiki/2023-09-Template-Schemas.md#122-services-from-environment-templates) item 4; see
+[Backward compatibility](#backward-compatibility)).
 
 ### Reading the endpoint
 
@@ -814,8 +819,8 @@ environment variables](#passing-the-endpoint-through-environment-variables)).
   entities in its scope ([§9](../wiki/2023-09-Template-Schemas.md#9-service-extension-service) item 9); they read the
   endpoint, not the Service's environment.
 * [§3.6.2](../wiki/2023-09-Template-Schemas.md#362-let-binding-scope-summary) adds rows for `<Service>.let` and
-  `<ServiceScript>.let`, and lets the `let` of a Step script, a simple action, and an Environment script read the
-  `Service.*` values in scope.
+  `<ServiceScript>.let` (and §7.3.1's let binding row names them), and lets the `let` of a Step script, a simple action,
+  and an Environment script read the `Service.*` values in scope.
 * [§7.4](../wiki/2023-09-Template-Schemas.md#74-template-processing-stages) adds `Service.*` to the values unknown
   before task execution, and a paragraph on service execution, the stage at which a Service's own actions are resolved
   on the service host.
@@ -943,7 +948,7 @@ coordinator that loses its state has invalidated every result produced against i
 policy is per-Service, and because neither answer is safe to assume the field has no default: an author who allows a
 relaunch must say what a relaunch means for completed Tasks. When `maxRestarts` is 0 no relaunch can happen and the
 field is needed only when a Service this one lists begins a new Service Session, where an omitted value is read as
-`RERUN`.
+`RERUN`, or when a scheduler would suspend the Service, which needs `KEEP`.
 
 The same distinction decides what happens to Tasks running at the moment of failure (requeued under
 `RERUN`, left to finish or fail on their own under `KEEP`) and whether a scheduler may suspend an
