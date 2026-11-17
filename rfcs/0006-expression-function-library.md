@@ -567,6 +567,9 @@ in `re_sub("a,b", ",", "\n")`, which gives `"a\nb"`. Because tab, newline and ca
 `'\11'`, `'\12'` and `'\15'` (which decode to them) are not caught, and neither is an octal escape that
 decodes to a printable character, such as `'\101'` for `A`.
 
+Write patterns as raw strings. In a non-raw string, `'\b'` is a backspace (see String Literal Formats
+in RFC 0005) rather than the word boundary anchor, and `'\1'` is U+0001.
+
 The regex syntax is the intersection of Python's `re` module and Rust's `regex` crate,
 ensuring cross-platform compatibility. Supported features:
 - Character classes: `[abc]`, `[^abc]`, `[a-z]`, `\d`, `\w`, `\s` (and negations)
