@@ -1020,8 +1020,10 @@ document acyclic.
 Applied to `X` itself, the rule makes `X` wait for itself, and that is rejected as a cycle. The
 template author keeps `X`'s Sessions out of its client Environment with the means RFC 0010 already
 gives: an `ON_REQUEST` client Environment that the Steps request, or a disabled entry by which `X`
-declines a `BY_DEFAULT` one (see [An exception for an Environment that lists the
-Service](#an-exception-for-an-environment-that-lists-the-service)).
+declines a `BY_DEFAULT` one (see [Services run inside Environments](#services-run-inside-environments),
+and RFC 0010's [Requesting an Environment from a
+Step](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#requesting-an-environment-from-a-step)
+for the disabled entry).
 
 An Environment Template's Service may also decline an earlier attachment's `BY_DEFAULT` Environment.
 A decline adds no edge to another document: it can let the Service's Sessions enter a later member
