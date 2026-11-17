@@ -214,9 +214,10 @@ submitted through it, just as its *environment* defines an Environment applied t
 Template's point of view these are **external Services**. Each Job that uses an external Service gets its own instance
 of it. An external Service's scope is computed over the combined Job by the same rules as an inline Service's (see
 [Service scope](#91-service-scope)): typically the Environment defined alongside it lists it, which puts in its scope
-every Step whose Sessions enter that Environment, and the Service declines that Environment for its own Sessions; or the
-Job Template lists it through `externalServices`. Either way it runs only when some Step falls in its scope. An attached
-Service that nothing in the combined Job lists has an empty scope and is never started; this is not an error.
+every Step whose Sessions enter that Environment, and the Service declines that Environment for its own Sessions; or a
+Step, Service, or Job Environment of the Job Template lists it in its `dependencies`, through an `externalServices`
+requirement. Either way it runs only when some Step falls in its scope. An attached Service that nothing in the combined
+Job lists has an empty scope and is never started; this is not an error.
 
 A `Service.*` reference resolves within its own document: in an Environment Template to the document's *services*, in a
 Job Template to its *services* or *externalServices* (see [Value References](#731-value-references)). No reference
@@ -3172,7 +3173,8 @@ is running. Every other action in a Session runs one at a time. The following ru
    [How Jobs Are Run](How-Jobs-Are-Run#service-lifecycle), constraint 10); one in progress when the Service Session ends
    is canceled before *onExit* runs.
 6. Under the `WRAP_ACTIONS` extension, `onWrapServiceHealthCheck` runs while `onWrapServiceRun` is running. Wrap
-   scripts used in a Service Session must tolerate concurrent invocation.
+   scripts used in a Service Session must tolerate concurrent invocation. Wrappers that execute into an existing
+   context (`docker exec`, `ssh`) do; a wrapper that creates a per-invocation exclusive resource does not.
 
 ### 9.8. `<ServiceRequirement>`
 

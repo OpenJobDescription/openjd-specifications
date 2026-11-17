@@ -846,10 +846,10 @@ environment variables](#passing-the-endpoint-through-environment-variables)).
   Session receives path mapping rules for the service host, and that placement is up to the scheduler, provided that
   `connectAddress` and `port` reach the service process from every host in the scope.
 * [Service lifecycle](../wiki/How-Jobs-Are-Run.md#service-lifecycle) defines the four states and the constraints a
-  scheduler must satisfy: ordering against `dependencies`, Tasks held until their Services are READY, stop order, one
-  Session and one `onRun` at a time, when a Service Session ends and what happens before it does, lazy start,
-  suspension of a `KEEP` Service, and probes in flight when `onRun` exits. The Basic Example [Execution
-  order](#execution-order) shows the order.
+  scheduler must satisfy: ports and addresses fixed before any action runs, ordering against `dependencies`, Tasks held
+  until their Services are READY, stop order, one Session and one `onRun` at a time, when a Service Session ends and
+  what happens before it does, a new Service Session after one ends, lazy start, suspension of a `KEEP` Service, and
+  probes in flight when `onRun` exits. The Basic Example [Execution order](#execution-order) shows the order.
 * [Service failure and restart](../wiki/How-Jobs-Are-Run.md#service-failure-and-restart) defines instance failures and
   start failures and the scheduler's steps after one: canceling or keeping running Tasks, relaunching under the restart
   policy, FAILED, relocation, host loss, `RERUN` and Step dependencies, and the Services that list a relaunched one. It
@@ -878,9 +878,9 @@ mid-scope, and How Jobs Are Run advises authors of stateful Services to require 
 ### Validation
 
 [§9.9](../wiki/2023-09-Template-Schemas.md#99-validation) indexes the rules the extension adds and the section that
-states it, and says which rules are checked when the Job is created or at submission rather than at template validation.
-The conformance suite's [README](../conformance-tests/2023-09/SERVICE/README.md) describes the rules its tests verify
-and lists every test.
+states each, and says which rules are checked when the Job is created or at submission rather than at template
+validation. The conformance suite's [README](../conformance-tests/2023-09/SERVICE/README.md) describes the rules its
+tests verify and lists every test.
 
 ## Design Choice Rationale
 
