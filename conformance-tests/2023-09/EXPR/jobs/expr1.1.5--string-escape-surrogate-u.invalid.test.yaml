@@ -1,0 +1,18 @@
+# Expression Language §1.1.5: a \u escape with a surrogate code point (U+D800 to U+DFFF) is a
+# syntax error, because a string can't hold one. The edges U+D7FF and U+E000 are valid; see
+# expr1.1.5--string-escapes.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r"VALUE:{{ len('\ud800') }}|")

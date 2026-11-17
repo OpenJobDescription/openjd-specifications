@@ -1,0 +1,36 @@
+# Expression Language §1.1.5: an unrecognized escape keeps its backslash, permanently.
+# That covers a letter that isn't an escape (\d, \q), the digits 8 and 9, which aren't
+# octal, a space, and a non-ASCII character. A value ends with '|' so an output line
+# can't pass by matching a prefix.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r"D:{{ repr_py('\d') }}|{{ len('\d') }}|")
+            print(r"Q:{{ repr_py('\q') }}|{{ len('\q') }}|")
+            print(r"EIGHT_NINE:{{ repr_py('\8\9') }}|{{ len('\8\9') }}|")
+            print(r"SPACE:{{ len('\ ') }}|")
+            print(r"NON_ASCII:{{ len('\é') }}|{{ '\é' == '\\é' }}|")
+            print(r"DOUBLE_QUOTED:{{ repr_py("\w+") }}|")
+            print(r"TRIPLE_QUOTED:{{ repr_py('''\s''') }}|")
+            print(r"PATTERN:{{ re_sub('a1b22', '\d+', '#') }}|")
+expected:
+  output:
+  - D:'\\d'|2|
+  - Q:'\\q'|2|
+  - EIGHT_NINE:'\\8\\9'|4|
+  - SPACE:2|
+  - NON_ASCII:2|true|
+  - DOUBLE_QUOTED:'\\w+'|
+  - TRIPLE_QUOTED:'\\s'|
+  - PATTERN:a#b#|

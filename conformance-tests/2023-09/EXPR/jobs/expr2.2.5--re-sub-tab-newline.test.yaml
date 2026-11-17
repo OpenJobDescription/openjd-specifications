@@ -1,0 +1,31 @@
+# Expression Language §2.2.5: re_sub allows tab, newline and carriage return in a
+# replacement, the control characters a replacement commonly needs. Each value ends
+# with '|' so an output line can't pass by matching a prefix.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r"TAB:{{ repr_py(re_sub('a,b', ',', '\t')) }}|")
+            print(r"NEWLINE:{{ repr_py(re_sub('a,b', ',', '\n')) }}|")
+            print(r"CRLF:{{ repr_py(re_sub('a,b', ',', '\r\n')) }}|")
+            print(r"OCTAL_NEWLINE:{{ repr_py(re_sub('a,b', ',', '\12')) }}|")
+            print(r"PRINTABLE:{{ re_sub('a,b', ',', '\x7e') }}|")
+            print(r"NBSP:{{ repr_py(re_sub('a,b', ',', '\xa0')) }}|")
+expected:
+  output:
+  - TAB:'a\tb'|
+  - NEWLINE:'a\nb'|
+  - CRLF:'a\r\nb'|
+  - OCTAL_NEWLINE:'a\nb'|
+  - PRINTABLE:a~b|
+  - NBSP:'a\xa0b'|
