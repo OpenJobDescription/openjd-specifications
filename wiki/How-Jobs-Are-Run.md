@@ -119,6 +119,8 @@ while a single-host runner starts it alongside the Tasks on loopback. Whatever t
 is a **Session** in every other respect too: it has its own working directory, and it receives [Path Mapping
 Rules](#path-mapping) for the **Service host** the same way a **Session** running Tasks does, so `PATH` Job Parameters
 in a **Service**'s actions are mapped for the host the **Service** runs on.
+An **Environment** that a **Service Session** enters runs its `onEnter` once per **Service Session**, on the **Service
+host**, in addition to once per **Session** that runs Tasks.
 
 ### Service lifecycle
 
@@ -218,7 +220,7 @@ scheduler takes steps 1–4; steps 5–8 govern the outcomes those steps can pro
    relaunch, is governed by the same restart policy, and changes every `Service.<name>.*` value. When relocating away from a host that is still available, constraint 7 above applies to the
    old **Session** in full.
 6. **Host loss.** A scheduler loses a **Service host** when it determines, by its own means, that the host is gone or
-   unreachable. This is an instance failure. The scheduler does not wait for `onExit`, **Environment** exits, or
+   unreachable. This is an instance failure. The scheduler must not wait for `onExit`, **Environment** exits, or
    working-directory cleanup there; it releases the host's allocations and proceeds to steps 1–4. If the host later
    reappears the scheduler should terminate any surviving service process and remove the working directory, but the
    **Service**'s state is unaffected.
