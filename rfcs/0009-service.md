@@ -608,8 +608,11 @@ An Environment Template needs the `extensions` key to list `SERVICE`.
 as RFC 0010's wiki edit does (its [Changes that apply without the
 extension](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#changes-that-apply-without-the-extension)
 item 4), so that this pull request reads correctly on its own. An extension listed there applies to that document only,
-so a Job Template need not list `SERVICE` for its Steps to enter an attached Environment that lists an attached
-Service. Reading the endpoint itself needs `externalServices`, which requires `SERVICE`.
+so a Job Template need not list `SERVICE` for its Steps to enter an attached Environment that lists an attached Service.
+This pull request also relies on the Job's Environment order that RFC 0010 states in §1.1 *jobEnvironments* (its Changes
+that apply without the extension, item 3): the attached Environments come first, in the order they are attached, then
+the Job Template's. "Attached before" in this RFC and its wiki edits refers to that order. Reading the endpoint itself
+needs `externalServices`, which requires `SERVICE`.
 
 ### Backward compatibility
 
@@ -696,9 +699,15 @@ document](#service-names-are-per-document)).
 
 The [§5](../wiki/2023-09-Template-Schemas.md#5-action) table of default timeouts gains the four Service actions, with a
 note that a `timeout` on `onRun` is measured from launch and that its expiry is an instance failure, and
-[§6](../wiki/2023-09-Template-Schemas.md#6-embeddedfile) adds `Service.File.<name>` for a Service's embedded files.
+[§6.1](../wiki/2023-09-Template-Schemas.md#61-embeddedfiletext) adds `Service.File.<name>` for a Service's embedded
+files.
 
 ### Depending on a Service
+
+RFC 0010's pull request also adds numbered constraints to §3.2 and numbered items to the §4 item list, starting from the
+same numbers this pull request uses. RFC 0010 merges first. When this pull request is rebased onto it, this pull
+request's §3.2 constraints and its §4 item 3, `dependencies`, will be numbered after RFC 0010's, and every reference to
+them in this RFC and the wiki, such as "§3.2 constraint 3" and "§4 item 3", will be updated to match.
 
 A Step, a Service, or a Job Environment that uses a Service lists it in its `dependencies`, in the same list as the
 Steps it depends on (see [Dependencies are declared, and one list names both
@@ -710,10 +719,7 @@ kinds](#dependencies-are-declared-and-one-list-names-both-kinds)).
   one Service, exactly one key per entry (replacing RFC 0010's constraint 1), and, in constraint 3, the one acyclic
   graph over a Job Template's Steps and Services. That graph has an edge from each entity to each Step and Service entry
   it lists, and from each Step and Service whose Sessions enter a Job Environment to each Service that Environment
-  lists, with no exception. Constraint 3 also says at which stage a cycle is reported. RFC 0010's pull request also adds
-  numbered constraints to §3.2. RFC 0010 merges first, and when this pull request is rebased onto it, these constraints
-  will be numbered after RFC 0010's, and this RFC's references to "§3.2 constraint 3" and "constraint 4" will be updated
-  to match.
+  lists, with no exception. Constraint 3 also says at which stage a cycle is reported.
 * [§3](../wiki/2023-09-Template-Schemas.md#3-steptemplate) item 4 says that a Step's `dependencies` may name Services,
   and the paragraph after the item list that a Step need not repeat a Step dependency that a Service it lists already
   carries. *stepEnvironments* constraint 3 points to the rule that a Step Environment has no `dependencies` of its own.
@@ -779,7 +785,9 @@ runs inside the container or under the remote launcher that wraps the Tasks.
 [§4.3](../wiki/2023-09-Template-Schemas.md#43-environmentactions) item 5 adds the four `onWrapService*` hooks, and its
 `WRAP_ACTIONS` constraint 6 replaces RFC 0008's rule 1 when `SERVICE` is declared: a wrapper must define the hook for
 every kind of action that a kind of Session entering it may run. Constraint 6 gives the table of actions and hooks and
-says when the check is made. [§4.3.1](../wiki/2023-09-Template-Schemas.md#431-wrap-hook-template-variables) adds the
+says when the check is made. §4.3's rule that an Environment defines `onEnter` or `onExit` is also met by the set of
+hooks that the `WRAP_ACTIONS` constraints require, which with `SERVICE` may be the hooks for Service Sessions without
+`onWrapTaskRun`. [§4.3.1](../wiki/2023-09-Template-Schemas.md#431-wrap-hook-template-variables) adds the
 `WrappedService.*` variables, the port names, numbers, bind addresses, and protocols that a wrapper needs to forward
 the Service's ports, and what a wrapper that gives the process its own network namespace must do. The list of format
 string scopes in [§4](../wiki/2023-09-Template-Schemas.md#4-environment) adds `Service.*` and `WrappedService.*`, and
@@ -1090,7 +1098,7 @@ Treating it as terminal while retrying an *onRun* crash would fail a Job for exa
 
 ## Prototype
 
-The prototype is the `service-extension` branch of
+The prototype is commit `7140a119`, the head of the `service-extension` branch of
 [mwiebe/openjd-rs](https://github.com/mwiebe/openjd-rs/tree/service-extension), developed alongside this RFC and built
 on RFC 0010's `env-params-prototype` branch at commit `1e68c2b`. RFC 0010 changes made after that commit are not yet
 carried into it. It implements the extension in `openjd-model`, `openjd-expr`, `openjd-sessions`, and `openjd-cli`,
