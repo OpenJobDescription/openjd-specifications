@@ -2780,7 +2780,10 @@ Where:
     4. On a Service in an Environment Template, an *environment* entry is permitted only as
        [Environment Template](#12-environment-template) item 6 constraint 5 permits it.
 5. *hostRequirements* — Describes the requirements on the Worker Host's capabilities that must be satisfied for the
-   Service to be placed on the host. The Service's *combined host requirements* are these together with the
+   Service to be placed on the host. RFC 0010's rules for an empty *hostRequirements*, for a requirement that resolves
+   to nothing and is discarded, and for an *anyOf* or *allOf* written as one expression (in
+   [&lt;HostRequirements&gt;](#33-hostrequirements) and [&lt;AttributeRequirement&gt;](#332-attributerequirement), as
+   RFC 0010 extends them) apply to a Service's own *hostRequirements* as they do to a Step's. The Service's *combined host requirements* are these together with the
    *hostRequirements* of every Environment its Sessions enter, each resolved with the Service's effective values and
    combined by RFC 0010's rules for a Step's combined host requirements (see
    [RFC 0010](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#host-requirements)).

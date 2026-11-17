@@ -754,7 +754,10 @@ rules for queue administrators.
 
 [§9](../wiki/2023-09-Template-Schemas.md#9-service-extension-service) item 5 combines a Service's `hostRequirements`
 with those of the Environments its Sessions enter, by RFC 0010's rules for a Step's combined host requirements, and
-places the Service Session only on a host that satisfies them.
+places the Service Session only on a host that satisfies them. Item 5 also says that RFC 0010's rules for empty,
+discarded, and one-expression host requirements (its [Host
+requirements](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md#host-requirements)) apply to a
+Service's own `hostRequirements` as they do to a Step's, so that implementations read them the same way.
 [§3.3](../wiki/2023-09-Template-Schemas.md#33-hostrequirements) now describes requirements for a Service as well as a
 Step. Its constraint 1, that at least one of *amounts* or *attributes* is given, applied "in a Job Template" and now
 applies wherever the object is provided, since a Service in an Environment Template also has `hostRequirements`.
