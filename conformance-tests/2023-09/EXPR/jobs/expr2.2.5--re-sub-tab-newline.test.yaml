@@ -18,7 +18,7 @@ template:
             print(r"TAB:{{ repr_py(re_sub('a,b', ',', '\t')) }}|")
             print(r"NEWLINE:{{ repr_py(re_sub('a,b', ',', '\n')) }}|")
             print(r"CRLF:{{ repr_py(re_sub('a,b', ',', '\r\n')) }}|")
-            print(r"OCTAL_NEWLINE:{{ repr_py(re_sub('a,b', ',', '\12')) }}|")
+            print(r"NL_OCTAL:{{ repr_py(re_sub('a,b', ',', '\12')) }}|")
             print(r"PRINTABLE:{{ re_sub('a,b', ',', '\x7e') }}|")
             print(r"NBSP:{{ repr_py(re_sub('a,b', ',', '\xa0')) }}|")
 expected:
@@ -26,6 +26,6 @@ expected:
   - TAB:'a\tb'|
   - NEWLINE:'a\nb'|
   - CRLF:'a\r\nb'|
-  - OCTAL_NEWLINE:'a\nb'|
+  - NL_OCTAL:'a\nb'|
   - PRINTABLE:a~b|
   - NBSP:'a\xa0b'|
