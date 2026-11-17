@@ -553,10 +553,19 @@ semantics of Python's `str.title` and `str.capitalize`:
 | `re_match(s: string, pattern: string) -> list[string]?` | Match at START of string, return captured groups or null |
 | `re_search(s: string, pattern: string) -> list[string]?` | Match ANYWHERE in string, return captured groups or null |
 | `re_findall(s: string, pattern: string) -> list[string] \| list[list[string]]` | Find all non-overlapping matches; returns full matches if no groups, list of captured group values (not full matches) if one group, list of group lists if multiple groups |
-| `re_sub(s: string, pattern: string, repl: string) -> string` | Replace all regex matches with replacement. The `repl` string is literal text — group references (`\1`, `\g<1>`, `$1`, `${1}`) are not supported and are errors. |
+| `re_sub(s: string, pattern: string, repl: string) -> string` | Replace all regex matches with replacement. The `repl` string is literal text — group references (`\1`, `\g<1>`, `$1`, `${1}`) are not supported and are errors. A `repl` that contains a control character is also an error (see the note below). |
 | `re_escape(s: string) -> string` | Escape regex metacharacters for literal matching |
 | `re_split(s: string, pattern: string) -> list[string]` | Split string by regex pattern |
 | `re_split(s: string, pattern: string, maxsplit: int) -> list[string]` | Split string by regex pattern, at most maxsplit times |
+
+The `re_sub` replacement must not contain a control character. A control character is one in the Unicode
+general category `Cc` (U+0000 to U+001F and U+007F to U+009F), except tab (U+0009), newline (U+000A) and
+carriage return (U+000D), which are allowed. This catches a group reference written in a non-raw string:
+`'\1'` decodes to U+0001 before `re_sub` sees it (see String Literal Formats in RFC 0005), so `re_sub("ab", "(a)", "\1")` is an error
+rather than a replacement with an invisible character. Write the replacement text you want literally, as
+in `re_sub("a,b", ",", "\n")`, which gives `"a\nb"`. Because tab, newline and carriage return are allowed,
+`'\11'`, `'\12'` and `'\15'` (which decode to them) are not caught, and neither is an octal escape that
+decodes to a printable character, such as `'\101'` for `A`.
 
 The regex syntax is the intersection of Python's `re` module and Rust's `regex` crate,
 ensuring cross-platform compatibility. Supported features:
