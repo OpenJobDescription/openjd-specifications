@@ -1,0 +1,25 @@
+# Expression Language §1.1.5: a line break inside a string literal (LF, CR LF or CR) is a single
+# LF, in raw strings too, while an escaped \r still gives CR. YAML block scalars can't hold a CR,
+# so each script is a double-quoted YAML string: "\r\n" is CR LF and "\\r" is a backslash and r.
+# Each value ends with '|' so an output line can't pass by matching a prefix.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - "print(r\"TRIPLE_LF:{{ repr_py('''ab\ncd''') }}|\")\nprint(r\"TRIPLE_CRLF:{{ repr_py('''ab\r\ncd''') }}|\")\nprint(r\"TRIPLE_CR:{{ repr_py('''ab\rcd''') }}|\")\nprint(r\"RAW_TRIPLE_CRLF:{{ repr_py(r'''ab\r\ncd''') }}|\")\nprint(r\"ESCAPED_CR_THEN_CRLF:{{ repr_py('''ab\\r\r\ncd''') }}|\")\n"
+expected:
+  output:
+  - TRIPLE_LF:'ab\ncd'|
+  - TRIPLE_CRLF:'ab\ncd'|
+  - TRIPLE_CR:'ab\ncd'|
+  - RAW_TRIPLE_CRLF:'ab\ncd'|
+  - ESCAPED_CR_THEN_CRLF:'ab\r\ncd'|

@@ -681,6 +681,10 @@ In raw strings (prefixed with `r` or `R`), backslashes are treated as literal ch
 and escape sequences are not processed. This is useful for regular expressions and
 Windows-style paths.
 
+A line break inside a string literal (LF, CR LF or CR) is a single LF, in raw strings too, and in a
+non-raw string a backslash before it continues the line instead; an escape such as `'\r'` is not a
+line break and still gives CR.
+
 #### Numeric Literal Formats
 
 The grammar supports Python's numeric literal formats for convenience:
