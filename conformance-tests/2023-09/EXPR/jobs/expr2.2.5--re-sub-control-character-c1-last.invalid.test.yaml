@@ -1,5 +1,5 @@
 # Expression Language §2.2.5: re_sub rejects a replacement that contains a control character,
-# which includes the C1 range U+0080 to U+009F. Here U+0085 (next line).
+# which includes the C1 range U+0080 to U+009F. Here its last character, U+009F.
 # The rest of the template is valid; expr2.2.5--re-sub-tab-newline is the accepted side.
 template:
   specificationVersion: jobtemplate-2023-09
@@ -15,4 +15,4 @@ template:
           args:
           - -c
           - |
-            print(r"VALUE:{{ repr_py(re_sub('a-b', '-', '\x85')) }}|")
+            print(r"VALUE:{{ repr_py(re_sub('a-b', '-', '\x9f')) }}|")
