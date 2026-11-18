@@ -670,7 +670,7 @@ These rules complete the table:
   characters named by rule such as `CJK UNIFIED IDEOGRAPH-4E00` and `HANGUL SYLLABLE GA`, and its
   name aliases. It doesn't accept a named sequence, a name for a sequence of several characters.
   Names are compared without regard to case, as in CPython 3.13 (CPython 3.12 requires upper case
-  for a name given by rule). Which names exist depends on the Unicode version. Implementations should
+  for `CJK UNIFIED IDEOGRAPH` and `HANGUL SYLLABLE` names). Which names exist depends on the Unicode version. Implementations should
   use Unicode 15.0 or later, and may differ on names that later versions add and on names given by
   rule other than `CJK UNIFIED IDEOGRAPH` and `HANGUL SYLLABLE` names.
 - A digit escape is never a regular expression group reference. `'\1'` is the single character U+0001, so
