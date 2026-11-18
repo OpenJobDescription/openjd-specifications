@@ -1,4 +1,4 @@
-# Expression Language §1.1.5: an unrecognized escape keeps its backslash, permanently.
+# Expression Language §1.1.5: an unrecognized escape keeps its backslash.
 # That covers a letter that isn't an escape (\d, \q), the digits 8 and 9, which aren't
 # octal, a space, and a non-ASCII character. A value ends with '|' so an output line
 # can't pass by matching a prefix.
