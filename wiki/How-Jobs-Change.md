@@ -694,12 +694,13 @@ apply plan:
 kinds: StepDependencies
 ```
 
-## 8. Proposal: conditional Steps
+## 8. Conditional Steps
 
-This section is a proposal for discussion. It describes Steps with an `enableIf` field, which
+This section describes Steps with an `enableIf` field, which
 [RFC 0010](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md) defines for
 Environments and [RFC 0011, Control Flow](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0011-control-flow.md) puts on
-Steps. `openjd diff` doesn't support the field yet, and nothing below is real output.
+Steps. `openjd diff` doesn't support the field yet, so this section has no output. It describes how a change to a
+conditional Step is expected to look.
 
 RFC 0011 says that "A statically disabled Step is still part of the Job and is shown as `SKIPPED`, so every Job created
 from a template has the same Steps, whatever its parameter values." That keeps Steps matched by name when a parameter
@@ -721,7 +722,7 @@ steps:
 | the `enableIf` text changes but gives the same result | none; only the template shows it | none |
 | an `enableIf` that reads another Step's output (`Steps.<Name>.Output.*`) | decided after the Job is created, at RFC 0011's step input binding, so two Jobs can't be compared on it until both are bound | unknown until then |
 
-Open questions for the RFC:
+Not yet decided:
 - What disabling a Step means for Tasks that already ran, and for Steps that already read its outputs.
 - Whether a system that updates a Job evaluates a changed late-bound `enableIf` with the outputs it already stores.
 
