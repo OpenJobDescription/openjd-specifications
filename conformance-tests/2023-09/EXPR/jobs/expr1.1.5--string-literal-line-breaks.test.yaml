@@ -1,5 +1,6 @@
 # Expression Language §1.1.5: a line break inside a string literal (LF, CR LF or CR) is a single
-# LF, in raw strings too, while an escaped \r still gives CR. YAML block scalars can't hold a CR,
+# LF, in raw strings too, while an escaped \r still gives CR. In a raw string a backslash before a
+# line break stays, and each of two adjacent line breaks is its own LF. YAML block scalars can't hold a CR,
 # so each script is a double-quoted YAML string: "\r\n" is CR LF and "\\r" is a backslash and r.
 # Each value ends with '|' so an output line can't pass by matching a prefix.
 template:
@@ -15,7 +16,7 @@ template:
           command: python
           args:
           - -c
-          - "print(r\"TRIPLE_LF:{{ repr_py('''ab\ncd''') }}|\")\nprint(r\"TRIPLE_CRLF:{{ repr_py('''ab\r\ncd''') }}|\")\nprint(r\"TRIPLE_CR:{{ repr_py('''ab\rcd''') }}|\")\nprint(r\"RAW_TRIPLE_CRLF:{{ repr_py(r'''ab\r\ncd''') }}|\")\nprint(r\"ESCAPED_CR_THEN_CRLF:{{ repr_py('''ab\\r\r\ncd''') }}|\")\n"
+          - "print(r\"TRIPLE_LF:{{ repr_py('''ab\ncd''') }}|\")\nprint(r\"TRIPLE_CRLF:{{ repr_py('''ab\r\ncd''') }}|\")\nprint(r\"TRIPLE_CR:{{ repr_py('''ab\rcd''') }}|\")\nprint(r\"RAW_TRIPLE_CRLF:{{ repr_py(r'''ab\r\ncd''') }}|\")\nprint(r\"ESCAPED_CR_THEN_CRLF:{{ repr_py('''ab\\r\r\ncd''') }}|\")\nprint(r\"RAW_TRIPLE_CR:{{ repr_py(r'''ab\rcd''') }}|\")\nprint(r\"RAW_BACKSLASH_CRLF:{{ repr_py(r'''ab\\\r\ncd''') }}|\")\nprint(r\"CR_CR:{{ repr_py('''ab\r\rcd''') }}|\")\nprint(r\"LF_CR:{{ repr_py('''ab\n\rcd''') }}|\")\n"
 expected:
   output:
   - TRIPLE_LF:'ab\ncd'|
@@ -23,3 +24,7 @@ expected:
   - TRIPLE_CR:'ab\ncd'|
   - RAW_TRIPLE_CRLF:'ab\ncd'|
   - ESCAPED_CR_THEN_CRLF:'ab\r\ncd'|
+  - RAW_TRIPLE_CR:'ab\ncd'|
+  - RAW_BACKSLASH_CRLF:'ab\\\ncd'|
+  - CR_CR:'ab\n\ncd'|
+  - LF_CR:'ab\n\ncd'|
