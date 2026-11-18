@@ -763,6 +763,10 @@ These rules complete the table:
 - An unrecognized escape keeps its backslash: `'\d'` is the two characters `\d`, and `len('\q')` is 2.
   This includes `\8`, `\9`, and a backslash before any character not in the table. Python has
   deprecated unrecognized escapes since 3.6 and plans to make them an error; EXPR keeps them as written.
+- Python has deprecated both of the forms above, unrecognized escapes since 3.6 and octal values
+  above `\377` since 3.11, and plans to reject them. The next major revision of the EXPR specification
+  should consider rejecting them too. Until then, write a regular expression as a raw string (`r'\d+'`)
+  and a literal backslash as `\\`.
 - A malformed escape is a syntax error. That is `\x`, `\u` or `\U` with too few hex digits; `\N`
   without `{name}`, or with a name that `\N` doesn't accept (see the next item); a `\U` value above
   `\U0010FFFF`; and a `\u` or `\U` value from U+D800 to U+DFFF. Python allows that last range in a
