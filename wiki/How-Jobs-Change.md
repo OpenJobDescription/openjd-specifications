@@ -8,8 +8,9 @@ are kept, added, removed or replaced, what a **Worker Host** sees, and which cha
 Open Job Description does not define how a render management system updates a Job that is already running. This page
 describes the difference between two Jobs, which any such system has to work out first.
 
-The examples use `openjd diff`, a command that compares two Jobs built from templates. It is a prototype in
-[openjd-rs#533](https://github.com/OpenJobDescription/openjd-rs/pull/533), so its flags and output may change. Each output on this page was printed by that prototype.
+The examples use `openjd diff`, the [openjd-rs](https://github.com/OpenJobDescription/openjd-rs) command that compares
+two Jobs built from templates. It is marked unstable, so its flags and output may change. Each output on this page was
+printed by it.
 
 ## Reading the output
 
@@ -696,8 +697,9 @@ kinds: StepDependencies
 ## 8. Proposal: conditional Steps
 
 This section is a proposal for discussion. It describes Steps with an `enableIf` field, which
-[RFC 0010](https://github.com/OpenJobDescription/openjd-specifications/pull/210) defines for Environments and the draft [RFC 0011, Control Flow](https://github.com/mwiebe/openjd-specifications/blob/rfc-control-flow/rfcs/0011-control-flow.md) puts on Steps. Neither RFC
-is accepted, `openjd diff` doesn't support the field, and nothing below is real output.
+[RFC 0010](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0010-environment-parameters.md) defines for
+Environments and [RFC 0011, Control Flow](https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/rfcs/0011-control-flow.md) puts on
+Steps. `openjd diff` doesn't support the field yet, and nothing below is real output.
 
 RFC 0011 says that "A statically disabled Step is still part of the Job and is shown as `SKIPPED`, so every Job created
 from a template has the same Steps, whatever its parameter values." That keeps Steps matched by name when a parameter
@@ -725,5 +727,5 @@ Open questions for the RFC:
 
 ## More examples
 
-The openjd-rs prototype has a gallery of 78 examples, one for each field `openjd diff` can report, each with its
-command and output: [`specs/cli/diff-examples.md`](https://github.com/leongdl/openjd-rs/blob/prototype/mutable-job-wip/specs/cli/diff-examples.md).
+openjd-rs has a gallery of 78 examples, one for each field `openjd diff` can report, each with its
+command and output: [`specs/cli/diff-examples.md`](https://github.com/OpenJobDescription/openjd-rs/blob/main/specs/cli/diff-examples.md).
