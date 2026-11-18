@@ -656,11 +656,10 @@ These rules complete the table:
 
 - An octal escape reads at most 3 digits, so `'\1234'` is `'S4'`, and `'\18'` is U+0001 followed by
   `8`. A value above `\377` is the character with that code point, so `'\400'` is U+0100 and `'\777'` is
-  U+01FF. Python 3.12 and later warn about this form, but in EXPR it is valid and keeps that meaning.
+  U+01FF. Python 3.12 and later warn about this form, but in EXPR it is valid.
 - An unrecognized escape keeps its backslash: `'\d'` is the two characters `\d`, and `len('\q')` is 2.
-  This includes `\8`, `\9`, and a backslash before any character not in the table. This rule is
-  permanent. Python has deprecated unrecognized escapes since 3.6 and plans to make them an error, but
-  EXPR will not change their meaning or reject them.
+  This includes `\8`, `\9`, and a backslash before any character not in the table. Python has
+  deprecated unrecognized escapes since 3.6 and plans to make them an error; EXPR keeps them as written.
 - A malformed escape is a syntax error. That is `\x`, `\u` or `\U` with too few hex digits; `\N`
   without `{name}`, or with a name that `\N` doesn't accept (see the next item); a `\U` value above
   `\U0010FFFF`; and a `\u` or `\U` value from U+D800 to U+DFFF. Python allows that last range in a
