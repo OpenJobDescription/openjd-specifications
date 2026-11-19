@@ -660,11 +660,31 @@ re_escape("file[1].txt")                        # returns "file\\[1\\]\\.txt"
 
 `repr_py` follows the behavior of Python's [repr](https://docs.python.org/3/library/functions.html#repr).
 
-`repr_sh` follows the behavior of Python's
-[shlex.quote](https://docs.python.org/3/library/shlex.html#shlex.quote) and
-[shlex.join](https://docs.python.org/3/library/shlex.html#shlex.join).
+`repr_sh` quotes its argument for a POSIX shell. Its result is defined by the words a POSIX shell
+reads back from it, not by its exact bytes, so that a conformance test can check it and so that
+implementations can use their platform's quoting library:
 
-Example: `repr_sh(["echo", "hello world"])` returns `"echo 'hello world'"`.
+- For a `string` or `path`, the result, unquoted in a command's arguments, is read by a POSIX shell
+  as exactly one word equal to the input.
+- For a list of N items, the result is the N quoted items separated by single spaces, which the shell
+  reads as N words, in order, each equal to its item. An empty list gives the empty string.
+- An empty string gives a word the shell reads as the empty string, such as `''`.
+- A string containing a NUL character cannot be a shell word, and is an evaluation error.
+- `bool`, `int`, `float`, `nulltype`, `range_expr` and nested lists have no `repr_sh` signature.
+
+Python's [shlex.quote](https://docs.python.org/3/library/shlex.html#shlex.quote) and
+[shlex.join](https://docs.python.org/3/library/shlex.html#shlex.join) are one conforming
+implementation, and the Rust [shlex](https://crates.io/crates/shlex) crate is another. They quote some
+inputs differently: for `it's`, `shlex.quote` gives `'it'"'"'s'` and the Rust crate gives `"it's"`.
+Both are read by the shell as the one word `it's`. Section 2.2.6 of the
+[Expression Language](https://github.com/OpenJobDescription/openjd-specifications/wiki/2026-02-Expression-Language)
+specification gives the full rules.
+
+Example: `repr_sh(["echo", "hello world"])` returns, for example, `"echo 'hello world'"` (one valid
+output).
+
+`repr_cmd` and `repr_pwsh` are specified by their exact output, because this specification defines
+their algorithms and there is no existing library for an implementation to match.
 
 `repr_cmd` produces Windows CMD-safe strings suitable for use in `.bat` files:
 
@@ -937,9 +957,11 @@ path portion verbatim.
 
 ### Python shlex
 
-The `repr_sh` function follows Python's
-[shlex.quote](https://docs.python.org/3/library/shlex.html#shlex.quote) semantics for safe
-shell escaping.
+The `repr_sh` function is modeled on Python's
+[shlex.quote](https://docs.python.org/3/library/shlex.html#shlex.quote) for safe shell escaping.
+The specification states the property `shlex.quote` provides, that the shell reads the result back
+as the input, rather than its exact output, because other quoting libraries provide the same
+property with different bytes.
 
 ### Standard Library Math Functions
 
