@@ -1,0 +1,18 @@
+# Expression Language §2.3.2: `with_number` rejects a padding width over its maximum.
+# In TEMPLATE scope (here the job name) a literal path has POSIX semantics
+# and is evaluated when the template is checked, so the check rejects it.
+# The same expression in a host-context field is checked only at run time:
+# see jobs/expr2.3.2--with-number-padding-too-wide.test.yaml.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: '{{ path("/out/file_%099d.exr").with_number(1) }}'
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - -c
+        - print('ok')

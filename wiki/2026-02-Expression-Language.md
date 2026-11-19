@@ -438,15 +438,26 @@ At each stage, known values are evaluated concretely while unresolved values pro
    comprehension over unknown elements), but a name that resolves nowhere is (see Names that
    Resolve Nowhere above).
 
+   The worker host is not known yet either, so neither is its path format (see
+   [Path Format](#path-format)). In host-context scopes (SESSION/TASK), `path()` evaluates to
+   `unresolved[path]` even when its argument is a literal, and so does `with_number()` on a
+   string, so the properties of a literal path, and everything computed from them, are not
+   checked until the expression runs on the worker. For example, `int(path("C:\\a\\5").name)` and
+   `path("C:\\a\\b").parts[2]` are accepted because a Windows worker evaluates them, even though
+   a POSIX worker would fail; `path("/a").relative_to(path("/b"))` is also accepted, and fails
+   on the worker. Type errors on a literal path, such as `path("/a").startswith("/")`, are still
+   reported. Literal paths in TEMPLATE scope are evaluated concretely, with POSIX semantics.
+
 2. **Job parameter binding** ("submit time"). Job parameter values are now known, so `Param.*`
    symbols are concrete. Expressions in TEMPLATE scope can be fully evaluated. Expressions in
    host-context scopes (SESSION/TASK) still have `Task.Param.*`, `Session.*`, `Task.File.*`,
    and `Env.File.*` as unresolved, but can now type-check operations on the known `Param.*`
-   values combined with the unresolved task/session symbols.
+   values combined with the unresolved task/session symbols. A `path()` in a host-context scope
+   is still `unresolved[path]`, because the worker's path format is still not known.
 
 3. **Worker host execution**. All symbols are known — `Task.Param.*`, `Session.*`, file paths,
-   and path mapping rules are all concrete. Every expression is fully evaluated with no
-   unknowns remaining.
+   path mapping rules, and the host's path format are all concrete. Every expression is fully
+   evaluated with no unknowns remaining.
 
 At each stage, the same evaluator is used. The only difference is which symbols in the symbol
 table are concrete values vs `unresolved[T]` placeholders. This means there is no separate type
@@ -545,6 +556,14 @@ The `path_format` parameter controls the behavior of the `path` type during eval
 - **`None`** (default): The `path` type behaves like Python's `PurePath` class,
   using the system's native path semantics. This is appropriate for host contexts
   (SESSION and TASK scopes) where paths should match the worker's OS.
+
+Before the worker host is known, as at template parse time and job parameter binding, the
+path format of host-context expressions is not known either. Checks of those expressions treat
+`path()` as returning `unresolved[path]` for any argument, and `with_number()` on a string as
+returning `unresolved[string]`: these functions read a literal string as a filesystem path,
+and the result depends on the format (`C:\a\b` is one path component in POSIX semantics and
+three in Windows semantics). Checking them in one format would reject expressions that a worker
+using the other format runs. See [Progressive Expression Evaluation](#progressive-expression-evaluation).
 
 The `path_format` setting only affects filesystem paths. URI paths (those with a `scheme://`
 prefix) always use URI-aware parsing with forward-slash separators and no normalization,
@@ -849,7 +868,8 @@ args:
 The `path` type can have either POSIX or Windows path semantics depending on the evaluation
 context. This affects path separator handling (`/` vs `\`) and case sensitivity. In TEMPLATE
 scope contexts, POSIX semantics are used for consistency. In host contexts (SESSION and TASK
-scopes), the semantics match the host's operating system.
+scopes), the semantics match the host's operating system, so a path built from a literal in a
+host context is `unresolved[path]` until that host is known (see [Path Format](#path-format)).
 
 **URI paths**: When a `path` value contains a URI (detected by a `scheme://` prefix matching
 the pattern `^[a-zA-Z][a-zA-Z0-9+.-]+://`), path operations use URI-aware string parsing

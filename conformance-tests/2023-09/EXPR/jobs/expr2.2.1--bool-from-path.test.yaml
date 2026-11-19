@@ -1,0 +1,38 @@
+# Expression Language §2.2.1: `bool()` of a path is an error.
+# In a host-context field (here a step's onRun args) a literal path is
+# unresolved[path] until the worker's path format is known (Expression
+# Language "Progressive Expression Evaluation" and "Path Format"), so the
+# template passes check and the error is reported when the task runs. The
+# step environment's onEnter prints CHECK PASSED to show the session
+# started. The task must then fail without running its command, which
+# would print TASK_RAN (spelled in two parts in the source, so an error
+# message that quotes the source doesn't match).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    stepEnvironments:
+    - name: Env1
+      script:
+        actions:
+          onEnter:
+            command: python
+            args:
+            - -c
+            - print('CHECK PASSED')
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print('TASK' + '_RAN', r'{{ bool(path("/tmp")) }}')
+expected:
+  taskFailure: {}
+  output:
+  - CHECK PASSED
+  forbidden:
+  - TASK_RAN

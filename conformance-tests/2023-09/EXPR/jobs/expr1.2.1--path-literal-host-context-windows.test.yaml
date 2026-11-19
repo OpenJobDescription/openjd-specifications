@@ -1,0 +1,33 @@
+# Expression Language 1.2.1 and "Path Format": in a host-context field, a
+# path built from a literal has the worker's path semantics. On a Windows
+# worker C:\a\b has the parts C:\, a and b. These expressions fail on a
+# POSIX worker, so check must not evaluate them with POSIX semantics (see
+# job_templates/expr1.2.1--path-literal-host-context-windows-format.yaml).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      let:
+      - frame = int(path("C:\\a\\5").name)
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'INT:[{{ frame }}]')
+            print(r'ABS:[{{ "ok" if path("C:\\a").is_absolute() else fail("relative") }}]')
+            print(r'PART:[{{ path("C:\\a\\b").parts[2] }}]')
+            print(r'RANGE:[{{ range(len(path("C:\\a\\b").parts))[2] }}]')
+runOn:
+- windows
+expected:
+  output:
+  - INT:[5]
+  - ABS:[ok]
+  - PART:[b]
+  - RANGE:[2]
