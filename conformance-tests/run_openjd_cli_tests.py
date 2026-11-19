@@ -38,8 +38,10 @@ OPERATING_SYSTEM = "windows" if sys.platform == "win32" else "posix"
 CONFORMANCE_DIR = Path(__file__).parent
 
 
+# Test files are UTF-8, and every file the runner reads or writes names the
+# encoding, because the default is the locale encoding (cp1252 on Windows).
 def load_yaml_or_json(path: Path):
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         content = f.read()
     if path.suffix == ".json":
         return json.loads(content)
@@ -47,9 +49,11 @@ def load_yaml_or_json(path: Path):
 
 
 def run_check(template_path: Path) -> tuple[bool, str]:
+    # openjd output is decoded as UTF-8. errors="backslashreplace" shows a byte
+    # that isn't UTF-8 as \xNN instead of aborting the whole run.
     result = subprocess.run(
         ["openjd", "check", str(template_path)],
-        capture_output=True, text=True,
+        capture_output=True, encoding="utf-8", errors="backslashreplace",
     )
     return result.returncode == 0, result.stderr or result.stdout
 
@@ -95,9 +99,10 @@ def run_job(test_path: Path) -> tuple[bool, str] | None:
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
 
-        # Write template
+        # Write template. yaml.dump writes non-ASCII characters as YAML escapes,
+        # so every file written here is ASCII and reads the same in any encoding.
         template_path = tmpdir / "template.yaml"
-        with open(template_path, "w") as f:
+        with open(template_path, "w", encoding="utf-8") as f:
             yaml.dump(test["template"], f)
 
         cmd = ["openjd", "run", str(template_path)]
@@ -105,25 +110,25 @@ def run_job(test_path: Path) -> tuple[bool, str] | None:
         # Parameters
         if "parameters" in test:
             params_path = tmpdir / "parameters.yaml"
-            with open(params_path, "w") as f:
+            with open(params_path, "w", encoding="utf-8") as f:
                 yaml.dump(test["parameters"], f)
             cmd.extend(["-p", f"file://{params_path}"])
 
         # Environment templates
         for i, env in enumerate(test.get("environments", [])):
             env_path = tmpdir / f"env{i}.yaml"
-            with open(env_path, "w") as f:
+            with open(env_path, "w", encoding="utf-8") as f:
                 yaml.dump(env, f)
             cmd.extend(["--env", str(env_path)])
 
         # Path mapping
         if "pathMapping" in test:
             pm_path = tmpdir / "pathmapping.json"
-            with open(pm_path, "w") as f:
+            with open(pm_path, "w", encoding="utf-8") as f:
                 json.dump({"version": "pathmapping-1.0", "path_mapping_rules": test["pathMapping"]}, f)
             cmd.extend(["--path-mapping-rules", f"file://{pm_path}"])
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="backslashreplace")
         output = result.stdout + result.stderr
 
         # For invalid tests, any failure (non-zero exit code) is acceptable
