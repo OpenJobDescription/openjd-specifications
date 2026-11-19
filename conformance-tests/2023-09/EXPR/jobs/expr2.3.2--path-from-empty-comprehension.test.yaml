@@ -1,0 +1,33 @@
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Items
+    type: LIST[STRING]
+    default: ["a", "b"]
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Keep
+        type: STRING
+        range: ["none"]
+    let:
+    - 'from_filtered = path([s for s in Param.Items if False])'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'FILTERED:{{ from_filtered }}')
+            print(r'TASK_FILTER:{{ path([s for s in Param.Items if s == Task.Param.Keep]) }}')
+            print(r'TASK_JOINED:{{ path([s for s in Param.Items if s == Task.Param.Keep]) / "a" }}')
+expected:
+  output:
+  - FILTERED:.
+  - TASK_FILTER:.
+  - TASK_JOINED:a

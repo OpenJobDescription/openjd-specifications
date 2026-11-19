@@ -2123,6 +2123,7 @@ Examples:
 |-----------|-------------|
 | `path(s: string) -> path` | Convert string to path |
 | `path(parts: list[string]) -> path` | Construct path from components |
+| `path(parts: list[nulltype]) -> path` | Construct path from no components, returns `path(".")` |
 | `with_name(p: path, name: string) -> path` | Return path with the filename changed |
 | `with_stem(p: path, stem: string) -> path` | Return path with the stem changed |
 | `with_suffix(p: path, suffix: string) -> path` | Return path with the suffix changed |
