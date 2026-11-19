@@ -838,6 +838,7 @@ Examples:
 |-----------|-------------|
 | `path(s: string) -> path` | Convert string to path |
 | `path(parts: list[string]) -> path` | Construct path from components (like `Path(*parts)` in Python) |
+| `path(parts: list[nulltype]) -> path` | Construct path from no components, returns `path(".")` (like `Path()` in Python) |
 | `with_name(p: path, name: string) -> path` | `p.with_name(name)` return path with the filename changed |
 | `with_stem(p: path, stem: string) -> path` | `p.with_stem(stem)` return path with the stem changed |
 | `with_suffix(p: path, suffix: string) -> path` | `p.with_suffix(suffix)` return path with the suffix changed |
