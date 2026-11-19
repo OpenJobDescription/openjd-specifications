@@ -1297,8 +1297,11 @@ At each stage, known values are evaluated concretely while unresolved values pro
    checked until the expression runs on the worker. For example, `int(path("C:\\a\\5").name)` and
    `path("C:\\a\\b").parts[2]` are accepted because a Windows worker evaluates them, even though
    a POSIX worker would fail; `path("/a").relative_to(path("/b"))` is also accepted, and fails
-   on the worker. Type errors on a literal path, such as `path("/a").startswith("/")`, are still
-   reported. Literal paths in TEMPLATE scope are evaluated concretely, with POSIX semantics.
+   on the worker. A `path` value computed in TEMPLATE scope, such as by a step-level `let`
+   binding, has the worker's path semantics when a host-context expression uses it, so it is
+   `unresolved[path]` there too. Type errors that the function signatures show, such as
+   `path("/a").startswith("/")`, are still reported. Literal paths in TEMPLATE scope are
+   evaluated concretely, with POSIX semantics.
 
 2. **Job parameter binding** ("submit time"). Job parameter values are now known, so `Param.*`
    symbols are concrete. Expressions in TEMPLATE scope can be fully evaluated. Expressions in

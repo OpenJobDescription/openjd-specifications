@@ -445,8 +445,11 @@ At each stage, known values are evaluated concretely while unresolved values pro
    checked until the expression runs on the worker. For example, `int(path("C:\\a\\5").name)` and
    `path("C:\\a\\b").parts[2]` are accepted because a Windows worker evaluates them, even though
    a POSIX worker would fail; `path("/a").relative_to(path("/b"))` is also accepted, and fails
-   on the worker. Type errors on a literal path, such as `path("/a").startswith("/")`, are still
-   reported. Literal paths in TEMPLATE scope are evaluated concretely, with POSIX semantics.
+   on the worker. A `path` value computed in TEMPLATE scope, such as by a step-level `let`
+   binding, has the worker's path semantics when a host-context expression uses it, so it is
+   `unresolved[path]` there too. Type errors that the function signatures show, such as
+   `path("/a").startswith("/")`, are still reported. Literal paths in TEMPLATE scope are
+   evaluated concretely, with POSIX semantics.
 
 2. **Job parameter binding** ("submit time"). Job parameter values are now known, so `Param.*`
    symbols are concrete. Expressions in TEMPLATE scope can be fully evaluated. Expressions in
@@ -563,7 +566,9 @@ path format of host-context expressions is not known either. Checks of those exp
 returning `unresolved[string]`: these functions read a literal string as a filesystem path,
 and the result depends on the format (`C:\a\b` is one path component in POSIX semantics and
 three in Windows semantics). Checking them in one format would reject expressions that a worker
-using the other format runs. See [Progressive Expression Evaluation](#progressive-expression-evaluation).
+using the other format runs. For the same reason, a `path` value computed in TEMPLATE scope is
+`unresolved[path]` when a host-context expression uses it before the host is known. See
+[Progressive Expression Evaluation](#progressive-expression-evaluation).
 
 The `path_format` setting only affects filesystem paths. URI paths (those with a `scheme://`
 prefix) always use URI-aware parsing with forward-slash separators and no normalization,
