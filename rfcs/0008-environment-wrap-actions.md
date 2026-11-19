@@ -749,10 +749,12 @@ reconstruct that line, and doing so is inherently dangerous: if
 breaks the script or, worse, executes unintended commands.
 
 The RFC requires the EXPR extension and its `repr_sh()` function (from RFC 0006)
-for safe command construction. `repr_sh(string)` applies `shlex.quote` semantics:
-it wraps the value in single quotes and escapes embedded single quotes.
-`repr_sh(list[string])` applies this per element and joins with spaces, so each
-element becomes exactly one argv entry when the shell parses the line.
+for safe command construction. A POSIX shell reads the result of
+`repr_sh(string)` back as exactly one word equal to the string, and the result
+of `repr_sh(list[string])` as one word per element, so each element becomes
+exactly one argv entry when the shell parses the line. RFC 0006 and Expression
+Language §2.2.6 define this property; implementations may quote differently,
+for example in the style of Python's `shlex.quote`.
 
 For Windows shells, the equivalent functions are `repr_cmd()` and `repr_pwsh()`
 from RFC 0006, which handle each shell's different escaping rules.
@@ -778,9 +780,9 @@ commands.
 
 The specification provides the primitives needed to do this correctly:
 
-- **`repr_sh()`** (RFC 0006): applies `shlex.quote` semantics to a string or
-  to each element of a `list[string]`, producing safely quoted argv tokens
-  that the POSIX shell parses as exactly one argument each.
+- **`repr_sh()`** (RFC 0006): quotes a string, or each element of a
+  `list[string]`, so that a POSIX shell parses each as exactly one argument
+  equal to the original value.
 - **`repr_cmd()`** and **`repr_pwsh()`** (RFC 0006): the Windows
   equivalents, which handle `cmd.exe` and PowerShell's distinct escaping
   rules.
