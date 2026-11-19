@@ -1106,13 +1106,12 @@ Treating it as terminal while retrying an *onRun* crash would fail a Job for exa
 
 ## Prototype
 
-The prototype is commit `7140a119`, the head of the `service-extension` branch of
+The prototype is commit `e856d80a`, the head of the `service-extension` branch of
 [mwiebe/openjd-rs](https://github.com/mwiebe/openjd-rs/tree/service-extension), developed alongside this RFC and built
-on RFC 0010's `env-params-prototype` branch at commit `1e68c2b`. With that base the prototype passes the ENV_PARAMS
-conformance tests of RFC 0010 at `45e5c53`, and later RFC 0010 changes are not yet carried into it. It implements the
-extension in `openjd-model`, `openjd-expr`, `openjd-sessions`, and `openjd-cli`, where `openjd run` is a single-host
-scheduler for Services. Its `openjd check` and `openjd run` pass all 372 tests under `conformance-tests/2023-09/SERVICE`
-at this RFC's head.
+on RFC 0010's `env-params-prototype` branch at commit `23ba98f`. With that base the prototype passes the ENV_PARAMS
+conformance tests of RFC 0010 at `74f8733`. It implements the extension in `openjd-model`, `openjd-expr`,
+`openjd-sessions`, and `openjd-cli`, where `openjd run` is a single-host scheduler for Services. Its `openjd check` and
+`openjd run` pass all 374 tests under `conformance-tests/2023-09/SERVICE` at this RFC's head.
 
 These parts of the proposal changed while the prototype was developed alongside it:
 
