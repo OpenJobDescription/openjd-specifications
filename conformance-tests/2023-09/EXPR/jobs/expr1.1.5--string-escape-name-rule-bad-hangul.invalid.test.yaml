@@ -1,0 +1,17 @@
+# Expression Language §1.1.5: \N with a HANGUL SYLLABLE name that names no Hangul syllable
+# is a syntax error.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r"VALUE:{{ len('\N{HANGUL SYLLABLE XYZ}') }}|")
