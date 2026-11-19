@@ -656,14 +656,13 @@ These rules complete the table:
 
 - An octal escape reads at most 3 digits, so `'\1234'` is `'S4'`, and `'\18'` is U+0001 followed by
   `8`. A value above `\377` is the character with that code point, so `'\400'` is U+0100 and `'\777'` is
-  U+01FF. Python 3.12 and later warn about this form, but in EXPR it is valid.
+  U+01FF.
 - An unrecognized escape keeps its backslash: `'\d'` is the two characters `\d`, and `len('\q')` is 2.
-  This includes `\8`, `\9`, and a backslash before any character not in the table. Python has
-  deprecated unrecognized escapes since 3.6 and plans to make them an error; EXPR keeps them as written.
-- Python has deprecated both of the forms above, unrecognized escapes since 3.6 and octal values
-  above `\377` since 3.11, and plans to reject them. The next major revision of the EXPR specification
-  should consider rejecting them too. Until then, write a regular expression as a raw string (`r'\d+'`)
-  and a literal backslash as `\\`.
+  This includes `\8`, `\9`, and a backslash before any character not in the table.
+- Python has deprecated both of the forms above: octal values above `\377` since 3.11, with a
+  SyntaxWarning from 3.12, and unrecognized escapes since 3.6. It plans to make both an error. The next
+  major revision of the EXPR specification should consider rejecting them too. Until then, write a
+  regular expression as a raw string (`r'\d+'`) and a literal backslash as `\\`.
 - A malformed escape is a syntax error. That is `\x`, `\u` or `\U` with too few hex digits; `\N`
   without `{name}`, or with a name that `\N` doesn't accept (see the next item); a `\U` value above
   `\U0010FFFF`; and a `\u` or `\U` value from U+D800 to U+DFFF. Python allows that last range in a
