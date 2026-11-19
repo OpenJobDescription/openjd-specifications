@@ -1,0 +1,17 @@
+# Expression Language §1.1.5: \N with a named sequence, a name for a sequence of several
+# characters (NamedSequences.txt), is a syntax error.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r"VALUE:{{ len('\N{LATIN CAPITAL LETTER A WITH MACRON AND GRAVE}') }}|")
