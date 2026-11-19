@@ -1290,15 +1290,26 @@ At each stage, known values are evaluated concretely while unresolved values pro
    comprehension over unknown elements), but a name that resolves nowhere is (see Names that
    Resolve Nowhere above).
 
+   The worker host is not known yet either, so neither is its path format (see
+   [Path Format](#path-format)). In host-context scopes (SESSION/TASK), `path()` evaluates to
+   `unresolved[path]` even when its argument is a literal, and so does `with_number()` on a
+   string, so the properties of a literal path, and everything computed from them, are not
+   checked until the expression runs on the worker. For example, `int(path("C:\\a\\5").name)` and
+   `path("C:\\a\\b").parts[2]` are accepted because a Windows worker evaluates them, even though
+   a POSIX worker would fail; `path("/a").relative_to(path("/b"))` is also accepted, and fails
+   on the worker. Type errors on a literal path, such as `path("/a").startswith("/")`, are still
+   reported. Literal paths in TEMPLATE scope are evaluated concretely, with POSIX semantics.
+
 2. **Job parameter binding** ("submit time"). Job parameter values are now known, so `Param.*`
    symbols are concrete. Expressions in TEMPLATE scope can be fully evaluated. Expressions in
    host-context scopes (SESSION/TASK) still have `Task.Param.*`, `Session.*`, `Task.File.*`,
    and `Env.File.*` as unresolved, but can now type-check operations on the known `Param.*`
-   values combined with the unresolved task/session symbols.
+   values combined with the unresolved task/session symbols. A `path()` in a host-context scope
+   is still `unresolved[path]`, because the worker's path format is still not known.
 
 3. **Worker host execution**. All symbols are known — `Task.Param.*`, `Session.*`, file paths,
-   and path mapping rules are all concrete. Every expression is fully evaluated with no
-   unknowns remaining.
+   path mapping rules, and the host's path format are all concrete. Every expression is fully
+   evaluated with no unknowns remaining.
 
 At each stage, the same evaluator is used. The only difference is which symbols in the symbol
 table are concrete values vs `unresolved[T]` placeholders. This means there is no separate type
