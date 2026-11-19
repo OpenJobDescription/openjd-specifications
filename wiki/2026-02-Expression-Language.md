@@ -440,11 +440,12 @@ At each stage, known values are evaluated concretely while unresolved values pro
 
    The worker host is not known yet either, so neither is its path format (see
    [Path Format](#path-format)). In host-context scopes (SESSION/TASK), `path()` evaluates to
-   `unresolved[path]` even when its argument is a literal, and so does `with_number()` on a
-   string, so the properties of a literal path, and everything computed from them, are not
-   checked until the expression runs on the worker. For example, `int(path("C:\\a\\5").name)` and
-   `path("C:\\a\\b").parts[2]` are accepted because a Windows worker evaluates them, even though
-   a POSIX worker would fail; `path("/a").relative_to(path("/b"))` is also accepted, and fails
+   `unresolved[path]` even when its argument is a literal, and `with_number()` on a string,
+   which it reads as a path, to `unresolved[string]`, so the properties of a literal path, and
+   everything computed from them, are not checked until the expression runs on the worker. For
+   example, `int(path("C:\\a\\5").name)` and `path("C:\\a\\b").parts[2]` are accepted
+   because a Windows worker evaluates them, even though a POSIX worker would fail;
+   `path("/a").relative_to(path("/b"))` is also accepted, and fails
    on the worker. A `path` value computed in TEMPLATE scope, such as by a step-level `let`
    binding, has the worker's path semantics when a host-context expression uses it, so it is
    `unresolved[path]` there too. Type errors that the function signatures show, such as
