@@ -662,29 +662,33 @@ re_escape("file[1].txt")                        # returns "file\\[1\\]\\.txt"
 
 `repr_sh` quotes its argument for a POSIX shell. Its result is defined by the words a POSIX shell
 reads back from it, not by its exact bytes, so that a conformance test can check it and so that
-implementations can use their platform's quoting library:
+implementations can use their platform's quoting library. In summary, when a non-interactive POSIX
+shell reads the result unquoted in a command's arguments:
 
-- For a `string` or `path`, the result, unquoted in a command's arguments, is read by a POSIX shell
-  as exactly one word equal to the input.
+- For a `string` or `path`, the shell reads exactly one word equal to the input.
 - For a list of N items, the result is the N quoted items separated by single spaces, which the shell
   reads as N words, in order, each equal to its item. An empty list gives the empty string.
 - An empty string gives a word the shell reads as the empty string, such as `''`.
-- A string containing a NUL character cannot be a shell word, and is an evaluation error.
+- A NUL character in a string, a path or a list item cannot be a shell word, and is an evaluation
+  error.
 - `bool`, `int`, `float`, `nulltype`, `range_expr` and nested lists have no `repr_sh` signature.
 
-Python's [shlex.quote](https://docs.python.org/3/library/shlex.html#shlex.quote) and
-[shlex.join](https://docs.python.org/3/library/shlex.html#shlex.join) are one conforming
-implementation, and the Rust [shlex](https://crates.io/crates/shlex) crate is another. They quote some
-inputs differently: for `it's`, `shlex.quote` gives `'it'"'"'s'` and the Rust crate gives `"it's"`.
-Both are read by the shell as the one word `it's`. Section 2.2.6 of the
+Section 2.2.6 of the
 [Expression Language](https://github.com/OpenJobDescription/openjd-specifications/wiki/2026-02-Expression-Language)
-specification gives the full rules.
+specification gives the full rules, including the cases the property doesn't cover, such as a result
+placed inside quotes or in the position of a command name.
+
+Python's [shlex.quote](https://docs.python.org/3/library/shlex.html#shlex.quote) and
+[shlex.join](https://docs.python.org/3/library/shlex.html#shlex.join) produce conforming output for
+inputs without a NUL character, and so does the Rust [shlex](https://crates.io/crates/shlex) crate.
+They quote some inputs differently: for `it's`, `shlex.quote` gives `'it'"'"'s'` and the Rust crate
+gives `"it's"`. A POSIX shell reads both as the one word `it's`.
 
 Example: `repr_sh(["echo", "hello world"])` returns, for example, `"echo 'hello world'"` (one valid
 output).
 
-`repr_cmd` and `repr_pwsh` are specified by their exact output, because this specification defines
-their algorithms and there is no existing library for an implementation to match.
+`repr_cmd` and `repr_pwsh` are not defined by a property. The rules below give their algorithms,
+because there is no existing library whose output an implementation would follow instead.
 
 `repr_cmd` produces Windows CMD-safe strings suitable for use in `.bat` files:
 

@@ -1919,7 +1919,8 @@ re_escape("file[1].txt")                        # returns "file\\[1\\]\\.txt"
 `repr_sh` quotes its argument for a POSIX shell (the
 [Shell Command Language](https://pubs.opengroup.org/onlinepubs/9799919799/utilities/V3_chap02.html)
 of POSIX.1-2024). Its result is defined by the words a POSIX shell reads back from it, not by its
-exact bytes. When the result appears unquoted in a command's arguments:
+exact bytes. When a non-interactive POSIX shell reads the result unquoted, in a command's arguments
+or a `for` loop's word list:
 
 - For a `string` or `path`, the shell reads exactly one word, and after quote removal that word is
   equal to the input. A `path` is quoted in its string form. No expansion or field splitting changes
@@ -1937,14 +1938,24 @@ exact bytes. When the result appears unquoted in a command's arguments:
 Implementations may choose different quoting forms, so two conforming implementations can return
 different bytes for the same input. Python's
 [shlex.quote](https://docs.python.org/3/library/shlex.html#shlex.quote) and
-[shlex.join](https://docs.python.org/3/library/shlex.html#shlex.join) are one conforming
-implementation, but they are not required. The property covers how the shell splits and unquotes
-words. A result placed inside quotes in a script is not covered, and neither is an unquoted word in
-the position of a command name, where the shell can still recognize a reserved word such as `if`.
+[shlex.join](https://docs.python.org/3/library/shlex.html#shlex.join) produce conforming output for
+any input without a NUL character, but they are not required.
 
-`repr_cmd` and `repr_pwsh` are specified differently: the rules below define their output exactly,
-because this specification defines their algorithms and there is no existing library for an
-implementation to match.
+The property covers how the shell splits and unquotes words, in a shell whose locale encodes text
+as UTF-8 or in another encoding where every byte below 0x80 is the ASCII character of that value,
+as the C and POSIX locales do. These cases are outside it:
+
+- A result placed inside quotes in a script.
+- An unquoted word in the position of a command name, where the shell can still recognize a reserved
+  word such as `if`.
+- An interactive shell, which can apply history expansion or treat control characters specially.
+- Text that is read by the shell a second time, as with `eval`.
+
+Unquoted text written directly next to the result, as in `--out={{repr_sh(Param.File)}}`, joins the
+same word, as it would for any quoted shell word.
+
+`repr_cmd` and `repr_pwsh` are not defined by a property. The rules below give their algorithms,
+because there is no existing library whose output an implementation would follow instead.
 
 `repr_cmd` produces Windows CMD-safe strings suitable for use in `.bat` files.
 Strings containing special characters (`& | < > ^ " ( ) % !` or whitespace) are wrapped in
@@ -1980,7 +1991,7 @@ preserves the nesting.
 
 Examples:
 - `repr_sh(["echo", "hello world"])` returns, for example, `"echo 'hello world'"` (one valid output)
-- `repr_sh("it's")` returns, for example, the text `'it'"'"'s'` or the text `"it's"` (two valid outputs)
+- `repr_sh("it's")` returns, for example, `"'it'\"'\"'s'"` or `"\"it's\""` (two valid outputs)
 - `repr_cmd("a & b")` returns `"\"a & b\""` (quoted, `&` is literal inside quotes)
 - `repr_cmd("a ^ b")` returns `"\"a ^^ b\""` (`^` escaped inside quotes)
 - `repr_cmd("hello!")` returns `"\"hello^^!\""` (`!` escaped as `^^!` for the delayed expansion context)

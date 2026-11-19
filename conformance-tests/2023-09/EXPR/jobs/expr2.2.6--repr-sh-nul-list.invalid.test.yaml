@@ -3,7 +3,9 @@
 #
 # The NUL is appended to a parameter value so the expression can't be folded
 # when the template is checked, and the error comes from evaluating repr_sh at
-# run time. The action only prints its argument, so nothing else in the job can fail.
+# run time. Only the length of the result reaches the action, so an
+# implementation that doesn't reject the NUL runs the job to success, and the
+# test fails, rather than failing later because a NUL reached the command line.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
@@ -16,7 +18,7 @@ template:
   steps:
   - name: Step1
     let:
-    - 'q = repr_sh(["a", Param.S + "\x00"])'
+    - 'q = len(repr_sh(["a", Param.S + "\x00"]))'
     script:
       actions:
         onRun:

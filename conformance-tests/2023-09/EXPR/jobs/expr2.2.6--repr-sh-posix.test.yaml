@@ -5,7 +5,9 @@
 #
 # Each output is put after `set --` in a script that `sh` runs, and the shell
 # prints the words it read separated by NUL bytes. Python prints them with
-# ascii() so newlines, tabs and non-ASCII characters are unambiguous.
+# ascii() so newlines, tabs and non-ASCII characters are unambiguous. Each
+# line starts with its case name in brackets, so no expected line can match
+# another case's line.
 runOn: [posix]
 template:
   specificationVersion: jobtemplate-2023-09
@@ -26,7 +28,7 @@ template:
     - 'v8 = repr_sh("$HOME ${x} $(id)")'  # parameter and command substitution
     - 'v9 = repr_sh("a$b''c")'
     - 'v10 = repr_sh("`id`")'  # command substitution
-    - 'v11 = repr_sh("!x")'  # history expansion in interactive bash
+    - 'v11 = repr_sh("!x")'
     - 'v12 = repr_sh("*")'  # pathname expansion
     - 'v13 = repr_sh("a?b[cd]{e,f}~g")'
     - 'v14 = repr_sh("a;b&c|d>e<f(g)#h")'
@@ -55,7 +57,7 @@ template:
                 script = "set -- " + text + "\nfor w in \"$@\"; do printf '%s\\0' \"$w\"; done\n"
                 out = subprocess.run(["sh", "-c", script], capture_output=True, check=True).stdout
                 words = [w.decode("utf-8") for w in out.split(b"\0")[:-1]]
-                print(name + "=" + ascii(words))
+                print("[" + name + "]=" + ascii(words))
           - '{{ v0 }}'
           - '{{ v1 }}'
           - '{{ v2 }}'
@@ -84,29 +86,29 @@ template:
           - '{{ v25 }}'
 expected:
   output:
-  - "SIMPLE=['hello']"
-  - "SPACE=['hello world']"
-  - "SQUOTE=[\"it's\"]"
-  - "DQUOTE=['say \"hi\"']"
-  - "MIXED=['a\\'b\"c']"
-  - "ONLY_QUOTES=['\\'\\'\"']"
-  - "BACKSLASH=['a\\\\b']"
-  - "TRAIL_BACKSLASH=['a\\\\']"
-  - "DOLLAR=['$HOME ${x} $(id)']"
-  - "DOLLAR_SQUOTE=[\"a$b'c\"]"
-  - "BACKTICK=['`id`']"
-  - "BANG=['!x']"
-  - "GLOB=['*']"
-  - "GLOB2=['a?b[cd]{e,f}~g']"
-  - "OPERATORS=['a;b&c|d>e<f(g)#h']"
-  - "NEWLINE=['a\\nb\\n']"
-  - "TAB=['a\\tb']"
-  - "EMPTY=['']"
-  - "DASH=['-x']"
-  - "EQUALS=['a=b']"
-  - "NON_ASCII=['\\xe9\\u65e5\\U0001f600']"
-  - "PATH=[\"/tmp/a b/it's\"]"
-  - "LIST=['', \"it's\", 'a b', '', 'x\"y', '$x']"
-  - "LIST_ONE=['a b']"
-  - "LIST_EMPTY=[]"
-  - "LIST_PATH=['/a b', 'c']"
+  - "[SIMPLE]=['hello']"
+  - "[SPACE]=['hello world']"
+  - "[SQUOTE]=[\"it's\"]"
+  - "[DQUOTE]=['say \"hi\"']"
+  - "[MIXED]=['a\\'b\"c']"
+  - "[ONLY_QUOTES]=['\\'\\'\"']"
+  - "[BACKSLASH]=['a\\\\b']"
+  - "[TRAIL_BACKSLASH]=['a\\\\']"
+  - "[DOLLAR]=['$HOME ${x} $(id)']"
+  - "[DOLLAR_SQUOTE]=[\"a$b'c\"]"
+  - "[BACKTICK]=['`id`']"
+  - "[BANG]=['!x']"
+  - "[GLOB]=['*']"
+  - "[GLOB2]=['a?b[cd]{e,f}~g']"
+  - "[OPERATORS]=['a;b&c|d>e<f(g)#h']"
+  - "[NEWLINE]=['a\\nb\\n']"
+  - "[TAB]=['a\\tb']"
+  - "[EMPTY]=['']"
+  - "[DASH]=['-x']"
+  - "[EQUALS]=['a=b']"
+  - "[NON_ASCII]=['\\xe9\\u65e5\\U0001f600']"
+  - "[PATH]=[\"/tmp/a b/it's\"]"
+  - "[LIST]=['', \"it's\", 'a b', '', 'x\"y', '$x']"
+  - "[LIST_ONE]=['a b']"
+  - "[LIST_EMPTY]=[]"
+  - "[LIST_PATH]=['/a b', 'c']"

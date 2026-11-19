@@ -35,8 +35,8 @@ environments:
           args:
           - "-c"
           # repr_sh(list[string]) joins elements with spaces and shell-quotes
-          # each individually. Plain strings with no metacharacters render as
-          # bare tokens.
+          # each individually. Plain strings with no metacharacters may render
+          # as bare tokens.
           - "printf 'ARGS=%s\\n' {{ repr_sh(WrappedAction.Args) }}"
         onWrapEnvExit:
           command: bash
