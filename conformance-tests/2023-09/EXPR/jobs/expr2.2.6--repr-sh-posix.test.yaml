@@ -3,8 +3,9 @@
 # item, in order, for a list. Implementations may quote differently, so this
 # test checks the words the shell reads back rather than the bytes.
 #
-# Each output is put after `set --` in a script that `sh` runs, and the shell
-# prints the words it read separated by NUL bytes. Python prints them with
+# Each output is put after `set --` in a script that `sh` runs, in an empty
+# directory except for one file, and the shell prints the words it read
+# separated by NUL bytes. Python prints them with
 # ascii() so newlines, tabs and non-ASCII characters are unambiguous. Each
 # line starts with its case name in brackets, so no expected line can match
 # another case's line.
@@ -31,18 +32,20 @@ template:
     - 'v11 = repr_sh("!x")'
     - 'v12 = repr_sh("*")'  # pathname expansion
     - 'v13 = repr_sh("a?b[cd]{e,f}~g")'
-    - 'v14 = repr_sh("a;b&c|d>e<f(g)#h")'
-    - 'v15 = repr_sh("a\nb\n")'  # embedded and trailing newline
-    - 'v16 = repr_sh("a\tb")'
-    - 'v17 = repr_sh("")'  # parses as one empty word
-    - 'v18 = repr_sh("-x")'  # leading dash
-    - 'v19 = repr_sh("a=b")'  # looks like an assignment
-    - 'v20 = repr_sh("\u00e9\u65e5\U0001F600")'
-    - 'v21 = repr_sh(path("/tmp/a b/it''s"))'  # a path quotes its string form
-    - 'v22 = repr_sh(["", "it''s", "a b", "", ''x"y'', "$x"])'  # N items give N words, empty items included
-    - 'v23 = repr_sh(["a b"])'
-    - 'v24 = repr_sh([])'  # zero words
-    - 'v25 = repr_sh([path("/a b"), path("c")])'
+    - 'v14 = repr_sh("~")'  # tilde expansion at the start of a word
+    - 'v15 = repr_sh("#x")'  # a comment at the start of a word
+    - 'v16 = repr_sh("a;b&c|d>e<f(g)#h")'
+    - 'v17 = repr_sh("a\nb\n")'  # embedded and trailing newline
+    - 'v18 = repr_sh("a\tb")'
+    - 'v19 = repr_sh("")'  # parses as one empty word
+    - 'v20 = repr_sh("-x")'  # leading dash
+    - 'v21 = repr_sh("a=b")'  # looks like an assignment
+    - 'v22 = repr_sh("\u00e9\u65e5\U0001F600")'
+    - 'v23 = repr_sh(path("/tmp/a b/it''s"))'  # a path quotes its string form
+    - 'v24 = repr_sh(["", "it''s", "a b", "", ''x"y'', "$x"])'  # N items give N words, empty items included
+    - 'v25 = repr_sh(["a b"])'
+    - 'v26 = repr_sh([])'  # zero words
+    - 'v27 = repr_sh([path("/a b"), path("c")])'
     script:
       actions:
         onRun:
@@ -50,12 +53,17 @@ template:
           args:
           - -c
           - |
+            import pathlib
             import subprocess
             import sys
-            names = ['SIMPLE', 'SPACE', 'SQUOTE', 'DQUOTE', 'MIXED', 'ONLY_QUOTES', 'BACKSLASH', 'TRAIL_BACKSLASH', 'DOLLAR', 'DOLLAR_SQUOTE', 'BACKTICK', 'BANG', 'GLOB', 'GLOB2', 'OPERATORS', 'NEWLINE', 'TAB', 'EMPTY', 'DASH', 'EQUALS', 'NON_ASCII', 'PATH', 'LIST', 'LIST_ONE', 'LIST_EMPTY', 'LIST_PATH']
+            import tempfile
+            names = ['SIMPLE', 'SPACE', 'SQUOTE', 'DQUOTE', 'MIXED', 'ONLY_QUOTES', 'BACKSLASH', 'TRAIL_BACKSLASH', 'DOLLAR', 'DOLLAR_SQUOTE', 'BACKTICK', 'BANG', 'GLOB', 'GLOB2', 'TILDE', 'HASH', 'OPERATORS', 'NEWLINE', 'TAB', 'EMPTY', 'DASH', 'EQUALS', 'NON_ASCII', 'PATH', 'LIST', 'LIST_ONE', 'LIST_EMPTY', 'LIST_PATH']
             for name, text in zip(names, sys.argv[1:]):
                 script = "set -- " + text + "\nfor w in \"$@\"; do printf '%s\\0' \"$w\"; done\n"
-                out = subprocess.run(["sh", "-c", script], capture_output=True, check=True).stdout
+                with tempfile.TemporaryDirectory() as tmp:
+                    # A file here makes an unquoted glob expand to something.
+                    pathlib.Path(tmp, "file").touch()
+                    out = subprocess.run(["sh", "-c", script], cwd=tmp, capture_output=True, check=True).stdout
                 words = [w.decode("utf-8") for w in out.split(b"\0")[:-1]]
                 print("[" + name + "]=" + ascii(words))
           - '{{ v0 }}'
@@ -84,6 +92,8 @@ template:
           - '{{ v23 }}'
           - '{{ v24 }}'
           - '{{ v25 }}'
+          - '{{ v26 }}'
+          - '{{ v27 }}'
 expected:
   output:
   - "[SIMPLE]=['hello']"
@@ -100,6 +110,8 @@ expected:
   - "[BANG]=['!x']"
   - "[GLOB]=['*']"
   - "[GLOB2]=['a?b[cd]{e,f}~g']"
+  - "[TILDE]=['~']"
+  - "[HASH]=['#x']"
   - "[OPERATORS]=['a;b&c|d>e<f(g)#h']"
   - "[NEWLINE]=['a\\nb\\n']"
   - "[TAB]=['a\\tb']"

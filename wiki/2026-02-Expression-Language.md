@@ -1929,10 +1929,11 @@ or a `for` loop's word list:
   spaces. The shell reads exactly N words, and the i-th is equal to the i-th item.
 - An empty string gives a quoted word that the shell reads as one empty word, such as `''`. An empty
   list gives the empty string, which the shell reads as no words.
-- A string containing a NUL character (U+0000) cannot be a shell word, so `repr_sh` of that string, or
+- A string or path containing a NUL character (U+0000) cannot be a shell word, so `repr_sh` of it, or
   of a list containing it, is an evaluation error.
-- `repr_sh` has no signature for `bool`, `int`, `float`, `nulltype`, `range_expr` or nested lists,
-  so calling it with one of these is an error, as for any call with no matching signature. To quote
+- `repr_sh` has no signature for `bool`, `int`, `float`, `nulltype`, `range_expr`, nested lists or
+  lists of anything other than strings or paths, so calling it with one of these is an error, as for
+  any call with no matching signature. To quote
   a number or a boolean, convert it with `string()` first.
 
 Implementations may choose different quoting forms, so two conforming implementations can return
@@ -1947,7 +1948,8 @@ as the C and POSIX locales do. These cases are outside it:
 
 - A result placed inside quotes in a script.
 - An unquoted word in the position of a command name, where the shell can still recognize a reserved
-  word such as `if`.
+  word such as `if` or an assignment such as `a=b`. Writing `command {{repr_sh(...)}}` puts the word
+  in an argument position.
 - An interactive shell, which can apply history expansion or treat control characters specially.
 - Text that is read by the shell a second time, as with `eval`.
 
