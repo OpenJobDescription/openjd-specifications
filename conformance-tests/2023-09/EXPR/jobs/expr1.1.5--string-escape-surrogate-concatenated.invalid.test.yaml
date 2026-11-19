@@ -1,5 +1,5 @@
-# Expression Language §1.1.5: a surrogate escape is a syntax error in any part of an implicitly
-# concatenated string literal, not only the first.
+# Expression Language §1.1.5: a surrogate escape is a syntax error in any string literal of an
+# expression, not only the first. Here it is in the second operand of a `+` concatenation.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
@@ -14,4 +14,4 @@ template:
           args:
           - -c
           - |
-            print(r"VALUE:{{ len('a' '\ud800') }}|")
+            print(r"VALUE:{{ len('a' + '\ud800') }}|")
