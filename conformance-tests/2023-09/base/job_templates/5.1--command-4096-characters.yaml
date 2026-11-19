@@ -1,6 +1,10 @@
 # Template Schemas §5.1 <CommandString>: "Maximum length: There is no maximum string length imposed by this
-# specification." A 4096-character command must pass template validation. The operating system the command runs on
-# imposes its own limit, so this is a validation test only and the job is never run.
+# specification." A 4096-character command must pass template validation.
+#
+# Validation only; this job is never run. Command length is enforced elsewhere: the operating system refuses a
+# command that is too long for it when the process starts (Linux allows 4095 bytes for a path, macOS 1024, Windows
+# 260 without long-path support), and a host may set its own explicit limit. No single length is runnable on every
+# operating system, so this test checks that a validator does not impose a limit of its own.
 specificationVersion: jobtemplate-2023-09
 name: CommandLength4096
 steps:
