@@ -1,6 +1,10 @@
 # Expression Language §1.1.5: every escape sequence in a non-raw string. Each value is
 # printed with repr_py (or compared with ==, for characters repr_py prints as themselves)
 # and ends with '|', so an output line can't pass by matching a prefix.
+# NAMED checks a lower-case CJK UNIFIED IDEOGRAPH name. An implementation that decodes
+# escapes with Python's own decoder needs a CPython release that accepts it (3.13.13 or
+# later in 3.13, 3.14.4 or later in 3.14) or its own case folding, because earlier
+# releases require upper case for that name.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:

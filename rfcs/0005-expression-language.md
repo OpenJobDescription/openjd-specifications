@@ -672,10 +672,11 @@ These rules complete the table:
 - `\N{name}` accepts a character's name from the Unicode Character Database, including the names of
   characters named by rule such as `CJK UNIFIED IDEOGRAPH-4E00` and `HANGUL SYLLABLE GA`, and its
   name aliases. It doesn't accept a named sequence, a name for a sequence of several characters.
-  Names are compared without regard to case, as in CPython 3.13 (CPython 3.12 requires upper case
-  for `CJK UNIFIED IDEOGRAPH` and `HANGUL SYLLABLE` names). Which names exist depends on the Unicode version. Implementations should
-  use Unicode 15.0 or later, and may differ on names that later versions add and on names given by
-  rule other than `CJK UNIFIED IDEOGRAPH` and `HANGUL SYLLABLE` names.
+  Names are compared without regard to case. CPython does this for most names, but CPython 3.12 and
+  earlier, 3.13.0 to 3.13.12, and 3.14.0 to 3.14.3 require upper case for `CJK UNIFIED IDEOGRAPH`
+  and `HANGUL SYLLABLE` names. Which names exist depends on the Unicode version. Implementations
+  should use Unicode 15.0 or later, and may differ on names that later versions add and on names
+  given by rule other than `CJK UNIFIED IDEOGRAPH` and `HANGUL SYLLABLE` names.
 - A digit escape is never a regular expression group reference. `'\1'` is the single character U+0001, so
   a group reference has to be written raw, as `r'\1'`. `re_sub` rejects both forms: `r'\1'` as a group
   reference, and `'\1'` because its replacement contains a control character (see `re_sub` in RFC 0006).
