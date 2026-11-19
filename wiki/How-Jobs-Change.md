@@ -12,33 +12,34 @@ The examples use `openjd diff`, the [openjd-rs](https://github.com/OpenJobDescri
 two Jobs built from templates. It is marked unstable, so its flags and output may change. Each output on this page was
 printed by it.
 
-## Reading the output
+## The rules
 
-`openjd diff` takes one template, whose old and new sides differ only by their parameter values, or two templates,
-an old one and a new one:
+These are the rules the examples below follow. Each links to the section that shows it.
 
-```text
-openjd diff [OPTIONS] <TEMPLATE> [NEW_TEMPLATE]
-```
+- **Steps are matched by name.** A Step with the same name in both Jobs is the same Step. Renaming a Step removes it
+  and adds a new one, and its Tasks are not kept ([§7](#7-steps)).
+- **A Task is identified by its Task parameter values**, such as `Frame=7, Eye=left`. A Task with the same values in
+  both Jobs is the same Task, so a system can keep its state. A Task in only one Job is added or removed
+  ([§1](#1-changing-a-parameter-value), [§2](#2-changing-the-template-and-its-parameters)).
+- **Adding or removing a Task parameter replaces every Task of the Step**, even when no argument reads it: every
+  Task's values change, so no Task matches ([§4](#4-when-tasks-cant-be-kept)).
+- **Some Steps can't match Tasks one to one.** When a Step's Tasks are chunked (`CHUNK[INT]`) or combined by
+  association (`combination: "(A, B)"`), a change to its parameter space replaces every Task
+  ([§4](#4-when-tasks-cant-be-kept)).
+- **A Step's Tasks have no order.** The [Template Schemas](2023-09-Template-Schemas#34-stepparameterspacedefinition) map a Step to a set of Tasks. When only the order
+  of the Task parameter definitions changes, `openjd diff` reports that the order of the Tasks changed. Whether that
+  matters, and whether to keep or replace the Tasks, is for the system applying the change to decide
+  ([§4](#4-when-tasks-cant-be-kept)).
+- **A change reaches only what reads it.** A parameter change affects the Job name, the Steps and the Environments
+  whose resolved values read the parameter. A Step's Tasks change only when its parameter space reads it
+  ([§5](#5-what-a-worker-host-sees)).
+- **Some changes are only in the template**, such as a description or a `let` binding that nothing reads. The Job built
+  from it is the same ([§6](#6-changes-only-the-template-shows)).
+- **A dependency belongs to the dependent Step.** Making `B` depend on `A` changes `B` only
+  ([§7](#7-steps)).
 
-| flag | sets a parameter for | example |
-|---|---|---|
-| `-p`, `--parameter` | both sides | `-p Frames=1-200` |
-| `--old-parameter` | the old side, over `-p` | `--old-parameter Frames=1-100` |
-| `--new-parameter` | the new side, over `-p` | `--new-parameter '{"Frames": "1-200"}'` |
-
-Each flag takes `Key=Value`, inline JSON, or a JSON or YAML file as `file://path`, and can be repeated. When a parameter
-is set twice, the later value is used. A `null` value means the value is not given, and the template's default
-applies. Each side is built only from its own values: a value given with `--old-parameter` is not used for the new side.
-
-In the output:
-- `~` is a change, `+` an addition and `-` a removal.
-- The tag in brackets says where a change came from: `[template]` (the template text changed), `[parameters]` (a
-  parameter value changed), or `[both]`.
-- `tasks:` shows how a Step's Tasks change, as ranges. `keep` Tasks exist on both sides, so a system can keep their
-  state. `add` and `remove` Tasks exist on one side only. `replaced` means the Tasks can't be matched one to one.
-- `--plan` lists, in order, the writes that would turn the old Job into the new one. Each write is tagged with the
-  kind of change it is, such as `TaskAppend` or `StepAdd`, so that a system can allow some kinds and refuse others.
+The examples run `openjd diff` on one template under two sets of parameter values, or on an old and a new template.
+Its flags and output format are described in the openjd-rs [`diff` specification](https://github.com/OpenJobDescription/openjd-rs/blob/main/specs/cli/diff.md).
 
 ## 1. Changing a parameter value
 
@@ -313,7 +314,7 @@ shot_v1.yaml -> shot_v2.yaml
 ## 4. When Tasks can't be kept
 
 A Task is identified by its Task parameter values, such as `Frame=7, Eye=left`. When a change keeps those values, the
-Task is kept. When it changes them, or changes the order the Tasks run in, every Task of the Step is replaced.
+Task is kept. When it changes them, no Task matches, and every Task of the Step is replaced.
 
 **A new Task parameter.** No argument reads `Eye`, but each Task now has a value for it. No Task matches.
 
@@ -350,8 +351,10 @@ apply plan:
 kinds: TaskReplace
 ```
 
-**Task parameters in a different order.** The same six Tasks exist on both sides, but the order of the definitions
-sets the order of the Tasks, so they are replaced.
+**Task parameters in a different order.** The same six Tasks exist in both Jobs, listed in a different order.
+`openjd diff` reports the order change as a replacement of every Task. A Step's Tasks have no order in the
+specification, so a system that doesn't depend on the order can keep these Tasks instead: the diff reports what
+changed, and the system applying it decides.
 
 `dimension_order_v1.yaml`:
 
