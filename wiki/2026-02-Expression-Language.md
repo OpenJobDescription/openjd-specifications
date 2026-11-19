@@ -1898,7 +1898,6 @@ re_escape("file[1].txt")                        # returns "file\\[1\\]\\.txt"
 | `repr_sh(p: path) -> string` | Shell-escape a path for POSIX shells |
 | `repr_sh(args: list[string]) -> string` | Join list into space-separated shell-escaped strings |
 | `repr_sh(args: list[path]) -> string` | Join path list into space-separated shell-escaped strings |
-| `repr_sh(args: list[path]) -> string` | Join path list into space-separated shell-escaped strings |
 | `repr_cmd(s: string) -> string` | Escape a string for Windows CMD |
 | `repr_cmd(args: list[string]) -> string` | Join list into space-separated CMD-escaped strings |
 | `repr_pwsh(s: string) -> string` | Escape a string for PowerShell |
@@ -1917,9 +1916,35 @@ re_escape("file[1].txt")                        # returns "file\\[1\\]\\.txt"
 | `repr_json(p: path) -> string` | JSON string representation of path's string value |
 | `repr_json(value: T) -> string` | Convert to JSON representation (`T` in `bool`, `int`, `float`, `string`, `list`) |
 
-`repr_sh` follows the behavior of Python's
+`repr_sh` quotes its argument for a POSIX shell (the
+[Shell Command Language](https://pubs.opengroup.org/onlinepubs/9799919799/utilities/V3_chap02.html)
+of POSIX.1-2024). Its result is defined by the words a POSIX shell reads back from it, not by its
+exact bytes. When the result appears unquoted in a command's arguments:
+
+- For a `string` or `path`, the shell reads exactly one word, and after quote removal that word is
+  equal to the input. A `path` is quoted in its string form. No expansion or field splitting changes
+  the word.
+- For a list of N strings or paths, the result is the N quoted items, in order, separated by single
+  spaces. The shell reads exactly N words, and the i-th is equal to the i-th item.
+- An empty string gives a quoted word that the shell reads as one empty word, such as `''`. An empty
+  list gives the empty string, which the shell reads as no words.
+- A string containing a NUL character (U+0000) cannot be a shell word, so `repr_sh` of that string, or
+  of a list containing it, is an evaluation error.
+- `repr_sh` has no signature for `bool`, `int`, `float`, `nulltype`, `range_expr` or nested lists,
+  so calling it with one of these is an error, as for any call with no matching signature. To quote
+  a number or a boolean, convert it with `string()` first.
+
+Implementations may choose different quoting forms, so two conforming implementations can return
+different bytes for the same input. Python's
 [shlex.quote](https://docs.python.org/3/library/shlex.html#shlex.quote) and
-[shlex.join](https://docs.python.org/3/library/shlex.html#shlex.join).
+[shlex.join](https://docs.python.org/3/library/shlex.html#shlex.join) are one conforming
+implementation, but they are not required. The property covers how the shell splits and unquotes
+words. A result placed inside quotes in a script is not covered, and neither is an unquoted word in
+the position of a command name, where the shell can still recognize a reserved word such as `if`.
+
+`repr_cmd` and `repr_pwsh` are specified differently: the rules below define their output exactly,
+because this specification defines their algorithms and there is no existing library for an
+implementation to match.
 
 `repr_cmd` produces Windows CMD-safe strings suitable for use in `.bat` files.
 Strings containing special characters (`& | < > ^ " ( ) % !` or whitespace) are wrapped in
@@ -1954,7 +1979,8 @@ preserves the nesting.
 [repr](https://docs.python.org/3/library/functions.html#repr).
 
 Examples:
-- `repr_sh(["echo", "hello world"])` returns `"echo 'hello world'"`
+- `repr_sh(["echo", "hello world"])` returns, for example, `"echo 'hello world'"` (one valid output)
+- `repr_sh("it's")` returns, for example, the text `'it'"'"'s'` or the text `"it's"` (two valid outputs)
 - `repr_cmd("a & b")` returns `"\"a & b\""` (quoted, `&` is literal inside quotes)
 - `repr_cmd("a ^ b")` returns `"\"a ^^ b\""` (`^` escaped inside quotes)
 - `repr_cmd("hello!")` returns `"\"hello^^!\""` (`!` escaped as `^^!` for the delayed expansion context)

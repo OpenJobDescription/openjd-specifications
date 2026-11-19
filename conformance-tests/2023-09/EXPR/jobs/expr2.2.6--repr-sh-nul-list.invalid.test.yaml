@@ -1,0 +1,27 @@
+# Expression Language §2.2.6: no POSIX shell word can hold a NUL character, so
+# repr_sh of a list item containing U+0000 is an evaluation error.
+#
+# The NUL is appended to a parameter value so the expression can't be folded
+# when the template is checked, and the error comes from evaluating repr_sh at
+# run time. The action only prints its argument, so nothing else in the job can fail.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: S
+    type: STRING
+    default: a
+  steps:
+  - name: Step1
+    let:
+    - 'q = repr_sh(["a", Param.S + "\x00"])'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - import sys; print(sys.argv[1])
+          - '{{ q }}'
