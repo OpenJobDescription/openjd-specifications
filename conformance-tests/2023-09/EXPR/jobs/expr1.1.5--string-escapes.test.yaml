@@ -1,10 +1,7 @@
 # Expression Language §1.1.5: every escape sequence in a non-raw string. Each value is
 # printed with repr_py (or compared with ==, for characters repr_py prints as themselves)
 # and ends with '|', so an output line can't pass by matching a prefix.
-# NAMED checks a lower-case CJK UNIFIED IDEOGRAPH name. An implementation that decodes
-# escapes with Python's own decoder needs a CPython release that accepts it (3.13.13 or
-# later in 3.13, 3.14.4 or later in 3.14) or its own case folding, because earlier
-# releases require upper case for that name.
+# Lower- and mixed-case names are in expr1.1.5--string-escape-name-case.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
@@ -38,7 +35,7 @@ template:
             print(r"U32:{{ '\U0001F600' == '\N{GRINNING FACE}' }}|{{ len('\U0001F600') }}|")
             print(r"NOT_ESCAPES:{{ len(r'\ud800') }}|{{ len('\\ud800') }}|{{ len('\\\U0000d7ff') }}|")
             print(r"SURROGATE_EDGES:{{ len('\ud7ff\ue000\U0000d7ff\U0000e000') }}|")
-            print(r"NAMED:{{ '\N{BULLET}' == '\u2022' }}|{{ '\N{bullet}' == '\u2022' }}|{{ '\N{cjk unified ideograph-4e00}' == '\u4e00' }}|")
+            print(r"NAMED:{{ '\N{BULLET}' == '\u2022' }}|")
             print(r"CONT:{{ repr_py('ab\
             cd') }}|")
             print(r"CONT_TRIPLE:{{ repr_py('''ab\
@@ -66,7 +63,7 @@ expected:
   - U32:true|1|
   - NOT_ESCAPES:6|6|2|
   - SURROGATE_EDGES:4|
-  - NAMED:true|true|true|
+  - NAMED:true|
   - CONT:'abcd'|
   - CONT_TRIPLE:'abcd'|
   - RAW_CONT:6|
