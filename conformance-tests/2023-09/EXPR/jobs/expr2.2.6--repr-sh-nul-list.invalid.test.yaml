@@ -2,8 +2,8 @@
 # repr_sh of a list item containing U+0000 is an evaluation error.
 #
 # The NUL is appended to a parameter value so the expression can't be folded
-# when the template is checked, and the error comes from evaluating repr_sh at
-# run time. Only the length of the result reaches the action, so an
+# when the template is checked, and the error comes from evaluating repr_sh
+# when the job is created. Only the length of the result reaches the action, so an
 # implementation that doesn't reject the NUL runs the job to success, and the
 # test fails, rather than failing later because a NUL reached the command line.
 template:

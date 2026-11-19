@@ -671,7 +671,8 @@ shell reads the result unquoted in a command's arguments:
 - An empty string gives a word the shell reads as the empty string, such as `''`.
 - A NUL character in a string, a path or a list item cannot be a shell word, and is an evaluation
   error.
-- `bool`, `int`, `float`, `nulltype`, `range_expr` and nested lists have no `repr_sh` signature.
+- `bool`, `int`, `float`, `nulltype`, `range_expr`, nested lists and lists of anything other than
+  strings or paths have no `repr_sh` signature.
 
 Section 2.2.6 of the
 [Expression Language](https://github.com/OpenJobDescription/openjd-specifications/wiki/2026-02-Expression-Language)

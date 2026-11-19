@@ -754,7 +754,11 @@ for safe command construction. A POSIX shell reads the result of
 of `repr_sh(list[string])` as one word per element, so each element becomes
 exactly one argv entry when the shell parses the line. RFC 0006 and Expression
 Language §2.2.6 define this property; implementations may quote differently,
-for example in the style of Python's `shlex.quote`.
+for example in the style of Python's `shlex.quote`. The property is for
+argument positions. In the command name position, the shell can still read a
+value such as `if` as a reserved word or `a=b` as an assignment, so a hook
+that runs `WrappedAction.Command` through a shell can write
+`command {{repr_sh(WrappedAction.Command)}}` to put it in an argument position.
 
 For Windows shells, the equivalent functions are `repr_cmd()` and `repr_pwsh()`
 from RFC 0006, which handle each shell's different escaping rules.
@@ -782,7 +786,8 @@ The specification provides the primitives needed to do this correctly:
 
 - **`repr_sh()`** (RFC 0006): quotes a string, or each element of a
   `list[string]`, so that a POSIX shell parses each as exactly one argument
-  equal to the original value.
+  equal to the original value. In the command name position, see the caveat
+  in [Command escaping via `repr_sh` rather than raw interpolation](#command-escaping-via-repr_sh-rather-than-raw-interpolation).
 - **`repr_cmd()`** and **`repr_pwsh()`** (RFC 0006): the Windows
   equivalents, which handle `cmd.exe` and PowerShell's distinct escaping
   rules.
