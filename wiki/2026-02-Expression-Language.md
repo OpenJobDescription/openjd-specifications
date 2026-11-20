@@ -2041,10 +2041,16 @@ or a `for` loop's word list:
   list gives the empty string, which the shell reads as no words.
 - A string or path containing a NUL character (U+0000) cannot be a shell word, so `repr_sh` of it, or
   of a list containing it, is an evaluation error.
-- `repr_sh` has no signature for `bool`, `int`, `float`, `nulltype`, `range_expr`, nested lists or
-  lists of anything other than strings or paths, so calling it with one of these is an error, as for
-  any call with no matching signature. To quote
-  a number or a boolean, convert it with `string()` first.
+- With the `SERVICE` extension, the result for an `int` is its decimal form, such as `6379` or `-1`,
+  and the result for a `list[int]` is the decimal forms of its items, in order, separated by single
+  spaces. Unlike the results for strings and paths, these are exact: a decimal integer needs no
+  quoting, so the shell reads back one word per integer, equal to its decimal form, and no words for
+  an empty list.
+- `repr_sh` has no signature for `bool`, `float`, `nulltype`, `range_expr`, nested lists or lists of
+  anything other than strings, paths or integers, and in a document that doesn't list the `SERVICE`
+  extension it has none for `int` or `list[int]`. Calling it with one of these is an error, as for
+  any call with no matching signature. To quote a `float` or a `bool`, or an `int` without
+  `SERVICE`, convert it with `string()` first.
 
 Implementations may choose different quoting forms, so two conforming implementations can return
 different bytes for the same input. Python's
@@ -2104,8 +2110,8 @@ preserves the nesting.
 Examples:
 - `repr_sh(["echo", "hello world"])` returns, for example, `"echo 'hello world'"` (one valid output)
 - `repr_sh("it's")` returns, for example, `"'it'\"'\"'s'"` or `"\"it's\""` (two valid outputs)
-- `repr_sh(6379)` returns `"6379"` and `repr_sh([80, 443])` returns `"80 443"` (`SERVICE` extension; without it,
-  `repr_sh` of an `int` or `list[int]` is a type error)
+- `repr_sh(6379)` returns `"6379"` and `repr_sh([80, 443])` returns `"80 443"` (`SERVICE`
+  extension; without it, `repr_sh` of an `int` or `list[int]` is a type error)
 - `repr_cmd("a & b")` returns `"\"a & b\""` (quoted, `&` is literal inside quotes)
 - `repr_cmd("a ^ b")` returns `"\"a ^^ b\""` (`^` escaped inside quotes)
 - `repr_cmd("hello!")` returns `"\"hello^^!\""` (`!` escaped as `^^!` for the delayed expansion context)

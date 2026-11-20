@@ -834,8 +834,9 @@ environment variables](#passing-the-endpoint-through-environment-variables)).
   `is_ipv4`, and `is_ipv6`, with examples, because an IPv6 address must be bracketed wherever an address and a port are
   joined. [§2.2.6](../wiki/2026-02-Expression-Language.md#226-script-embedding-and-serialization) adds `repr_sh` of an
   `int` and of a `list[int]`, so that a port number or `WrappedService.Ports` can be passed to a shell command without a
-  `string()` conversion. These functions and signatures are available only in a document that lists `SERVICE`. The
-  same edit removes a duplicated `repr_sh(args: list[path])` row from the §2.2.6 table.
+  `string()` conversion. Their results are exact: an `int`'s decimal form, or a `list[int]`'s decimal forms joined by
+  single spaces, because a decimal integer needs no quoting for a shell to read it back as one word. These functions
+  and signatures are available only in a document that lists `SERVICE`.
 
 ### Running a Service
 
