@@ -1,9 +1,11 @@
-# Template Schemas §4.5 item 3 (RFC 0010): a string converted to a PATH value, or to an element of a LIST[PATH] value,
-# keeps its text, so a PATH value that is a single {{ }} expression whose result is a string is that string, with its
-# repeated separators, "." components and trailing separator, as are the strings in a LIST[PATH] value's list. The
-# strings come from string literals and from a STRING Job Parameter, as a Step's entry values and as an Environment
-# parameter's default; Env.RawParam reads each unchanged. In contrast, a result that is already a path is that path's
-# string form, which path() normalizes.
+# Template Schemas §4.5 items 1 and 3 (RFC 0010): a string that becomes a PATH value, or an element of a LIST[PATH]
+# value, keeps its text and is not normalized, even where the Expression Language would convert it to a path. So a
+# single {{ }} expression whose result is a string is that string, with its repeated separators, "." components and
+# trailing separator, and so is each string element of a list literal for a LIST[PATH] parameter; a format string
+# with text around its expression keeps its resolved string. The strings come from string literals and from a STRING
+# Job Parameter, as a Step's entry values and as an Environment parameter's default; Env.RawParam reads each
+# unchanged. In contrast, a result that is already a path, alone or as a list element, is that path's string form,
+# which path() normalizes.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [ENV_PARAMS, EXPR]
@@ -21,6 +23,8 @@ template:
         Copy: "{{Param.Text}}"
         Dirs: "{{ ['x//y/', './z', Param.Text] }}"
         Norm: "{{ path('rel//a/./b/') }}"
+        Mixed: "{{ [path('m//n/'), 'o//p/'] }}"
+        Fmt: "pre//{{Param.Text}}"
     script:
       actions:
         onRun:
@@ -40,6 +44,10 @@ environments:
       type: LIST[PATH]
     - name: Norm
       type: PATH
+    - name: Mixed
+      type: LIST[PATH]
+    - name: Fmt
+      type: PATH
     - name: Def
       type: PATH
       default: "{{ './def//d/' }}"
@@ -55,6 +63,8 @@ environments:
             print(r'DIRS:[{{ Env.RawParam.Dirs.join(',') }}]')
             print(r'DEF:[{{Env.RawParam.Def}}]')
             print(r'NORM:[{{Env.RawParam.Norm}}]')
+            print(r'MIXED:[{{ Env.RawParam.Mixed.join(',') }}]')
+            print(r'FMT:[{{Env.RawParam.Fmt}}]')
 runOn: [posix, windows]
 expected:
   output:
@@ -63,4 +73,6 @@ expected:
   - DIRS:[x//y/,./z,from//param/./x/]
   - DEF:[./def//d/]
   - NORM:[rel/a/b]
+  - MIXED:[m/n,o//p/]
+  - FMT:[pre//from//param/./x/]
   - TASK A
