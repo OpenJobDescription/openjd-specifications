@@ -2824,7 +2824,8 @@ specified.
    with the Step's own (see [Combined Host Requirements](#333-combined-host-requirements)).
 
 Environment parameter PATH and LIST[PATH] values are used as given, never joined with any directory (see
-[§4.5](#45-environmentparameterdefinition-extension-env_params)).
+[§4.5](#45-environmentparameterdefinition-extension-env_params)). A value that is a single `{{ }}` expression whose
+result is a string keeps that string's text, and one whose result is a list of strings keeps the text of each.
 
 ### 7.5. Numeric strings
 

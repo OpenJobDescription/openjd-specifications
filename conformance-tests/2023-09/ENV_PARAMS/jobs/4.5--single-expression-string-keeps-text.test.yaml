@@ -1,0 +1,60 @@
+# Template Schemas §4.5 items 1 and 3 and §7.4.1 (RFC 0010): a PATH value that is a single {{ }} expression whose
+# result is a string keeps that string's text, and so does each string of a LIST[PATH] result. The string is used as
+# given, as a literal is, so separators, "." components and a trailing separator are not normalized. The values come
+# from a string literal and from a STRING Job Parameter, as a Step's entry values and as an Environment parameter's
+# default; Env.RawParam reads each unchanged.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: SingleExpressionStringKeepsText
+  parameterDefinitions:
+  - name: Text
+    type: STRING
+    default: "from//param/./x/"
+  steps:
+  - name: A
+    dependencies:
+    - environment: Mnt
+      parameters:
+        Lit: "{{ 'rel//a/./b/' }}"
+        Copy: "{{Param.Text}}"
+        Dirs: "{{ ['x//y/', './z', Param.Text] }}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Mnt
+    envParameterDefinitions:
+    - name: Lit
+      type: PATH
+    - name: Copy
+      type: PATH
+    - name: Dirs
+      type: LIST[PATH]
+    - name: Def
+      type: PATH
+      default: "{{ './def//d/' }}"
+    script:
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'LIT:[{{Env.RawParam.Lit}}]')
+            print(r'COPY:[{{Env.RawParam.Copy}}]')
+            print(r'DIRS:[{{ Env.RawParam.Dirs.join(',') }}]')
+            print(r'DEF:[{{Env.RawParam.Def}}]')
+runOn: [posix, windows]
+expected:
+  output:
+  - LIT:[rel//a/./b/]
+  - COPY:[from//param/./x/]
+  - DIRS:[x//y/,./z,from//param/./x/]
+  - DEF:[./def//d/]
+  - TASK A

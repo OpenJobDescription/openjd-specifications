@@ -412,7 +412,9 @@ up to 50 parameters, read only inside it as `Env.Param.<name>` and `Env.RawParam
 * The `default` is a format string resolved when the Job is created, and may read the same document's Job Parameters and
   `Job.Name`. A parameter without one must be supplied by every Step that the Environment applies to, whatever its
   *enableIf*.
-* A PATH or LIST[PATH] value is used as given: never joined with a directory, and not required to be absolute.
+* A PATH or LIST[PATH] value is used as given: never joined with a directory, and not required to be absolute. A
+  value that is a single `{{ }}` expression whose result is a string, such as `{{RawParam.Dir}}`, keeps that string's
+  text, and one whose result is a list of strings keeps the text of each.
 * A RANGE_EXPR value's *minLength* and *maxLength* apply to the value as written and to its canonical form.
 
 Environment parameters are never merged with Job Parameters

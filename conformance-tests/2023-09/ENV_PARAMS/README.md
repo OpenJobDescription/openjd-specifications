@@ -130,7 +130,7 @@ a disabled entry, is an error instead. A Job Environment or Environment Template
   the same string form, so a FLOAT or each element of a LIST[FLOAT] compares by the text it was written with, a STRING
   by its code points, a PATH by its unmapped string, and an INT, a BOOL, or a RANGE_EXPR by its one string form; a
   Step's Tasks never run in an Environment entered with values that are not equal to the Step's.
-- **Path values** (§4.5): PATH and LIST[PATH] values are used as given, never joined with a directory and not required to be absolute, checked unmapped, path-mapped in `Env.Param.*` and not in `Env.RawParam.*`. An empty or relative value joins as Expression Language §2.1.5 says.
+- **Path values** (§4.5): PATH and LIST[PATH] values are used as given, never joined with a directory and not required to be absolute, checked unmapped, path-mapped in `Env.Param.*` and not in `Env.RawParam.*`. A single `{{ }}` expression whose result is a string, or a list of strings, keeps that text; an empty or relative value joins as Expression Language §2.1.5 says.
 - **`Job.EnvNames`** (§7.3.1): the names of every Job Environment, own and attached, whatever its `activation`, in
   the Job's Environment order (the attached ones first, in the order they are attached; §1.1 *jobEnvironments*),
   excluding Step Environments, with a name repeated when two attached Environments share it.
@@ -738,6 +738,7 @@ permitted but not required, so for those only the values both Tasks see are chec
 | JB-200 | `4.5--path-allowed-values-mapped-only.invalid.test.yaml` | EP, EX | `runOn: [posix]`. `allowedValues` lists the path a mapping rule would produce, not the value as given; the unmapped value is not allowed, so the submission is rejected (§4.5 item 3). The contrast of JB-62. |
 | JB-206 | `4.5--relative-paths-never-joined.test.yaml` | EP, EX; env EP, EX | Relative PATH and LIST[PATH] format-string and literal `default`s, and a relative format-string value, in a Job Environment and in an attached Environment Template, are used as given and never joined with a directory (§4.5 items 1 and 3). |
 | JB-207 | `4.5--path-join-onto-empty-or-relative-value.test.yaml` | EP, EX; env EP, EX | An empty PATH value, supplied as a literal to an attached Environment and taken from a Job Environment's literal `default: ""`, adds nothing to a join: `Env.Param.Dir / 'k'` and `path('k') / Env.Param.Dir` are `k`; a relative value `rel/dir` joins as relative, and a LIST[PATH] value's empty and relative elements join the same way (§4.5 item 3, Expression Language §2.1.5). |
+| JB-208 | `4.5--single-expression-string-keeps-text.test.yaml` | EP, EX; env EP, EX | A PATH value or `default` that is a single `{{ }}` expression whose result is a string, from a string literal or a STRING Job Parameter, keeps that string's text, `//`, `.` components and a trailing `/` included; so does each string of a LIST[PATH] value's list result (§4.5 items 1 and 3, §7.4.1). |
 
 #### Host requirements (§3.3.3, §4 item 5)
 
@@ -866,7 +867,7 @@ keeps its number with a note. Earlier drafts of the RFC carried the same index a
 | V23 | Removed: `ENV_PARAMS` requires `EXPR`, so no requesting document lacks `EXPR`; see V36 | — | — |
 | V24 | A format-string value or `default` for a list-typed parameter is one `{{ }}` expression | Template validation for `default`s, and for Job Environment entries where the Environment is known not to be disabled (V35); job creation otherwise | JT-37, JT-38, JT-91, ET-24, JB-29 |
 | V25 | A resolved, non-literal `default` satisfies its type and constraints for each Step that takes it | Job creation; at template validation, where no Step takes it, it is not checked against its type (other than V24's single-expression form for a list) or constraints | JB-11, JB-12, JT-215, ET-53 |
-| V26 | PATH / LIST[PATH] values used as given, not required to be absolute; string constraints on the unmapped value, including an unused literal `default` | Job creation | JB-60–JB-63, JB-157–JB-164; an unmapped value outside `allowedValues` is rejected even when its mapped value is in them: JB-200; relative format-string values and `default`s, never joined: JB-206; empty and relative values in a join: JB-207; mapping: JB-54–JB-59 |
+| V26 | PATH / LIST[PATH] values used as given, not required to be absolute; string constraints on the unmapped value, including an unused literal `default` | Job creation | JB-60–JB-63, JB-157–JB-164; an unmapped value outside `allowedValues` is rejected even when its mapped value is in them: JB-200; relative format-string values and `default`s, never joined: JB-206; empty and relative values in a join: JB-207; a single expression's string result keeps its text: JB-208; mapping: JB-54–JB-59 |
 | V27 | Merged into V20 | — | — |
 | V28 | Removed: the RFC no longer specifies composition with `SERVICE` | — | — |
 | V29 | RFC 0008's wrap-hook rules apply per Session stack, which with `activation` and `enableIf` is per Step's Environment set. Composition with `SERVICE` is no longer specified | Job creation | JB-77 |
