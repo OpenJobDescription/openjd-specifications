@@ -1,5 +1,6 @@
-# Template Schemas §4.5 item 2 (RFC 0010): a default that contains "{{ }}" is checked only for the Steps that take it.
-# The only Step supplies N, so the INT default "{{ 'abc' }}", which cannot convert, is not an error.
+# Template Schemas §4.5 item 2 (RFC 0010): a default that contains "{{ }}" is checked against its type and constraints
+# only for the Steps that take it. The only Step supplies N, so the INT default "{{ 'abc' }}", which cannot convert, is
+# not an error.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - ENV_PARAMS

@@ -1,7 +1,8 @@
-# Template Schemas §3.2 (checked-at paragraph, <EnvironmentParameterValue>) and §7.6 rule 5 (RFC 0010): an entry whose
-# enableIf is not known at template validation may turn out to be disabled, and if it is enabled its value is evaluated
-# with the parameter's type as its target type. "{{ abs('5') }}" for the INT parameter N resolves to 5 with that target
-# (Expression Language §1.3.1), so the template is valid, as it is when the entry has no enableIf.
+# Template Schemas §3.2 (checked-at paragraph) and §7.6 rule 5 (RFC 0010): an entry whose enableIf is not known at
+# template validation may turn out to be disabled, so its values are not checked until the Job is created. Without a
+# target type "{{ abs('5') }}" has no matching signature, but if the entry is enabled the value is evaluated with the
+# INT parameter's type as its target type and resolves to 5 (§3.2 <EnvironmentParameterValue>, Expression Language
+# §1.3.1). So the template is valid, as it is when the entry has no enableIf.
 specificationVersion: jobtemplate-2023-09
 extensions:
 - ENV_PARAMS
