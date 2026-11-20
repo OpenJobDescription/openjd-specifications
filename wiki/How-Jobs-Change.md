@@ -731,5 +731,6 @@ Not yet decided:
 
 ## More examples
 
-openjd-rs has a gallery of 78 examples, one for each field `openjd diff` can report, each with its
-command and output: [`specs/cli/diff-examples.md`](https://github.com/OpenJobDescription/openjd-rs/blob/main/specs/cli/diff-examples.md).
+openjd-rs has a short set of [`openjd diff` examples](https://github.com/OpenJobDescription/openjd-rs/blob/main/crates/openjd-cli/examples/diff/README.md)
+with their templates, and its test suite has one case for each field `openjd diff` can report, with each command
+and its output: [`specs/cli/diff-cases.md`](https://github.com/OpenJobDescription/openjd-rs/blob/main/specs/cli/diff-cases.md).
