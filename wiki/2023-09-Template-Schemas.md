@@ -2391,7 +2391,7 @@ Job runs, and does not declare the files that the Job reads or writes.
    [§1.2.6](2026-02-Expression-Language#126-list-literal-type-inference), the string is kept instead: `"{{ 'a//b/' }}"`
    is `a//b/`, and `"{{ ['c//d', './e'] }}"` is the list of `c//d` and `./e`. A result that is already a `path`, such as
    that of `"{{ path('a//b/') }}"`, is that path's string form, `a/b`, since values resolve with the POSIX path
-   semantics of template scope ([Expression Language §1.2.1](2026-02-Expression-Language#121-types)). The value's
+   semantics of template scope ([Expression Language §1.2.1](2026-02-Expression-Language#121-expression-types)). The value's
    constraints are checked when the Job is created, against the unmapped value, and path mapping on the Worker Host does
    not re-check them.
 4. *RANGE_EXPR values* — *minLength* and *maxLength* check both the value as written and its canonical form (see
