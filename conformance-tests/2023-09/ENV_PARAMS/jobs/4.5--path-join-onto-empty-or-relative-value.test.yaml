@@ -57,6 +57,7 @@ environments:
           - -c
           - |
             print(r'EMPTY_RAW:[{{Env.RawParam.Empty}}]')
+            print(r'LIST_RAW:[{{ Env.RawParam.Dirs.join(',') }}]')
             print(r'EMPTY_LEFT:[{{ (Env.Param.Empty / 'k').as_posix() }}]')
             print(r'EMPTY_LEFT_TWO:[{{ (Env.Param.Empty / 'a' / 'b').as_posix() }}]')
             print(r'EMPTY_RIGHT:[{{ (path('k') / Env.Param.Empty).as_posix() }}]')
@@ -68,6 +69,7 @@ runOn: [posix, windows]
 expected:
   output:
   - EMPTY_RAW:[]
+  - LIST_RAW:[,rel/d]
   - EMPTY_LEFT:[k]
   - EMPTY_LEFT_TWO:[a/b]
   - EMPTY_RIGHT:[k]

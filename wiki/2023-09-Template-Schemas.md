@@ -1068,7 +1068,9 @@ An `<EnvironmentParameterValue>` is one of:
   `<intstring>`, a float or `<floatstring>`, a boolean, or a list.
 * A [Format String](#73-format-strings) resolved when the Job is created. The values it may reference are given in the
   [`ENV_PARAMS` Scope Summary](#732-env_params-scope-summary). A value that is a single `{{ }}`
-  expression is evaluated with the parameter's type as its target type. Any other format string resolves to a string.
+  expression is evaluated with the parameter's type as its target type; a string result for a PATH or LIST[PATH]
+  parameter keeps its text ([§4.5](#45-environmentparameterdefinition-extension-env_params) item 3). Any other format
+  string resolves to a string.
   The string is converted to the parameter's type as a submitted Job Parameter value of that type would be, except
   that a relative path is not joined with any directory. A list-typed parameter has no string form, so its value must
   be a list literal or a single `{{ }}` expression.
@@ -2381,8 +2383,12 @@ Job runs, and does not declare the files that the Job reads or writes.
 3. *PATH values* — A value of a PATH parameter, and each element of a LIST[PATH] value, is used as given. It is never
    joined with a directory, and it need not be absolute: unlike a PATH Job Parameter, whose value the submitting
    workstation resolves and may use to choose files to send with the Job, an Environment parameter value only reaches
-   the Environment's own actions, mapped by the path mapping rules on the Worker Host. Its constraints are checked when
-   the Job is created, against the unmapped value, and path mapping on the Worker Host does not re-check them.
+   the Environment's own actions, mapped by the path mapping rules on the Worker Host. A string converted to such a
+   value keeps its text: unlike the Expression Language's `path()`, the conversion does not normalize it. This holds
+   for a literal, a format string's resolved string, and a string that a single `{{ }}` expression gives, alone or in
+   a list, so `"{{ 'a//b/' }}"` is `a//b/`. A result that is already a `path` is that path's string form, so
+   `"{{ path('a//b/') }}"` is `a/b`. Its constraints are checked when the Job is created, against the unmapped value,
+   and path mapping on the Worker Host does not re-check them.
 4. *RANGE_EXPR values* — *minLength* and *maxLength* check both the value as written and its canonical form (see
    [§2.10](#210-jobrangeexprparameterdefinition-extension-expr)). The value as written is the literal's string, a format
    string's resolved string, or the string result of a single `{{ }}` expression. A single expression whose result is
@@ -2824,8 +2830,8 @@ specified.
    with the Step's own (see [Combined Host Requirements](#333-combined-host-requirements)).
 
 Environment parameter PATH and LIST[PATH] values are used as given, never joined with any directory (see
-[§4.5](#45-environmentparameterdefinition-extension-env_params)). A value that is a single `{{ }}` expression whose
-result is a string keeps that string's text, and one whose result is a list of strings keeps the text of each.
+[§4.5](#45-environmentparameterdefinition-extension-env_params)), and a string converted to such a value keeps its
+text (§4.5 item 3).
 
 ### 7.5. Numeric strings
 
