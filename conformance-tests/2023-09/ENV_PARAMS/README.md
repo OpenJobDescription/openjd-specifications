@@ -400,7 +400,7 @@ lists the extensions the document under test declares, where it matters (`EP` = 
 | JT-206 | `3.2--fifty-environment-entries.yaml` | EP, EX | A Step with 50 `required: false` `environment:` entries is valid: an implementation that limits *dependencies* must accept at least 50 such entries (§3 *dependencies*). |
 | JT-212 | `3.2.2--grouped-job-environment-literal-value-deferred.yaml` | EP, EX | A Job Environment with an `exclusiveGroup` is never known to be entered at template validation, so a Step's literal value outside its `allowedValues` is not checked there, and the template is valid (§3.2.2 item 1, §4). |
 | JT-213 | `3.2--expression-entry-value-deferred.yaml` | EP, EX | `"{{ abs('5') }}"` for an INT parameter, in an entry whose `enableIf` is not known at template validation, is valid: its values are not checked until the Job is created, when, if the entry is enabled, it resolves to 5 with the parameter's type as its target type (§3.2, §7.6 rule 5). |
-| JT-214 | `3.2--external-entry-value-not-type-checked.yaml` | EP, EX | The same value in an entry that names an external Environment is valid: template validation checks only constraints 1–4, 8, and 9 and each value's form there (§3.2). |
+| JT-214 | `3.2--external-entry-value-not-type-checked.yaml` | EP, EX | The same value in an entry that names an external Environment is valid: the Environment's parameter types are not known before the Job is created, so template validation does not check the value against one (§3.2). |
 
 #### `<StepDependency>` `step:` entries (§3.2 item 2)
 
@@ -864,7 +864,7 @@ keeps its number with a note. Earlier drafts of the RFC carried the same index a
 | V22 | Keys and values for an external Environment; a key the resolved Environment lacks is an error even with `required: false`, unless the Environment declares no parameters: then a `required: false` entry's `parameters` are ignored, and a `required: true` entry's are an error | Job creation | JB-18, JB-24–JB-26, JB-165, JB-166; accepted: JB-20; ignored: JB-19, JB-167, JB-168; not type checked at template validation: JT-214 |
 | V23 | Removed: `ENV_PARAMS` requires `EXPR`, so no requesting document lacks `EXPR`; see V36 | — | — |
 | V24 | A format-string value or `default` for a list-typed parameter is one `{{ }}` expression | Template validation for `default`s, and for Job Environment entries where the Environment is known not to be disabled (V35); job creation otherwise | JT-37, JT-38, JT-91, ET-24, JB-29 |
-| V25 | A resolved, non-literal `default` satisfies its type and constraints for each Step that takes it | Job creation; its type and constraints are not checked at template validation where no Step takes it | JB-11, JB-12, JT-215, ET-53 |
+| V25 | A resolved, non-literal `default` satisfies its type and constraints for each Step that takes it | Job creation; at template validation, where no Step takes it, it is not checked against its type (other than V24's single-expression form for a list) or constraints | JB-11, JB-12, JT-215, ET-53 |
 | V26 | PATH / LIST[PATH] values used as given, not required to be absolute; string constraints on the unmapped value, including an unused literal `default` | Job creation | JB-60–JB-63, JB-157–JB-164; an unmapped value outside `allowedValues` is rejected even when its mapped value is in them: JB-200; relative format-string values and `default`s, never joined: JB-206; mapping: JB-54–JB-59 |
 | V27 | Merged into V20 | — | — |
 | V28 | Removed: the RFC no longer specifies composition with `SERVICE` | — | — |
