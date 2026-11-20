@@ -1,11 +1,11 @@
 # Template Schemas §4.5 items 1 and 3 (RFC 0010): a string that becomes a PATH value, or an element of a LIST[PATH]
 # value, keeps its text and is not normalized, even where the Expression Language would convert it to a path. So a
 # single {{ }} expression whose result is a string is that string, with its repeated separators, "." components and
-# trailing separator, and so is each string element of a list literal for a LIST[PATH] parameter; a format string
-# with text around its expression keeps its resolved string. The strings come from string literals and from a STRING
-# Job Parameter, as a Step's entry values and as an Environment parameter's default; Env.RawParam reads each
-# unchanged. In contrast, a result that is already a path, alone or as a list element, is that path's string form,
-# which path() normalizes.
+# trailing separator, and so is each string of a list literal or a LIST[STRING] Job Parameter for a LIST[PATH]
+# parameter; a format string with text around its expression keeps its resolved string. The strings come from string
+# literals and from STRING and LIST[STRING] Job Parameters, as a Step's entry values and as an Environment parameter's
+# default; Env.RawParam reads each unchanged. In contrast, a result that is already a path, alone or as a list element,
+# is that path's string form, which path() normalizes.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [ENV_PARAMS, EXPR]
@@ -14,6 +14,9 @@ template:
   - name: Text
     type: STRING
     default: "from//param/./x/"
+  - name: Strs
+    type: LIST[STRING]
+    default: ["a//b/", "./c"]
   steps:
   - name: A
     dependencies:
@@ -25,6 +28,7 @@ template:
         Norm: "{{ path('rel//a/./b/') }}"
         Mixed: "{{ [path('m//n/'), 'o//p/'] }}"
         Fmt: "pre//{{Param.Text}}"
+        Coerced: "{{Param.Strs}}"
     script:
       actions:
         onRun:
@@ -48,6 +52,8 @@ environments:
       type: LIST[PATH]
     - name: Fmt
       type: PATH
+    - name: Coerced
+      type: LIST[PATH]
     - name: Def
       type: PATH
       default: "{{ './def//d/' }}"
@@ -65,6 +71,7 @@ environments:
             print(r'NORM:[{{Env.RawParam.Norm}}]')
             print(r'MIXED:[{{ Env.RawParam.Mixed.join(',') }}]')
             print(r'FMT:[{{Env.RawParam.Fmt}}]')
+            print(r'COERCED:[{{ Env.RawParam.Coerced.join(',') }}]')
 runOn: [posix, windows]
 expected:
   output:
@@ -75,4 +82,5 @@ expected:
   - NORM:[rel/a/b]
   - MIXED:[m/n,o//p/]
   - FMT:[pre//from//param/./x/]
+  - COERCED:[a//b/,./c]
   - TASK A

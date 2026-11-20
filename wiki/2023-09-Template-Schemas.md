@@ -2390,8 +2390,10 @@ Job runs, and does not declare the files that the Job reads or writes.
    [§1.2.3](2026-02-Expression-Language#123-implicit-type-coercion) or the list-literal element coercion of its
    [§1.2.6](2026-02-Expression-Language#126-list-literal-type-inference), the string is kept instead: `"{{ 'a//b/' }}"`
    is `a//b/`, and `"{{ ['c//d', './e'] }}"` is the list of `c//d` and `./e`. A result that is already a `path`, such as
-   that of `"{{ path('a//b/') }}"`, is that path's string form, `a/b`. The value's constraints are checked when the Job
-   is created, against the unmapped value, and path mapping on the Worker Host does not re-check them.
+   that of `"{{ path('a//b/') }}"`, is that path's string form, `a/b`, since values resolve with the POSIX path
+   semantics of template scope ([Expression Language §1.2.1](2026-02-Expression-Language#121-types)). The value's
+   constraints are checked when the Job is created, against the unmapped value, and path mapping on the Worker Host does
+   not re-check them.
 4. *RANGE_EXPR values* — *minLength* and *maxLength* check both the value as written and its canonical form (see
    [§2.10](#210-jobrangeexprparameterdefinition-extension-expr)). The value as written is the literal's string, a format
    string's resolved string, or the string result of a single `{{ }}` expression. A single expression whose result is
@@ -2833,7 +2835,7 @@ specified.
    with the Step's own (see [Combined Host Requirements](#333-combined-host-requirements)).
 
 Environment parameter PATH and LIST[PATH] values are used as given, never joined with any directory (see
-[§4.5](#45-environmentparameterdefinition-extension-env_params)), and a string converted to such a value keeps its
+[§4.5](#45-environmentparameterdefinition-extension-env_params)), and a string that becomes such a value keeps its
 text (§4.5 item 3).
 
 ### 7.5. Numeric strings

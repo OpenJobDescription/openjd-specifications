@@ -131,7 +131,7 @@ a disabled entry, is an error instead. A Job Environment or Environment Template
   by its code points, a PATH by its unmapped string, and an INT, a BOOL, or a RANGE_EXPR by its one string form; a
   Step's Tasks never run in an Environment entered with values that are not equal to the Step's.
 - **Path values** (§4.5): PATH and LIST[PATH] values are used as given, never joined with a directory and not required
-  to be absolute, checked unmapped, path-mapped in `Env.Param.*` and not in `Env.RawParam.*`. A string converted to a
+  to be absolute, checked unmapped, path-mapped in `Env.Param.*` and not in `Env.RawParam.*`. A string that becomes a
   PATH value keeps its text, while a `path` result is its string form; an empty or relative value joins as Expression
   Language §2.1.5 says.
 - **`Job.EnvNames`** (§7.3.1): the names of every Job Environment, own and attached, whatever its `activation`, in
@@ -741,7 +741,7 @@ permitted but not required, so for those only the values both Tasks see are chec
 | JB-200 | `4.5--path-allowed-values-mapped-only.invalid.test.yaml` | EP, EX | `runOn: [posix]`. `allowedValues` lists the path a mapping rule would produce, not the value as given; the unmapped value is not allowed, so the submission is rejected (§4.5 item 3). The contrast of JB-62. |
 | JB-206 | `4.5--relative-paths-never-joined.test.yaml` | EP, EX; env EP, EX | Relative PATH and LIST[PATH] format-string and literal `default`s, and a relative format-string value, in a Job Environment and in an attached Environment Template, are used as given and never joined with a directory (§4.5 items 1 and 3). |
 | JB-207 | `4.5--path-join-onto-empty-or-relative-value.test.yaml` | EP, EX; env EP, EX | An empty PATH value, supplied as a literal to an attached Environment and taken from a Job Environment's literal `default: ""`, reads as empty in `Env.RawParam.*`, as does an empty LIST[PATH] element, and adds nothing to a join: `Env.Param.Dir / 'k'` and `path('k') / Env.Param.Dir` are `k`; a relative value `rel/dir` joins as relative, and a LIST[PATH] value's empty and relative elements join the same way (§4.5 item 3, Expression Language §2.1.5). |
-| JB-208 | `4.5--single-expression-string-keeps-text.test.yaml` | EP, EX; env EP, EX | A string that becomes a PATH value keeps its text, even where the Expression Language would convert it to a `path`: a value or `default` that is a single `{{ }}` expression whose result is a string, from a string literal or a STRING Job Parameter, is that string, `//`, `.` components and a trailing `/` included; so is each string element of a list literal for a LIST[PATH] parameter, and a format string's resolved string. A `path()` result, alone or in a list, is the normalized path's string form (§4.5 items 1 and 3). |
+| JB-208 | `4.5--single-expression-string-keeps-text.test.yaml` | EP, EX; env EP, EX | A string that becomes a PATH value keeps its text, even where the Expression Language would convert it to a `path`: a value or `default` that is a single `{{ }}` expression whose result is a string, from a string literal or a STRING Job Parameter, is that string, `//`, `.` components and a trailing `/` included; so is each string of a list literal or of a LIST[STRING] Job Parameter for a LIST[PATH] parameter, and a format string's resolved string. A `path()` result, alone or in a list, is the normalized path's string form (§4.5 items 1 and 3). |
 
 #### Host requirements (§3.3.3, §4 item 5)
 
