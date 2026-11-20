@@ -1,0 +1,17 @@
+# Template Schemas §4.5 item 2 (RFC 0010): a default that contains "{{ }}" is checked only for the Steps that take it.
+# An Environment Template validated alone has no Steps, so the INT default "{{ 'abc' }}", which cannot convert, is not
+# an error. A Job whose Step takes it is rejected when it is created.
+specificationVersion: environment-2023-09
+extensions: [ENV_PARAMS, EXPR]
+environment:
+  name: Lic
+  activation: ON_REQUEST
+  envParameterDefinitions:
+  - name: N
+    type: INT
+    default: "{{ 'abc' }}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.N}}"]

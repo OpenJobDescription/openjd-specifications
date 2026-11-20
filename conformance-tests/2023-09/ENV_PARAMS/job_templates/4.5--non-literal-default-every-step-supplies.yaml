@@ -1,0 +1,29 @@
+# Template Schemas §4.5 item 2 (RFC 0010): a default that contains "{{ }}" is checked only for the Steps that take it.
+# The only Step supplies N, so the INT default "{{ 'abc' }}", which cannot convert, is not an error.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Lic
+  envParameterDefinitions:
+  - name: N
+    type: INT
+    default: "{{ 'abc' }}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.N}}"]
+steps:
+- name: Render
+  dependencies:
+  - environment: Lic
+    parameters:
+      N: 3
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]
