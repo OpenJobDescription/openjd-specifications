@@ -1,0 +1,81 @@
+# Template Schemas §4.5 item 3 (RFC 0010) and Expression Language §2.1.5: an Environment parameter PATH value, and
+# each element of a LIST[PATH] value, is used as given, so an empty or relative value reaches Env.Param.* empty or
+# relative, and a join treats it as the Expression Language says. An empty path adds nothing to a join, so
+# Env.Param.Dir / 'k' and path('k') / Env.Param.Dir are both k; a relative path joins as relative, never as a root or
+# as a path joined with a directory. The empty value is a literal supplied by a Step to an attached Environment and a
+# literal default of a Job Environment; the relative value is supplied by the Step.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: PathJoinOntoEmptyOrRelative
+  jobEnvironments:
+  - name: Own
+    envParameterDefinitions:
+    - name: Dir
+      type: PATH
+      default: ""
+    script:
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'OWN_RAW:[{{Env.RawParam.Dir}}]')
+            print(r'OWN_LEFT:[{{ (Env.Param.Dir / 'k').as_posix() }}]')
+            print(r'OWN_RIGHT:[{{ (path('k') / Env.Param.Dir).as_posix() }}]')
+  steps:
+  - name: A
+    dependencies:
+    - environment: Mnt
+      parameters:
+        Empty: ""
+        Rel: rel/dir
+        Dirs: "{{ ['', 'rel/d'] }}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Mnt
+    envParameterDefinitions:
+    - name: Empty
+      type: PATH
+    - name: Rel
+      type: PATH
+    - name: Dirs
+      type: LIST[PATH]
+    script:
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'EMPTY_RAW:[{{Env.RawParam.Empty}}]')
+            print(r'EMPTY_LEFT:[{{ (Env.Param.Empty / 'k').as_posix() }}]')
+            print(r'EMPTY_LEFT_TWO:[{{ (Env.Param.Empty / 'a' / 'b').as_posix() }}]')
+            print(r'EMPTY_RIGHT:[{{ (path('k') / Env.Param.Empty).as_posix() }}]')
+            print(r'REL_LEFT:[{{ (Env.Param.Rel / 'k').as_posix() }}]')
+            print(r'REL_RIGHT:[{{ (path('k') / Env.Param.Rel).as_posix() }}]')
+            print(r'LIST_LEFT:[{{ [(p / 'k').as_posix() for p in Env.Param.Dirs].join(',') }}]')
+            print(r'LIST_RIGHT:[{{ [(path('k') / p).as_posix() for p in Env.Param.Dirs].join(',') }}]')
+runOn: [posix, windows]
+expected:
+  output:
+  - EMPTY_RAW:[]
+  - EMPTY_LEFT:[k]
+  - EMPTY_LEFT_TWO:[a/b]
+  - EMPTY_RIGHT:[k]
+  - REL_LEFT:[rel/dir/k]
+  - REL_RIGHT:[k/rel/dir]
+  - LIST_LEFT:[k,rel/d/k]
+  - LIST_RIGHT:[k,k/rel/d]
+  - OWN_RAW:[]
+  - OWN_LEFT:[k]
+  - OWN_RIGHT:[k]
+  - TASK A
