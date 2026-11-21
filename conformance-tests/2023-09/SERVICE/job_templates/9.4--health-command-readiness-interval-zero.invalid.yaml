@@ -1,0 +1,32 @@
+# Section 9.4 item 3: `readinessIntervalSeconds` is a <posinteger>; 0 must be rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  - name: admin
+  healthCheck:
+    type: COMMAND
+    readinessIntervalSeconds: 0
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+      onHealthCheck:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

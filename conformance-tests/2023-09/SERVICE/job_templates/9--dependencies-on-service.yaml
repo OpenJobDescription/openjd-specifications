@@ -1,0 +1,38 @@
+# Section 9 item 4 (RFC 0009): a Service may depend on another Service with
+# `service: <name>` without referencing its endpoint, for start
+# ordering alone. Front starts only once Back is READY and is stopped before
+# Back; Use's scope lies in both.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Back
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+- name: Front
+  dependencies:
+  - service: Back
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Use
+  dependencies:
+  - service: Front
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Front.main.port }}"]

@@ -1,0 +1,3 @@
+# Section 1.2: an Environment Template with neither `environment` nor
+# `services` is invalid whether or not SERVICE is declared.
+specificationVersion: environment-2023-09

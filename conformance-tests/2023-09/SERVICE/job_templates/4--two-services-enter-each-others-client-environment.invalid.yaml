@@ -1,0 +1,54 @@
+# Section 3.2 constraint 3 (RFC 0009): two Services whose Sessions each enter
+# a client Environment of the other are a cycle. A's Sessions enter the
+# BY_DEFAULT Environment BClient, which lists B (A -> B), and B's enter
+# AClient, which lists A (B -> A). Each declines its own client Environment,
+# so the two-Service cycle is the only one. Keeping the graph acyclic is the
+# author's responsibility, for example by making the client Environments
+# ON_REQUEST for the Steps that need them.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: AClient
+  dependencies:
+  - service: A
+  variables:
+    A_PORT: "{{ Service.A.main.port }}"
+- name: BClient
+  dependencies:
+  - service: B
+  variables:
+    B_PORT: "{{ Service.B.main.port }}"
+services:
+- name: A
+  dependencies:
+  - environment: AClient
+    enableIf: false
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+- name: B
+  dependencies:
+  - environment: BClient
+    enableIf: false
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

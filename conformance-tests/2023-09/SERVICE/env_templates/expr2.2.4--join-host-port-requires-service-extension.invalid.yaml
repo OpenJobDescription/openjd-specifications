@@ -1,0 +1,10 @@
+# Expression Language 2.2.4: join_host_port is added by the SERVICE
+# extension, so an Environment Template that declares EXPR alone cannot
+# call it.
+specificationVersion: environment-2023-09
+extensions:
+- EXPR
+environment:
+  name: Env
+  variables:
+    ENDPOINT: "{{ join_host_port('cache.example', 6379) }}"

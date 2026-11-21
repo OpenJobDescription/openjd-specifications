@@ -1,0 +1,38 @@
+# Section 3.2 constraint 3 / Section 4 item 3 (RFC 0009): a Service's Sessions
+# choose their Environments as a Step's do, with no exception for one that
+# lists the Service. Store writes no entry for the BY_DEFAULT Environment
+# Client, so its Sessions enter Client, which lists Store and waits for it to
+# be READY: the cycle Store -> Store, rejected naming Client. Step1 lists
+# Store, so the cycle is the only error. The remedies are an ON_REQUEST Client
+# that the Steps request (4--environment-dependencies-service-form) or a
+# disabled entry on Store that declines it (9.1--scope-via-job-environment-dependency).
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Client
+  dependencies:
+  - service: Store
+  variables:
+    STORE_PORT: "{{ Service.Store.main.port }}"
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port }}"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

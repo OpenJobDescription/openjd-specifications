@@ -1,0 +1,44 @@
+# RFC 0009 "Failure and restart" step 4 and "Service lifecycle" constraints
+# 3, 6, 7: the same Service as service-max-restarts-exhausted, asserting on
+# the output. No Task of the scope is scheduled while the Service is UNREADY
+# or FAILED, and the FAILED Service's Session is still ended normally, so its
+# onExit runs. (taskFailure here asserts only that the run exited non-zero.)
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: MaxRestartsExhaustedOutput
+  services:
+  - name: Broken
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+      readinessTimeoutSeconds: 30
+    restartPolicy:
+      maxRestarts: 2
+      completedTasks: RERUN
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print(\"BROKEN_EXITING\", flush=True); raise SystemExit(3)"]
+        onExit:
+          command: python
+          args: ["-c", "print(\"BROKEN_EXIT_RAN\")"]
+  steps:
+  - name: Never
+    dependencies:
+    - service: Broken
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print(\"TASK_MUST_NOT_RUN\")"]
+
+expected:
+  taskFailure: {}
+  output:
+  - BROKEN_EXITING
+  - BROKEN_EXIT_RAN
+  forbidden:
+  - TASK_MUST_NOT_RUN

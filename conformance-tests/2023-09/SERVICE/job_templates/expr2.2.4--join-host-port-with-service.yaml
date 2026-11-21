@@ -1,0 +1,27 @@
+# Expression Language 2.2.4 (RFC 0009): join_host_port(host: string, port: int)
+# composes an endpoint from a Service's connectAddress and port, and
+# split_host_port, is_ipv4, and is_ipv6 are available.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ join_host_port(Service.Store.main.connectAddress, Service.Store.main.port) }}", "{{ Service.Store.main.connectAddress.join_host_port(Service.Store.main.port) }}", "{{ split_host_port(\"[::1]:80\")[0] }}", "{{ is_ipv4(Service.Store.main.connectAddress) or is_ipv6(Service.Store.main.connectAddress) }}"]

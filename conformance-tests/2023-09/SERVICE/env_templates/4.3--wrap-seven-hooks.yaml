@@ -1,0 +1,34 @@
+# Section 4.3 WRAP_ACTIONS constraint 6: a wrapping Environment that defines
+# all seven hooks wraps every kind of action, so it may be attached to any
+# queue, whichever kinds of Session enter it.
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- SERVICE
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Wrapper
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapEnvExit:
+        command: python
+        args: ["-c", "print()"]
+      onWrapTaskRun:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceRun:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceHealthCheck:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceExit:
+        command: python
+        args: ["-c", "print()"]

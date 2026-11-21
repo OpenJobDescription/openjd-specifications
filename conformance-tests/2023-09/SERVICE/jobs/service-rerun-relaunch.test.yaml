@@ -1,0 +1,102 @@
+# RFC 0009 "Failure and restart" with completedTasks: RERUN (Template Schemas
+# §9.5). The Service's first instance exits while Task 1 is still running
+# (after answering it). The scheduler cancels the running Task (not a Task
+# failure), relaunches onRun -- in the same Service Session or a new one, its
+# choice -- and returns every completed Task to the queue. Every Task
+# therefore completes against instance 2, and Task 1 never completes against
+# instance 1.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: RerunRelaunch
+  services:
+  - name: Flaky
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+      readinessTimeoutSeconds: 60
+    restartPolicy:
+      maxRestarts: 1
+      completedTasks: RERUN
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Flaky.main.bindAddress }}", "{{ Service.Flaky.main.port }}", "{{ Job.Name }}"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "import os, sys, tempfile; m = os.path.join(tempfile.gettempdir(), 'openjd-' + sys.argv[1] + '.marker'); os.path.exists(m) and os.remove(m)", "{{ Job.Name }}"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import os, socket, sys, tempfile, time
+          host, port = sys.argv[1], int(sys.argv[2])
+          # The scheduler MAY relaunch in the same Service Session or begin a new
+          # one, so nothing in the working directory is relied on: a marker in
+          # the host's temp directory, keyed by Job.Name and deleted by onExit,
+          # tells the instances apart. A stale marker makes the first instance
+          # report itself as 2, which the TASK 1 GOT INSTANCE 1 assertion catches.
+          marker = os.path.join(tempfile.gettempdir(), "openjd-" + sys.argv[3] + ".marker")
+          instance = 2 if os.path.exists(marker) else 1
+          open(marker, "a").close()
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready: instance", instance, flush=True)
+          while True:
+              c, _ = s.accept()
+              msg = c.recv(64).decode()
+              c.sendall(str(instance).encode())
+              c.close()
+              if instance == 1 and msg == "task 1":
+                  # Exit shortly after Task 1 has its answer, while Task 1 is still
+                  # running: an instance failure.
+                  time.sleep(0.3)
+                  print("INSTANCE 1 EXITING", flush=True)
+                  sys.exit(1)
+  steps:
+  - name: Work
+    dependencies:
+    - service: Flaky
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: N
+        type: INT
+        range: "1-3"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Service.Flaky.main.connectAddress }}", "{{ Service.Flaky.main.port }}", "{{ Task.Param.N }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import socket, sys, time
+          host, port, n = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          c = socket.create_connection((host, port), timeout=10)
+          c.sendall(("task " + n).encode())
+          instance = c.recv(64).decode()
+          c.close()
+          print("TASK", n, "GOT INSTANCE", instance, flush=True)
+          time.sleep(1.5)
+          print("TASK", n, "INSTANCE", instance, "DONE", flush=True)
+
+expected:
+  output:
+  - TASK 1 GOT INSTANCE 1
+  - INSTANCE 1 EXITING
+  - TASK 1 INSTANCE 2 DONE
+  - TASK 2 INSTANCE 2 DONE
+  - TASK 3 INSTANCE 2 DONE
+  forbidden:
+  - TASK 1 INSTANCE 1 DONE
+  - TASK 2 GOT INSTANCE 1
+  - TASK 3 GOT INSTANCE 1

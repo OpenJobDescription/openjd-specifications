@@ -1,0 +1,9 @@
+# Section 1.2 item 2 (RFC 0010, "Changes that apply without the extension"
+# item 4): `$schema` is allowed on an Environment Template, and ignored, as on
+# a Job Template. Included here alongside the SERVICE fixtures that use it.
+specificationVersion: environment-2023-09
+$schema: "https://example.com/openjd/environment-2023-09.schema.json"
+environment:
+  name: Env1
+  variables:
+    FOO: bar

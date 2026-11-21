@@ -1,0 +1,100 @@
+# RFC 0009 lifecycle constraints 6 and 7 (a Service Session ends when the
+# Service's scope completes: no Step in the scope has a Task that could still
+# run; nothing orders a Step outside the scope after that) and Template
+# Schemas §9.1 rule 1: a Service that one Step lists in its `dependencies` is
+# stopped, and its onExit run, once that Step completes. Step After depends on
+# Count but not on Service Counter, so it is outside the scope and may not
+# reference Service.Counter.*; the Service's scope ends when Count does. The
+# fixture asserts the Service's exit marker and each Step's own output. It
+# does not assert that After finds the endpoint refused: a Step outside the
+# scope is not ordered after the Service's onExit, so After may be scheduled
+# while the Session is still ending, and whether the port is already closed
+# when After runs is the scheduler's timing, not a rule.
+#
+# The endpoint is handed between Steps through a file in the host's temp
+# directory keyed by Job.Name, which assumes both Steps' Tasks run on the same
+# host, as the reference runner does. Count's Task overwrites the file (so a
+# stale one from an aborted run cannot leak in) and After's Task deletes it,
+# failing loudly if it is missing.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: ScopeStoppedBeforeDependentStep
+  services:
+  - name: Counter
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+      readinessTimeoutSeconds: 60
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Counter.main.bindAddress }}", "{{ Service.Counter.main.port }}"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "print('COUNTER_EXIT')"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port = sys.argv[1], int(sys.argv[2])
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready: counter up", flush=True)
+          n = 0
+          while True:
+              c, _ = s.accept()
+              n += 1
+              c.sendall(str(n).encode())
+              c.close()
+  steps:
+  - name: Count
+    dependencies:
+    - service: Counter
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Service.Counter.main.connectAddress }}", "{{ Service.Counter.main.port }}", "{{ Job.Name }}"]
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import os, socket, sys, tempfile
+          host, port, job = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          c = socket.create_connection((host, port), timeout=10)
+          print("COUNT_TASK_GOT", c.recv(64).decode(), flush=True)
+          c.close()
+          with open(os.path.join(tempfile.gettempdir(), "openjd-" + job + ".port"), "w") as f:
+              f.write(host + "\n" + str(port))
+  - name: After
+    dependencies:
+    - dependsOn: Count
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Job.Name }}"]
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import os, sys, tempfile
+          path = os.path.join(tempfile.gettempdir(), "openjd-" + sys.argv[1] + ".port")
+          with open(path) as f:
+              host, port = f.read().split("\n")
+          os.remove(path)
+          print("AFTER_TASK_RAN", host != "" and int(port) > 0, flush=True)
+
+expected:
+  output:
+  - COUNT_TASK_GOT 1
+  - COUNTER_EXIT
+  - AFTER_TASK_RAN True

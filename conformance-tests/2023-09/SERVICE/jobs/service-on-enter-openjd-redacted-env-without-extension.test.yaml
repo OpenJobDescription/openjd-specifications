@@ -1,0 +1,45 @@
+# RFC 0009 <ServiceActions> "Environment variables within a Service"
+# (Template Schemas §9.7), the control for
+# service-on-enter-openjd-redacted-env-with-extension: without the
+# REDACTED_ENV_VARS extension, an openjd_redacted_env line on a Service
+# onEnter's stdout does NOT set the variable -- onRun does not see it -- but
+# the value is still redacted from the log, as for an Environment's onEnter
+# (see REDACTED_ENV_VARS/jobs/redaction-without-extension).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: OnEnterRedactedEnvWithoutExtension
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('openjd_redacted_env: STORE_SECRET=s3cret-value-xyz')"]
+        onRun:
+          command: python
+          args: ["-c", "import os,time; print('RUN_SECRET_SET', 'STORE_SECRET' in os.environ); print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  steps:
+  - name: Use
+    dependencies:
+    - service: Store
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os; print('TASK_SECRET_SET', 'STORE_SECRET' in os.environ); print('TASK_PORT_SEEN', {{ Service.Store.main.port }} > 0)"]
+
+expected:
+  output:
+  - RUN_SECRET_SET False
+  - TASK_SECRET_SET False
+  - TASK_PORT_SEEN True
+  - 'openjd_redacted_env: STORE_SECRET=********'
+  forbidden:
+  - s3cret-value-xyz

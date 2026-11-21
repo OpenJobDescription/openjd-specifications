@@ -1,0 +1,37 @@
+# Section 7.3.1 / Section 9.6: `Service.File.<name>` resolves to an embedded
+# file of the declaring Service, within its actions, embedded files, and
+# <ServiceScript>.let.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    let:
+    - config = Service.File.Conf
+    actions:
+      onRun:
+        command: python
+        args: ["{{ Service.File.Serve }}", "{{ config }}"]
+    embeddedFiles:
+    - name: Serve
+      type: TEXT
+      data: |
+        print("{{ Service.File.Conf }}")
+    - name: Conf
+      type: TEXT
+      data: "port={{ Service.Store.main.port }}"
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", ]

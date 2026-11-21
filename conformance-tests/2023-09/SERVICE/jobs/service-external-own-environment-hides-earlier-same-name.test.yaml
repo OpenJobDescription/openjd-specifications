@@ -1,0 +1,58 @@
+# Section 1.2 item 6 constraint 5 (RFC 0009) / RFC 0010 "Names resolve to the
+# Job Template first": an Environment Template Service's disabled entry
+# resolves to its own document's `environment` when that has the name, as a
+# Step's entry resolves to its Job Template's Job Environment first. The first
+# attachment also defines an Environment named CacheClient. Cache's entry
+# declines its own CacheClient, which lists it, and Cache's Session still
+# enters the earlier attachment's CacheClient. Two documents defining one
+# name is not an error, and nothing else names CacheClient.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: ExternalServiceOwnEnvironmentHidesEarlierSameName
+  steps:
+  - name: Use
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os; [print('TASK_' + v + '=' + os.environ.get(v, 'unset')) for v in ['SEEN_EARLIER_CLIENT', 'SEEN_OWN_CLIENT']]"]
+
+environments:
+- specificationVersion: environment-2023-09
+  environment:
+    name: CacheClient
+    variables:
+      SEEN_EARLIER_CLIENT: "yes"
+- specificationVersion: environment-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  services:
+  - name: Cache
+    dependencies:
+    # Resolves to this document's CacheClient, not the earlier one.
+    - environment: CacheClient
+      enableIf: false
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os, time; [print('SERVICE_' + v + '=' + os.environ.get(v, 'unset'), flush=True) for v in ['SEEN_EARLIER_CLIENT', 'SEEN_OWN_CLIENT']]; print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  environment:
+    name: CacheClient
+    dependencies:
+    - service: Cache
+    variables:
+      SEEN_OWN_CLIENT: "yes"
+      CACHE_PORT: "{{ Service.Cache.main.port }}"
+
+expected:
+  output:
+  - SERVICE_SEEN_EARLIER_CLIENT=yes
+  - SERVICE_SEEN_OWN_CLIENT=unset
+  - TASK_SEEN_EARLIER_CLIENT=yes
+  - TASK_SEEN_OWN_CLIENT=yes

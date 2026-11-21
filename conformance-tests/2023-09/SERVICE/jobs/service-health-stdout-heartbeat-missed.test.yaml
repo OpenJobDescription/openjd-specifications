@@ -1,0 +1,95 @@
+# RFC 0009 <ServiceHealthCheck> STDOUT with healthIntervalSeconds (Template
+# Schemas §9.4 items 1, 5, 6) and the `openjd_service_ready` heartbeat in
+# How Jobs Are Run: after READY the service must print the line at least once
+# per interval. It heartbeats every 0.3 seconds until it has answered Task 1,
+# then stops while continuing to serve. With healthIntervalSeconds: 1 and
+# failureThreshold: 2, two intervals without a line make the instance
+# UNHEALTHY, an instance failure; with the default maxRestarts of 0 the Job
+# fails, Task 2 never starts, and onExit runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: HealthStdoutHeartbeatMissed
+  services:
+  - name: Store
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+      readinessTimeoutSeconds: 60
+      healthIntervalSeconds: 1
+      failureThreshold: 2
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Store.main.bindAddress }}", "{{ Service.Store.main.port }}"]
+          cancelation:
+            mode: TERMINATE
+        onExit:
+          command: python
+          args: ["-c", "print('STORE_EXIT_RAN')"]
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port = sys.argv[1], int(sys.argv[2])
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          s.settimeout(0.3)
+          beating = True
+          while True:
+              if beating:
+                  print("openjd_service_ready: beat", flush=True)
+              try:
+                  c, _ = s.accept()
+              except socket.timeout:
+                  continue
+              msg = c.recv(64).decode()
+              c.sendall(b"hello")
+              c.close()
+              if beating and msg == "task 1":
+                  beating = False
+                  print("STORE_HEARTBEAT_STOPPED", flush=True)
+  steps:
+  - name: Work
+    dependencies:
+    - service: Store
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: N
+        type: INT
+        range: "1-2"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Task.File.Run }}", "{{ Service.Store.main.connectAddress }}", "{{ Service.Store.main.port }}", "{{ Task.Param.N }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Run
+        type: TEXT
+        data: |
+          import socket, sys, time
+          host, port, n = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          c = socket.create_connection((host, port), timeout=10)
+          c.sendall(("task " + n).encode())
+          print("TASK", n, "GOT", c.recv(64).decode(), flush=True)
+          c.close()
+          # Stay running long enough for two missed intervals, so the instance
+          # is UNHEALTHY before Task 2 could be scheduled.
+          time.sleep(5)
+          print("TASK", n, "DONE", flush=True)
+
+expected:
+  taskFailure: {}
+  output:
+  - TASK 1 GOT hello
+  - STORE_HEARTBEAT_STOPPED
+  - STORE_EXIT_RAN
+  forbidden:
+  - TASK 2 GOT

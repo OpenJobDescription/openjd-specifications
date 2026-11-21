@@ -1,0 +1,38 @@
+# Section 9 scope rule 3 / Section 9.9 item 1 (RFC 0009): a Step Environment
+# follows its Step's dependencies. Render's Step Environment references
+# Service.Store.main.port, but Render does not list `service: Store`, so the
+# template is rejected; Use depends on Store, so Store is not unused.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Store.main.port }}"]
+steps:
+- name: Use
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+- name: Render
+  stepEnvironments:
+  - name: Client
+    variables:
+      STORE_PORT: "{{ Service.Store.main.port }}"
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

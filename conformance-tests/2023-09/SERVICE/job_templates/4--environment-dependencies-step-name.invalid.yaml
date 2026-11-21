@@ -1,0 +1,23 @@
+# Section 4 item 3 constraint 2 / Section 9.9 item 14: every entry of an
+# Environment's `dependencies` must use the `service` key. An Environment is
+# entered by Sessions, not scheduled, so a dependency on a Step has no meaning
+# there; `dependsOn: Prepare` is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Client
+  dependencies:
+  - dependsOn: Prepare
+  variables:
+    GREETING: hello
+steps:
+- name: Prepare
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
