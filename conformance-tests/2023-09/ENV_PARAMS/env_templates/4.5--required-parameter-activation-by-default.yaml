@@ -1,0 +1,18 @@
+# Template Schemas §4.5 and §3.2.1 (RFC 0010): a parameter without a default is required, but for an
+# attached Environment constraint 7 is checked over the combined Job when the Job is created. An
+# Environment Template whose Environment every Step enters (the default activation, BY_DEFAULT) with a required
+# parameter is valid on its own.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]

@@ -1,0 +1,14 @@
+# Template Schemas §7.3.1 Job.EnvNames (RFC 0010): Job.EnvNames is not available in the Job Template's
+# name.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: "Job-{{ Job.EnvNames.join('-') }}"
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

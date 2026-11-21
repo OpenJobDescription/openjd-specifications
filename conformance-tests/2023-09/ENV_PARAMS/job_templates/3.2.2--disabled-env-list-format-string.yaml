@@ -1,0 +1,34 @@
+# Template Schemas §3.2.2 and §3.2 <EnvironmentParameterValue> (RFC 0010): Lic's enableIf is the literal false, and A's
+# value for the LIST[STRING] Products is a format string that is not a single {{ }} expression. That rule is part of
+# the value's type, which is not checked for a disabled Environment, so the template is valid.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: DisabledEnvListFormatString
+parameterDefinitions:
+- name: Use
+  type: STRING
+  allowedValues: ["yes", "no"]
+  default: "yes"
+jobEnvironments:
+- name: Lic
+  activation: ON_REQUEST
+  enableIf: false
+  envParameterDefinitions:
+  - name: Products
+    type: LIST[STRING]
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Lic, "Count={{len(Env.Param.Products)}}"]
+steps:
+- name: A
+  dependencies:
+  - environment: Lic
+    parameters:
+      Products: "{{Param.Use}}-render"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

@@ -1,0 +1,18 @@
+# Template Schemas §4 item 7 (RFC 0010): an Environment Template's Environment may have an exclusiveGroup.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Conda
+  exclusiveGroup: SoftwareProvider
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: ""
+  enableIf: "Env.Param.Packages != ''"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Conda]

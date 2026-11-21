@@ -1,0 +1,42 @@
+# RFC 0010 / Template Schemas §3.3.3 ("A Step whose Sessions do not enter an
+# Environment ... because the entry is disabled, gets none of that
+# Environment's requirements"): the Step's only entry for an ON_REQUEST
+# Environment whose anyOf conflicts with the Step's own has an enableIf that
+# resolves to false, so there is no conflict and the Job runs without
+# entering the Environment.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: DisabledEntryRequirementsNotApplied
+  jobEnvironments:
+  - name: Gpu
+    activation: ON_REQUEST
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.flavor
+        anyOf: [b]
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Gpu]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Gpu
+      enableIf: "'Nope' in Job.EnvNames"
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.flavor
+        anyOf: [a]
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A
+  forbidden:
+  - ENTER Gpu

@@ -1,0 +1,87 @@
+# RFC 0010 / Template Schemas §4 item 4 (activation), §3.2 constraint 7, §7.6 rule 5, with RFC 0008 (single-layer
+# rule, §4.3 constraint 2): the Job Template lists WRAP_ACTIONS but not ENV_PARAMS, and each of its Steps has a
+# wrapping Step Environment. The attached Environment Template lists ENV_PARAMS, so Job creation takes the steps of
+# §7.4.1. A Job Environment or Environment Template from a document that does not list ENV_PARAMS behaves as ALWAYS,
+# but a Step Environment of such a document is still entered only by its own Step's Sessions. So A's Sessions have one
+# wrapping layer, WrapA, and B's have one, WrapB, and the Job runs. Counting WrapA in B's set (or WrapB in A's) would
+# give two wrapping layers and reject the Job.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [WRAP_ACTIONS, EXPR]
+  name: PreExtensionStepWrappersNotShared
+  steps:
+  - name: A
+    stepEnvironments:
+    - name: WrapA
+      script:
+        actions:
+          onEnter:
+            command: echo
+            args: [ENTER, WrapA]
+          onWrapEnvEnter:
+            command: bash
+            args:
+            - "-c"
+            - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+          onWrapTaskRun:
+            command: echo
+            args: [WRAP, WrapA]
+          onWrapEnvExit:
+            command: bash
+            args:
+            - "-c"
+            - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+  - name: B
+    dependencies:
+    - dependsOn: A
+    stepEnvironments:
+    - name: WrapB
+      script:
+        actions:
+          onEnter:
+            command: echo
+            args: [ENTER, WrapB]
+          onWrapEnvEnter:
+            command: bash
+            args:
+            - "-c"
+            - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+          onWrapTaskRun:
+            command: echo
+            args: [WRAP, WrapB]
+          onWrapEnvExit:
+            command: bash
+            args:
+            - "-c"
+            - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, B]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Attached
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Attached]
+runOn: [posix]
+expected:
+  output:
+  - ENTER Attached
+  - ENTER WrapA
+  - WRAP WrapA
+  - ENTER WrapB
+  - WRAP WrapB
+  forbidden:
+  - TASK A
+  - TASK B

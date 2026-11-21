@@ -1,0 +1,32 @@
+# RFC 0010 / Template Schemas §3.2.1 item 1, §3.2 constraint 6: a STRING "abc"
+# supplied to an attached Environment's INT parameter is rejected at job creation.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalValueWrongType
+  steps:
+  - name: A
+    dependencies:
+    - environment: Lic
+      parameters:
+        Seats: abc
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Lic
+    envParameterDefinitions:
+    - name: Seats
+      type: INT
+      default: 1
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Lic, "Seats={{Env.Param.Seats}}"]
+runOn: [posix, windows]

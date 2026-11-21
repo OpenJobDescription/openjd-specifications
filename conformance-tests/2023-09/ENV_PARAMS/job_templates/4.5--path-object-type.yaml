@@ -1,0 +1,29 @@
+# Template Schemas §4.5 (RFC 0010): objectType is permitted on a PATH Environment parameter, with the same
+# shape as on a <JobParameterDefinition> of that type; it is informational and does not change how the Job runs.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Dir
+  type: PATH
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: CacheDir
+    type: PATH
+    default: "{{RawParam.Dir}}"
+    objectType: DIRECTORY
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

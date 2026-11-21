@@ -1,0 +1,35 @@
+# RFC 0010 / Template Schemas §3.2 *enableIf* and §3.2.1: Step A's entry for an attached ALWAYS Environment has an
+# enableIf that resolves to false when the Job is created. A disabled entry's name is still resolved, and no Step can
+# leave an ALWAYS Environment out, so the submission is rejected, naming A and Lic. (Lic's Product has no default, so
+# the Job would also fail constraint 7 if the entry were treated as absent.)
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: AttachedAllRequiredEntryDisabled
+  steps:
+  - name: A
+    dependencies:
+    - environment: Lic
+      enableIf: "'Nope' in Job.EnvNames"
+      parameters:
+        Product: arnold
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Lic
+    activation: ALWAYS
+    envParameterDefinitions:
+    - name: Product
+      type: STRING
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Lic, "Product={{Env.Param.Product}}"]
+runOn: [posix, windows]

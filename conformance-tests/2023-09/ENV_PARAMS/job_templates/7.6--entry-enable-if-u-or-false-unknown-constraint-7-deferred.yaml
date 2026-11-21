@@ -1,0 +1,31 @@
+# Template Schemas §7.6 rule 5 and Expression Language §2.1.6 (RFC 0010): at template validation the BOOL Job Parameter
+# F is unresolved[bool], U here. As JT-196 with the entry's enableIf "Param.F or false". U or false is U, so whether A
+# requests Lic is not known, and disabled the entry requests nothing: template validation reports nothing.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: UnknownEntryUOrFalse
+parameterDefinitions:
+- name: F
+  type: BOOL
+  default: true
+jobEnvironments:
+- name: Lic
+  activation: ON_REQUEST
+  envParameterDefinitions:
+  - name: Product
+    type: STRING
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Lic, "{{Env.Param.Product}}"]
+steps:
+- name: A
+  dependencies:
+  - environment: Lic
+    enableIf: "Param.F or false"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

@@ -1,0 +1,25 @@
+# Template Schemas §7.3.2 (RFC 0010): Task.* is not available in a Step Environment's
+# enableIf, which is decided once per Step when the Job is created.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: TestJob
+steps:
+- name: A
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Frame
+      type: INT
+      range: "1-2"
+  stepEnvironments:
+  - name: Scratch
+    enableIf: "Task.Param.Frame == 1"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Scratch]
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

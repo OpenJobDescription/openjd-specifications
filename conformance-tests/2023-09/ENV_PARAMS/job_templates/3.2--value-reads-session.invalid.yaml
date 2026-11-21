@@ -1,0 +1,29 @@
+# Template Schemas §3.2 <EnvironmentParameterValue> (RFC 0010): Session.* is not available in a
+# parameters value.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Tag
+    type: STRING
+    default: none
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  dependencies:
+  - environment: Conda
+    parameters:
+      Tag: "{{Session.WorkingDirectory}}"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

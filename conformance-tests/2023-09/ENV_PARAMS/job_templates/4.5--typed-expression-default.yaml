@@ -1,0 +1,29 @@
+# Template Schemas §4.5 item 1 (RFC 0010): with EXPR, a default that is a single {{ }} expression is
+# evaluated with the parameter's type as its target type, so an INT default "{{ Param.N + 1 }}" is valid.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: N
+  type: INT
+  default: 1
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Threads
+    type: INT
+    default: "{{ Param.N + 1 }}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

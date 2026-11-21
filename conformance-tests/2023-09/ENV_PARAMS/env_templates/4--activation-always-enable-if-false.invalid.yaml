@@ -1,0 +1,15 @@
+# Template Schemas §4 item 4 and item 6, §3.2.2 item 6 (RFC 0010): an Environment Template whose Environment has
+# activation: ALWAYS and the literal enableIf: false is rejected at template validation, as for a Job Environment.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Lic
+  activation: ALWAYS
+  enableIf: false
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Lic]

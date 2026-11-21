@@ -1,0 +1,25 @@
+# Template Schemas §2.10: minLength and maxLength of a RANGE_EXPR are checked against the value as written (and, with
+# ENV_PARAMS, also its canonical form). "1,2,3" is 5 characters, longer than maxLength 3, although its canonical form "1-3" fits, so
+# job creation fails.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [EXPR]
+  name: RangeExprMaxLengthAsWritten
+  parameterDefinitions:
+  - name: Frames
+    type: RANGE_EXPR
+    maxLength: 3
+  steps:
+  - name: A
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: INT
+        range: "{{Param.Frames}}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: ["{{Task.Param.Frame}}"]
+parameters:
+  Frames: "1,2,3"

@@ -1,0 +1,34 @@
+# RFC 0010 §Backward compatibility, Template Schemas §1.2 item 3: a Job
+# Template that does not list ENV_PARAMS cannot request anything, so an
+# attached ON_REQUEST Environment is never entered by its Sessions.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WithoutExtensionSkipsOnRequest
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    activation: ON_REQUEST
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: pkgdefault
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A
+  forbidden:
+  - ENTER Conda

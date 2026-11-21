@@ -1,0 +1,30 @@
+# RFC 0010 / Template Schemas §3.2 constraint 5 (RFC §Backward compatibility):
+# an entry without parameters may name an attached Environment from a document
+# that does not list ENV_PARAMS; the Environment is entered as a BY_DEFAULT Environment.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalWithoutEnvParamsNoParameters
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  environment:
+    name: Conda
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, legacy]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda legacy
+  - TASK A

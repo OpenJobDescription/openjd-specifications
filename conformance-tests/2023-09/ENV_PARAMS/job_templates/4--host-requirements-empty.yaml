@@ -1,0 +1,23 @@
+# Template Schemas §4 item 5 (RFC 0010) with §3.3 constraint 1: in a document that lists ENV_PARAMS,
+# constraint 1 does not apply, so an empty hostRequirements object on a Job Environment is valid and means
+# no requirements.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Gpu
+  hostRequirements: {}
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

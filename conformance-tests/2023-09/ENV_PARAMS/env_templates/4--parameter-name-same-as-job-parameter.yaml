@@ -1,0 +1,21 @@
+# Template Schemas §4 item 3 constraint 3 and §1.2.1 (RFC 0010): an Environment parameter may have the same
+# name as a Job Parameter of the same Environment Template; they do not conflict.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+parameterDefinitions:
+- name: Packages
+  type: STRING
+  default: numpy
+environment:
+  name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: "{{Param.Packages}}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]

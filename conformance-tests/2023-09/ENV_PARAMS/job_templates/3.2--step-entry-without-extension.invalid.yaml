@@ -1,0 +1,19 @@
+# Template Schemas §3.2 item 2 (RFC 0010): the step: form of <StepDependency> is available only with the
+# ENV_PARAMS extension. This Job Template lists no extensions, so the entry is rejected.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: First
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["first"]
+- name: Second
+  dependencies:
+  - step: First
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["second"]

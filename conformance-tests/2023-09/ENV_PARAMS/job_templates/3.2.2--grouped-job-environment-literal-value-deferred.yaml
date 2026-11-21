@@ -1,0 +1,33 @@
+# Template Schemas §3.2.2 item 1 and §4 (RFC 0010): whether a Job Environment with an exclusiveGroup is disabled for a
+# Step is known at template validation only where §4 says whether the Step's Sessions are known to enter it. Without
+# the Environment Templates to be attached, a grouped Job Environment is never known to be entered, because an attached
+# member of its group may come first and supersede it. So the Step's literal value outside allowedValues is not checked
+# at template validation, and the template is valid. Job creation rejects it when Conda is entered (JB-154 shows a
+# superseded Environment's values are not checked).
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: GroupedLiteralDeferred
+jobEnvironments:
+- name: Conda
+  exclusiveGroup: SoftwareProvider
+  envParameterDefinitions:
+  - name: Product
+    type: STRING
+    allowedValues: [arnold, redshift]
+    default: arnold
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, "{{Env.Param.Product}}"]
+steps:
+- name: A
+  dependencies:
+  - environment: Conda
+    parameters:
+      Product: vray
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK]

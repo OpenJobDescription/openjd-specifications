@@ -1,0 +1,42 @@
+# Template Schemas §4.5 item 5 (RFC 0010): the length limit is one of the parameter's constraints, so it is
+# not checked for a Step for which the Environment is disabled. The Environment's enableIf reads no parameter and is
+# false, so the 1200-character value is not an error, the Environment is not entered, and the Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: DisabledNotChecked
+  parameterDefinitions:
+  - name: Half
+    type: STRING
+    default: "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+  - name: F
+    type: BOOL
+    default: false
+  jobEnvironments:
+  - name: E
+    enableIf: "Param.F"
+    envParameterDefinitions:
+    - name: V
+      type: STRING
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, E, "VLEN={{ len(Env.Param.V) }}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: E
+      parameters:
+        V: "{{Param.Half}}{{Param.Half}}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A
+  forbidden:
+  - ENTER E

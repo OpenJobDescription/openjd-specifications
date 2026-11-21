@@ -1,0 +1,34 @@
+# Template Schemas §7.4.1 and §3.3 (RFC 0010): the attached Environment Template lists ENV_PARAMS and the Job Template
+# does not. Job creation takes the steps of §7.4.1, but a Step's own requirements in a Job Template that does not list
+# ENV_PARAMS keep the base rules, so the Step's amount whose min resolves to null is not discarded: an amount with
+# neither min nor max is an error, and the submission is rejected.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [EXPR, FEATURE_BUNDLE_1]
+  name: StepRequirementKept
+  parameterDefinitions:
+  - name: N
+    type: INT
+    default: 0
+  steps:
+  - name: A
+    hostRequirements:
+      amounts:
+      - name: conformance:amount.widgets
+        min: "{{ Param.N if Param.N > 0 else None }}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: E
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, E]
+runOn: [posix, windows]

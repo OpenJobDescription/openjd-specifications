@@ -1,0 +1,16 @@
+# Template Schemas §1.2 item 3 and §1.1 item 3 (RFC 0010): an Environment Template has the Job Template's extension
+# prerequisites, so listing ENV_PARAMS without EXPR is rejected.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+environment:
+  name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: ""
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]

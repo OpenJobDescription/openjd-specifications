@@ -1,0 +1,36 @@
+# Template Schemas §4.5 item 3 (RFC 0010): an Environment parameter PATH value is used as given. It is not required
+# to be absolute or to have any path format, and Env.RawParam reads it unchanged.
+# A relative path written with backslashes, relative\dir, is accepted.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: PathValueAsGiven
+  steps:
+  - name: A
+    dependencies:
+    - environment: Mnt
+      parameters:
+        Dir: "relative\\dir"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Mnt
+    envParameterDefinitions:
+    - name: Dir
+      type: PATH
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Mnt, "Dir={{Env.RawParam.Dir}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - "ENTER Mnt Dir=relative\\dir"
+  - TASK A

@@ -1,0 +1,30 @@
+# Template Schemas §3.3.2 and §3.3.2.2 (RFC 0010): each element of the list result of an anyOf written as one
+# expression must be an <AttributeCapabilityValue>. The Environment's anyOf resolves to [a, "has space"], whose second
+# element has a character that is not allowed, so the submission is rejected at job creation.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: AnyOfExpressionInvalidElement
+  jobEnvironments:
+  - name: Hw
+    envParameterDefinitions:
+    - name: Flavor
+      type: STRING
+      default: has space
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.flavor
+        anyOf: "{{ ['a', Env.Param.Flavor] }}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Hw]
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]

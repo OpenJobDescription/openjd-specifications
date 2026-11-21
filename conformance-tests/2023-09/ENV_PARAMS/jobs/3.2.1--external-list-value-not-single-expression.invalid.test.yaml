@@ -1,0 +1,33 @@
+# RFC 0010 / Template Schemas §3.2 (<EnvironmentParameterValue>: "a list-typed
+# parameter has no string form"): a format string other than one {{ }}
+# expression for an attached LIST[STRING] parameter is rejected at job creation.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalListValueNotSingleExpression
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      parameters:
+        Items: "x{{ 'a' }}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    envParameterDefinitions:
+    - name: Items
+      type: LIST[STRING]
+      default: []
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Items={{ Env.Param.Items.join(',') }}"]
+runOn: [posix, windows]

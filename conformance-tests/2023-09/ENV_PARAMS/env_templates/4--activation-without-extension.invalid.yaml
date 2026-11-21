@@ -1,0 +1,11 @@
+# Template Schemas §4 item 4 and §1.2 item 3 (RFC 0010): activation requires ENV_PARAMS in the document that
+# contains it. This Environment Template lists no extensions.
+specificationVersion: environment-2023-09
+environment:
+  name: Conda
+  activation: ON_REQUEST
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]

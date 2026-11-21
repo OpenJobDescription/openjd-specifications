@@ -1,0 +1,30 @@
+# Template Schemas §7.6 rule 5 and §4 item 4 (RFC 0010): the template of JT-195. Its enableIf "Param.F and true" is
+# not known at template validation, which reports nothing. With F false it evaluates to false for Step A when the Job
+# is created, and an ALWAYS Environment cannot be disabled, so the Job is rejected then.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: UnknownUAndTrue
+  parameterDefinitions:
+  - name: F
+    type: BOOL
+    default: true
+  jobEnvironments:
+  - name: Audit
+    activation: ALWAYS
+    enableIf: "Param.F and true"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Audit]
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+parameters:
+  F: "false"
+runOn: [posix, windows]

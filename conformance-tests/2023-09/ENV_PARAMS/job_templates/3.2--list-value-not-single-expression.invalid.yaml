@@ -1,0 +1,34 @@
+# Template Schemas §3.2 <EnvironmentParameterValue> (RFC 0010): a list-typed parameter has no string form,
+# so its value must be a list literal or a single {{ }} expression. A format string with text around its
+# expression, for a Job Environment's LIST[STRING] parameter, is rejected at template validation.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Pkg
+  type: STRING
+  default: numpy
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Channels
+    type: LIST[STRING]
+    default: [conda-forge]
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  dependencies:
+  - environment: Conda
+    parameters:
+      Channels: "extra-{{Param.Pkg}}"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

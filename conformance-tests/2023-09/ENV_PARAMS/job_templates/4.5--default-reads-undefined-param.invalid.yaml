@@ -1,0 +1,26 @@
+# Template Schemas §4.5 item 1 (RFC 0010): a default may reference only Job Parameters defined in the
+# top-level parameterDefinitions of the same document, so one reading an undefined Job Parameter is
+# rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: "{{Param.CondaPackages}}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

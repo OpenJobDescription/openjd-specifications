@@ -1,0 +1,29 @@
+# Template Schemas §3.2 <EnvironmentParameterValue> (RFC 0010): an INT value may be written as an integer
+# or an <intstring>, so the string "1" is a valid INT value.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: License
+  envParameterDefinitions:
+  - name: Seats
+    type: INT
+    default: 1
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  dependencies:
+  - environment: License
+    parameters:
+      Seats: "1"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

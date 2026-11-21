@@ -1,0 +1,61 @@
+# RFC 0010 / Template Schemas §3.2.2 (equal values): an expression that only copies a FLOAT keeps its text (Expression
+# Language §1.3.4), so Step A's "{{Param.PythonVersion}}", with the Job Parameter's default "3.10", is 3.10, and Step
+# B's "3.1" is not equal to it. B's Task does not run in the Environment entered with A's value, and A's Task sees
+# 3.10, not 3.1.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: FloatCopiedByExpression
+  parameterDefinitions:
+  - name: PythonVersion
+    type: FLOAT
+    default: "3.10"
+  jobEnvironments:
+  - name: Py
+    envParameterDefinitions:
+    - name: Version
+      type: FLOAT
+    variables:
+      PY_VERSION: "{{Env.Param.Version}}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Py, "Version=[{{Env.Param.Version}}]"]
+        onExit:
+          command: echo
+          args: [EXIT, Py, "Version=[{{Env.Param.Version}}]"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Py
+      parameters:
+        Version: "{{Param.PythonVersion}}"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_A_VERSION=['+os.environ['PY_VERSION']+']')"]
+  - name: B
+    dependencies:
+    - dependsOn: A
+    - environment: Py
+      parameters:
+        Version: "3.1"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_B_VERSION=['+os.environ['PY_VERSION']+']')"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Py Version=[3.10]
+  - EXIT Py Version=[3.10]
+  - ENTER Py Version=[3.1]
+  - EXIT Py Version=[3.1]
+  - TASK_A_VERSION=[3.10]
+  - TASK_B_VERSION=[3.1]
+  forbidden:
+  - TASK_B_VERSION=[3.10]
+  - TASK_A_VERSION=[3.1]

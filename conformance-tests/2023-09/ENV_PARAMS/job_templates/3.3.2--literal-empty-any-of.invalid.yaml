@@ -1,0 +1,19 @@
+# Template Schemas §3.3 and §3.3.2 (RFC 0010): literal text keeps the base rules under ENV_PARAMS, so an
+# attribute written with an empty anyOf list is rejected at template validation. Only an anyOf written as
+# one expression that resolves to null is omitted (§3.3.2).
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+steps:
+- name: Render
+  hostRequirements:
+    attributes:
+    - name: conformance:attr.flavor
+      anyOf: []
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

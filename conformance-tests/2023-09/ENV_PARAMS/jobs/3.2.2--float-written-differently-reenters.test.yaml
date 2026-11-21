@@ -1,0 +1,56 @@
+# RFC 0010 / Template Schemas §3.2.2 (equal values, Session sharing): a FLOAT keeps the text it was written with, so
+# Step A's "3.10" and Step B's "3.1" are not equal although they are the same number. Step B's Task must not run in the
+# Environment entered with A's value: whether the Session enters the Environment again or B runs in another Session,
+# the Environment is entered with "3.1" for B, and B's Task sees 3.1 through the Environment's variables.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: FloatWrittenDifferently
+  jobEnvironments:
+  - name: Py
+    envParameterDefinitions:
+    - name: Version
+      type: FLOAT
+    variables:
+      PY_VERSION: "{{Env.Param.Version}}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Py, "Version=[{{Env.Param.Version}}]"]
+        onExit:
+          command: echo
+          args: [EXIT, Py, "Version=[{{Env.Param.Version}}]"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Py
+      parameters:
+        Version: "3.10"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_A_VERSION=['+os.environ['PY_VERSION']+']')"]
+  - name: B
+    dependencies:
+    - dependsOn: A
+    - environment: Py
+      parameters:
+        Version: "3.1"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_B_VERSION=['+os.environ['PY_VERSION']+']')"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Py Version=[3.10]
+  - EXIT Py Version=[3.10]
+  - ENTER Py Version=[3.1]
+  - EXIT Py Version=[3.1]
+  - TASK_A_VERSION=[3.10]
+  - TASK_B_VERSION=[3.1]
+  forbidden:
+  - TASK_B_VERSION=[3.10]

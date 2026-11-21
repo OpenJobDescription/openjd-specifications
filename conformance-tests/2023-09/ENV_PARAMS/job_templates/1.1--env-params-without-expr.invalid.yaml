@@ -1,0 +1,24 @@
+# Template Schemas §1.1 item 3 (RFC 0010): a document that lists ENV_PARAMS must also list EXPR. This Job Template
+# lists ENV_PARAMS alone and uses only a STRING Environment parameter, so the missing EXPR is the only error.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: ""
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

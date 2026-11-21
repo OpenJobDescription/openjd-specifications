@@ -1,0 +1,32 @@
+# Template Schemas §3.2.2 (RFC 0010): being disabled for a Step affects only which Sessions enter an Environment and
+# the checks of the Step's effective values. The Environment's other fields resolved when the Job is created are
+# resolved and checked as without the extension. The Job Environment's enableIf is false for every Step, and its
+# onEnter timeout resolves to 0, which is an error; the submission is rejected.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR, FEATURE_BUNDLE_1]
+  name: DisabledTimeoutChecked
+  parameterDefinitions:
+  - name: T
+    type: INT
+    default: 0
+  - name: F
+    type: BOOL
+    default: false
+  jobEnvironments:
+  - name: E
+    enableIf: "Param.F"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, E]
+          timeout: "{{Param.T}}"
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]

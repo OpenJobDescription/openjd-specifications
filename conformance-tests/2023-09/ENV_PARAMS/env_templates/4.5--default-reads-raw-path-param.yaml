@@ -1,0 +1,20 @@
+# Template Schemas §4.5 item 1 (RFC 0010): a default may reference RawParam.* of any Job Parameter of the
+# same document, including one of type PATH.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+parameterDefinitions:
+- name: Dir
+  type: PATH
+environment:
+  name: Conda
+  envParameterDefinitions:
+  - name: CacheDir
+    type: PATH
+    default: "{{RawParam.Dir}}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]

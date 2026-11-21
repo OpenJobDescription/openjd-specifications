@@ -1,0 +1,44 @@
+# RFC 0010 / Template Schemas §3.2.1 item 1, §7.4.1 step 5: the parameters of a
+# required: false entry to an attached Environment that declares none are
+# ignored and not resolved, so a value that would fail to resolve (an index out
+# of range) is not an error, and the Environment is entered.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalWithoutEnvParamsUnresolvableValueIgnored
+  parameterDefinitions:
+  - name: L
+    type: LIST[INT]
+    default: [1]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      required: false
+      parameters:
+        Packages: "{{ Param.L[5] }}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: CondaPackages
+    type: STRING
+    default: ""
+  environment:
+    name: Conda
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "CondaPackages={{Param.CondaPackages}}"]
+parameters:
+  CondaPackages: ffmpeg=6
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda CondaPackages=ffmpeg=6
+  - TASK A

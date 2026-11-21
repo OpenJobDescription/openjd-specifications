@@ -1,0 +1,41 @@
+# RFC 0010 / Template Schemas §7.3.1 Job.EnvNames (available in a Step let,
+# §3.6.2), §3.2 (<EnvironmentParameterValue> scope):
+# a Step let binding that reads Job.EnvNames feeds a parameters value, which
+# the Environment's onEnter prints.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnvNamesInStepLet
+  jobEnvironments:
+  - name: Lic
+    envParameterDefinitions:
+    - name: Label
+      type: STRING
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Lic, "Label={{Env.Param.Label}}"]
+  - name: Other
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Other]
+  steps:
+  - name: A
+    let:
+    - names = Job.EnvNames.join('+')
+    dependencies:
+    - environment: Lic
+      parameters:
+        Label: "{{ names }}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Lic Label=Lic+Other

@@ -1,0 +1,30 @@
+# Template Schemas §4.5 "A default is checked" item 1 (RFC 0010): a literal default outside allowedValues
+# is an error at template validation even when every Step supplies the parameter.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: License
+  envParameterDefinitions:
+  - name: Renderer
+    type: STRING
+    allowedValues: [arnold, redshift]
+    default: karma
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  dependencies:
+  - environment: License
+    parameters:
+      Renderer: arnold
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

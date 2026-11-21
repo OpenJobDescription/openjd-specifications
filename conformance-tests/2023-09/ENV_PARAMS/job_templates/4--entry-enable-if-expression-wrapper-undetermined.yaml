@@ -1,0 +1,62 @@
+# Template Schemas §3.2 (checked-at paragraph), §4 item 6 (enableIf tail), and §7.6 rule 5, with RFC 0008
+# (single-layer rule): Always is a BY_DEFAULT wrapping Environment; OnRequest is an ON_REQUEST wrapping Environment
+# that Step A requests through an entry whose enableIf is an expression. The entry is undetermined at template
+# validation, so A's Sessions may or may not enter OnRequest, and template validation reports no error.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, WRAP_ACTIONS, EXPR]
+name: EntryWrapperUndetermined
+parameterDefinitions:
+- name: Use
+  type: STRING
+  allowedValues: ["yes", "no"]
+  default: "yes"
+jobEnvironments:
+- name: Always
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Always]
+      onWrapEnvEnter:
+        command: bash
+        args:
+        - "-c"
+        - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+      onWrapTaskRun:
+        command: echo
+        args: [WRAP, Always]
+      onWrapEnvExit:
+        command: bash
+        args:
+        - "-c"
+        - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+- name: OnRequest
+  activation: ON_REQUEST
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, OnRequest]
+      onWrapEnvEnter:
+        command: bash
+        args:
+        - "-c"
+        - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+      onWrapTaskRun:
+        command: echo
+        args: [WRAP, OnRequest]
+      onWrapEnvExit:
+        command: bash
+        args:
+        - "-c"
+        - "{{ repr_sh(WrappedAction.Command) }} {{ repr_sh(WrappedAction.Args) }}"
+steps:
+- name: A
+  dependencies:
+  - environment: OnRequest
+    enableIf: "Param.Use == 'yes'"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

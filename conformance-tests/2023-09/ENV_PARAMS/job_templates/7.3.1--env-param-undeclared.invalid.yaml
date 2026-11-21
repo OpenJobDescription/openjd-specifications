@@ -1,0 +1,25 @@
+# Template Schemas §7.3.1 (RFC 0010): a reference to Env.Param.<name> that does not name a parameter of the
+# enclosing Environment is a template validation error. Conda declares Packages, not Channels.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Channels}}"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

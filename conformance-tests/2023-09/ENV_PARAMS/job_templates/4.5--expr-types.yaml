@@ -1,0 +1,43 @@
+# Template Schemas §4.5 (RFC 0010): with the EXPR extension, an Environment parameter may have type
+# BOOL or any LIST type available to Job Parameters, including LIST[PATH].
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Tool
+  envParameterDefinitions:
+  - name: Verbose
+    type: BOOL
+    default: false
+  - name: Channels
+    type: LIST[STRING]
+    default: [conda-forge]
+  - name: Mounts
+    type: LIST[PATH]
+    default: []
+  - name: Ports
+    type: LIST[INT]
+    default: [8080]
+  - name: Weights
+    type: LIST[FLOAT]
+    default: [0.5]
+  - name: Flags
+    type: LIST[BOOL]
+    default: [true]
+  - name: Grid
+    type: LIST[LIST[INT]]
+    default: [[1, 2]]
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

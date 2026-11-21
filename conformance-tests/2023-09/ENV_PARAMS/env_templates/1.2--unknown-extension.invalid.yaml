@@ -1,0 +1,12 @@
+# Template Schemas §1.2 item 3 (RFC 0010): an Environment Template's extensions have the same available
+# names as the Job Template, so an extension name the specification does not define is rejected.
+specificationVersion: environment-2023-09
+extensions:
+- NOT_A_REAL_EXTENSION
+environment:
+  name: Conda
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]

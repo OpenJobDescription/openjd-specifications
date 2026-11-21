@@ -1,0 +1,27 @@
+# Template Schemas §7.3.1 (RFC 0010; RFC 0008): a wrapping Environment's wrap hooks read the wrapping
+# Environment's own parameters through Env.Param.*, so onWrapTaskRun reading Env.Param.Image is valid.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- WRAP_ACTIONS
+- EXPR
+environment:
+  name: Docker
+  envParameterDefinitions:
+  - name: Image
+    type: STRING
+    default: ubuntu
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["pull", "{{Env.Param.Image}}"]
+      onWrapEnvEnter:
+        command: echo
+        args: ["wrap-enter", "{{WrappedEnv.Name}}"]
+      onWrapTaskRun:
+        command: echo
+        args: ["run", "{{Env.Param.Image}}", "{{WrappedAction.Command}}"]
+      onWrapEnvExit:
+        command: echo
+        args: ["wrap-exit", "{{WrappedEnv.Name}}"]

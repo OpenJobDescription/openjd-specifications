@@ -1,0 +1,54 @@
+# RFC 0010 / Template Schemas §1.2.1 (added paragraph), §4 item 3 constraint 3:
+# Environment parameters are never merged with Job Parameters or with each
+# other. A Job Parameter and two Environments' parameters all named Packages
+# keep three distinct values.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnvParametersNotMerged
+  parameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: jobparam
+  jobEnvironments:
+  - name: EnvA
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: adefault
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, EnvA, "Packages={{Env.Param.Packages}}"]
+  - name: EnvB
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: bdefault
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, EnvB, "Packages={{Env.Param.Packages}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: EnvA
+      parameters:
+        Packages: avalue
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A, "Packages={{Param.Packages}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER EnvA Packages=avalue
+  - ENTER EnvB Packages=bdefault
+  - TASK A Packages=jobparam
+  forbidden:
+  - ENTER EnvB Packages=avalue
+  - ENTER EnvA Packages=jobparam
+  - ENTER EnvB Packages=jobparam

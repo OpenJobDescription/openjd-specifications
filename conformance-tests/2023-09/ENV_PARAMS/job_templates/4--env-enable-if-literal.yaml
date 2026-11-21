@@ -1,0 +1,24 @@
+# Template Schemas §4 item 6 (RFC 0010): with ENV_PARAMS and EXPR, a Job Environment may carry enableIf as a
+# boolean literal.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: ""
+  enableIf: false
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+steps:
+- name: A
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

@@ -1,0 +1,41 @@
+# Template Schemas §3.2.2 and §4 (RFC 0010) with REDACTED_ENV_VARS: an Environment's onEnter sets a redacted variable
+# from its own parameter, and a Task that prints the variable sees it redacted. REDACTED_ENV_VARS redacts the
+# variable's value from then on; it does not hide the effective value, which is part of the Job, so this test asserts
+# only the redacted line.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR, REDACTED_ENV_VARS]
+  name: RedactedFromEnvParam
+  jobEnvironments:
+  - name: Tokens
+    envParameterDefinitions:
+    - name: Token
+      type: STRING
+      default: unset
+    script:
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - "import sys; print('openjd_redacted_env: TOK=' + sys.argv[1])"
+          - "{{Env.Param.Token}}"
+  steps:
+  - name: A
+    dependencies:
+    - environment: Tokens
+      parameters:
+        Token: abcdefghij
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - import os; print('TASK_TOK:' + os.environ['TOK'])
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK_TOK:********
+  forbidden:
+  - TASK_TOK:abcdefghij

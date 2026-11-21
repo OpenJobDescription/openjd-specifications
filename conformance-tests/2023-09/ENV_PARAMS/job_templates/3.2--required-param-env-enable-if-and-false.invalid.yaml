@@ -1,0 +1,29 @@
+# Template Schemas §3.2 constraint 7 and §3.2.2 (RFC 0010): the Job Environment E is BY_DEFAULT, so it applies to Step
+# A, which has no entry for it and does not supply X, a parameter without default. That is an error in A's definition
+# whatever E's enableIf is, so the template is rejected. The enableIf would be false whatever X is, because its first
+# operand, "not Param.F", is false with F's default, but it is never evaluated with a missing value.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: RequiredParamEnableIfAndFalse
+parameterDefinitions:
+- name: F
+  type: BOOL
+  default: true
+jobEnvironments:
+- name: E
+  enableIf: "not Param.F and Env.Param.X == 'a'"
+  envParameterDefinitions:
+  - name: X
+    type: STRING
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, E]
+steps:
+- name: A
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

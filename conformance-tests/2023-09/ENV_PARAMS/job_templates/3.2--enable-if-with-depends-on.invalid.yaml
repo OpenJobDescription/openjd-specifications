@@ -1,0 +1,34 @@
+# Template Schemas §3.2 constraint 1 (RFC 0010): enableIf is permitted only with environment, so enableIf
+# on a dependsOn entry is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]
+steps:
+- name: First
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["first"]
+- name: Render
+  dependencies:
+  - dependsOn: First
+    enableIf: true
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

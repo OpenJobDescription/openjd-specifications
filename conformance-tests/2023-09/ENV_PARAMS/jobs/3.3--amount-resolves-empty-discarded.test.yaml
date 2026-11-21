@@ -1,0 +1,26 @@
+# Template Schemas §3.3 (RFC 0010): with ENV_PARAMS, an amount whose min and max both resolve to null
+# is discarded at job creation rather than rejected. The Step's only amount has a FEATURE_BUNDLE_1
+# format-string min that resolves to null when Gpus is empty, and no max, so the Job is created and runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR, FEATURE_BUNDLE_1]
+  name: AmountResolvesEmpty
+  parameterDefinitions:
+  - name: Gpus
+    type: STRING
+    default: ""
+  steps:
+  - name: Render
+    hostRequirements:
+      amounts:
+      - name: conformance:amount.widgets
+        min: "{{ 1 if Param.Gpus != '' else None }}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, Render]
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK Render

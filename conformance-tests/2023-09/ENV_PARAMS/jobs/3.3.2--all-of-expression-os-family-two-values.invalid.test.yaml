@@ -1,0 +1,23 @@
+# Template Schemas §3.3.2.1 (RFC 0010): a host has exactly one value of attr.worker.os.family, so an allOf for
+# it has at most one value. Here the allOf is one expression, which template validation cannot count; it
+# resolves to [linux, windows] when the Job is created, and the submission is rejected.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: AllOfExpressionOsFamilyTwoValues
+  parameterDefinitions:
+  - name: Second
+    type: STRING
+    default: windows
+  steps:
+  - name: Render
+    hostRequirements:
+      attributes:
+      - name: attr.worker.os.family
+        allOf: "{{ ['linux', Param.Second] }}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, Render]
+runOn: [posix, windows]

@@ -1,0 +1,41 @@
+# Template Schemas §3.3 and §3.3.3 (RFC 0010): the discard rule applies to an Environment's
+# hostRequirements as to a Step's. An attached Environment's only requirement, an amount whose
+# FEATURE_BUNDLE_1 format-string min resolves to null for a Step that supplies no Gpus, is discarded,
+# the Environment adds no requirements, and the Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnvironmentRequirementsResolveEmpty
+  steps:
+  - name: Render
+    dependencies:
+    - environment: Gpu
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, Render]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR, FEATURE_BUNDLE_1]
+  environment:
+    name: Gpu
+    activation: ON_REQUEST
+    envParameterDefinitions:
+    - name: Gpus
+      type: STRING
+      default: ""
+    hostRequirements:
+      amounts:
+      - name: conformance:amount.gpu
+        min: "{{ 1 if Env.Param.Gpus != '' else None }}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Gpu]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Gpu
+  - TASK Render

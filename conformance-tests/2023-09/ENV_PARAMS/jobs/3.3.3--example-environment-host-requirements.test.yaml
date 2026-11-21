@@ -1,0 +1,69 @@
+# RFC 0010 §Basic Examples, "An Environment that states what hosts it needs"
+# (Template Schemas §4 hostRequirements, §3.3.3): an attached Docker
+# Environment's amount min "{{ 1 if Env.Param.Gpus != '' else None }}" resolves per
+# Step. For Train (Gpus: all, own min 1) it is 1; for Prep (no Gpus) it is null, so
+# the amount has neither bound and is discarded (§3.3). Both Steps' combined
+# requirements are free of conflicts, so the Job is created and both Steps run. Custom
+# capability names stand in for attr.worker.os.family and amount.worker.gpu.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnvironmentHostRequirements
+  steps:
+  - name: Prep
+    dependencies:
+    - environment: Docker
+      parameters:
+        Image: slim
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, Prep]
+  - name: Train
+    dependencies:
+    - dependsOn: Prep
+    - environment: Docker
+      parameters:
+        Image: cuda
+        Gpus: all
+    hostRequirements:
+      amounts:
+      - name: conformance:amount.gpu
+        min: 1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, Train]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR, FEATURE_BUNDLE_1]
+  environment:
+    name: Docker
+    activation: ON_REQUEST
+    envParameterDefinitions:
+    - name: Image
+      type: STRING
+    - name: Gpus
+      type: STRING
+      default: ""
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.os
+        anyOf: [linux]
+      amounts:
+      - name: conformance:amount.gpu
+        min: "{{ 1 if Env.Param.Gpus != '' else None }}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Docker, "Image={{Env.Param.Image}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Docker Image=slim
+  - ENTER Docker Image=cuda
+  - TASK Prep
+  - TASK Train

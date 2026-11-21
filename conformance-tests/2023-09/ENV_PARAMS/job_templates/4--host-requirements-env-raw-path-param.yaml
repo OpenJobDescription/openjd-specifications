@@ -1,0 +1,33 @@
+# Template Schemas §7.3.2 (RFC 0010): an Environment's hostRequirements may reference its own
+# Env.RawParam.* of any type, as they may RawParam.* of a Job Parameter: Env.RawParam of a PATH parameter is its
+# unmapped string, known without a host.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Dir
+  type: PATH
+jobEnvironments:
+- name: Gpu
+  envParameterDefinitions:
+  - name: CacheDir
+    type: PATH
+    default: "{{RawParam.Dir}}"
+  hostRequirements:
+    attributes:
+    - name: conformance:attr.flavor
+      anyOf: ["{{Env.RawParam.CacheDir}}"]
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

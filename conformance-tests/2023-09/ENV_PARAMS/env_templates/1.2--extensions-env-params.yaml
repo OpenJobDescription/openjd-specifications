@@ -1,0 +1,17 @@
+# Template Schemas §1.2 item 3 and §4 item 3 (RFC 0010): an Environment Template may list ENV_PARAMS in
+# its extensions, and its environment may then declare and read parameters.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]

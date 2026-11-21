@@ -1,0 +1,19 @@
+# Template Schemas §4 item 4 (RFC 0010): activation is available only with the ENV_PARAMS extension.
+# This Job Template lists no extensions, so activation on its Job Environment is rejected.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+jobEnvironments:
+- name: Conda
+  activation: ON_REQUEST
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

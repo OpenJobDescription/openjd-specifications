@@ -1,0 +1,20 @@
+# Template Schemas §3.2 (RFC 0010): for an entry that names no jobEnvironments entry, template validation can check only
+# constraints 1-4, 8, and 9, and the form of each value, so it does not check the value against a parameter type. The
+# attached Environment may declare N as an INT, and "{{ abs('5') }}" resolves to 5 with that target type (Expression
+# Language §1.3.1), so the template is valid.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+steps:
+- name: Render
+  dependencies:
+  - environment: Lic
+    parameters:
+      N: "{{ abs('5') }}"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

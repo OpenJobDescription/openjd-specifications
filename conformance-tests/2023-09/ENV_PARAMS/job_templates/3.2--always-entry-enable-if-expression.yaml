@@ -1,0 +1,36 @@
+# Template Schemas §3.2 *enableIf* and §7.6 rule 5 (RFC 0010): a Step's disabled entry for an ALWAYS Environment is an
+# error, but an entry whose enableIf is an expression is not known to be disabled until the Job is created, so the
+# template is valid. JB-44 runs a Job of the same shape with a value for which the entry is disabled.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Mode
+  type: STRING
+  allowedValues: ["on", "off"]
+jobEnvironments:
+- name: Lic
+  activation: ALWAYS
+  envParameterDefinitions:
+  - name: Product
+    type: STRING
+    default: pdefault
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Product}}"]
+steps:
+- name: Render
+  dependencies:
+  - environment: Lic
+    enableIf: "Param.Mode == 'on'"
+    parameters:
+      Product: arnold
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

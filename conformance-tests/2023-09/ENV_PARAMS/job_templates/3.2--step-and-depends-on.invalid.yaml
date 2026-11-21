@@ -1,0 +1,24 @@
+# Template Schemas §3.2 constraint 1 (RFC 0010): exactly one of dependsOn, step, or environment must be
+# present in a <StepDependency>, so an entry with both step and dependsOn is rejected, even when they
+# name the same Step.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+steps:
+- name: First
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["first"]
+- name: Second
+  dependencies:
+  - step: First
+    dependsOn: First
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["second"]

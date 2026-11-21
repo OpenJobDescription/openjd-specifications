@@ -1,0 +1,24 @@
+# Template Schemas §3.2 item 2 (RFC 0010): a step: entry obeys every rule of the dependsOn: entry it is a
+# synonym of, so a step: entry and a dependsOn: entry naming the same Step are a duplicate dependency and
+# are rejected, as two dependsOn: entries naming one Step are.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+steps:
+- name: First
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["first"]
+- name: Second
+  dependencies:
+  - dependsOn: First
+  - step: First
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["second"]

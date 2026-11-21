@@ -1,0 +1,22 @@
+# Template Schemas §4 item 4 and item 6, §3.2.2 item 6 (RFC 0010): an Environment whose activation is ALWAYS
+# cannot be disabled, so its enableIf being false for a Step is an error. A literal false is known at template
+# validation (§7.6 rule 5), so the template is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: TestJob
+jobEnvironments:
+- name: Lic
+  activation: ALWAYS
+  enableIf: false
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Lic]
+steps:
+- name: A
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

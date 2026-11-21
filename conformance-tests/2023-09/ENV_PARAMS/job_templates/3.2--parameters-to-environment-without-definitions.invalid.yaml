@@ -1,0 +1,25 @@
+# Template Schemas §3.2 constraint 5 (RFC 0010): an Environment that declares no parameters rejects an
+# entry with any parameters.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  dependencies:
+  - environment: Conda
+    parameters:
+      Packages: ffmpeg
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

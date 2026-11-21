@@ -1,0 +1,30 @@
+# Template Schemas §3.3.2.1: an allOf for attr.worker.os.family has at most one element. A list of format strings is
+# checked after resolution, when the Job is created, because with EXPR an item that resolves to null is skipped
+# (Expression Language §1.3.2). Here one of the two items resolves to null, so the allOf has one value, and the Job
+# runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: X
+    type: BOOL
+    default: true
+  steps:
+  - name: Step1
+    hostRequirements:
+      attributes:
+      - name: attr.worker.os.family
+        allOf: ["{{ 'linux' if Param.X else null }}", "{{ 'windows' if not Param.X else null }}"]
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print('RAN')
+runOn: [posix]
+expected:
+  output:
+  - RAN

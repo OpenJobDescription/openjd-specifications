@@ -1,0 +1,42 @@
+# RFC 0010 / Template Schemas §3.2.1 item 1, §3.2 constraint 5 (RFC §Backward
+# compatibility): an attached Environment Template that does not list
+# ENV_PARAMS declares no parameters, so it ignores the parameters of a
+# required: false entry, as for Deadline Cloud's pre-extension Conda queue
+# environment. The Environment is entered, configured by its Job Parameter.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalWithoutEnvParamsSupplied
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      required: false
+      parameters:
+        Packages: ffmpeg=7
+        Channels: conda-forge
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: CondaPackages
+    type: STRING
+    default: ""
+  environment:
+    name: Conda
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "CondaPackages={{Param.CondaPackages}}"]
+parameters:
+  CondaPackages: ffmpeg=6
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda CondaPackages=ffmpeg=6
+  - TASK A

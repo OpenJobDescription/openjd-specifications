@@ -1,0 +1,29 @@
+# Template Schemas §7.3.2 (RFC 0010): an Environment's hostRequirements may reference the
+# Environment's own Env.Param.* of a type other than PATH or LIST[PATH].
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Gpu
+  envParameterDefinitions:
+  - name: Flavor
+    type: STRING
+    default: vanilla
+  hostRequirements:
+    attributes:
+    - name: conformance:attr.flavor
+      anyOf: ["{{Env.Param.Flavor}}"]
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

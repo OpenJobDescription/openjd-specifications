@@ -1,0 +1,15 @@
+# Template Schemas §4 item 7 constraint 1 (RFC 0010): an Environment whose activation is ALWAYS must not have an
+# exclusiveGroup, since the group could leave it out of a Step's Sessions.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Audit
+  activation: ALWAYS
+  exclusiveGroup: Setup
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Audit]

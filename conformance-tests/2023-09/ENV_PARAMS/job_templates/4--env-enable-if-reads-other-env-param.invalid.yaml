@@ -1,0 +1,31 @@
+# Template Schemas §7.3.2 and 3 (RFC 0010): an Environment's enableIf may read only its own
+# Env.Param.*. Here Gate reads Packages, which only Conda declares.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: ""
+  enableIf: true
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+- name: Gate
+  enableIf: "Env.Param.Packages != ''"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Gate]
+steps:
+- name: A
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

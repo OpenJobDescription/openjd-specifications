@@ -1,0 +1,28 @@
+# Template Schemas §7.3.1 Env.RawParam.<ParamName> (RFC 0010): Env.RawParam.* is available in the
+# declaring Environment's actions, including onExit.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+      onExit:
+        command: echo
+        args: ["{{Env.RawParam.Packages}}"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]
