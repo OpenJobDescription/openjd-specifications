@@ -1,0 +1,34 @@
+# Supplied FLOAT values exactly equal to minValue and maxValue are accepted (bounds are inclusive).
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: AtMin
+    type: FLOAT
+    minValue: 0.5
+    maxValue: 99.5
+  - name: AtMax
+    type: FLOAT
+    minValue: 0.5
+    maxValue: 99.5
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'BOUNDS:min={{Param.AtMin}},max={{Param.AtMax}}')
+parameters:
+  AtMin: 0.5
+  AtMax: 99.5
+# anyOf: the spec fixes no canonical float rendering; 0.5/99.5 are exactly
+# representable so shortest-round-trip implementations print them as
+# written, but a fixed-precision printer ("0.50") still honors the
+# inclusive bounds under test.
+expected:
+  output:
+  - anyOf:
+    - BOUNDS:min=0.5,max=99.5
+    - BOUNDS:min=0.50,max=99.50

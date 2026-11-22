@@ -1,0 +1,11 @@
+# A bare dot-free reference {{MyParam}} names no value defined in base scope and must be rejected.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "{{MyParam}}"
