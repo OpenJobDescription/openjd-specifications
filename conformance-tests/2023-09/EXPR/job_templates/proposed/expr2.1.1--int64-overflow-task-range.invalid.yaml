@@ -1,0 +1,22 @@
+# The int type is a 64-bit signed integer (Expression Language §1.2.1;
+# RFC 0005 "64-bit Signed Integer Type", dropped from the published form).
+# A task parameter range element of 2^63 = 9223372036854775808 is out of
+# range and must be rejected at template validation.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: TooBig
+      type: INT
+      range: "9223372036854775808"
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ Task.Param.TooBig }}')"

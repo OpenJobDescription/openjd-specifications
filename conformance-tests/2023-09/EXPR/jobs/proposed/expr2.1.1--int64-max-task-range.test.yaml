@@ -1,0 +1,27 @@
+# The int type is a 64-bit signed integer (Expression Language §1.2.1), so
+# 2^63-1 = 9223372036854775807 must be accepted as a task parameter range
+# element. This is the accept twin of expr2.1.1--int64-overflow-task-range;
+# the job-parameter accept twins live in
+# ../jobs/expr2.1.1--int64-max-param-values.test.yaml.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Big
+        type: INT
+        range: "9223372036854775807"
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - "print(r'TASK:{{ Task.Param.Big }}')"
+expected:
+  output:
+  - "TASK:9223372036854775807"
