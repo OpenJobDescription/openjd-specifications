@@ -1,0 +1,71 @@
+# RFC 0008 "Modifications to How Jobs Are Run": wrap hooks intercept the
+# lifecycle actions of EVERY inner environment — no fixture elsewhere
+# stacks two inner environments under one wrap env. Both inner envs'
+# onEnter and onExit must each be replaced by the corresponding hook, with
+# WrappedEnv.Name carrying the right environment name on each invocation.
+# Catches a runtime that wraps only the first (or last) inner env, or that
+# caches WrappedEnv.Name across invocations. Membership assertions only —
+# the runner cannot assert order, so LIFO exit sequencing is pinned
+# separately (wrap-openjd-env-grand-child-under-exit-hook).
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapTwoInnerEnvsWrappedEnvNamePerInvocation
+  jobEnvironments:
+  - name: EnvAlpha
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('ALPHA_ENTER_BODY')"]
+        onExit:
+          command: python
+          args: ["-c", "print('ALPHA_EXIT_BODY')"]
+  - name: EnvBeta
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print('BETA_ENTER_BODY')"]
+        onExit:
+          command: python
+          args: ["-c", "print('BETA_EXIT_BODY')"]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_BODY_RAN')"]
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        # Print-only hooks: the wrapped bodies are replaced and NOT
+        # executed, so the *_BODY sentinels must not appear.
+        onWrapEnvEnter:
+          command: python
+          args: ["-c", "print('WENTER='+{{repr_py(WrappedEnv.Name)}})"]
+        onWrapTaskRun:
+          command: python
+          args: ["-c", "print('WTASK_RAN')"]
+        onWrapEnvExit:
+          command: python
+          args: ["-c", "print('WEXIT='+{{repr_py(WrappedEnv.Name)}})"]
+expected:
+  output:
+  - WENTER=EnvAlpha
+  - WENTER=EnvBeta
+  - WEXIT=EnvAlpha
+  - WEXIT=EnvBeta
+  - WTASK_RAN
+  forbidden:
+  - ALPHA_ENTER_BODY
+  - BETA_ENTER_BODY
+  - ALPHA_EXIT_BODY
+  - BETA_EXIT_BODY
+  - TASK_BODY_RAN

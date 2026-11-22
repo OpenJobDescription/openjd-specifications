@@ -1,0 +1,22 @@
+# RFC 0008 "Failure semantics" (parity control): "The session handles
+# each failure exactly as it would in the unwrapped case." This is the
+# UNWRAPPED twin of wrap-exit-status-python — the same failing task (exit
+# 42) with no wrap environment at all. The pair pins the parity claim:
+# both runs must surface a task failure with the identical exit code. A
+# divergence in either direction (wrap layer altering the code, or the
+# unwrapped baseline behaving differently than the wrapped fixture
+# assumes) breaks exactly one of the two fixtures and points at the side
+# that changed.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapUnwrappedParityTaskFailure
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import sys; sys.exit(42)"]
+expected:
+  taskFailure:
+    exitCode: 42

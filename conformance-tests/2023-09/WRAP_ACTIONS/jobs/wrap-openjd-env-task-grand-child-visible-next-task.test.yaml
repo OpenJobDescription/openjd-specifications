@@ -1,0 +1,63 @@
+# RFC 0008 "Stdout forwarding and macro propagation": the runtime MUST
+# include in WrappedAction.Environment every openjd_env-defined variable
+# emitted by ANY earlier action in the same session — including a task's
+# onRun that ran via onWrapTaskRun. Task 1's grand-child exports a
+# variable; task 2's wrap hook must see it in WrappedAction.Environment.
+# Catches a runtime that only harvests macros from environment lifecycle
+# actions, or that rebuilds the forwarded list per step rather than
+# accumulating per session. The forbidden: line additionally pins that
+# each hook's variable snapshot is taken before its own wrapped action
+# runs (TASK2_VAR is exported by the last task, so no later dump can
+# contain it).
+#
+# ASSUMPTION: tasks execute in ascending parameter order (1 then 2). The
+# spec leaves task scheduling order to the scheduler; every known runner
+# executes a single-session range in ascending order, but a conformant
+# scheduler running tasks reversed would falsely fail this fixture (it
+# would not wrongly pass).
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapOpenjdEnvTaskGrandChildVisibleNextTask
+  steps:
+  - name: Step1
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: N
+        type: INT
+        range: [1, 2]
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('openjd_env: TASK{{Task.Param.N}}_VAR=set-by-task-{{Task.Param.N}}')"]
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        # Dump the forwarded variables, then run the wrapped task so its
+        # macro is forwarded through this script's stdout.
+        onWrapTaskRun:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys\nfor e in {{repr_py(WrappedAction.Environment)}}:\n print('WAENV='+e)\nsys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        onWrapEnvExit:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+expected:
+  output:
+  - WAENV=TASK1_VAR=set-by-task-1
+  forbidden:
+  - WAENV=TASK2_VAR

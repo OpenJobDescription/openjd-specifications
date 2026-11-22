@@ -160,6 +160,53 @@ rule beyond action args (`env_templates/`):
     └── 4--wrappedaction-in-embedded-file.invalid.yaml
 ```
 
+A second audit round added fixtures for the remaining coverage gaps
+(RFC 0008 test-coverage review):
+
+```
+WRAP_ACTIONS/
+├── env_templates/
+│   │  # Variable scope negatives (RFC §Template variables)
+│   ├── 4--wrappedenv-name-in-onwraptaskrun.invalid.yaml
+│   ├── 4--wrappedstep-name-in-onwrapenventer.invalid.yaml
+│   ├── 4--wrappedstep-name-in-onwrapenvexit.invalid.yaml
+│   ├── 4--wrappedaction-in-expr-funcall-outside-hook.invalid.yaml
+│   ├── 4--wrappedaction-in-let-outside-hook.invalid.yaml
+│   │  # All-or-nothing rule — remaining reject subsets
+│   ├── 4.3--wrap-only-onwrap-env-enter.invalid.yaml
+│   ├── 4.3--wrap-only-onwrap-env-exit.invalid.yaml
+│   ├── 4.3--wrap-enter-and-exit-missing-task-run.invalid.yaml
+│   ├── 4.3--wrap-run-and-exit-missing-enter.invalid.yaml
+│   │  # FEATURE_BUNDLE_1 accept-side twin of the gated-form rejects
+│   └── 4.2--wrap-fmtstring-timeout-and-mode-with-feature-bundle.yaml
+├── jobs/
+│   │  # Absent-by-design: host env vars excluded (RFC §Host environment
+│   │  # variables and embedded file paths)
+│   ├── wrap-environment-excludes-host-vars.test.yaml
+│   │  # Macro propagation × emitter (RFC §Stdout forwarding)
+│   ├── wrap-openjd-env-from-wrap-script-itself.test.yaml
+│   ├── wrap-openjd-env-task-grand-child-visible-next-task.test.yaml
+│   ├── wrap-openjd-env-grand-child-under-exit-hook.test.yaml
+│   ├── wrap-progress-status-macros-forwarded.test.yaml
+│   ├── wrap-stderr-forwarded-from-grand-child.test.yaml
+│   ├── wrap-discarded-grand-child-stdout-loses-macro.test.yaml
+│   │  # Nesting depth 2 and the nothing-to-replace rule
+│   ├── wrap-two-inner-envs-wrappedenv-name-per-invocation.test.yaml
+│   ├── wrap-variables-only-inner-env-skips-hooks.test.yaml
+│   │  # Failure-path breadth (RFC §Failure semantics, §Lifecycle)
+│   ├── wrap-failed-exit-hook-own-onexit-still-runs.test.yaml
+│   ├── wrap-grand-child-fails-under-enter-hook.test.yaml
+│   ├── wrap-unwrapped-parity-task-failure.test.yaml
+│   │  # Session composition (How Jobs Are Run)
+│   ├── wrap-two-steps-wrappedstep-name-per-step.test.yaml
+│   ├── wrap-job-env-wraps-step-env.test.yaml
+│   └── wrap-no-wrap-control.test.yaml
+```
+
+(A `jobs/proposed/` directory of spec-correct fixtures that fail against the
+current reference implementations is added separately by the
+expected-failures PR; it is documented there.)
+
 Most execution tests use POSIX shell commands (`sh`, `bash`, `echo`,
 `printf`) and are gated to `runOn: [posix]`. Fixtures that carry no
 `runOn` gate use `python`, the suite's portable interpreter — including
