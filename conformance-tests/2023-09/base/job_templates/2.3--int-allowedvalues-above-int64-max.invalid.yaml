@@ -1,0 +1,25 @@
+# Section 2.3 types INT properties as <integer> and states no bound. Both
+# reference implementations store INT as int64, the range the Expression
+# Language type table defines.
+#
+# Puts 9223372036854775808, one past int64 max, in allowedValues. The 2^63-1
+# accept twin is added by PR #161.
+#
+# Validation must refuse it. Both implementations accept it and keep an entry
+# that no supplied value can ever match.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: MyParam
+  type: INT
+  allowedValues:
+  - 9223372036854775808
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print('{{Param.MyParam}}')"

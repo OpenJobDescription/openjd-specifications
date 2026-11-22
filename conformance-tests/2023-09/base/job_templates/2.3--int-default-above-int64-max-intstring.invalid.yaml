@@ -1,0 +1,24 @@
+# Section 2.3 accepts an INT property as <integer> or as <intstring>, the
+# base-10 string form. Both forms denote the same value, so the same int64
+# bound applies to each.
+#
+# Sets default: "9223372036854775808" as a quoted string. The bare-integer
+# sibling is 2.3--int-default-above-int64-max.invalid.yaml.
+#
+# Validation must refuse it. An implementation that bounds only the bare-integer
+# form accepts the string and keeps the out-of-range value.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: MyParam
+  type: INT
+  default: "9223372036854775808"
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print('{{Param.MyParam}}')"
