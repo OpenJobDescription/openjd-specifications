@@ -2100,17 +2100,19 @@ Where:
    before the extension, such as one that a render management system attaches to every Job for licensing or auditing,
    and its `required: false` entries work whether or not an attached Environment lists the extension. In a Job Template
    that does not list `ENV_PARAMS`, no Step has an *environment* entry, and neither its Job Environments nor an attached
-   Environment from an Environment Template that does not list `ENV_PARAMS` can have an *enableIf*, so every Session of
-   the Job enters each of them, as without the extension. Each of them applies to every Step and, when Job creation
-   takes the steps of [§7.4.1](#741-job-creation-with-env_params), is in every Step's set (step 4). No other rule is
-   needed for them.
+   Environment from an Environment Template that does not list `ENV_PARAMS` can have an *activation* or an *enableIf*,
+   so every Session of the Job enters each of them, as without the extension. Each of them applies to every Step and,
+   when Job creation takes the steps of [§7.4.1](#741-job-creation-with-env_params), is in every Step's set (step 4). No
+   other rule is needed for them.
 
    A Session that does not enter an Environment does not enter or exit it, does not have its *variables* set, and does
    not have it in its Environment stack. The Environments a Session does enter keep their relative order. An Environment
-   whose *activation* is `ALWAYS` is entered by every Step's Sessions, or the Job is rejected. Each Environment that the
-   previous paragraph says every Session enters is entered by every Step's Sessions. So a check that depends on whether
-   a Step's Sessions enter any of these may treat it as entered. Such rules include the `WRAP_ACTIONS` single-layer rule
-   and the [Combined Host Requirements](#333-combined-host-requirements). Available with the `ENV_PARAMS` extension.
+   whose *activation* is `ALWAYS` is entered by every Step's Sessions, or the Job is rejected. An Environment without
+   `ENV_PARAMS` active is entered by every Step's Sessions, and so, in a Job Template that does not list `ENV_PARAMS`,
+   are its Job Environments and every attached Environment from an Environment Template that does not list it. So a
+   check that depends on whether a Step's Sessions enter any of these may treat it as entered. Such rules include the
+   `WRAP_ACTIONS` single-layer rule and the [Combined Host Requirements](#333-combined-host-requirements). Available
+   with the `ENV_PARAMS` extension.
    Constraints:
     1. An implementation must reject an `<EnvironmentActivation>` it does not recognize. The values are case-sensitive,
        as are this schema's other enumerated values except parameter type names. `always` and `On_Request` are not

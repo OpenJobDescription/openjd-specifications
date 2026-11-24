@@ -356,11 +356,12 @@ This RFC is additive and gated by the `ENV_PARAMS` extension name declared under
 - No existing field changes meaning. A Job with no `environment:` entries, no Environment `envParameterDefinitions`, no
   `activation`, and no Environment `enableIf` behaves as today, including which Environments each Session enters and how
   Sessions are shared between Steps. An attached Environment from an Environment Template that does not list
-  `ENV_PARAMS`, such as one written before this extension, is entered by every Session, as today (see
-  [Terminology](#terminology) and [Environment Templates without `ENV_PARAMS` are
-  `ALWAYS`](#environment-templates-without-env_params-are-always)). A Job Template that lists `ENV_PARAMS` but no
-  `environment:` entries, run with an Environment Template that declares parameters and keeps the default `activation`,
-  also shares Sessions as today: every Step takes the same defaults, so every Step's values are equal.
+  `ENV_PARAMS`, such as one written before this extension, is entered by every Session, as today, and so, in a Job
+  Template that does not list `ENV_PARAMS`, are its Job Environments (see [Terminology](#terminology) and [Environment
+  Templates without `ENV_PARAMS` are `ALWAYS`](#environment-templates-without-env_params-are-always)). A Job Template
+  that lists `ENV_PARAMS` but no `environment:` entries, run with an Environment Template that declares parameters and
+  keeps the default `activation`, also shares Sessions as today: every Step takes the same defaults, so every Step's
+  values are equal.
 - Adding `ENV_PARAMS` to a document changes how the *minLength* and *maxLength* of its existing RANGE_EXPR Job
   Parameters are checked: both the value as written and its canonical form must satisfy them
   ([§2.10](../wiki/2023-09-Template-Schemas.md#210-jobrangeexprparameterdefinition-extension-expr)). So a value that a
@@ -691,9 +692,10 @@ licensing, auditing, or security setup must be entered whatever a Job supplies.
 In a document that lists `ENV_PARAMS`, a Job Environment or Environment Template that omits `activation` is
 `BY_DEFAULT`, so that an author who writes an *enableIf* gets what it says without also writing `activation`. An
 Environment without `ENV_PARAMS` active behaves as `ALWAYS` (see [Terminology](#terminology) and [Environment Templates
-without `ENV_PARAMS` are `ALWAYS`](#environment-templates-without-env_params-are-always)). Both keep
-today's behavior, in which every Session enters the Environment. A Step Environment has no `activation`, since only its
-own Step's Sessions can enter it.
+without `ENV_PARAMS` are `ALWAYS`](#environment-templates-without-env_params-are-always)). In a Job Template that does
+not list `ENV_PARAMS`, every Session enters its Job Environments and every attached Environment from an Environment
+Template that does not list `ENV_PARAMS` (same section). All of these keep today's behavior, in which every Session
+enters the Environment. A Step Environment has no `activation`, since only its own Step's Sessions can enter it.
 
 ### Environment Templates without `ENV_PARAMS` are `ALWAYS`
 
@@ -713,10 +715,10 @@ an author that a Step asked to leave out an Environment whose author chose to fo
 the extension made no such choice.
 
 In a Job Template that does not list `ENV_PARAMS`, no Step has an entry, and neither its Job Environments nor an
-attached Environment from an Environment Template that does not list `ENV_PARAMS` can have an *enableIf*, so every
-Session enters each of them, as without the extension. Each of them applies to every Step and, when Job creation takes
-the steps of [§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params), is in every Step's set
-(step 4). No other rule is needed for them.
+attached Environment from an Environment Template that does not list `ENV_PARAMS` can have an *activation* or an
+*enableIf*, so every Session enters each of them, as without the extension. Each of them applies to every Step and, when
+Job creation takes the steps of [§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params), is in
+every Step's set (step 4). No other rule is needed for them.
 
 ### `enableIf` on the Environment
 
