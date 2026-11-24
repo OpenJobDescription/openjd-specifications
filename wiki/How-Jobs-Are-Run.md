@@ -147,7 +147,7 @@ A parameter without a default must be supplied by every Step that the **Environm
 `ALWAYS` one, every Step that does not decline a `BY_DEFAULT` one, and every Step that requests an `ON_REQUEST` one.
 This holds even for a Step for which the **Environment**'s own `enableIf` turns out to be false, so a missing value is a
 mistake in the Step. Checking the Job Template reports it for the Job's own **Environments** wherever the `enableIf` of
-each of the Step's `environment:` entries for it is known then, and in other cases as Template Schemas
+each of the Step's `environment:` entries for it is known then, and for them in other cases as Template Schemas
 [§7.6](2023-09-Template-Schemas#76-expression-fields) rule 5 says; creating the Job reports it in every case, attached
 **Environments** included. The `enableIf` is then evaluated with the Step's actual values. If it reads a value that
 cannot be worked out, such as `"many"` for an INT parameter, it is not evaluated, and the Job is rejected.
