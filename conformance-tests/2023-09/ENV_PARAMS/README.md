@@ -405,7 +405,7 @@ lists the extensions the document under test declares, where it matters (`EP` = 
 | JT-157 | `3.2--literal-value-violation-env-enable-if-undetermined.yaml` | EP, EX | The same with an expression `enableIf`: the check depends on it, so template validation reports nothing (§7.6 rule 5). JB-108 and JB-109 run it. |
 | JT-206 | `3.2--fifty-environment-entries.yaml` | EP, EX | A Step with 50 `required: false` `environment:` entries is valid: an implementation that limits *dependencies* must accept at least 50 such entries (§3 *dependencies*). |
 | JT-212 | `3.2.2--grouped-job-environment-literal-value-deferred.yaml` | EP, EX | A Job Environment with an `exclusiveGroup` is never known to be entered at template validation, so a Step's literal value outside its `allowedValues` is not checked there, and the template is valid (§3.2.2 item 1, §4). |
-| JT-213 | `3.2--expression-entry-value-deferred.yaml` | EP, EX | `"{{ abs('5') }}"` for an INT parameter, in an entry whose `enableIf` is not known at template validation, is valid: its values are not checked until the Job is created, when, if the entry is enabled, it resolves to 5 with the parameter's type as its target type (§3.2, §7.6 rule 5). |
+| JT-213 | `3.2--expression-entry-value-deferred.yaml` | EP, EX | `"{{ abs('5') }}"` for an INT parameter, in an entry whose `enableIf` is not known at template validation, is valid: its values are checked when the Job is created, and then, if the entry is enabled, it resolves to 5 with the parameter's type as its target type (§3.2, §7.6 rule 5). |
 | JT-214 | `3.2--external-entry-value-not-type-checked.yaml` | EP, EX | The same value in an entry that names an external Environment is valid: the Environment's parameter types are not known before the Job is created, so template validation does not check the value against one (§3.2). |
 
 #### `<StepDependency>` `step:` entries (§3.2 item 2)
@@ -881,7 +881,7 @@ keeps its number with a note. Earlier drafts of the RFC carried the same index a
 | V31 | A `step:` entry obeys every rule of the `dependsOn:` entry it is a synonym of; a `step:` and a `dependsOn:` entry naming one Step are duplicates (§3.2 item 2). | Template validation | JT-124, JT-130–JT-133 |
 | V32 | Environment `enableIf` (listed after V31 so that existing row numbers are stable, as V33 and V34 are): `ENV_PARAMS`; an expression field of type `bool` (§7.6); the scopes of §7.3.2 | Template validation | JT-135–JT-137, JT-139–JT-147, ET-39–ET-41, JT-153, JT-154; run time: JB-111 |
 | V33 | Environment `enableIf` does not resolve to `null`, per Step | Job creation | JB-97; run-time effect: JB-93–JB-96, JB-98, JB-99 |
-| V34 | A check over a Step's Environment set, such as the `WRAP_ACTIONS` single-layer rule, where an Environment's `enableIf` decides membership | Job creation; before then only when the violation holds however every undetermined `enableIf` resolves (§7.6 rule 5) | JT-150, JT-151, JB-100, JB-101, JB-103, JB-105, JB-106 |
+| V34 | A check over a Step's Environment set, such as the `WRAP_ACTIONS` single-layer rule, where an Environment's `enableIf` decides membership | Job creation; before then only as §7.6 rule 5 allows | JT-150, JT-151, JB-100, JB-101, JB-103, JB-105, JB-106 |
 | V35 | The Step's effective values for an Environment disabled for it (its `enableIf` is `false`, or it is superseded) are not checked. An Environment `enableIf` is evaluated at job creation with concrete values only; one that reads a value that fails to resolve or does not convert is not evaluated, and the value is an error (§3.2.2). | Template validation for an `enableIf` known there to be `false` (§7.6 rule 5); job creation otherwise | JT-156, JT-157, JT-204, JB-108–JB-110, JB-112, JB-125, JB-126, JB-184, JB-186; superseded: JB-154; a grouped Job Environment's values are not checked at template validation: JT-212 |
 | V36 | A document that lists `ENV_PARAMS` also lists `EXPR` (§1.1 item 3, §1.2 item 3). | Template validation | JT-160, JT-161, ET-43 |
 | V37 | The `enableIf` of an `ALWAYS` Environment is not known at template validation to be `false` (§4 item 6, §3.2.2 item 6, §7.6 rule 5). | Template validation | JT-170, ET-44, ET-51, JT-194, JT-198, JT-200, JT-205; an expression that is not known is not rejected then: JT-172, JT-195, JT-199, JT-201 |
@@ -1024,11 +1024,11 @@ These rules, or parts of rules, have no planned test with a definite expected ou
     JB-104 passes whether or not an implementation follows the rule; it distinguishes the rule only on a runner whose
     host or submission path format is Windows. Path mapping is not tested separately: an `enableIf` cannot read
     `Param.<PATH>` (JT-122), and `RawParam.*` is unmapped in every scope.
-18. **When a certain failure is reported.** §7.6 rule 5 says an early check reports an error *only when* it holds for
-    every value the undetermined fields could take, and that an implementation *should* report it at the earliest stage
-    where it does. The first part forbids an early error that depends on those values, so JT-150, JT-151, JT-157,
-    JT-195, JT-197, JT-199, and JT-201 must pass template validation. The second is a preference, not a requirement, so
-    JB-105–JB-107 are `jobs/` tests, which pass whichever stage rejects them. A check whose fields are all known is
+18. **When a certain failure is reported.** §7.6 rule 5 says which errors an implementation *should* report before
+    the Job is created, and which it *must not*. For JT-150, JT-151, JT-157, JT-195, JT-197, JT-199, and JT-201, some
+    Job Parameter values let Job creation succeed, so the *must not* applies and they must pass template validation.
+    Job creation rejects JB-105–JB-107 for every value, so the *should* applies, and it is a preference, not a
+    requirement: they are `jobs/` tests, which pass whichever stage rejects them. A check whose fields are all known is
     different: rule 5 says it is made at that stage, so JT-152, JT-194, JT-196, JT-198, JT-200, and JT-202 to JT-205 are
     `job_templates/` tests. So is constraint 7 for a Step whose entries are known, which does not depend on any
     Environment's `enableIf` (JT-148, JT-158, JT-162, JT-189–JT-191).
