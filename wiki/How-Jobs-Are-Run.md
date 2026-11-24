@@ -130,9 +130,9 @@ The **Environment** of an Environment Template that does not list ENV_PARAMS, su
 attached to a Job whose template lists ENV_PARAMS, is entered by every **Session**, as an `ALWAYS` one is. A Step's
 entry for it whose `enableIf` is false has no effect, so a Job cannot leave out an **Environment** that a render
 management system attached for licensing or auditing before it adopted ENV_PARAMS. A Job whose template does not list
-ENV_PARAMS has no `environment:` entries, and neither its own **Environments** nor an attached one whose template does
-not list ENV_PARAMS can have an `activation` or an `enableIf`, so every **Session** enters the Job Environments and
-every attached **Environment** whose template does not list ENV_PARAMS, as before.
+ENV_PARAMS has no `environment:` entries, and neither its Job Environments nor an attached **Environment** whose
+template does not list ENV_PARAMS can have an `activation` or an `enableIf`, so every **Session** enters the Job
+Environments and every attached **Environment** whose template does not list ENV_PARAMS, as before.
 
 The **Environments** a **Session** does enter keep the order they have in the Job.
 

@@ -694,8 +694,8 @@ In a document that lists `ENV_PARAMS`, a Job Environment or Environment Template
 Environment without `ENV_PARAMS` active behaves as `ALWAYS` (see [Terminology](#terminology) and [Environment Templates
 without `ENV_PARAMS` are `ALWAYS`](#environment-templates-without-env_params-are-always)). In a Job Template that does
 not list `ENV_PARAMS`, every Session enters its Job Environments and every attached Environment from an Environment
-Template that does not list `ENV_PARAMS` (same section). All of these keep today's behavior, in which every Session
-enters the Environment. A Step Environment has no `activation`, since only its own Step's Sessions can enter it.
+Template that does not list `ENV_PARAMS` (see the same section). All of these keep today's behavior, in which every
+Session enters the Environment. A Step Environment has no `activation`, since only its own Step's Sessions can enter it.
 
 ### Environment Templates without `ENV_PARAMS` are `ALWAYS`
 

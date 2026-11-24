@@ -1,6 +1,6 @@
 # RFC 0010 / Template Schemas §3.2.1 item 1, §3.2 constraint 5: the same
-# Environment without ENV_PARAMS active, which declares no parameters, rejects an entry
-# with required: true that supplies one. Only required: false has its
+# Environment without ENV_PARAMS active, which declares no parameters, rejects
+# an entry with required: true that supplies one. Only required: false has its
 # parameters ignored.
 template:
   specificationVersion: jobtemplate-2023-09
