@@ -712,11 +712,11 @@ ignored](#parameters-for-an-environment-that-declares-none-are-ignored)). The er
 an author that a Step asked to leave out an Environment whose author chose to forbid it. An Environment written before
 the extension made no such choice.
 
-In a Job Template that does not list `ENV_PARAMS`, no Step has an entry and none of its Environments has an *enableIf*,
-so every Session enters its Job Environments, and any attached Environment from an Environment Template that does not
-list `ENV_PARAMS`, as without the extension. Each of them is in every Step's set
-([§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params) step 4). No other rule is needed for
-them.
+In a Job Template that does not list `ENV_PARAMS`, no Step has an entry, and neither its Job Environments nor an
+attached Environment from an Environment Template that does not list `ENV_PARAMS` can have an *enableIf*, so every
+Session enters each of them, as without the extension. Each of them applies to every Step and, when Job creation takes
+the steps of [§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params), is in every Step's set
+(step 4). No other rule is needed for them.
 
 ### `enableIf` on the Environment
 

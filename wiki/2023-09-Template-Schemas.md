@@ -2099,9 +2099,9 @@ Where:
    that field needs the extension. So a Job Template that lists `ENV_PARAMS` cannot leave out an Environment written
    before the extension, such as one that a render management system attaches to every Job for licensing or auditing,
    and its `required: false` entries work whether or not an attached Environment lists the extension. In a Job Template
-   that does not list `ENV_PARAMS`, no Step has an *environment* entry and none of its Environments has an *enableIf*,
-   so every Session of the Job enters its Job Environments, and any attached Environment from an Environment Template
-   that does not list `ENV_PARAMS`, as without the extension. Each of them applies to every Step and, when Job creation
+   that does not list `ENV_PARAMS`, no Step has an *environment* entry, and neither its Job Environments nor an attached
+   Environment from an Environment Template that does not list `ENV_PARAMS` can have an *enableIf*, so every Session of
+   the Job enters each of them, as without the extension. Each of them applies to every Step and, when Job creation
    takes the steps of [§7.4.1](#741-job-creation-with-env_params), is in every Step's set (step 4). No other rule is
    needed for them.
 
@@ -2802,11 +2802,12 @@ as possible. See the [Expression Language](2026-02-Expression-Language) specific
 
 When any document of a submission, the Job Template or an attached Environment Template, lists the `ENV_PARAMS`
 extension, Job creation takes these steps in order. A rule that the extension adds for the content of a document still
-applies only to a document that lists it ([§1.2](#12-environment-template) item 3): an Environment without `ENV_PARAMS`
-active behaves as [&lt;Environment&gt;](#4-environment) *activation* says, and a Step's own requirements in a
-Job Template that does not list it keep the base rules ([§3.3](#33-hostrequirements); step 8). The steps fix when each
-check is made. When a submission has several errors, which of them an implementation reports, and in what order, is not
-specified.
+applies only to a document that lists it ([§1.2](#12-environment-template) item 3). An Environment without `ENV_PARAMS`
+active, and, in a Job Template that does not list `ENV_PARAMS`, its Job Environments and every attached Environment from
+an Environment Template that does not list `ENV_PARAMS`, behave as [&lt;Environment&gt;](#4-environment) *activation*
+says, and a Step's own requirements in a Job Template that does not list it keep the base rules
+([§3.3](#33-hostrequirements); step 8). The steps fix when each check is made. When a submission has several errors,
+which of them an implementation reports, and in what order, is not specified.
 
 1. The Environment Templates attached to the Job are determined. `Job.EnvNames` is concrete before any TEMPLATE-scope
    expression of the Job, including a Step's `let` bindings, is evaluated.
