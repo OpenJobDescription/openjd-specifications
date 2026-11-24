@@ -2097,15 +2097,17 @@ Where:
    that field needs the extension. So a Job Template that lists `ENV_PARAMS` cannot leave out an Environment written
    before the extension, such as one that a render management system attaches to every Job for licensing or auditing,
    and its `required: false` entries work whether or not an attached Environment lists the extension. In a Job Template
-   that does not list `ENV_PARAMS`, no Step has an *environment* entry and no Environment has an *enableIf*, so its Job
-   Environments, and any attached Environment from an Environment Template that does not list `ENV_PARAMS`, are entered
-   by every Session either way. No rule is needed for them.
+   that does not list `ENV_PARAMS`, no Step has an *environment* entry and none of its Environments has an *enableIf*,
+   so every Session of the Job enters its Job Environments, and any attached Environment from an Environment Template
+   that does not list `ENV_PARAMS`, as without the extension. Each of them applies to every Step and is in every Step's
+   set ([§7.4.1](#741-job-creation-with-env_params) step 4). No other rule is needed for them.
 
    A Session that does not enter an Environment does not enter or exit it, does not have its *variables* set, and does
    not have it in its Environment stack. The Environments a Session does enter keep their relative order. An Environment
    whose *activation* is `ALWAYS` is entered by every Step's Sessions, or the Job is rejected. An Environment without
-   `ENV_PARAMS` active is entered by every Step's Sessions. So a check that depends on whether a Step's Sessions enter
-   either may treat it as entered. Such rules include the `WRAP_ACTIONS` single-layer rule and the [Combined Host
+   `ENV_PARAMS` active, and each Environment that the previous paragraph says every Session enters, is entered by every
+   Step's Sessions. So a check that depends on whether a Step's Sessions enter any of these may treat it as entered.
+   Such rules include the `WRAP_ACTIONS` single-layer rule and the [Combined Host
    Requirements](#333-combined-host-requirements). Available with the `ENV_PARAMS` extension.
    Constraints:
     1. An implementation must reject an `<EnvironmentActivation>` it does not recognize. The values are case-sensitive,
@@ -2156,8 +2158,9 @@ A check that depends on which Environments a Step's Sessions enter, such as the 
 ([&lt;EnvironmentActions&gt;](#43-environmentactions) constraint 2), uses what is known at each stage (see
 [§7.6](#76-expression-fields) rule 5). Before the Job is created:
 
-* A Step's Sessions may be taken to enter every Environment whose *activation* is `ALWAYS`, and every Environment
-  without `ENV_PARAMS` active.
+* A Step's Sessions may be taken to enter every Environment whose *activation* is `ALWAYS`, every Environment without
+  `ENV_PARAMS` active, and, in a Job Template that does not list `ENV_PARAMS`, its Job Environments and every attached
+  Environment from an Environment Template that does not list it ([&lt;Environment&gt;](#4-environment) *activation*).
 * They are known to enter an Environment whose *enableIf* is absent or known to be `true` when the Step would otherwise
   enter it: by `activation: BY_DEFAULT` with no entry for it or with an entry whose *enableIf* is absent or known to be
   `true`, or through such an entry.
@@ -2812,7 +2815,9 @@ specified.
    from each Environment's *activation* and the Step's entries. An enabled entry requests an `ON_REQUEST` Environment. A
    disabled entry declines a `BY_DEFAULT` one, or, for an `ALWAYS` one, causes the Job to be rejected, naming the Step
    and the Environment (see [&lt;StepDependency&gt;](#32-stepdependency) *enableIf*). It has no effect on an Environment
-   without `ENV_PARAMS` active, which is in every Step's set ([&lt;Environment&gt;](#4-environment) *activation*).
+   without `ENV_PARAMS` active, which is in every Step's set ([&lt;Environment&gt;](#4-environment) *activation*). In a
+   Job Template that does not list `ENV_PARAMS`, its Job Environments, and every attached Environment from an
+   Environment Template that does not list it, are in every Step's set too (§4 item 4).
 5. Environment parameter defaults and *environment* entry values are resolved into each Step's effective values. The
    *parameters* of an entry that [§3.2.1](#321-resolving-external-environments) item 1 ignores are not resolved.
    Constraint 7 is checked for every Environment in each Step's set, before any *enableIf* of step 6 is evaluated

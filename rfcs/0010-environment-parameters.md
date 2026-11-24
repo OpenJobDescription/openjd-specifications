@@ -343,7 +343,7 @@ This RFC is additive and gated by the `ENV_PARAMS` extension name declared under
   `required: false` entry's parameters are ignored, and implementations should warn (see
   [`<StepDependency>`](../wiki/2023-09-Template-Schemas.md#32-stepdependency) constraint 5 and
   [§3.2.1](../wiki/2023-09-Template-Schemas.md#321-resolving-external-environments) item 1).
-- An Environment Template from a document that does not list `ENV_PARAMS`, such as one written before this extension,
+- An Environment Template that does not list `ENV_PARAMS`, such as one written before this extension,
   under a [recommended name](#recommended-names-non-normative) accepts Job Templates that supply its recommended
   parameters with `required: false`, and ignores those parameters. Deadline Cloud's console Conda queue environment
   (`Conda`) is such a case today. Its Sessions then install what the Job Parameters (`CondaPackages`, `CondaChannels`)
@@ -353,11 +353,11 @@ This RFC is additive and gated by the `ENV_PARAMS` extension name declared under
   ignored](#parameters-for-an-environment-that-declares-none-are-ignored).
 - No existing field changes meaning. A Job with no `environment:` entries, no Environment `envParameterDefinitions`, no
   `activation`, and no Environment `enableIf` behaves as today, including which Environments each Session enters and how
-  Sessions are shared between Steps. An Environment without `ENV_PARAMS` active, such as one written before this
-  extension, is entered by every Session, as today (see [Terminology](#terminology)). A Job Template that
-  lists `ENV_PARAMS` but no `environment:` entries, run with an Environment Template that declares parameters and keeps
-  the default `activation`, also shares Sessions as today: every Step takes the same defaults, so every Step's values
-  are equal.
+  Sessions are shared between Steps. An attached Environment from an Environment Template that does not list
+  `ENV_PARAMS`, such as one written before this extension, is entered by every Session, as today (see
+  [Terminology](#terminology)). A Job Template that lists `ENV_PARAMS` but no `environment:` entries, run with an
+  Environment Template that declares parameters and keeps the default `activation`, also shares Sessions as today: every
+  Step takes the same defaults, so every Step's values are equal.
 - Adding `ENV_PARAMS` to a document changes how the *minLength* and *maxLength* of its existing RANGE_EXPR Job
   Parameters are checked: both the value as written and its canonical form must satisfy them
   ([§2.10](../wiki/2023-09-Template-Schemas.md#210-jobrangeexprparameterdefinition-extension-expr)). So a value that a
@@ -706,9 +706,11 @@ ignored](#parameters-for-an-environment-that-declares-none-are-ignored)). The er
 an author that a Step asked to leave out an Environment whose author chose to forbid it. An Environment written before
 the extension made no such choice.
 
-In a Job Template that does not list `ENV_PARAMS`, no Step has an entry and no Environment has an *enableIf*, so its Job
-Environments, and any attached Environment from an Environment Template that does not list `ENV_PARAMS`, are entered by
-every Session whichever `activation` they are read as. No rule is needed for them.
+In a Job Template that does not list `ENV_PARAMS`, no Step has an entry and none of its Environments has an *enableIf*,
+so every Session enters its Job Environments, and any attached Environment from an Environment Template that does not
+list `ENV_PARAMS`, as without the extension, and each of them is in every Step's set
+([§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params) step 4). No other rule is needed for
+them.
 
 ### `enableIf` on the Environment
 
@@ -783,10 +785,11 @@ lists names, not parameters.
 
 Only the entry's *parameters* are ignored. The entry still names the Environment, so it is not treated as matching
 nothing, and it still requests an `ON_REQUEST` Environment. The same entry, when disabled, has no effect on an
-Environment without `ENV_PARAMS` active, which every Session enters, and declines a `BY_DEFAULT` one that lists it, as
-any disabled entry does. Ignoring the whole entry would differ only for an `ON_REQUEST` Environment from an Environment
-Template that lists `ENV_PARAMS` but declares no parameters: the Step asked for it, and its Sessions would not enter it.
-Implementations should warn, because the Step does not get the values it asked for.
+Environment without `ENV_PARAMS` active, which every Session enters, and declines a `BY_DEFAULT` one from an Environment
+Template that lists `ENV_PARAMS`, as any disabled entry does. Ignoring the whole entry would differ only for an
+`ON_REQUEST` Environment from an Environment Template that lists `ENV_PARAMS` but declares no parameters: the Step asked
+for it, and its Sessions would not enter it. Implementations should warn, because the Step does not get the values it
+asked for.
 
 The rule is narrow on purpose. An Environment that declares parameters has adopted this extension, so a key it does not
 declare is a typo, or a parameter of a later version of the Environment. Either is a mistake that the Job Template's

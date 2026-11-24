@@ -62,8 +62,9 @@ Values are fixed per Step when the Job is created. For each Step and each Enviro
 A Session enters an Environment with `activation: ALWAYS` always, one with `BY_DEFAULT` unless its Step declines it with
 a disabled entry, and one with `activation: ON_REQUEST` only when its Step requests it, in each case unless the
 Environment's `enableIf` is false for the Step. For an `ALWAYS` Environment, an `enableIf` that is false for a Step, or
-a disabled entry, is an error instead. A Job Environment or Environment Template from a document that does not list
-`ENV_PARAMS` behaves as `ALWAYS`, except that a Step's disabled entry for it has no effect.
+a disabled entry, is an error instead. An Environment without `ENV_PARAMS` active, from an Environment Template that
+does not list `ENV_PARAMS` attached to a Job Template that does, behaves as `ALWAYS`, except that a Step's disabled
+entry for it has no effect.
 
 ## RFC rules these tests verify
 
@@ -74,8 +75,9 @@ a disabled entry, is an error instead. A Job Environment or Environment Template
   3).
 - **Extensions are per document** (§1.2 item 3): a Job Template without `ENV_PARAMS` runs with an Environment
   Template that lists it, taking every default and never entering its `ON_REQUEST` Environments; an Environment
-  Template without `ENV_PARAMS` behaves as an `ALWAYS` Environment with no parameters and no `enableIf`, which every
-  Session enters, and a Step's disabled entry for it has no effect and is not an error (§4 item 4).
+  Template without `ENV_PARAMS`, attached to a Job Template that lists it, behaves as an `ALWAYS` Environment with no
+  parameters and no `enableIf`, which every Session enters, and a Step's disabled entry for it has no effect and is not
+  an error (§4 item 4).
 - **Environment `envParameterDefinitions`** (§4 item 3, §4.5): 1–50 entries, unique names that may coincide with Job
   Parameters and other Environments' parameters, not on `stepEnvironments`; permitted types and fields; `default`
   scope; a literal `default` checked at template validation, a non-literal one only where a Step takes it.
@@ -613,7 +615,7 @@ permitted but not required, so for those only the values both Tasks see are chec
 | JB-16 | `3.2.1--external-required-missing.invalid.test.yaml` | EP | An entry (default `required: true`) naming an Environment nothing attaches is rejected. |
 | JB-17 | `3.2.1--external-required-false-missing-ignored.test.yaml` | EP, EX | The same entry with `required: false` is ignored; the Step's Task runs, and `Job.EnvNames` lists only the Job Environment `J`. |
 | JB-18 | `3.2.1--external-lacks-parameter.invalid.test.yaml` | EP | A `required: false` entry supplying a parameter the attached Environment, which declares others, does not declare is rejected. |
-| JB-19 | `3.2.1--external-without-env-params-supplied.test.yaml` | EP | Attached Environment Template without `ENV_PARAMS` (the pre-extension `Conda` case); a `required: false` entry's `parameters` are ignored, and the Environment is entered with its Job Parameter's value. |
+| JB-19 | `3.2.1--external-without-env-params-supplied.test.yaml` | EP | Attached Environment Template without `ENV_PARAMS` (the `Conda` case written before the extension); a `required: false` entry's `parameters` are ignored, and the Environment is entered with its Job Parameter's value. |
 | JB-165 | `3.2.1--external-without-env-params-supplied-required.invalid.test.yaml` | EP | The same Environment with a `required: true` entry that supplies a parameter is rejected. |
 | JB-166 | `3.2.1--external-only-undeclared-key.invalid.test.yaml` | EP | A `required: false` entry whose only key the attached Environment, which declares parameters, does not declare is rejected. |
 | JB-167 | `3.2.1--external-on-request-without-definitions-supplied.test.yaml` | EP; env EP, EX | An attached `ON_REQUEST` Environment that lists `ENV_PARAMS` and declares no parameters ignores a `required: false` entry's `parameters`, and the entry still requests it, so the Step's Session enters it. |
@@ -896,7 +898,7 @@ keeps its number with a note. Earlier drafts of the RFC carried the same index a
 | V49 | An `allOf` for `attr.worker.os.family` or `attr.worker.cpu.arch` has at most one element: a list of literals as written, and otherwise the resolved list or a `<ListExpressionString>` result (§3.3.2.1). | Template validation for a list none of whose items contains `{{ }}`; job creation otherwise | base `3.3--allof-multiple-single-value-attr.invalid`; JB-147; a list of format strings: EXPR `3.3.2.1--allof-format-strings-resolve-to-one`, `3.3.2.1--allof-format-strings-resolve-to-two.invalid` |
 | V50 | `exclusiveGroup` is an `<Identifier>`, not on `stepEnvironments`, and not on an `ALWAYS` Environment (§4 item 7). | Template validation | ET-48, ET-49, JT-187, JT-188 |
 | V51 | Of the Environments a Step's Sessions would enter that share an `exclusiveGroup`, only the first in the Job's Environment order whose `enableIf` is not `false` for the Step is entered; the others are superseded and disabled (§4 item 7, §3.2.2). | Job creation, per Step | JB-148–JB-150, JB-152–JB-154; a superseded Environment is still held to constraint 7: JB-151 |
-| V52 | A Job Environment or Environment Template from a document that does not list `ENV_PARAMS` behaves as `activation: ALWAYS` with no `enableIf`: every Step's Sessions enter it, and a disabled `environment:` entry that names it has no effect and is not an error (§4 item 4, §3.2 *enableIf*). | Job creation; before then by a validator given the Environment Templates | JB-169–JB-171, JB-173; Step Environments excluded: JB-202; enabled entries: JB-19, JB-20, JB-172; the `BY_DEFAULT` contrast: JB-140, JB-174 |
+| V52 | An Environment without `ENV_PARAMS` active (from an Environment Template that does not list `ENV_PARAMS`, attached to a Job Template that does) behaves as `activation: ALWAYS` with no `enableIf`: every Step's Sessions enter it, and a disabled `environment:` entry that names it has no effect and is not an error (§4 item 4, §3.2 *enableIf*). | Job creation; before then by a validator given the Environment Templates | JB-169–JB-171, JB-173; Step Environments excluded: JB-202; enabled entries: JB-19, JB-20, JB-172; the `BY_DEFAULT` contrast: JB-140, JB-174 |
 | V53 | Two effective values are equal only when they have the same type and string form (a FLOAT as written, a STRING by code points, a RANGE_EXPR in canonical form, lists element by element), and a Session runs a Step's Tasks only when it entered each of the Step's Environments with values equal to the Step's (§3.2.2). | Run time, as a Session takes a Step's Tasks | JB-175, JB-177, JB-179, JB-181–JB-183; equal values: JB-10, JB-176, JB-178, JB-180; one Environment per Step's values: JB-85 |
 | V54 | Before an expression field is evaluated, its value is known when it is a scalar or when evaluating it with the values not yet known as `unresolved[T]` gives a result by the Expression Language's rules for unknown operands (`U and false` is `false`, `U or true` is `true`, `not U` is `U`, and `c if U else c` is `c`); a check whose fields are known is made then (§7.6 rule 5, Expression Language §2.1.6). | Template validation | JT-152, JT-194–JT-205, ET-51; at job creation: JB-185 |
 | V55 | A STRING or PATH effective value, and each element of a LIST[STRING] or LIST[PATH] one, is at most 1024 characters, except where the Environment is disabled for the Step (§4.5 item 5) | Template validation for literals; job creation | JT-208, JT-209, JB-193, JB-194; not checked where disabled: JB-195 |
@@ -913,9 +915,11 @@ Runtime behaviors in the suite's scope that are not Validation rows are covered 
 `onExit`, and `variables` (JB-01–JB-04); defaults from merged Job Parameters (JB-05–JB-08); `ON_REQUEST` entry
 (JB-36–JB-41); entry `enableIf` true, false, and `null` (JB-42–JB-46), and a disabled entry declining a `BY_DEFAULT` Environment (JB-139, JB-140) and having no effect on one from a document without `ENV_PARAMS` (JB-169–JB-171); every `enableIf` evaluated in template scope (JB-104); `Job.EnvNames` contents and order (JB-47–JB-53, JB-86);
 path mapping in `Env.Param.*` and not `Env.RawParam.*` (JB-54–JB-59); INT `1` vs `"1"` (JB-10); per-document
-extensions (JB-74, JB-75); wrap hooks (JB-76, JB-77); TASK_CHUNKING (JB-191); REDACTED_ENV_VARS (JB-192); the `Job.EnvNames` rationale example (JB-197, JB-198); host requirements of a disabled entry and case-insensitive combination (JB-88–JB-90). The Basic Examples are JB-78–JB-81, JB-84, JB-85, and JB-148–JB-150, and the pre-extension
-`Conda` case of the second example (reduced to one Step with only a `Conda` entry), whose `required: false` entry's
-`parameters` are ignored, is JB-19.
+extensions (JB-74, JB-75); wrap hooks (JB-76, JB-77); TASK_CHUNKING (JB-191); REDACTED_ENV_VARS (JB-192); the
+`Job.EnvNames` rationale example (JB-197, JB-198); host requirements of a disabled entry and case-insensitive
+combination (JB-88–JB-90). The Basic Examples are JB-78–JB-81, JB-84, JB-85, and JB-148–JB-150, and the `Conda` case of
+the second example written before the extension (reduced to one Step with only a `Conda` entry), whose `required: false`
+entry's `parameters` are ignored, is JB-19.
 
 ## Running the tests
 
@@ -1025,8 +1029,9 @@ These rules, or parts of rules, have no planned test with a definite expected ou
     different: rule 5 says it is made at that stage, so JT-152, JT-194, JT-196, JT-198, JT-200, and JT-202 to JT-205 are
     `job_templates/` tests. So is constraint 7 for a Step whose entries are known, which does not depend on any
     Environment's `enableIf` (JT-148, JT-158, JT-162, JT-189–JT-191).
-19. **Environments from documents without `ENV_PARAMS` in combinations that cannot be written.** §4 item 4 makes a Job
-    Environment or Environment Template from such a document behave as `ALWAYS`. Two combinations it might seem to need
+19. **Environments from documents without `ENV_PARAMS` in combinations that cannot be written.** §4 item 4 makes an
+    Environment without `ENV_PARAMS` active behave as `ALWAYS`, and has every Session enter the Job Environments of a
+    Job Template that does not list `ENV_PARAMS`. Two combinations it might seem to need
     tests for cannot occur. Such an Environment cannot have an `exclusiveGroup`, because the field requires `ENV_PARAMS`
     (ET-50, V1), so it never takes part in the group rule. A Job Environment of a Job Template that does not list
     `ENV_PARAMS` cannot be named by a Step whose template lists it, because a Job Template's Steps are in the same
