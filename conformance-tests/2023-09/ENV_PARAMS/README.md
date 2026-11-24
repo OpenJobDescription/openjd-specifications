@@ -86,7 +86,7 @@ and every attached Environment from an Environment Template that does not list `
   `ENV_PARAMS`, not on `stepEnvironments`; an `ON_REQUEST` Environment is entered, and its `variables` set, only in the
   Sessions of Steps that request it, and entered Environments keep their order. An `ALWAYS` Environment cannot be
   disabled: its `enableIf` being false for a Step is an error, at template validation where it is known to be `false`
-  and at job creation otherwise, or earlier as §7.6 rule 5 says (§4 item 6, §3.2.2 item 6).
+  and otherwise at job creation, or before then as §7.6 rule 5 says (§4 item 6, §3.2.2 item 6).
 - **Environment `enableIf`** (§4 item 6): requires `ENV_PARAMS`; an expression field of type `bool`
   (§7.6) with the scopes of the Environment's `hostRequirements` (or, on a Step Environment, `Step.Name` and the
   Step's `let`); decided per Step at job creation from its effective values, never `null`; a disabled Environment is
@@ -184,8 +184,8 @@ Directory rules, from the task plan:
   test. There are two exceptions. A submission that Job creation rejects for every value of what is not yet known,
   through a check that rule 5 does not require template validation to make, falls under §7.6 rule 5's *should*: the
   specification recommends but does not require that template validation report it
-  ([item 18](#rules-without-a-definite-test)). Examples are JB-65, JB-68, JB-105–JB-107 and JB-128. And JB-102 and
-  JB-113 reuse the templates of JT-152 and JT-158, which template validation must reject. Such tests pass whichever
+  ([item 18](#rules-without-a-definite-test)). Examples are JB-65, JB-68, JB-105–JB-107, JB-128 and JB-147. And JB-102
+  and JB-113 reuse the templates of JT-152 and JT-158, which template validation must reject. Such tests pass whichever
   stage rejects them.
 
 Commands: tests that only print values use `echo` with `runOn: [posix, windows]`. Tests that inspect exact argv or
@@ -792,7 +792,7 @@ matches them against the local host.
 | JB-155 | `2.10--range-expr-merged-length-written-only.test.yaml` | EP, EX; env EX | A merged RANGE_EXPR Job Parameter: `minLength: 4` from an Environment Template without `ENV_PARAMS` is checked against `1-3:2` as written only; the Job runs (§2.10, §1.2.1). |
 | JB-156 | `2.10--range-expr-merged-length-canonical.invalid.test.yaml` | EP, EX; env EX | The same with `minLength: 4` in the Job Template, which lists `ENV_PARAMS`: the canonical form `1,3` is too short; rejected. |
 | JB-146 | `3.2.1--unreachable-attached-always-required.invalid.test.yaml` | EP; env EP, EX | An attached `ALWAYS` Environment named like a Job Environment, so unreachable, with a parameter without `default`: every Step's Sessions enter it and none can supply the value, so the submission is rejected (§3.2.1 item 4). |
-| JB-147 | `3.3.2--all-of-expression-os-family-two-values.invalid.test.yaml` | EP, EX | A Step's `allOf: "{{ ['linux', Param.Second] }}"` on `attr.worker.os.family` passes template validation and resolves to two values when the Job is created; a host has one value of that attribute, so the submission is rejected (§3.3.2.1). The literal `allOf: [linux, windows]` is the base suite's `3.3--allof-multiple-single-value-attr.invalid`. |
+| JB-147 | `3.3.2--all-of-expression-os-family-two-values.invalid.test.yaml` | EP, EX | A Step's `allOf: "{{ ['linux', Param.Second] }}"` on `attr.worker.os.family` always resolves to two values; a host has one value of that attribute, so the submission is rejected for every value, at template validation or job creation (§3.3.2.1, item 18). The literal `allOf: [linux, windows]` is the base suite's `3.3--allof-multiple-single-value-attr.invalid`. |
 | JB-199 | `3.3.3--combined-fifty-capabilities-accepted.test.yaml` | EP, EX | A Step with 30 attribute requirements enters a Job Environment with 20 others; the combined set names 50 capabilities, the floor every implementation accepts, and the Job runs (§3.3.3). |
 | JB-201 | `3.3.2--any-of-expression-invalid-element.invalid.test.yaml` | EP, EX | An Environment's `anyOf` written as one expression resolves to `[a, "has space"]`; the second element is not an `<AttributeCapabilityValue>`, so the submission is rejected (§3.3.2). |
 
@@ -850,7 +850,7 @@ sentinels.
 Each row is a rule the extension adds, abridged from the section of Template Schemas that states it, which governs where
 the two differ. Row numbers are stable: a row added later is listed at the end, and a row that was dropped or merged
 keeps its number with a note. Earlier drafts of the RFC carried the same index as a Validation table. Where a row's
-stage is job creation, an error may also be reported earlier as Template Schemas §7.6 rule 5 says.
+stage is job creation, an error can also be reported earlier, as Template Schemas §7.6 rule 5 says.
 
 | # | Validation rule (abridged) | Checked at | Tests |
 |---|---|---|---|
@@ -1035,15 +1035,16 @@ These rules, or parts of rules, have no planned test with a definite expected ou
     the Job is created, and which it *must not*. For JT-150, JT-151, JT-157, JT-195, JT-197, JT-199, and JT-201, some
     Job Parameter values let Job creation succeed, so the *must not* applies and they must pass template validation. So
     must JT-212 and JT-214, which some attached Environment Templates make valid. Job creation rejects JB-65, JB-68,
-    JB-105–JB-107 and JB-128 for every value, and each check reads something not yet known: the Step's whole Environment
-    set, which includes Environments a validator is not given, in JB-65 and JB-68 (combined host requirements), the
-    third wrapper's `enableIf` in JB-105, the Environments a validator is not given in JB-106, the entry's `enableIf`,
-    which constraint 7 reads to decide whether the entry supplies its values, in JB-107, and the Environment's
-    `enableIf`, which reads an effective value, in JB-128. So the *should* applies, and it is a preference, not a
-    requirement: they are `jobs/` tests, which pass whichever stage rejects them. Checks for which everything they
-    depend on is known at template validation, where rule 5 says they are made, are tested by `job_templates/` tests:
-    JT-152, JT-194, JT-196, JT-198, JT-200, and JT-202 to JT-205. So is constraint 7 for a Step whose entries are known,
-    which does not depend on any Environment's `enableIf` (JT-148, JT-158, JT-162, JT-189–JT-191).
+    JB-105–JB-107, JB-128 and JB-147, for example, for every value, and each check depends on something not yet known:
+    the Step's whole Environment set, which includes Environments a validator is not given, in JB-65 and JB-68 (combined
+    host requirements), the third wrapper's `enableIf` in JB-105, the Environments a validator is not given in JB-106,
+    the entry's `enableIf`, which constraint 7 reads to decide whether the entry supplies its values, in JB-107, the
+    Environment's `enableIf`, which reads an effective value, in JB-128, and a format string, whose value is not known
+    before it is resolved, in JB-147. So the *should* applies, and it is a preference, not a requirement: they are
+    `jobs/` tests, which pass whichever stage rejects them. Checks for which everything they depend on is known at
+    template validation, where rule 5 says they are made, are tested by `job_templates/` tests: JT-152, JT-194, JT-196,
+    JT-198, JT-200, and JT-202 to JT-205. So is constraint 7 for a Step whose entries are known, which does not depend
+    on any Environment's `enableIf` (JT-148, JT-158, JT-162, JT-189–JT-191).
 19. **Environments from documents without `ENV_PARAMS` in combinations that cannot be written.** §4 item 4 makes an
     Environment without `ENV_PARAMS` active behave as `ALWAYS`, and has every Session enter the Job Environments of a
     Job Template that does not list `ENV_PARAMS` and every attached Environment from an Environment Template that does

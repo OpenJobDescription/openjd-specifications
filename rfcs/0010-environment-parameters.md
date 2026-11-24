@@ -382,7 +382,7 @@ them as changes to the base specification:
    value of each, so an *allOf* for either has at most one element. A list of literals, such as `allOf: [linux,
    windows]`, which the old text allowed, is now invalid at template validation. No host could run it, and the base
    conformance suite already rejects it. A list that contains a format string is checked after resolution, when its
-   values are known, or earlier as §7.6 rule 5 says; with `EXPR` an element may also resolve to `null` and be skipped.
+   values are known; with `EXPR` an element may also resolve to `null` and be skipped.
 3. **The Job's Environment order.** [§1.1](../wiki/2023-09-Template-Schemas.md#11-job-template) *jobEnvironments* now
    states that a Session enters the Environments attached from Environment Templates before the Job Template's
    `jobEnvironments`,
