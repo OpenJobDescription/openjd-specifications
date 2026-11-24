@@ -1039,10 +1039,9 @@ Where:
        the entry is enabled. Where it is `false`, the entry is *disabled*. A disabled entry requests nothing and
        supplies no values. Its *parameters* are not checked: constraints 5 and 6 do not apply to it, so a key that the
        Environment does not declare, or a value that it would reject, is not an error. A disabled entry whose name
-       resolves to no Environment has no effect, whatever *required* says. Nor does one whose name resolves to a Job
-       Environment or Environment Template from a document that does not list `ENV_PARAMS`: every Session of the Job
-       enters that Environment, and the entry is not an error (see [&lt;Environment&gt;](#4-environment)
-       *activation*). Otherwise its effect depends on the *activation* of the Environment it names:
+       resolves to no Environment has no effect, whatever *required* says. Nor does one whose name resolves to a
+       pre-extension Environment ([&lt;Environment&gt;](#4-environment) *activation*). Otherwise its effect depends on
+       the *activation* of the Environment it names:
         * `ON_REQUEST` — The Step does not request the Environment, as if the entry were absent.
         * `BY_DEFAULT` — The Step *declines* the Environment. Its Sessions do not enter it, exactly as for an
           `ON_REQUEST` Environment that the Step does not request. The Environment's *enableIf* is not evaluated for the
@@ -1082,20 +1081,20 @@ Constraints:
 3. No two *environment* entries of one *dependencies* list may name the same Environment.
 4. *parameters*, if provided, must contain at least one entry and at most 50 entries.
 5. Every key of *parameters* must name a parameter declared in the named Environment's *envParameterDefinitions*. An
-   Environment that declares none, including one from a document that does not list `ENV_PARAMS`, accepts an entry with
-   no *parameters* and rejects one with any, except that it ignores the *parameters* of an entry with `required: false`
-   (see [§3.2.1](#321-resolving-external-environments) item 1).
+   Environment that declares none, including a pre-extension Environment, accepts an entry with no *parameters* and
+   rejects one with any, except that it ignores the *parameters* of an entry with `required: false` (see
+   [§3.2.1](#321-resolving-external-environments) item 1).
 6. Every value must be valid for the parameter it supplies: of its type, within its `allowedValues`, `minLength`,
    `maxLength`, `minValue`, `maxValue`, and `item` constraints, and within the length limit of
    [§4.5](#45-environmentparameterdefinition-extension-env_params) item 5.
 7. For every Environment that *applies* to a Step, the Step must supply every parameter that has no `default`. An
    Environment applies to a Step when its *activation* is `ALWAYS`, when it is `BY_DEFAULT` and the Step does not
-   decline it with a disabled entry, and when it is `ON_REQUEST` and an enabled entry of the Step requests it. A Job
-   Environment or Environment Template from a document that does not list `ENV_PARAMS` applies to every Step (see
-   [&lt;Environment&gt;](#4-environment) *activation*). A Step Environment applies only to its own Step. Whether an
-   Environment applies to a Step does not depend on the Environment's own *enableIf* or on its *exclusiveGroup*. So a
-   parameter that the Step does not supply is an error in the Step's definition even where the Environment turns out to
-   be disabled for the Step (see [§3.2.2](#322-effective-environment-parameter-values)).
+   decline it with a disabled entry, and when it is `ON_REQUEST` and an enabled entry of the Step requests it. A
+   pre-extension Environment applies to every Step ([&lt;Environment&gt;](#4-environment) *activation*). A Step
+   Environment applies only to its own Step. Whether an Environment applies to a Step does not depend on the
+   Environment's own *enableIf* or on its *exclusiveGroup*. So a parameter that the Step does not supply is an error in
+   the Step's definition even where the Environment turns out to be disabled for the Step (see
+   [§3.2.2](#322-effective-environment-parameter-values)).
 8. *required* must not be `false` on an entry that names a *jobEnvironments* entry.
 9. *enableIf* is an expression field of type `bool` (see [§7.6](#76-expression-fields)).
 
@@ -1139,14 +1138,13 @@ are resolved too (see *enableIf* in [&lt;StepDependency&gt;](#32-stepdependency)
 1. If exactly one attached Environment Template's `environment` has the entry's name, the entry refers to it. For an
    enabled entry, constraints 5 and 6 are checked against that Environment's *envParameterDefinitions*, constraint 6
    only where the Environment is not disabled for the Step ([§3.2.2](#322-effective-environment-parameter-values) item
-   3), with one exception. If the Environment declares no *envParameterDefinitions*, such as one from an Environment
-   Template that does not list `ENV_PARAMS`, and the enabled entry has `required: false`, the entry's *parameters* are
-   ignored: the entry supplies no values, its values are not resolved, and constraints 5 and 6 do not apply to them.
-   Each value must still have one of the forms of an `<EnvironmentParameterValue>`, as for any entry, so a `null` or an
-   object is an error. Implementations should warn when they ignore an entry's *parameters*, naming the entry, the
-   Environment, and the ignored keys. The entry still refers to the Environment, and has every other effect of an entry,
-   so it requests an `ON_REQUEST` Environment. Otherwise constraints 5 and 6 apply as usual, whatever *required* says.
-   In particular:
+   3), with one exception. If the Environment declares no *envParameterDefinitions*, such as a pre-extension
+   Environment, and the enabled entry has `required: false`, the entry's *parameters* are ignored: the entry supplies no
+   values, its values are not resolved, and constraints 5 and 6 do not apply to them. Each value must still have one of
+   the forms of an `<EnvironmentParameterValue>`, as for any entry, so a `null` or an object is an error.
+   Implementations should warn when they ignore an entry's *parameters*, naming the entry, the Environment, and the
+   ignored keys. The entry still refers to the Environment, and has every other effect of an entry, so it requests an
+   `ON_REQUEST` Environment. Otherwise constraints 5 and 6 apply as usual, whatever *required* says. In particular:
     * If an enabled entry with `required: true` supplies parameters to an attached Environment that declares none, the
       submission must be rejected, naming the entry and the parameter.
     * If an enabled entry supplies a key that an attached Environment with *envParameterDefinitions* does not declare,
@@ -1156,27 +1154,26 @@ are resolved too (see *enableIf* in [&lt;StepDependency&gt;](#32-stepdependency)
 3. If two or more do, then for an enabled entry, the submission must be rejected, naming the entry and the ambiguous
    name. A disabled entry refers to each of them, and has the effect of a disabled entry on each (see *enableIf* in
    [&lt;StepDependency&gt;](#32-stepdependency)): it declines each one whose *activation* is `BY_DEFAULT`, has no effect
-   on an `ON_REQUEST` one or one from a document that does not list `ENV_PARAMS`, and is an error for an `ALWAYS` one.
+   on an `ON_REQUEST` one or a pre-extension one, and is an error for an `ALWAYS` one.
 4. An attached Environment with the same name as a *jobEnvironments* entry is not reachable by name from the Job
    Template. Implementations should warn when they see one. Constraint 7 still applies to it, and no entry can supply
    its parameters or decline it. So with `activation: ALWAYS` or `BY_DEFAULT`, it applies to every Step, and a
-   parameter without a `default` rejects the submission, whatever the Environment's *enableIf*. With `activation:
-   ON_REQUEST`, it applies to no Step.
+   parameter without a `default` rejects the submission (constraint 7 does not depend on the Environment's *enableIf*).
+   With `activation: ON_REQUEST`, it applies to no Step.
 5. Likewise, an attached Environment with the same name as a *stepEnvironments* entry of a Step is not reachable by name
    from that Step (constraint 2). Other Steps of the Job reach it as usual.
 
 Each enabled entry that resolves applies independently of the others. When the scheduler attaches several of the
 Environments a Step requests, the Step's Sessions enter all of them, each with the values its own entry supplies. The
 *activation* and *enableIf* of an attached Environment decide which Sessions enter it, as for a Job Environment (see
-[&lt;Environment&gt;](#4-environment)). An Environment from an Environment Template that does not list `ENV_PARAMS` is
-entered by every Session of the Job, whatever the Job Template's entries say. After resolution, constraint 7 is checked
-over the combined Job.
+[&lt;Environment&gt;](#4-environment)), and a pre-extension Environment is entered by every Session of the Job. After
+resolution, constraint 7 is checked over the combined Job.
 
 > **NOTE:** Every Step of the Job that an attached `ALWAYS` or `BY_DEFAULT` Environment applies to, which is every Step
 > for an `ALWAYS` one and every Step that does not decline a `BY_DEFAULT` one, must supply its parameters that have no
-> `default`, whatever the Environment's *enableIf*. An Environment Template intended for Job Templates that do not
-> supply its parameters should therefore give every parameter a `default`, or use `activation: ON_REQUEST` so that only
-> the Steps that request it must supply values.
+> `default` ([&lt;StepDependency&gt;](#32-stepdependency) constraint 7). An Environment Template intended for Job
+> Templates that do not supply its parameters should therefore give every parameter a `default`, or use `activation:
+> ON_REQUEST` so that only the Steps that request it must supply values.
 
 #### 3.2.2. Effective Environment Parameter Values
 
@@ -1204,13 +1201,13 @@ An Environment is *disabled* for a Step when its *enableIf* is `false` for the S
 Step by an earlier Environment of its *exclusiveGroup* ([&lt;Environment&gt;](#4-environment) *exclusiveGroup*). These
 rules apply:
 
-1. Whether an Environment is disabled for a Step is decided after constraint 7, which does not depend on it, and before
-   the checks of the Step's effective values for the Environment. At template validation it is decided where the
-   *enableIf* is known (item 5) and, for an Environment with an *exclusiveGroup*, only where
-   [&lt;Environment&gt;](#4-environment) says that the Step's Sessions are known to enter it or known not to enter it. A
-   validator that is not given the Environment Templates to be attached never knows that a Job Environment with an
-   *exclusiveGroup* is entered, so it does not check the Step's values for one. Otherwise it is decided when the Job is
-   created.
+1. Whether an Environment is disabled for a Step is decided after constraint 7, which does not depend on it (see
+   [&lt;StepDependency&gt;](#32-stepdependency) constraint 7), and before the checks of the Step's effective values for
+   the Environment. At template validation it is decided where the *enableIf* is known (item 5) and, for an Environment
+   with an *exclusiveGroup*, only where [&lt;Environment&gt;](#4-environment) says that the Step's Sessions are known to
+   enter it or known not to enter it. A validator that is not given the Environment Templates to be attached never knows
+   that a Job Environment with an *exclusiveGroup* is entered, so it does not check the Step's values for one. Otherwise
+   it is decided when the Job is created.
 2. When the Job is created, the *enableIf* is evaluated with concrete values only. Constraint 7 ensures that every
    parameter has an effective value. Where one has none, the Job is rejected under constraint 7, and an *enableIf* that
    reads it is not evaluated for the Step. The *enableIf* *reads* a parameter when its expression references
@@ -2090,22 +2087,22 @@ Where:
    Step.
 
    A Job Environment, or the *environment* of an Environment Template, from a document that does not list `ENV_PARAMS`
-   behaves as one with `activation: ALWAYS` and no *enableIf*: every Session of the Job enters it. Unlike for an
-   `ALWAYS` Environment, a Step's disabled *environment* entry for it has no effect and is not an error (see
-   [&lt;StepDependency&gt;](#32-stepdependency) *enableIf*). So a Job Template that lists `ENV_PARAMS` cannot leave out
-   an Environment written before the extension, such as one that a render management system attaches to every Job for
-   licensing or auditing, and its `required: false` entries work whether or not an attached Environment lists the
-   extension. In a Job Template that does not list `ENV_PARAMS`, no Step has an *environment* entry and no Environment
-   has an *enableIf*, so its Job Environments are entered by every Session either way.
+   is a *pre-extension Environment*. A pre-extension Environment behaves as one with `activation: ALWAYS` and no
+   *enableIf*: every Session of the Job enters it, and it applies to every Step
+   ([&lt;StepDependency&gt;](#32-stepdependency) constraint 7). Unlike for an `ALWAYS` Environment, a Step's disabled
+   *environment* entry for it has no effect and is not an error. It declares no *envParameterDefinitions*. So a Job
+   Template that lists `ENV_PARAMS` cannot leave out an Environment written before the extension, such as one that a
+   render management system attaches to every Job for licensing or auditing, and its `required: false` entries work
+   whether or not an attached Environment lists the extension. In a Job Template that does not list `ENV_PARAMS`, no
+   Step has an *environment* entry and no Environment has an *enableIf*, so its Job Environments are entered by every
+   Session either way.
 
    A Session that does not enter an Environment does not enter or exit it, does not have its *variables* set, and does
    not have it in its Environment stack. The Environments a Session does enter keep their relative order. An Environment
-   whose *activation* is `ALWAYS` is entered by every Step's Sessions, or the Job is rejected, and a Job Environment or
-   Environment Template from a document that does not list `ENV_PARAMS` is entered by every Step's Sessions. So a check
-   that depends on whether a Step's Sessions enter either may treat it as entered. Such rules include the `WRAP_ACTIONS`
-   single-layer rule and the [Combined Host Requirements](#333-combined-host-requirements). Available with the
-   `ENV_PARAMS` extension.
-   Constraints:
+   whose *activation* is `ALWAYS` is entered by every Step's Sessions, or the Job is rejected, and so is a pre-extension
+   Environment. So a check that depends on whether a Step's Sessions enter either may treat it as entered. Such rules
+   include the `WRAP_ACTIONS` single-layer rule and the [Combined Host Requirements](#333-combined-host-requirements).
+   Available with the `ENV_PARAMS` extension. Constraints:
     1. An implementation must reject an `<EnvironmentActivation>` it does not recognize. The values are case-sensitive,
        as are this schema's other enumerated values except parameter type names. `always` and `On_Request` are not
        recognized.
@@ -2124,7 +2121,7 @@ Where:
    values, which are concrete then (see [§3.2.2](#322-effective-environment-parameter-values) item 2). The Steps it
    applies to are given by its *activation* and the Steps' *environment* entries
    ([&lt;StepDependency&gt;](#32-stepdependency) constraint 7), or, for a Step Environment, its own Step. Each such Step
-   must supply the Environment's parameters that have no `default`, whatever the *enableIf* is. A `null` result is an
+   must supply the Environment's parameters that have no `default`, as constraint 7 says. A `null` result is an
    error. If omitted, the Environment is enabled for every such Step. Where it is `false` for a Step, that Step's
    Sessions do not enter the Environment (see *activation*). Available with the `ENV_PARAMS` extension.
 7. *exclusiveGroup* — A name shared by Environments of which a Step's Sessions enter at most one, such as Environments
@@ -2154,8 +2151,8 @@ A check that depends on which Environments a Step's Sessions enter, such as the 
 ([&lt;EnvironmentActions&gt;](#43-environmentactions) constraint 2), uses what is known at each stage (see
 [§7.6](#76-expression-fields) rule 5). Before the Job is created:
 
-* A Step's Sessions may be taken to enter every Environment whose *activation* is `ALWAYS`, and every Job Environment
-  or Environment Template from a document that does not list `ENV_PARAMS`.
+* A Step's Sessions may be taken to enter every Environment whose *activation* is `ALWAYS`, and every pre-extension
+  Environment.
 * They are known to enter an Environment whose *enableIf* is absent or known to be `true` when the Step would otherwise
   enter it: by `activation: BY_DEFAULT` with no entry for it or with an entry whose *enableIf* is absent or known to be
   `true`, or through such an entry.
@@ -2170,8 +2167,7 @@ A check that depends on which Environments a Step's Sessions enter, such as the 
 
 Here an *enableIf* is known to be `true` or `false` as [§7.6](#76-expression-fields) rule 5 says. For example, two
 wrapping Environments known to be entered violate the single-layer rule whatever a third does. Constraint 7 does not
-use these bullets: whether an Environment applies to a Step does not depend on its *enableIf* or its *exclusiveGroup*
-(see [&lt;StepDependency&gt;](#32-stepdependency) constraint 7).
+use these bullets ([&lt;StepDependency&gt;](#32-stepdependency) constraint 7).
 
 The format string scopes available to format strings within an Environment are:
 
@@ -2795,11 +2791,10 @@ as possible. See the [Expression Language](2026-02-Expression-Language) specific
 
 When any document of a submission, the Job Template or an attached Environment Template, lists the `ENV_PARAMS`
 extension, Job creation takes these steps in order. A rule that the extension adds for the content of a document still
-applies only to a document that lists it ([§1.2](#12-environment-template) item 3): an Environment from a document that
-does not list it behaves as [&lt;Environment&gt;](#4-environment) *activation* says, and a Step's own requirements in a
-Job Template that does not list it keep the base rules ([§3.3](#33-hostrequirements); step 8). The steps fix when each
-check is made. When a submission has several errors, which of them an implementation reports, and in what order, is not
-specified.
+applies only to a document that lists it ([§1.2](#12-environment-template) item 3): a pre-extension Environment behaves
+as [&lt;Environment&gt;](#4-environment) *activation* says, and a Step's own requirements in a Job Template that does
+not list it keep the base rules ([§3.3](#33-hostrequirements); step 8). The steps fix when each check is made. When a
+submission has several errors, which of them an implementation reports, and in what order, is not specified.
 
 1. The Environment Templates attached to the Job are determined. `Job.EnvNames` is concrete before any TEMPLATE-scope
    expression of the Job, including a Step's `let` bindings, is evaluated.
@@ -2810,13 +2805,12 @@ specified.
 4. The set of Environments that apply to each Step ([&lt;StepDependency&gt;](#32-stepdependency) constraint 7) is fixed
    from each Environment's *activation* and the Step's entries. An enabled entry requests an `ON_REQUEST` Environment. A
    disabled entry declines a `BY_DEFAULT` one, or, for an `ALWAYS` one, causes the Job to be rejected, naming the Step
-   and the Environment (see [&lt;StepDependency&gt;](#32-stepdependency) *enableIf*). It has no effect on a Job
-   Environment or Environment Template from a document that does not list `ENV_PARAMS`, which is in every Step's set
-   (see [&lt;Environment&gt;](#4-environment) *activation*).
+   and the Environment (see [&lt;StepDependency&gt;](#32-stepdependency) *enableIf*). It has no effect on a
+   pre-extension Environment, which is in every Step's set ([&lt;Environment&gt;](#4-environment) *activation*).
 5. Environment parameter defaults and *environment* entry values are resolved into each Step's effective values. The
    *parameters* of an entry that [§3.2.1](#321-resolving-external-environments) item 1 ignores are not resolved.
-   Constraint 7 is checked for every Environment in each Step's set, before any *enableIf* of step 6 is evaluated, so a
-   parameter without a `default` that the Step does not supply is an error whatever the Environment's *enableIf* is.
+   Constraint 7 is checked for every Environment in each Step's set, before any *enableIf* of step 6 is evaluated
+   ([&lt;StepDependency&gt;](#32-stepdependency) constraint 7).
 6. Each Environment's *enableIf* is evaluated for each such Step, with the Step's effective values, in the Job's
    Environment order. Only concrete values are read: an *enableIf* that reads a value that is missing, fails to
    resolve, or does not convert is not evaluated for the Step (see
@@ -2907,21 +2901,23 @@ Rules:
 5. Before the stage at which an expression field is evaluated, its value is *known* when it is a boolean, integer, or
    float scalar (item 1), or when its expression, evaluated with each value not yet known as `unresolved[T]` of its
    type, gives a value that is not unresolved. The Expression Language's rules for unknown operands decide which results
-   are known ([Expression Language §2.1.6](2026-02-Expression-Language#216-logical-operators), and
-   [Conditional Expressions with Unknown Conditions](2026-02-Expression-Language#static-type-checking-via-unresolved-values)).
-   At template validation, the values not yet known are every Job Parameter (`Param.*` and `RawParam.*`), `Job.Name`,
-   `Job.EnvNames`, `Step.Name`, `Task.*`, `Session.*`, and every `Env.*` value, as the
-   [stage table](#74-template-processing-stages) says. A `let` binding has the value its expression has with them, so
-   one computed only from literals is known. So with a BOOL Job Parameter `F`, `"true"` and `"Param.F or true"` are
-   known to be `true`, `"Param.F and false"` and `"false if Param.F else false"` are known to be `false`, and
-   `"Param.F"`, `"not Param.F"`, `"Param.F and true"`, and `"Param.F or false"` are not known. An *environment* entry or
-   an Environment whose *enableIf* is not known is undetermined until the Job is created: whether the entry is enabled,
-   and whether the Environment is disabled for a Step, is not known before then. A check whose fields are all known at
-   an earlier stage is made at that stage. A check that depends on a field that is not known reports an error at that
-   stage only when the error holds for every value the field could take, and is made again at the stage where the field
-   is evaluated, with the value it then has. An implementation should report an error at the earliest stage at which it
-   holds for every such value. These rules decide only which errors are reported early. When an expression field is
-   evaluated at its own stage, every value it reads is concrete.
+   are known ([Expression Language §2.1.6](2026-02-Expression-Language#216-logical-operators), and [Conditional
+   Expressions with Unknown Conditions](2026-02-Expression-Language#static-type-checking-via-unresolved-values)). At
+   template validation, the values not yet known are every Job Parameter (`Param.*` and `RawParam.*`), `Job.Name`,
+   `Job.EnvNames`, `Step.Name`, `Task.*`, `Session.*`, and every `Env.*` value, as the [stage
+   table](#74-template-processing-stages) says. A `let` binding has the value its expression has with them, so one
+   computed only from literals is known. So with a BOOL Job Parameter `F`, `"true"` and `"Param.F or true"` are known to
+   be `true`, `"Param.F and false"` and `"false if Param.F else false"` are known to be `false`, and `"Param.F"`, `"not
+   Param.F"`, `"Param.F and true"`, and `"Param.F or false"` are not known. An *environment* entry or an Environment
+   whose *enableIf* is not known is undetermined until the Job is created: whether the entry is enabled, and whether the
+   Environment is disabled for a Step, is not known before then. A check whose fields are all known at an earlier stage
+   is made at that stage. A check that depends on a field that is not known reports an error at that stage only when the
+   error holds for every value the field could take, and is made again at the stage where the field is evaluated, with
+   the value it then has. An implementation should report an error at the earliest stage at which it holds for every
+   such value. Before the Job is created, an implementation may report fewer errors than Job creation would, or group
+   them differently, but every error it reports early must be one that Job creation reports for every value of what is
+   not yet known. These rules decide only which errors are reported early. When an expression field is evaluated at its
+   own stage, every value it reads is concrete.
 
 With the `ENV_PARAMS` extension, the *enableIf* of an *environment* entry and of an Environment is evaluated in
 template scope, not in a host context. `path` values have POSIX semantics whatever path format the Job's paths have,

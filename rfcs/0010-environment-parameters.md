@@ -291,7 +291,8 @@ Schemas unless another page is named.
 | **Request** | A Step requests an Environment with an enabled `environment:` entry in its `dependencies` that names it. |
 | **Disabled entry** | An `environment:` entry whose own `enableIf` is `false`. It requests nothing and supplies no values. |
 | **Decline** | A Step declines a `BY_DEFAULT` Environment with a disabled entry naming it, and its Sessions then do not enter it. |
-| **Applies** | An Environment applies to a Step when its `activation` is `ALWAYS`, when it is `BY_DEFAULT` and the Step does not decline it, or when it is `ON_REQUEST` and the Step requests it. The Step must supply each of the Environment's parameters that has no `default`, whatever the Environment's *enableIf*. |
+| **Pre-extension Environment** | A Job Environment, or an Environment Template's Environment, from a document that does not list `ENV_PARAMS`. It behaves as `ALWAYS` with no *enableIf*, except that a Step's disabled entry for it has no effect rather than being an error ([§4](../wiki/2023-09-Template-Schemas.md#4-environment) item 4). |
+| **Applies** | An Environment applies to a Step when its `activation` is `ALWAYS`, when it is `BY_DEFAULT` and the Step does not decline it, or when it is `ON_REQUEST` and the Step requests it. A pre-extension Environment applies to every Step. The Step must supply each of the Environment's parameters that has no `default`. Whether an Environment applies does not depend on its own *enableIf* or its `exclusiveGroup` ([§3.2](../wiki/2023-09-Template-Schemas.md#32-stepdependency) constraint 7). |
 | **Disabled Environment** | An Environment whose own `enableIf` is `false` for a Step, or that is superseded for it. That Step's Sessions do not enter it. |
 | **Superseded** | An Environment is superseded for a Step when an earlier Environment of its `exclusiveGroup`, in the Job's Environment order, is one the Step's Sessions enter. |
 | **Effective values** | For one Step and one Environment that applies to it, the value of each of the Environment's parameters: the one the Step's enabled entry supplies, or else the parameter's resolved `default`. |
@@ -308,9 +309,9 @@ list `ENV_PARAMS` keep running with it (see [Backward compatibility](#backward-c
 
 When only some documents of a submission list `ENV_PARAMS`, Job creation still takes the steps of
 [§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params), and each rule the extension adds for a
-document's content applies only to the documents that list it. A Job Environment or Environment Template from a document
-that does not list it behaves as `ALWAYS`, and a Step's own host requirements in a Job Template that does not list it
-keep the base rules.
+document's content applies only to the documents that list it. A pre-extension Environment behaves as
+[Terminology](#terminology) says, and a Step's own host requirements in a Job Template that does not list it keep the
+base rules.
 
 The item descriptions of *jobEnvironments*, *stepEnvironments*, *let*, and *dependencies* each gain a sentence so that
 they stay true with the extension. §1.1 *jobEnvironments* also states the Job's Environment order, which applies with or
@@ -335,12 +336,11 @@ This RFC is additive and gated by the `ENV_PARAMS` extension name declared under
   Job Templates working while adding per-Step configuration. Such a Job Template cannot request anything, so its
   Sessions never enter an attached `ON_REQUEST` Environment. An author who wants existing Job Templates to keep getting
   an Environment leaves its `activation` at the default, `BY_DEFAULT`, or sets `ALWAYS`.
-- An Environment Template that does not list `ENV_PARAMS` runs with a Job Template that does. Its Environment behaves as
-  one with `activation: ALWAYS` and no `enableIf`, so every Session enters it, and a disabled `environment:` entry that
-  names it has no effect and is not an error (see [Environments from documents without `ENV_PARAMS` are
+- An Environment Template that does not list `ENV_PARAMS` runs with a Job Template that does. Its Environment is a
+  pre-extension Environment (see [Terminology](#terminology) and [Environments from documents without `ENV_PARAMS` are
   `ALWAYS`](#environments-from-documents-without-env_params-are-always)). It has no parameters, so an enabled
-  `environment:` entry that names it and supplies parameters is an error only if it has `required: true`. A
-  `required: false` entry's parameters are ignored, and implementations should warn (see
+  `environment:` entry that names it and supplies parameters is an error only if it has `required: true`. A `required:
+  false` entry's parameters are ignored, and implementations should warn (see
   [`<StepDependency>`](../wiki/2023-09-Template-Schemas.md#32-stepdependency) constraint 5 and
   [§3.2.1](../wiki/2023-09-Template-Schemas.md#321-resolving-external-environments) item 1).
 - An Environment Template from a document that does not list `ENV_PARAMS`, such as one written before this extension,
@@ -353,12 +353,10 @@ This RFC is additive and gated by the `ENV_PARAMS` extension name declared under
   ignored](#parameters-for-an-environment-that-declares-none-are-ignored).
 - No existing field changes meaning. A Job with no `environment:` entries, no Environment `envParameterDefinitions`, no
   `activation`, and no Environment `enableIf` behaves as today, including which Environments each Session enters and how
-  Sessions are shared between Steps. A Job Environment or Environment Template from a document that does not list
-  `ENV_PARAMS`, such as one written before this extension, behaves as `activation: ALWAYS` with no `enableIf`, so every
-  Session enters it, as today, whatever the entries of a Job Template that lists `ENV_PARAMS` say. A Job Template that
-  lists `ENV_PARAMS` but no `environment:` entries, run with an Environment Template that declares parameters and keeps
-  the default `activation`, also shares Sessions as today: every Step takes the same defaults, so every Step's values
-  are equal.
+  Sessions are shared between Steps. A pre-extension Environment, such as one written before this extension, is entered
+  by every Session, as today (see [Terminology](#terminology)). A Job Template that lists `ENV_PARAMS` but no
+  `environment:` entries, run with an Environment Template that declares parameters and keeps the default `activation`,
+  also shares Sessions as today: every Step takes the same defaults, so every Step's values are equal.
 - Adding `ENV_PARAMS` to a document changes how the *minLength* and *maxLength* of its existing RANGE_EXPR Job
   Parameters are checked: both the value as written and its canonical form must satisfy them
   ([§2.10](../wiki/2023-09-Template-Schemas.md#210-jobrangeexprparameterdefinition-extension-expr)). So a value that a
@@ -410,8 +408,8 @@ up to 50 parameters, read only inside it as `Env.Param.<name>` and `Env.RawParam
 `<JobParameterDefinition>` of any type available with `EXPR`, except that:
 
 * The `default` is a format string resolved when the Job is created, and may read the same document's Job Parameters and
-  `Job.Name`. A parameter without one must be supplied by every Step that the Environment applies to, whatever its
-  *enableIf*.
+  `Job.Name`. A parameter without one must be supplied by every Step that the Environment applies to (see *Applies* in
+  [Terminology](#terminology)).
 * A PATH or LIST[PATH] value is used as given: never joined with a directory, and not required to be absolute. A string
   that becomes such a value keeps its text, even where the Expression Language would convert it to a `path`, so a value
   that is a single `{{ }}` expression whose result is a string, such as `{{RawParam.Dir}}`, is that string, not
@@ -444,14 +442,14 @@ must resolve to an Environment. An enabled `required: true` entry whose Environm
 earlier member of its *exclusiveGroup* supersedes, is not an error, and implementations may warn. *enableIf* is
 evaluated when the Job is created, and a value known before then, such as a literal `false`, also decides what template
 validation checks. A `false` entry requests and supplies nothing, declines a `BY_DEFAULT` Environment, is an error for
-an `ALWAYS` one, and has no effect on a Job Environment or Environment Template from a document that does not list
-`ENV_PARAMS`. *parameters* supplies values, each a literal or a format string resolved when the Job is created.
+an `ALWAYS` one, and has no effect on a pre-extension Environment. *parameters* supplies values, each a literal or a
+format string resolved when the Job is created.
 
 Among other things, the constraints keep an entry to one form and one Environment to one entry, forbid an entry that
 names one of the same Step's `stepEnvironments`, give an entry's `parameters` 1 to 50 values, require each key to be
 declared and each value to be valid (except that an attached Environment that declares no parameters ignores a
 `required: false` entry's values), require every Step that an Environment applies to, by its `activation` and the Step's
-entries, to supply each parameter without a `default` whatever the Environment's *enableIf* is (constraint 7), and
+entries, to supply each parameter without a `default` (constraint 7; see *Applies* in [Terminology](#terminology)), and
 forbid `required: false` on an entry that names a Job Environment. The section says at which stage each constraint is
 checked.
 
@@ -474,22 +472,20 @@ ignored](#parameters-for-an-environment-that-declares-none-are-ignored)).
 * `ON_REQUEST`: the Sessions of the Steps that request it, less any for which its *enableIf* is `false`.
 
 A Step Environment has no *activation*: only its own Step's Sessions enter it, and they do not if its *enableIf* is
-`false` for that Step. A Job Environment or Environment Template from a document that does not list `ENV_PARAMS`
-behaves as `ALWAYS` with no *enableIf*, except that a Step's disabled entry for it has no effect rather than being an
-error.
+`false` for that Step. A pre-extension Environment behaves as [Terminology](#terminology) says.
 
 §4 item 6, *enableIf*, is evaluated when the Job is created, once per Step with that Step's effective values. It comes
-after constraint 7, which does not depend on it: a Step that an Environment applies to supplies every parameter without
-a `default`. [§3.2.2](../wiki/2023-09-Template-Schemas.md#322-effective-environment-parameter-values) then evaluates the
-*enableIf* with concrete values, before the value checks, which do not apply to a Step for which it is `false`. An
-*enableIf* that reads a value that fails to resolve or does not convert is not evaluated, and the value is an error. §4
-item 7, *exclusiveGroup*, names a group of Environments of which each Step's Sessions enter only the first, in the Job's
+after constraint 7, which does not depend on it (see *Applies* in [Terminology](#terminology)).
+[§3.2.2](../wiki/2023-09-Template-Schemas.md#322-effective-environment-parameter-values) then evaluates the *enableIf*
+with concrete values, before the value checks, which do not apply to a Step for which it is `false`. An *enableIf* that
+reads a value that fails to resolve or does not convert is not evaluated, and the value is an error. §4 item 7,
+*exclusiveGroup*, names a group of Environments of which each Step's Sessions enter only the first, in the Job's
 Environment order, that they would otherwise enter and that its *enableIf* does not disable. The later ones are
 superseded, which disables them for the Step, and their *enableIf* is not evaluated. Attached Environments come first,
 so one can supersede a Job Environment, and a validator given only the Job Template never treats a grouped Job
 Environment as known to be entered. An `ALWAYS` Environment cannot have a group (see
-[`exclusiveGroup`](#exclusivegroup)). A Step Environment may have *enableIf* but none of the other new fields (see
-[Not on Step Environments](#not-on-step-environments)).
+[`exclusiveGroup`](#exclusivegroup)). A Step Environment may have *enableIf* but none of the other new fields (see [Not
+on Step Environments](#not-on-step-environments)).
 
 Being disabled for a Step changes which Sessions enter an Environment, not its definition. Its other fields resolved
 at Job creation, such as an action's *timeout*, read no effective values, and are resolved and checked as without the
@@ -554,7 +550,9 @@ fields, which both *enableIf* fields are: one typed expression with no `{{ }}` a
 widening `int` to `float`. Before it is evaluated, its value is known when it is a boolean, integer, or float scalar, or
 when the Expression Language's rules for unknown operands give a result with the values not yet known. A check whose
 fields are known is made then; one that depends on a field that is not known reports an error only when the error holds
-for every value it could take.
+for every value it could take. Before the Job is created, an implementation may report fewer errors than Job creation
+would, or group them differently, but every error it reports early must be one that Job creation reports for every value
+of what is not yet known.
 
 ### Expression Language
 
@@ -695,10 +693,10 @@ own Step's Sessions can enter it.
 An operator who attaches an Environment to every Job, for example for licensing or auditing, wrote it before this
 extension existed and relies on every Session entering it. A Job Template that lists `ENV_PARAMS` must not be able to
 change that. If such an Environment were `BY_DEFAULT`, a Step could decline it with `enableIf: false` on an entry that
-names it, and a new Job Template would skip an Environment that no Job Template could skip before. So a Job Environment
-or Environment Template from a document that does not list `ENV_PARAMS` behaves as `ALWAYS` with no *enableIf*, and the
-guarantee the operator had before the extension still holds after it. A Step can leave out only an Environment whose
-author listed `ENV_PARAMS` and left it `BY_DEFAULT` or made it `ON_REQUEST`.
+names it, and a new Job Template would skip an Environment that no Job Template could skip before. So a pre-extension
+Environment behaves as `ALWAYS` with no *enableIf*, and the guarantee the operator had before the extension still holds
+after it. A Step can leave out only an Environment whose author listed `ENV_PARAMS` and left it `BY_DEFAULT` or made it
+`ON_REQUEST`.
 
 A disabled entry that names such an Environment has no effect, instead of the error it is for an `ALWAYS` Environment.
 The entry's author could not have known whether the attached Environment lists the extension, and a Job Template with
@@ -782,12 +780,11 @@ a second Job Template until every queue is upgraded, and no expression can tell 
 lists names, not parameters.
 
 Only the entry's *parameters* are ignored. The entry still names the Environment, so it is not treated as matching
-nothing, and it still requests an `ON_REQUEST` Environment. The same entry, when disabled, has no effect on a Job
-Environment or Environment Template from a document that does not list `ENV_PARAMS`, which every Session enters, and
-declines a `BY_DEFAULT` one that lists it, as any disabled entry does. Ignoring the whole entry would differ only for an
-`ON_REQUEST` Environment from an Environment Template that lists `ENV_PARAMS` but declares no parameters: the Step asked
-for it, and its Sessions would not enter it. Implementations should warn, because the Step does not get the values it
-asked for.
+nothing, and it still requests an `ON_REQUEST` Environment. The same entry, when disabled, has no effect on a
+pre-extension Environment, which every Session enters, and declines a `BY_DEFAULT` one that lists it, as any disabled
+entry does. Ignoring the whole entry would differ only for an `ON_REQUEST` Environment from an Environment Template that
+lists `ENV_PARAMS` but declares no parameters: the Step asked for it, and its Sessions would not enter it.
+Implementations should warn, because the Step does not get the values it asked for.
 
 The rule is narrow on purpose. An Environment that declares parameters has adopted this extension, so a key it does not
 declare is a typo, or a parameter of a later version of the Environment. Either is a mistake that the Job Template's
@@ -879,7 +876,7 @@ Environments, which no Step can request.
 
 An entry's *enableIf* lets a Step make a request conditional, for example on a Job Parameter. Declining a `BY_DEFAULT`
 Environment lets a Step avoid one it has nothing to ask of, and an `ALWAYS` Environment exists so that no Step can. No
-Step can decline a Job Environment or Environment Template from a document that does not list `ENV_PARAMS` either.
+Step can decline a pre-extension Environment either.
 
 It is evaluated at Job creation, so a disabled entry costs nothing at run time. A disabled entry that matches no
 attached Environment has no effect, so a `required: true` entry with a `false` condition is not an error. `required` is
@@ -1007,9 +1004,9 @@ submitter-controlled input differ per Step, and lets a Step leave out an Environ
 Environment Template owner who does not want submitters to choose, for example, arbitrary container images restricts the
 parameter with `allowedValues`, which a scheduler checks at Job creation before any Worker Host runs anything.
 
-A Job Template cannot use the extension to skip an Environment that an operator attaches to every Job. A Job Environment
-or Environment Template from a document that does not list `ENV_PARAMS` behaves as `ALWAYS`, so every Session enters it
-whatever a Job Template writes, as before the extension (see [Environments from documents without `ENV_PARAMS` are
+A Job Template cannot use the extension to skip an Environment that an operator attaches to every Job. A pre-extension
+Environment behaves as `ALWAYS`, so every Session enters it whatever a Job Template writes, as before the extension (see
+[Environments from documents without `ENV_PARAMS` are
 `ALWAYS`](#environments-from-documents-without-env_params-are-always)). An operator who adopts the extension keeps that
 guarantee by setting `activation: ALWAYS`, under which a Step's disabled entry or an *enableIf* that is `false` for a
 Step rejects the Job. A Step can decline only a `BY_DEFAULT` Environment, which its author left for Steps to decline.
