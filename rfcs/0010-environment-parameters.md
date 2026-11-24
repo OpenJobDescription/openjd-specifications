@@ -557,8 +557,8 @@ work done at Job creation. The new [§7.6](../wiki/2023-09-Template-Schemas.md#7
 fields, which both *enableIf* fields are: one typed expression with no `{{ }}` and no implicit conversion other than
 widening `int` to `float`. Before it is evaluated, its value is known when it is a boolean, integer, or float scalar, or
 when the Expression Language's rules for unknown operands give a result with the values not yet known. A check whose
-fields are known is made then. Rule 5 is also where the specification says which errors an implementation should
-report before the Job is created, and which it must not.
+fields are known is made at that stage. [§7.6](../wiki/2023-09-Template-Schemas.md#76-expression-fields) rule 5 also
+says which errors an implementation should report before the Job is created, and which it must not.
 
 ### Expression Language
 

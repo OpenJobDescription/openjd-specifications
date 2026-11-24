@@ -1111,17 +1111,17 @@ only to an enabled entry, and constraint 6 only where the Environment is not dis
 2. When the Job is created, for every entry whose *enableIf* is absent or resolves to `true`, once format strings are
    resolved and external Environments are known.
 
-An entry whose *enableIf* is not known at template validation may turn out to be disabled, so its keys and values are
-checked when the Job is created, and an error in them is reported earlier only as [§7.6](#76-expression-fields) rule 5
-allows.
+An entry whose *enableIf* is not known at template validation may turn out to be disabled, so an error in its keys and
+values is reported before the Job is created only as [§7.6](#76-expression-fields) rule 5 says. They are checked when
+the Job is created.
 
 Constraint 7 depends only on the Step's entries, the Environments' *activation*, and which parameters have a
 `default`. It is checked at
 template validation for the *jobEnvironments* entries, and when the Job is created for every Environment, before any
 Environment's *enableIf* is evaluated ([§7.4.1](#741-job-creation-with-env_params) step 5). At template validation it
-is made for a Step when the Step's entries that bear on it are known, and otherwise reports an error only as §7.6 rule
-5 allows. Any other check at template validation that depends on whether an entry is enabled or an Environment is
-disabled is made as §7.6 rule 5 describes. Otherwise the check is made when the Job is created.
+is checked for a Step when the Step's entries that bear on it are known, and otherwise an error is reported only as
+§7.6 rule 5 says. Any other check at template validation that depends on whether an entry is enabled or an Environment
+is disabled is made as §7.6 rule 5 describes. Otherwise the check is made when the Job is created.
 
 For an entry that names no *jobEnvironments* entry, template validation can check only constraints 1–4, 8, and 9, and
 that each value has one of the forms of an `<EnvironmentParameterValue>`. A validator that is given the Environment
@@ -2075,11 +2075,10 @@ Where:
     * `ALWAYS` — Every Session of the Job enters this Environment, in its position in the Job's Environment order
       ([§1.1](#11-job-template) *jobEnvironments*). No Step can leave it out. A Step's disabled *environment* entry for
       it is an error, and so is its *enableIf* being `false` for a Step. Either error names the Step and the
-      Environment. It is
-      reported at the earliest stage at which it is known (see [§7.6](#76-expression-fields) rule 5): at template
-      validation where the *enableIf* is known there to be `false`, and otherwise when the Job is created. For a
-      disabled entry, template validation reports it only for an entry that names a *jobEnvironments* entry. A `true`
-      *enableIf* is not an error.
+      Environment. Where the *enableIf* is known at template validation to be `false`, the error is reported there
+      ([§7.6](#76-expression-fields) rule 5). Otherwise it is reported when the Job is created, or earlier as §7.6 rule
+      5 says. A validator that is not given the Environment Templates to be attached knows the error of a disabled
+      entry only for an entry that names a *jobEnvironments* entry. A `true` *enableIf* is not an error.
     * `BY_DEFAULT` — Every Session of the Job enters this Environment, in its position in the Job's Environment order,
       except the Sessions of a Step that declines it with a disabled *environment* entry, and of a Step for which its
       *enableIf* is `false`. This is the default in a document that lists `ENV_PARAMS`: a *jobEnvironments* entry of
@@ -2111,9 +2110,10 @@ Where:
    whose *activation* is `ALWAYS` is entered by every Step's Sessions, or the Job is rejected. An Environment without
    `ENV_PARAMS` active is entered by every Step's Sessions, and so, in a Job Template that does not list `ENV_PARAMS`,
    are its Job Environments and every attached Environment from an Environment Template that does not list `ENV_PARAMS`.
-   So a check that depends on whether a Step's Sessions enter any of these may treat each of them as entered. Before the
-   Job is created, an error found this way is one that [§7.6](#76-expression-fields) rule 5 allows, since a Job in
-   which a Step's Sessions do not enter one of them is rejected. Such rules include the `WRAP_ACTIONS` single-layer rule
+   So a check that depends on whether a Step's Sessions enter any of these may treat each of them as entered. Doing so
+   does not make an error depend on a value not yet known, since a Job in which a Step's Sessions do not enter one of
+   them is rejected. Whether the error is reported before the Job is created is decided by
+   [§7.6](#76-expression-fields) rule 5. Such rules include the `WRAP_ACTIONS` single-layer rule
    and the [Combined Host Requirements](#333-combined-host-requirements).
    Available with the `ENV_PARAMS` extension.
    Constraints:
@@ -2803,8 +2803,8 @@ With the `EXPR` extension enabled, expressions that reference values not yet kno
 stage are type-checked using the declared types of those values, catching type errors as early
 as possible. See the [Expression Language](2026-02-Expression-Language) specification for details.
 
-The table says which checks each stage makes. Which errors an implementation should report, and which it must not,
-before the Job is created is stated in [§7.6](#76-expression-fields) rule 5.
+The table says which checks each stage makes. [§7.6](#76-expression-fields) rule 5 says which errors an implementation
+should report before the Job is created, and which it must not.
 
 #### 7.4.1. Job Creation with `ENV_PARAMS`
 
@@ -2929,17 +2929,22 @@ Rules:
    [Conditional Expressions with Unknown Conditions](2026-02-Expression-Language#static-type-checking-via-unresolved-values)).
    At template validation, the values not yet known are every Job Parameter (`Param.*` and `RawParam.*`), `Job.Name`,
    `Job.EnvNames`, `Step.Name`, `Task.*`, `Session.*`, and every `Env.*` value, as the
-   [stage table](#74-template-processing-stages) says. A validator that is not given the Environment Templates to be
-   attached does not know them either. A `let` binding has the value its expression has with the values not yet known,
+   [stage table](#74-template-processing-stages) says. Nor does a validator know the documents it is not given: the
+   Environment Templates to be attached, when it validates a Job Template, or the Job Template, when it validates an
+   Environment Template. A `let` binding has the value its expression has with the values not yet known,
    so one computed only from literals is known. So with a BOOL Job Parameter `F`, `"true"` and `"Param.F or true"` are
    known to be `true`, `"Param.F and false"` and `"false if Param.F else false"` are known to be `false`, and
    `"Param.F"`, `"not Param.F"`, `"Param.F and true"`, and `"Param.F or false"` are not known. An *environment* entry or
    an Environment whose *enableIf* is not known is undetermined until the Job is created: whether the entry is enabled,
-   and whether the Environment is disabled for a Step, is not known before then. A check whose fields are all known at
-   an earlier stage is made at that stage. Before the Job is created, an implementation should report every error it
-   can show will make Job creation fail for every value of what is not yet known, and must not report an error when
-   some of those values would let Job creation succeed. The error it reports may differ from the first one Job creation
-   reports for a particular value. A check that depends on a field that is not known is made again at the stage where
+   and whether the Environment is disabled for a Step, is not known before then. A check is made at an earlier stage
+   when everything it depends on is known there, including whether it applies: each *enableIf* that decides that is
+   known, and, for a check over the Environments a Step's Sessions enter, they are known to enter or known not to enter
+   each of them ([&lt;Environment&gt;](#4-environment)). Before the Job is created, an implementation should report
+   every error it can show will make Job creation fail for every value of what is not yet known, and must not report an
+   error when some of those values would let Job creation succeed. The error it reports may differ from the first one
+   Job creation reports for a particular value. Job creation includes the checks that this specification makes at
+   template validation, so an error that template validation must report makes Job creation fail for every value. A
+   check that depends on a field that is not known is made again at the stage where
    the field is evaluated, with the value it then has. These rules decide only which errors are reported early. When an
    expression field is evaluated at its own stage, every value it reads is concrete.
 
