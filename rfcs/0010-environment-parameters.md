@@ -310,7 +310,8 @@ list `ENV_PARAMS` keep running with it (see [Backward compatibility](#backward-c
 When only some documents of a submission list `ENV_PARAMS`, Job creation still takes the steps of
 [§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params), and each rule the extension adds for a
 document's content applies only to the documents that list it. An Environment without `ENV_PARAMS` active behaves as
-[Terminology](#terminology) says. In a Job Template that does not list it, every Session enters its Job Environments
+[Terminology](#terminology) says. In a Job Template that does not list `ENV_PARAMS`, every Session enters its Job
+Environments and every attached Environment from an Environment Template that does not list `ENV_PARAMS`
 (see [Environment Templates without `ENV_PARAMS` are `ALWAYS`](#environment-templates-without-env_params-are-always)),
 and a Step's own host requirements keep the base rules.
 
@@ -476,7 +477,8 @@ ignored](#parameters-for-an-environment-that-declares-none-are-ignored)).
 
 A Step Environment has no *activation*: only its own Step's Sessions enter it, and they do not if its *enableIf* is
 `false` for that Step. An Environment without `ENV_PARAMS` active behaves as [Terminology](#terminology) says, and in a
-Job Template that does not list `ENV_PARAMS`, every Session enters its Job Environments (see [Environment Templates
+Job Template that does not list `ENV_PARAMS`, every Session enters its Job Environments and every attached Environment
+from an Environment Template that does not list `ENV_PARAMS` (see [Environment Templates
 without `ENV_PARAMS` are `ALWAYS`](#environment-templates-without-env_params-are-always)).
 
 §4 item 6, *enableIf*, is evaluated when the Job is created, once per Step with that Step's effective values. It comes

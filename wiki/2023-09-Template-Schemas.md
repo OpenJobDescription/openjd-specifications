@@ -1095,9 +1095,8 @@ Constraints:
    `ENV_PARAMS`, do its Job Environments and every attached Environment from an Environment Template that does not list
    `ENV_PARAMS` ([&lt;Environment&gt;](#4-environment) *activation*). A Step Environment applies only to its own Step.
    Whether an Environment applies to a Step does not depend on the Environment's own *enableIf* or on its
-   *exclusiveGroup*. So a parameter that the Step does not supply is an error in
-   the Step's definition even where the Environment turns out to be disabled for the Step (see
-   [§3.2.2](#322-effective-environment-parameter-values)).
+   *exclusiveGroup*. So a parameter that the Step does not supply is an error in the Step's definition even where the
+   Environment turns out to be disabled for the Step (see [§3.2.2](#322-effective-environment-parameter-values)).
 8. *required* must not be `false` on an entry that names a *jobEnvironments* entry.
 9. *enableIf* is an expression field of type `bool` (see [§7.6](#76-expression-fields)).
 
@@ -1171,8 +1170,9 @@ are resolved too (see *enableIf* in [&lt;StepDependency&gt;](#32-stepdependency)
 Each enabled entry that resolves applies independently of the others. When the scheduler attaches several of the
 Environments a Step requests, the Step's Sessions enter all of them, each with the values its own entry supplies. The
 *activation* and *enableIf* of an attached Environment decide which Sessions enter it, as for a Job Environment (see
-[&lt;Environment&gt;](#4-environment)), and an Environment without `ENV_PARAMS` active is entered by every Session of
-the Job. After resolution, constraint 7 is checked over the combined Job.
+[&lt;Environment&gt;](#4-environment)). An Environment without `ENV_PARAMS` active is entered by every Session of the
+Job, and so, in a Job Template that does not list `ENV_PARAMS`, is every attached Environment from an Environment
+Template that does not list `ENV_PARAMS`. After resolution, constraint 7 is checked over the combined Job.
 
 > **NOTE:** Every Step of the Job that an attached `ALWAYS` or `BY_DEFAULT` Environment applies to, which is every Step
 > for an `ALWAYS` one and every Step that does not decline a `BY_DEFAULT` one, must supply its parameters that have no
@@ -2107,11 +2107,10 @@ Where:
 
    A Session that does not enter an Environment does not enter or exit it, does not have its *variables* set, and does
    not have it in its Environment stack. The Environments a Session does enter keep their relative order. An Environment
-   whose *activation* is `ALWAYS` is entered by every Step's Sessions, or the Job is rejected. An Environment without
-   `ENV_PARAMS` active, and each Environment that the previous paragraph says every Session enters, is entered by every
-   Step's Sessions. So a check that depends on whether a Step's Sessions enter any of these may treat it as entered.
-   Such rules include the `WRAP_ACTIONS` single-layer rule and the [Combined Host
-   Requirements](#333-combined-host-requirements). Available with the `ENV_PARAMS` extension.
+   whose *activation* is `ALWAYS` is entered by every Step's Sessions, or the Job is rejected. Each Environment that the
+   previous paragraph says every Session enters is entered by every Step's Sessions. So a check that depends on whether
+   a Step's Sessions enter any of these may treat it as entered. Such rules include the `WRAP_ACTIONS` single-layer rule
+   and the [Combined Host Requirements](#333-combined-host-requirements). Available with the `ENV_PARAMS` extension.
    Constraints:
     1. An implementation must reject an `<EnvironmentActivation>` it does not recognize. The values are case-sensitive,
        as are this schema's other enumerated values except parameter type names. `always` and `On_Request` are not

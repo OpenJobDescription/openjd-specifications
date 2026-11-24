@@ -1,8 +1,8 @@
 # RFC 0010 / Template Schemas §4 item 4 (activation), §3.2 constraint 7, §7.6 rule 5, with RFC 0008 (single-layer
 # rule, §4.3 constraint 2): the Job Template lists WRAP_ACTIONS but not ENV_PARAMS, and each of its Steps has a
 # wrapping Step Environment. The attached Environment Template lists ENV_PARAMS, so Job creation takes the steps of
-# §7.4.1. Every Session enters the Job Environments of a Job Template that does not list ENV_PARAMS (§4 item 4), but a
-# Step Environment of such a document is still entered only by its own Step's Sessions. So A's Sessions have one
+# §7.4.1. A Step Environment of a Job Template that does not list ENV_PARAMS is still entered only by its own Step's
+# Sessions (§4 item 4), as without the extension. So A's Sessions have one
 # wrapping layer, WrapA, and B's have one, WrapB, and the Job runs. Counting WrapA in B's set (or WrapB in A's) would
 # give two wrapping layers and reject the Job.
 template:
