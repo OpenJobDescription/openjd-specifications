@@ -751,7 +751,7 @@ not resolve or convert is not evaluated, and the value is an error. Whether a va
 so it does not depend on evaluation order. At Job creation the *enableIf* is then an ordinary evaluation of concrete
 values. Unknown values remain only at template validation, where Job Parameters are not yet known, and there they only
 decide which errors are reported early. The Expression Language now defines their results, such as `U and false =
-false`, so validators agree on what they report.
+false`, so validators agree on which values are known.
 
 A value that the *enableIf* does not read still need not convert when the Environment is disabled: an entry
 `Seats: "{{Param.N}}"` for an INT parameter, with the Job Parameter `N` set to `"many"`, is not an error for a Step for
