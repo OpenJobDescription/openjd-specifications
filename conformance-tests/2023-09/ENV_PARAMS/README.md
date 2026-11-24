@@ -86,7 +86,7 @@ and every attached Environment from an Environment Template that does not list `
   `ENV_PARAMS`, not on `stepEnvironments`; an `ON_REQUEST` Environment is entered, and its `variables` set, only in the
   Sessions of Steps that request it, and entered Environments keep their order. An `ALWAYS` Environment cannot be
   disabled: its `enableIf` being false for a Step is an error, at template validation where it is known to be `false`
-  and at job creation otherwise (§4 item 6, §3.2.2 item 6).
+  and at job creation otherwise, or earlier as §7.6 rule 5 says (§4 item 6, §3.2.2 item 6).
 - **Environment `enableIf`** (§4 item 6): requires `ENV_PARAMS`; an expression field of type `bool`
   (§7.6) with the scopes of the Environment's `hostRequirements` (or, on a Step Environment, `Step.Name` and the
   Step's `let`); decided per Step at job creation from its effective values, never `null`; a disabled Environment is
@@ -882,17 +882,17 @@ keeps its number with a note. Earlier drafts of the RFC carried the same index a
 | V32 | Environment `enableIf` (listed after V31 so that existing row numbers are stable, as V33 and V34 are): `ENV_PARAMS`; an expression field of type `bool` (§7.6); the scopes of §7.3.2 | Template validation | JT-135–JT-137, JT-139–JT-147, ET-39–ET-41, JT-153, JT-154; run time: JB-111 |
 | V33 | Environment `enableIf` does not resolve to `null`, per Step | Job creation | JB-97; run-time effect: JB-93–JB-96, JB-98, JB-99 |
 | V34 | A check over a Step's Environment set, such as the `WRAP_ACTIONS` single-layer rule, where an Environment's `enableIf` decides membership | Job creation; before then only as §7.6 rule 5 allows | JT-150, JT-151, JB-100, JB-101, JB-103, JB-105, JB-106 |
-| V35 | The Step's effective values for an Environment disabled for it (its `enableIf` is `false`, or it is superseded) are not checked. An Environment `enableIf` is evaluated at job creation with concrete values only; one that reads a value that fails to resolve or does not convert is not evaluated, and the value is an error (§3.2.2). | Template validation for an `enableIf` known there to be `false` (§7.6 rule 5); job creation otherwise | JT-156, JT-157, JT-204, JB-108–JB-110, JB-112, JB-125, JB-126, JB-184, JB-186; superseded: JB-154; a grouped Job Environment's values are not checked at template validation: JT-212 |
+| V35 | The Step's effective values for an Environment disabled for it (its `enableIf` is `false`, or it is superseded) are not checked. An Environment `enableIf` is evaluated at job creation with concrete values only; one that reads a value that fails to resolve or does not convert is not evaluated, and the value is an error (§3.2.2). | Template validation for an `enableIf` known there to be `false` (§7.6 rule 5); job creation otherwise, or earlier as §7.6 rule 5 says | JT-156, JT-157, JT-204, JB-108–JB-110, JB-112, JB-125, JB-126, JB-184, JB-186; superseded: JB-154; a grouped Job Environment's values are not checked at template validation: JT-212 |
 | V36 | A document that lists `ENV_PARAMS` also lists `EXPR` (§1.1 item 3, §1.2 item 3). | Template validation | JT-160, JT-161, ET-43 |
-| V37 | The `enableIf` of an `ALWAYS` Environment is not known at template validation to be `false` (§4 item 6, §3.2.2 item 6, §7.6 rule 5). | Template validation | JT-170, ET-44, ET-51, JT-194, JT-198, JT-200, JT-205; an expression that is not known is not rejected then: JT-172, JT-195, JT-199, JT-201 |
+| V37 | The `enableIf` of an `ALWAYS` Environment is not known at template validation to be `false` (§4 item 6, §3.2.2 item 6, §7.6 rule 5). | Template validation | JT-170, ET-44, ET-51, JT-194, JT-198, JT-200, JT-205; an expression that some Job Parameter value makes `true` is not rejected then: JT-172, JT-195, JT-199, JT-201 |
 | V38 | The `enableIf` of an `ALWAYS` Environment does not resolve to `false` for any Step, for Job Environments and attached Environments (§4 item 6, §3.2.2 item 6). | Job creation, per Step | JB-128, JB-131; not an error when `true` for every Step: JB-129 |
 | V39 | In a document that lists `ENV_PARAMS`, a Step's or an Environment's `hostRequirements` may be `{}` or have empty `amounts` and `attributes` (§3.3 constraint 1); a literal amount with neither `min` nor `max`, or a literal empty `anyOf` or `allOf`, is still rejected (§3.3). | Template validation | JT-117, JT-173, JT-174, ET-46; still rejected: JT-175, JT-176 |
 | V40 | At job creation, an `anyOf` or `allOf` of a Step's or an Environment's `hostRequirements` that has no values after resolution, an expression whose result is an empty list or a list whose items all resolve to `null`, is rejected, naming the Step or Environment and the attribute (§3.3 item 3, §3.3.2). | Job creation, per Step | JB-133, JB-136 |
 | V41 | In a document that lists `ENV_PARAMS`, an `anyOf` or `allOf` written as a string is exactly one `{{ }}` expression, and its static type fits `list[string]?` (§3.3.2). | Template validation | JT-177; rejected: JT-178, JT-179 |
 | V42 | An `anyOf` or `allOf` written as one expression that resolves to `null` is omitted, and an attribute requirement left with neither is discarded; each element of a list result satisfies `<AttributeCapabilityValue>` (§3.3 item 2, §3.3.2). | Job creation, per Step | JB-135; a list result: JB-137; an invalid element: JB-201 |
-| V43 | A Step's disabled `environment:` entry for an `ALWAYS` Environment is an error naming the Step and the Environment (§3.2 *enableIf*). | Template validation for an `enableIf` known there to be `false` on an entry naming a Job Environment; otherwise job creation | JT-181, JT-202, JB-44, JB-92, JB-141; an expression that is not known is not rejected at template validation: JT-182 |
+| V43 | A Step's disabled `environment:` entry for an `ALWAYS` Environment is an error naming the Step and the Environment (§3.2 *enableIf*). | Template validation for an `enableIf` known there to be `false` on an entry naming a Job Environment; otherwise job creation, or earlier as §7.6 rule 5 says | JT-181, JT-202, JB-44, JB-92, JB-141; an expression that some Job Parameter value makes `true` is not rejected at template validation: JT-182 |
 | V44 | A Step's disabled `environment:` entry for a `BY_DEFAULT` Environment declines it: its Sessions do not enter it, and constraint 7, its effective-value checks, and the Environment's `hostRequirements` do not apply to the Step (§3.2 *enableIf*, §3.3.3). | Template validation for an `enableIf` known there to be `false` (§7.6 rule 5); job creation otherwise | JT-103, JB-35, JB-139, JB-140, JB-142 |
-| V45 | Constraints 5 and 6 apply only to an enabled entry; a disabled entry's `parameters` are not checked (§3.2 *enableIf*). | Template validation for an entry whose `enableIf` is absent or known there to be `true` (§7.6 rule 5); job creation for one that resolves to `true` then | JT-183, JT-184, JT-203, JT-213, JB-143, JB-144 |
+| V45 | Constraints 5 and 6 apply only to an enabled entry; a disabled entry's `parameters` are not checked (§3.2 *enableIf*). | Template validation for an entry whose `enableIf` is absent or known there to be `true` (§7.6 rule 5); job creation for one that resolves to `true` then, or earlier as §7.6 rule 5 says | JT-183, JT-184, JT-203, JT-213, JB-143, JB-144 |
 | V46 | A RANGE_EXPR value satisfies *minLength* and *maxLength* both as written and in canonical form: every Environment parameter, and a Job Parameter in a document that lists `ENV_PARAMS` (§2.10, §4.5). | Template validation for literals; job creation | JT-166, JT-167, JB-122, JB-145; merged definitions, each under its own document's rule: JB-155, JB-156; without `ENV_PARAMS`, EXPR `2.10--range-expr-min-length-written-only` |
 | V47 | An attached `ALWAYS` or `BY_DEFAULT` Environment named like a Job Environment has every parameter supplied by a `default`, whatever its `enableIf` (§3.2.1 item 4). | Job creation | JB-146; `BY_DEFAULT`: JB-123, JB-124 |
 | V48 | An expression field (§7.6): parses as one expression without `{{ }}`, its static type fits the target type with only `int` to `float` widening, and a `null` value is an error. | Template validation | JT-95–JT-98, JT-149, JT-185 |
@@ -1012,8 +1012,9 @@ These rules, or parts of rules, have no planned test with a definite expected ou
     scope table gives `RawParam.*` of any type for both. JT-153–JT-155 and JB-111 test it; `Param.<PATH>` stays excluded
     (JT-50, JT-122).
 15. **Constraints 5 and 6 on a disabled entry.** Resolved: §3.2 *enableIf* says a disabled entry's `parameters` are not
-    checked, and the checked-at paragraph defers the check for an entry whose `enableIf` is not known at template
-    validation to job creation (JT-183, JT-184, JB-143, JB-144); one known there to be `true` is checked then (JT-203).
+    checked, and the checked-at paragraph leaves an error in an entry whose `enableIf` is not known at template
+    validation to §7.6 rule 5: JT-184's entry is disabled for some values, so it passes template validation (JT-183,
+    JT-184, JB-143, JB-144); one known there to be `true` is checked then (JT-203).
     Constraint 2 still applies to every entry as written.
 16. **A missing `min` in §3.3.3 versus a capability's defined minimum.** Resolved: §3.3.3 item 1 omits from the
     combined requirement a bound that no source gives, which then means what §3.3.1 says (for `amount.worker.vcpu`, a
@@ -1026,14 +1027,15 @@ These rules, or parts of rules, have no planned test with a definite expected ou
     `Param.<PATH>` (JT-122), and `RawParam.*` is unmapped in every scope.
 18. **When a certain failure is reported.** §7.6 rule 5 says which errors an implementation *should* report before
     the Job is created, and which it *must not*. For JT-150, JT-151, JT-157, JT-195, JT-197, JT-199, and JT-201, some
-    Job Parameter values let Job creation succeed, so the *must not* applies and they must pass template validation.
-    Job creation rejects JB-105–JB-107 for every value, and each check reads something not yet known: the third
-    wrapper's `enableIf` in JB-105, the Environments a validator is not given in JB-106, and the entry's `enableIf` in
-    JB-107. So the *should* applies, and it is a preference, not a requirement: they are `jobs/` tests, which pass
-    whichever stage rejects them. Checks for which everything they depend on is known at template validation, where rule
-    5 says the check is made, are tested by `job_templates/` tests: JT-152, JT-194, JT-196, JT-198, JT-200, and JT-202
-    to JT-205. So is constraint 7 for a Step whose entries are known, which does not depend on any Environment's
-    `enableIf` (JT-148, JT-158, JT-162, JT-189–JT-191).
+    Job Parameter values let Job creation succeed, so the *must not* applies and they must pass template validation. So
+    must JT-212 and JT-214, which some attached Environment Templates make valid. Job creation rejects JB-105–JB-107 for
+    every value, and each check reads something not yet known: the third wrapper's `enableIf` in JB-105, the
+    Environments a validator is not given in JB-106, and the entry's `enableIf` in JB-107. So the *should* applies, and
+    it is a preference, not a requirement: they are `jobs/` tests, which pass whichever stage rejects them. Checks for
+    which everything they depend on is known at template validation, where rule 5 says they are made, are tested by
+    `job_templates/` tests: JT-152, JT-194, JT-196, JT-198, JT-200, and JT-202 to JT-205. So is constraint 7 for a Step
+    whose entries are known, which does not depend on any Environment's `enableIf` (JT-148, JT-158, JT-162,
+    JT-189–JT-191).
 19. **Environments from documents without `ENV_PARAMS` in combinations that cannot be written.** §4 item 4 makes an
     Environment without `ENV_PARAMS` active behave as `ALWAYS`, and has every Session enter the Job Environments of a
     Job Template that does not list `ENV_PARAMS` and every attached Environment from an Environment Template that does
