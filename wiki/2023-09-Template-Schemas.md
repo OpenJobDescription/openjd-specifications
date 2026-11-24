@@ -1482,11 +1482,12 @@ allow users to define their own custom capabilities.
 
 A host has exactly one value of each of these two capabilities, so an *allOf* for either of them must have at most one
 element. An *allOf* written as a list of more than one element, none of which contains `{{ }}`, is an error at template
-validation. Otherwise the number of elements is checked after resolution, when the Job is created, and more than one is
-an error. This covers a list in which some element contains `{{ }}`, whose values are not known before then and whose
-elements may resolve to `null` and be skipped ([Expression Language
-§1.3.2](2026-02-Expression-Language#132-evaluation-within-template-schemas)), and, with the `ENV_PARAMS` extension, an
-*allOf* written as a `<ListExpressionString>`. A custom attribute capability may have several values.
+validation. Otherwise the number of elements is checked after resolution, when the Job is created, or earlier as
+[§7.6](#76-expression-fields) rule 5 says, and more than one is an error. This covers a list in which some element
+contains `{{ }}`, whose values are not known before then and whose elements may resolve to `null` and be skipped
+([Expression Language §1.3.2](2026-02-Expression-Language#132-evaluation-within-template-schemas)), and, with the
+`ENV_PARAMS` extension, an *allOf* written as a `<ListExpressionString>`. A custom attribute capability may have several
+values.
 
 ##### 3.3.2.2. `<AttributeCapabilityValue>`
 
@@ -2076,8 +2077,8 @@ Where:
     * `ALWAYS` — Every Session of the Job enters this Environment, in its position in the Job's Environment order
       ([§1.1](#11-job-template) *jobEnvironments*). No Step can leave it out. A Step's disabled *environment* entry for
       it is an error, and so is its *enableIf* being `false` for a Step. Either error names the Step and the
-      Environment. Where the Environment's *enableIf* is known at template validation to be `false`, or, for a
-      *jobEnvironments* entry, the *enableIf* of a Step's entry that names it is, the error is reported there
+      Environment. Where the Environment's *enableIf*, or, for a *jobEnvironments* entry, the *enableIf* of a Step's
+      entry that names it, is known at template validation to be `false`, the error is reported there
       ([§7.6](#76-expression-fields) rule 5). Otherwise it is reported when the Job is created, or earlier as §7.6 rule
       5 says. For a disabled entry, template validation of the Job Template alone reports it only for an entry that
       names a *jobEnvironments* entry. A validator that is given the Environment Templates to be attached reports it for
@@ -2184,10 +2185,11 @@ A check that depends on which Environments a Step's Sessions enter, such as the 
   entered when one before it in its group would, by the bullets above, be known to be entered.
 * Any other Environment is undetermined.
 
-Here an *enableIf* is known to be `true` or `false` as [§7.6](#76-expression-fields) rule 5 says. For example, two
-wrapping Environments known to be entered violate the single-layer rule whatever a third does, so §7.6 rule 5 says the
-error should be reported before the Job is created. Constraint 7 does not use these bullets
-([&lt;StepDependency&gt;](#32-stepdependency) constraint 7).
+Here an *enableIf* is known to be `true` or `false` as [§7.6](#76-expression-fields) rule 5 says, and for rule 5's
+checks an Environment taken to be entered by the first bullet is known to be entered only when its *enableIf* is absent
+or known to be `true`. For example, two wrapping Environments known to be entered violate the single-layer rule whatever
+a third does, so §7.6 rule 5 says the error should be reported before the Job is created. Constraint 7 does not use
+these bullets ([&lt;StepDependency&gt;](#32-stepdependency) constraint 7).
 
 The format string scopes available to format strings within an Environment are:
 
@@ -2946,15 +2948,16 @@ Rules:
    known and, for each Environment the check depends on, that the Step's Sessions are known to enter it or known not to
    enter it, as [&lt;Environment&gt;](#4-environment) says, *exclusiveGroup* included. An Environment that they may be
    taken to enter counts as known to be entered here only when its *enableIf* is absent or known to be `true`. A check
-   that reads anything else not yet known, other than through an *enableIf* that is known, falls under the rule that
-   follows, even when its result is already certain. Before the Job is created, an implementation should report every
+   that reads the value of anything else not yet known, other than through an *enableIf* that is known, need not be made
+   early, even when its result is already certain. Before the Job is created, an implementation should report every
    error it can show will make Job creation fail for every value of what is not yet known, and must not report an error
    when some of those values would let Job creation succeed. The error it reports may differ from the first one Job
-   creation reports for a particular value. For this rule, an error that this specification requires template validation
-   to report counts as one that makes Job creation fail for every value. A check that depends on a field that is not
-   known is made, or made again, at the stage where the field is evaluated, with the value it then has. These rules
-   decide only which errors are reported early. When an expression field is evaluated at its own stage, every value it
-   reads is concrete.
+   creation reports for a particular value. Here a value that Job creation works out from others, such as a Step's
+   effective value, ranges only over what those others can make it. For this rule, an error that this specification
+   requires template validation to report counts as one that makes Job creation fail for every value. A check that
+   depends on a field that is not known is made, or made again, at the stage where the field is evaluated, with the
+   value it then has. These rules decide only which errors are reported early. When an expression field is evaluated at
+   its own stage, every value it reads is concrete.
 
 With the `ENV_PARAMS` extension, the *enableIf* of an *environment* entry and of an Environment is evaluated in
 template scope, not in a host context. `path` values have POSIX semantics whatever path format the Job's paths have,

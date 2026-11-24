@@ -382,7 +382,7 @@ them as changes to the base specification:
    value of each, so an *allOf* for either has at most one element. A list of literals, such as `allOf: [linux,
    windows]`, which the old text allowed, is now invalid at template validation. No host could run it, and the base
    conformance suite already rejects it. A list that contains a format string is checked after resolution, when its
-   values are known; with `EXPR` an element may also resolve to `null` and be skipped.
+   values are known, or earlier as §7.6 rule 5 says; with `EXPR` an element may also resolve to `null` and be skipped.
 3. **The Job's Environment order.** [§1.1](../wiki/2023-09-Template-Schemas.md#11-job-template) *jobEnvironments* now
    states that a Session enters the Environments attached from Environment Templates before the Job Template's
    `jobEnvironments`,
@@ -750,8 +750,8 @@ Now a missing value is an error of the Step, whatever the *enableIf* is, and an 
 not resolve or convert is not evaluated, and the value is an error. Whether a value is read is a property of the text,
 so it does not depend on evaluation order. At Job creation the *enableIf* is then an ordinary evaluation of concrete
 values. Unknown values remain only at template validation, where Job Parameters are not yet known, and there they only
-decide which errors are reported early. The Expression Language now defines their results, such as `U and false =
-false`, so validators agree on which values are known.
+decide which errors are reported early. The Expression Language now defines their results, such as
+`U and false = false`, so validators agree on which values are known.
 
 A value that the *enableIf* does not read still need not convert when the Environment is disabled: an entry
 `Seats: "{{Param.N}}"` for an INT parameter, with the Job Parameter `N` set to `"many"`, is not an error for a Step for
@@ -776,8 +776,8 @@ and bring implicit conversions under which `"{{'yes'}}"` becomes `true`. As an e
 
 Existing single-expression fields such as `timeout` stay as they are, since changing their kind would break accepted
 templates. At template validation an expression's value is known when the Expression Language's rules for unknown
-operands give one, so a constant expression such as `"false"` is known there, and implementations agree on what template
-validation reports.
+operands give one, so a constant expression such as `"false"` is known there, and implementations agree on which values
+are known at template validation.
 
 ### Parameters for an Environment that declares none are ignored
 

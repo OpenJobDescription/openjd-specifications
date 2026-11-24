@@ -1,7 +1,7 @@
 # Template Schemas §3.2 (checked-at paragraph) and §4 item 6 (enableIf tail), with RFC 0008 (single-layer rule): as
-# JT-151, but the entry for the ON_REQUEST wrapping Environment has enableIf: true, a scalar, so A's Sessions
-# certainly enter both wrapping Environments, and the Job is rejected; an implementation may already report it at
-# template validation (README item 18).
+# JT-151, but the entry for the ON_REQUEST wrapping Environment has enableIf: true, a scalar, so A's Sessions certainly
+# enter both wrapping Environments, and the Job is rejected; an implementation should already report it at template
+# validation (§7.6 rule 5); the test passes whichever stage rejects it (README item 18).
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [ENV_PARAMS, WRAP_ACTIONS, EXPR]
