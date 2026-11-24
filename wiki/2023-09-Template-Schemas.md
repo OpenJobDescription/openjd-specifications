@@ -2092,8 +2092,9 @@ Where:
    is a *pre-extension Environment*. A pre-extension Environment behaves as one with `activation: ALWAYS` and no
    *enableIf*: every Session of the Job enters it, and it applies to every Step
    ([&lt;StepDependency&gt;](#32-stepdependency) constraint 7). Unlike for an `ALWAYS` Environment, a Step's disabled
-   *environment* entry for it has no effect and is not an error. A pre-extension Environment declares no
-   *envParameterDefinitions*, which needs the extension. So a Job Template that lists `ENV_PARAMS` cannot leave out
+   *environment* entry for it has no effect and is not an error (see [&lt;StepDependency&gt;](#32-stepdependency)
+   *enableIf*). A pre-extension Environment declares no *envParameterDefinitions*, since that field needs the
+   extension. So a Job Template that lists `ENV_PARAMS` cannot leave out
    an Environment written before the extension, such as one that a render management system attaches to every Job for
    licensing or auditing, and its `required: false` entries work whether or not an attached Environment lists the
    extension. In a Job Template that does not list `ENV_PARAMS`, no Step has an *environment* entry and no Environment
@@ -2918,10 +2919,10 @@ Rules:
    an earlier stage is made at that stage. A check that depends on a field that is not known reports an error at that
    stage only when the error holds for every value the field could take, and is made again at the stage where the field
    is evaluated, with the value it then has. An implementation should report an error at the earliest stage at which it
-   holds for every such value. Before the Job is created, an implementation may report fewer errors than Job creation
-   would, or group them differently, but every error it reports early must be one that Job creation would find for every
-   value of what is not yet known. These rules decide only which errors are reported early. When an expression field is
-   evaluated at its own stage, every value it reads is concrete.
+   holds for every such value. Before the Job is created, an implementation may report only some of the errors that Job
+   creation would find, or group them differently, but every error it reports early must be one that Job creation would
+   find for every value of what is not yet known. These rules decide only which errors are reported early. When an
+   expression field is evaluated at its own stage, every value it reads is concrete.
 
 With the `ENV_PARAMS` extension, the *enableIf* of an *environment* entry and of an Environment is evaluated in
 template scope, not in a host context. `path` values have POSIX semantics whatever path format the Job's paths have,

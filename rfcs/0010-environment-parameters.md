@@ -551,9 +551,9 @@ fields, which both *enableIf* fields are: one typed expression with no `{{ }}` a
 widening `int` to `float`. Before it is evaluated, its value is known when it is a boolean, integer, or float scalar, or
 when the Expression Language's rules for unknown operands give a result with the values not yet known. A check whose
 fields are known is made then; one that depends on a field that is not known reports an error only when the error holds
-for every value it could take. Before the Job is created, an implementation may report fewer errors than Job creation
-would, or group them differently, but every error it reports early must be one that Job creation would find for every
-value of what is not yet known.
+for every value it could take. Before the Job is created, an implementation may report only some of the errors that Job
+creation would find, or group them differently, but every error it reports early must be one that Job creation would
+find for every value of what is not yet known.
 
 ### Expression Language
 
