@@ -1027,11 +1027,13 @@ These rules, or parts of rules, have no planned test with a definite expected ou
 18. **When a certain failure is reported.** §7.6 rule 5 says which errors an implementation *should* report before
     the Job is created, and which it *must not*. For JT-150, JT-151, JT-157, JT-195, JT-197, JT-199, and JT-201, some
     Job Parameter values let Job creation succeed, so the *must not* applies and they must pass template validation.
-    Job creation rejects JB-105–JB-107 for every value, so the *should* applies, and it is a preference, not a
-    requirement: they are `jobs/` tests, which pass whichever stage rejects them. Checks for which everything they
-    depend on is known at template validation, where rule 5 says the check is made, are tested by `job_templates/`
-    tests: JT-152, JT-194, JT-196, JT-198, JT-200, and JT-202 to JT-205. So is constraint 7 for a Step whose entries
-    are known, which does not depend on any Environment's `enableIf` (JT-148, JT-158, JT-162, JT-189–JT-191).
+    Job creation rejects JB-105–JB-107 for every value, and each check reads something not yet known: the third
+    wrapper's `enableIf` in JB-105, the Environments a validator is not given in JB-106, and the entry's `enableIf` in
+    JB-107. So the *should* applies, and it is a preference, not a requirement: they are `jobs/` tests, which pass
+    whichever stage rejects them. Checks for which everything they depend on is known at template validation, where rule
+    5 says the check is made, are tested by `job_templates/` tests: JT-152, JT-194, JT-196, JT-198, JT-200, and JT-202
+    to JT-205. So is constraint 7 for a Step whose entries are known, which does not depend on any Environment's
+    `enableIf` (JT-148, JT-158, JT-162, JT-189–JT-191).
 19. **Environments from documents without `ENV_PARAMS` in combinations that cannot be written.** §4 item 4 makes an
     Environment without `ENV_PARAMS` active behave as `ALWAYS`, and has every Session enter the Job Environments of a
     Job Template that does not list `ENV_PARAMS` and every attached Environment from an Environment Template that does

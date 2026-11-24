@@ -556,7 +556,7 @@ at each stage, and the new [§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job
 work done at Job creation. The new [§7.6](../wiki/2023-09-Template-Schemas.md#76-expression-fields) defines expression
 fields, which both *enableIf* fields are: one typed expression with no `{{ }}` and no implicit conversion other than
 widening `int` to `float`. Before it is evaluated, its value is known when it is a boolean, integer, or float scalar, or
-when the Expression Language's rules for unknown operands give a result with the values not yet known. Its rule 5
+when the Expression Language's rules for unknown operands give a result with the values not yet known. §7.6 rule 5
 also says when a check is made before the field is evaluated, which errors an implementation should report before the
 Job is created, and which it must not.
 
