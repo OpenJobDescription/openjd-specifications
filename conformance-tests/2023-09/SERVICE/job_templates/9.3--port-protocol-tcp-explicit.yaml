@@ -1,0 +1,28 @@
+# Section 9.3 item 3: `protocol: TCP` spells out the default and is accepted
+# alongside ports that omit it.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+    protocol: TCP
+  - name: admin
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

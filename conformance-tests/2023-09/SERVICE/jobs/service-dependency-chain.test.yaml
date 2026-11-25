@@ -1,0 +1,84 @@
+# RFC 0009 "Service lifecycle" ordering constraint 2 / Template Schemas §9
+# item 4: Front lists Service Back in its `dependencies`, so Front's Session
+# does not start until Back is READY, and Front may reference Back's endpoint.
+# Front connects to Back as it starts (a refused connection would exit before
+# READY and fail the run), then serves what Back told it to the Task.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  name: ReferenceChain
+  services:
+  - name: Back
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Back.main.bindAddress }}", "{{ Service.Back.main.port }}", "BACK_VALUE"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port, payload = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready: back up", flush=True)
+          while True:
+              c, _ = s.accept()
+              c.sendall(payload.encode())
+              c.close()
+  - name: Front
+    dependencies:
+    - service: Back
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["{{ Service.File.Serve }}", "{{ Service.Front.main.bindAddress }}", "{{ Service.Front.main.port }}", "{{ Service.Back.main.connectAddress }}", "{{ Service.Back.main.port }}"]
+          cancelation:
+            mode: TERMINATE
+      embeddedFiles:
+      - name: Serve
+        type: TEXT
+        data: |
+          import socket, sys
+          host, port, back_host, back_port = sys.argv[1], int(sys.argv[2]), sys.argv[3], int(sys.argv[4])
+          b = socket.create_connection((back_host, back_port), timeout=2)
+          upstream = b.recv(64).decode()
+          b.close()
+          print("FRONT_GOT_FROM_BACK", upstream, flush=True)
+          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+          s.bind((host, port))
+          s.listen(16)
+          print("openjd_service_ready: front up", flush=True)
+          while True:
+              c, _ = s.accept()
+              c.sendall(("front:" + upstream).encode())
+              c.close()
+  steps:
+  - name: Use
+    dependencies:
+    - service: Front
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import socket,sys; c=socket.create_connection((sys.argv[1], int(sys.argv[2])), timeout=10); print('TASK_GOT', c.recv(64).decode(), flush=True)", "{{ Service.Front.main.connectAddress }}", "{{ Service.Front.main.port }}"]
+
+expected:
+  output:
+  - FRONT_GOT_FROM_BACK BACK_VALUE
+  - TASK_GOT front:BACK_VALUE

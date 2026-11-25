@@ -1,0 +1,36 @@
+# Section 3.2 (RFC 0009 / RFC 0010): `step:` is RFC 0010's synonym of
+# `dependsOn:`, and a Service may use it in its own `dependencies` as a Step
+# does. Store starts only after Prepare completes, and Use runs after both.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Store
+  dependencies:
+  - step: Prepare
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Prepare
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+- name: Use
+  dependencies:
+  - step: Prepare
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

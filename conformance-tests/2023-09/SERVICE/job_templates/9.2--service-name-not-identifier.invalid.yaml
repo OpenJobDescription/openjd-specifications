@@ -1,0 +1,27 @@
+# Section 9.2: a Service's `name` is an <Identifier> (Section 7.1), unlike an
+# <EnvironmentName>, because it appears as a component of dotted `Service.*`
+# references. A name with a hyphen must be rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: key-store
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: key-store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

@@ -1,0 +1,30 @@
+# Section 1.2 item 6 constraint 4 / Section 3.2 constraint 3 / Section 9.9 item
+# 10: the dependencies among an Environment Template's Services must be
+# acyclic, as in a Job Template. Front depends on Service Back and Back on
+# Service Front.
+specificationVersion: environment-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+services:
+- name: Front
+  dependencies:
+  - service: Back
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Back.main.port }}"]
+- name: Back
+  dependencies:
+  - service: Front
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service.Front.main.port }}"]

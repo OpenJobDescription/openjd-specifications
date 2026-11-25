@@ -1,0 +1,26 @@
+# Section 9.2 / Section 7.1: identifiers may contain underscores and digits
+# after the first character.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: _key_store2
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: _key_store2
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()", "{{ Service._key_store2.main.port }}"]

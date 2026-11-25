@@ -1,0 +1,25 @@
+# Section 9.1 rule 4 / Section 1.1 item 8 constraint 6 / Section 9.9 item 11
+# (RFC 0009): a Service that no Step, Service, or Job Environment lists in
+# `dependencies` has an empty scope and is rejected, naming the Service.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Sidecar
+  ports:
+  - name: main
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]

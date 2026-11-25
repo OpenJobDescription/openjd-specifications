@@ -1,0 +1,70 @@
+# Section 1.2 item 6 constraint 5 (RFC 0009): an Environment Template's
+# Service may decline, with a disabled `environment:` entry, a BY_DEFAULT
+# Environment of an Environment Template attached before it. The first
+# attachment's Environment Earlier has a parameter without a `default`, which
+# the Service cannot supply, so the Job is valid only because Cache declines
+# Earlier. The Step supplies the value and enters Earlier; Cache's Session
+# does not.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalServiceDeclinesEarlierAttachmentEnvironment
+  steps:
+  - name: Use
+    dependencies:
+    - environment: Earlier
+      parameters:
+        Tag: task
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os; [print('TASK_' + v + '=' + os.environ.get(v, 'unset')) for v in ['SEEN_EARLIER', 'SEEN_CACHE_CLIENT']]"]
+
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Earlier
+    activation: BY_DEFAULT
+    envParameterDefinitions:
+    - name: Tag
+      type: STRING
+    variables:
+      SEEN_EARLIER: "{{ Env.Param.Tag }}"
+- specificationVersion: environment-2023-09
+  extensions: [SERVICE, ENV_PARAMS, EXPR]
+  services:
+  - name: Cache
+    dependencies:
+    # CacheClient lists this Service, so its Sessions decline it.
+    - environment: CacheClient
+      enableIf: false
+    # Earlier needs a value Cache cannot supply, so Cache declines it too.
+    - environment: Earlier
+      enableIf: false
+    ports:
+    - name: main
+    healthCheck:
+      type: STDOUT
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os, time; [print('SERVICE_' + v + '=' + os.environ.get(v, 'unset'), flush=True) for v in ['SEEN_EARLIER', 'SEEN_CACHE_CLIENT']]; print('openjd_service_ready: up', flush=True); time.sleep(600)"]
+          cancelation:
+            mode: TERMINATE
+  environment:
+    name: CacheClient
+    dependencies:
+    - service: Cache
+    variables:
+      SEEN_CACHE_CLIENT: "yes"
+      CACHE_PORT: "{{ Service.Cache.main.port }}"
+
+expected:
+  output:
+  - SERVICE_SEEN_EARLIER=unset
+  - SERVICE_SEEN_CACHE_CLIENT=unset
+  - TASK_SEEN_EARLIER=task
+  - TASK_SEEN_CACHE_CLIENT=yes

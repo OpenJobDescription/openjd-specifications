@@ -1,0 +1,39 @@
+# Section 4.3.1 / Section 4 scope list item 9: WrappedService.* is available
+# within the four onWrapService* hooks, including in a hook's own `timeout`
+# and `cancelation` fields, which the runtime resolves at the same time as
+# the hook's command and args. (A format-string timeout and
+# notifyPeriodInSeconds need FEATURE_BUNDLE_1, Section 5.)
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- SERVICE
+- ENV_PARAMS
+- EXPR
+- FEATURE_BUNDLE_1
+environment:
+  name: Wrapper
+  activation: ON_REQUEST
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapEnvExit:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceEnter:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceRun:
+        command: python
+        args: ["-c", "print()"]
+        timeout: "{{ 3600 if WrappedService.Name == 'Store' else WrappedAction.Timeout }}"
+        cancelation:
+          mode: NOTIFY_THEN_TERMINATE
+          notifyPeriodInSeconds: "{{ 30 + len(WrappedService.Ports) }}"
+      onWrapServiceHealthCheck:
+        command: python
+        args: ["-c", "print()"]
+      onWrapServiceExit:
+        command: python
+        args: ["-c", "print()"]

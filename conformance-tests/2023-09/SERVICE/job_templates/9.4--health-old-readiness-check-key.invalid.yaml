@@ -1,0 +1,28 @@
+# Section 9: `readinessCheck` is not a property of <Service>; the probe is
+# declared under `healthCheck`. An unknown property must be rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- SERVICE
+- ENV_PARAMS
+- EXPR
+name: TestJob
+services:
+- name: Store
+  ports:
+  - name: main
+  readinessCheck:
+    type: TCP_CONNECT
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
+steps:
+- name: Step1
+  dependencies:
+  - service: Store
+  script:
+    actions:
+      onRun:
+        command: python
+        args: ["-c", "print()"]
