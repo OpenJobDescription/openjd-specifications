@@ -1,3 +1,4 @@
+# conformance: xfail(rs, reason="openjd-cli 0.7.2 (crates.io) keeps a CRLF in a triple-quoted string literal; fixed on openjd-rs main, unreleased", strict=false)
 # conformance: xfail(py, reason="openjd-cli 0.8.0 keeps CR LF and CR inside a string literal instead of LF; fixed in openjd-rs#570, not yet in an openjd-expr release")
 # Expression Language §1.1.5: a line break inside a string literal (LF, CR LF or CR) is a single
 # LF, in raw strings too, while an escaped \r still gives CR. In a raw string a backslash before a

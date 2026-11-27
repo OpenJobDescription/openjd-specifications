@@ -1,3 +1,4 @@
+# conformance: xfail(rs, reason="openjd-cli 0.7.2 (crates.io) accepts a control character in a re_sub result; fixed on openjd-rs main, unreleased", strict=false)
 # conformance: xfail(py, reason="openjd-cli 0.8.0 accepts a re_sub replacement with a NEL control character (U+0085); fixed in openjd-rs#570 (unreleased, after openjd-expr 0.17)")
 # Expression Language §2.2.5: re_sub rejects a replacement that contains a control character,
 # which includes U+0085 (next line), though Python's str.splitlines treats it as a line break.

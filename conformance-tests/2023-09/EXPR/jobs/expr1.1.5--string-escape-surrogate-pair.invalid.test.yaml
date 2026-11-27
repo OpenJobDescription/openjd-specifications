@@ -1,3 +1,4 @@
+# conformance: xfail(rs, reason="openjd-cli 0.7.2 (crates.io) accepts a surrogate escape in a string literal; fixed on openjd-rs main, unreleased", strict=false)
 # conformance: xfail(py, reason="openjd-cli 0.8.0 accepts a surrogate u or U escape in a string literal; fixed in openjd-rs#570, not yet in an openjd-expr release")
 # Expression Language §1.1.5: two escapes are never combined into one character, so the surrogate
 # pair '\uD83D\uDE00' is a syntax error, not U+1F600.

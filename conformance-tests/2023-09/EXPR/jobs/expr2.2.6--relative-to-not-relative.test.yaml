@@ -1,3 +1,4 @@
+# conformance: xfail(rs, reason="openjd-cli 0.7.2 (crates.io) rejects this template at check; fixed on openjd-rs main, unreleased", strict=false)
 # conformance: xfail(py, reason="openjd-cli 0.8.0 folds a literal path() in a host-context field and fails check on relative_to; fixed in openjd-rs#611 (unreleased)")
 # Expression Language §2.2.6: `relative_to` fails when the path is not relative to the other path.
 # In a host-context field (here a step's onRun args) a literal path is
