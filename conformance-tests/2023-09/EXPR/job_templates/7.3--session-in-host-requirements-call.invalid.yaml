@@ -1,0 +1,23 @@
+# Session.WorkingDirectory is not available in the submission-time host
+# requirements context (Template Schemas §7.3.1). Unlike the existing bare
+# "{{ Session.WorkingDirectory }}" negative, the symbol here is buried inside
+# a function call — a validator that walks bare format-string references but
+# not full expression trees would incorrectly accept this.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  hostRequirements:
+    attributes:
+    - name: attr.worker.os.family
+      anyOf:
+      - "{{ upper(string(Session.WorkingDirectory)) }}"
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print()"
