@@ -1,0 +1,51 @@
+# conformance: xfail(rs, reason="openjd-rs builds a job environment's symbol table without its own table, so Job.Name is undefined; fixed by openjd-rs#629", strict=false)
+# Template Schemas §7.3.1: Job.Name is available in every Format String in the Job Template except
+# the Job's own name field, so a job environment's variables, onEnter, onExit and let bindings
+# resolve it. Each value is printed bracketed, so the unresolved text cannot match.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: "{{ Param.Project }}-render"
+  parameterDefinitions:
+  - name: Project
+    type: STRING
+    default: MyProject
+  jobEnvironments:
+  - name: Env
+    variables:
+      JOB_NAME_VAR: "{{ Job.Name }}"
+    script:
+      let:
+      - upper_name = Job.Name.upper()
+      actions:
+        onEnter:
+          command: python
+          args:
+          - -c
+          - |
+            import os
+            print('ENTER:[' + os.environ['JOB_NAME_VAR'] + ']')
+            print(r'ENTER_LET:[{{ upper_name }}]')
+        onExit:
+          command: python
+          args:
+          - -c
+          - print(r'EXIT:[{{ Job.Name }}]')
+  steps:
+  - name: Render
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'TASK:[{{ Job.Name }}]')
+parameters:
+  Project: StudioX
+expected:
+  output:
+  - 'ENTER:[StudioX-render]'
+  - 'ENTER_LET:[STUDIOX-RENDER]'
+  - 'EXIT:[StudioX-render]'
+  - 'TASK:[StudioX-render]'
