@@ -177,22 +177,27 @@ specificationVersion: jobtemplate-2023-09
 - The arguments before `reason` name the implementations the marker applies to: `py` for
   [openjd-cli](https://github.com/OpenJobDescription/openjd-cli) (Python) and `rs` for the
   [openjd-rs](https://github.com/OpenJobDescription/openjd-rs) CLI. `xfail(py, rs, reason="...")`
-  names both. A file may carry one marker per implementation.
+  names both. An implementation may be named by at most one marker in a file.
 - `reason` is required, and should say what the implementation does wrong and, where there is
-  one, link the issue or pull request that tracks the fix.
+  one, link the issue or pull request that tracks the fix. `strict` is `true` or `false`.
 - The test still runs. For a named implementation a failure is reported as `XFAIL` and does not
-  fail the run. A pass is reported as `XPASS` and fails the run, so the marker is removed in the
-  change that fixes the implementation. Add `strict=false` to report an `XPASS` without failing
-  the run, for a test whose outcome on that implementation varies.
-- A `# conformance:` line that is not a well-formed marker (an unknown marker name or
-  implementation, or no `reason`) fails the test, so a typo cannot silently turn a marker off.
+  fail the run. A pass is reported as `XPASS`, counts as a failure, and fails the run, so the
+  marker is removed in the change that fixes the implementation. Add `strict=false` to report an
+  `XPASS` without failing the run, for a test whose outcome on that implementation varies.
+- Every comment line in the leading block that starts with `conformance` (in any case, after any
+  number of `#`) is read as a marker line. One that is not exactly
+  `# conformance: xfail(...)` with valid arguments (an unknown marker name or implementation, no
+  `reason`, an argument given twice) fails the test, whichever implementation runs it, so a typo
+  cannot silently turn a marker off.
 - A marker never changes what the test asserts: a test is correct against the specification or
   it does not belong in the suite. Markers are for implementation defects only.
 - JSON test files cannot carry comments, so they cannot carry markers.
 
 The runner applies the markers for the implementation given by `--implementation py|rs`. By
-default (`--implementation auto`) it detects which `openjd` is on `PATH`, and when it cannot tell
-it says so and applies none. `--implementation none` ignores every marker.
+default (`--implementation auto`) it detects which `openjd` is on `PATH` from the CLI's own banner
+(the Rust CLI's `--help` heading, openjd-cli's `--version` line), and when it cannot tell it says
+so and applies none. `--implementation none` applies none. A malformed marker fails its test in
+every mode.
 
 ## Writing Your Own Test Runner
 
