@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 does not join LIST[PATH] default items to the template dir or check walk-up; pure-Python openjd-model only does scalar PATH")
 # 2.12: relative elements of a LIST[PATH] default are joined with the job
 # template's directory and lexically normalized (2.2). Elements that stay
 # inside the directory, including "./" and an interior "..", are accepted.

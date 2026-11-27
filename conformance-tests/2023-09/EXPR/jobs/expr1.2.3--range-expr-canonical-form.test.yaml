@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 does not write range_expr in canonical form or compare by value; fixed in openjd-rs#469 (openjd-expr 0.13), not yet released", strict=false)
 # Template Schemas §3.4.1.1.1 (canonical form) and Expression Language §1.2.3: a range_expr converts to the string of
 # its canonical form, which depends only on its list of values. Greedy runs from the left: a run of three or more
 # values with a constant step is written x-y or x-y:s; otherwise the value is written alone. The same values give the

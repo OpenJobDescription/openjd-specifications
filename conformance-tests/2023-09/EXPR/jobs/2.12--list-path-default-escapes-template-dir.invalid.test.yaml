@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 accepts a LIST[PATH] default item that walks out of the template dir; pure-Python openjd-model checks scalar PATH only")
 # 2.12: each element of a LIST[PATH] default is joined with the job template's
 # directory and must stay within it (2.2). Companion to
 # base/jobs/1.1--validation-invalid-path-default-escapes-template-dir. The bad

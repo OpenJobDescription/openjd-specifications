@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 range_expr overflows on values near i64 max; fixed in openjd-rs#469 (openjd-expr 0.13), not yet released", strict=false)
 # Template Schemas §3.4.1.1.1 (canonical form, informative note): a range expression with very many values has a
 # short canonical form, and an implementation computes it from the elements without listing the values. B0, B3, and
 # B4 each have more than 10^18 values. B1 and B2 use values near the 64-bit limits (-9223372036854775807 and

@@ -1,3 +1,4 @@
+# conformance: xfail(rs, reason="openjd-cli 0.7.2 (crates.io) rejects a 4096-character command; fixed on openjd-rs main, unreleased", strict=false)
 # Template Schemas §5.1 <CommandString>: "Maximum length: There is no maximum string length imposed by this
 # specification." The command field below is exactly 4096 characters long: a format string whose expression
 # resolves to `echo` (the padding literal is sliced to the empty string, so it contributes only length). The

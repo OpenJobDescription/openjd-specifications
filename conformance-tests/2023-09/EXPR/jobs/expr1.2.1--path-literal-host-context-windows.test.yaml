@@ -1,3 +1,4 @@
+# conformance: xfail(rs, reason="openjd-cli 0.7.2 (crates.io) resolves a path literal against the host in checks; fixed by openjd-rs#611, unreleased", strict=false)
 # Expression Language 1.2.1 and "Path Format": in a host-context field, a
 # path built from a literal has the worker's path semantics. On a Windows
 # worker C:\a\b has the parts C:\, a and b, also when a step-level let

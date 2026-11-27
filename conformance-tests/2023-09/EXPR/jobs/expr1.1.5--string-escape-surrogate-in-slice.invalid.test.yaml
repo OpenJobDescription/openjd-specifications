@@ -1,3 +1,5 @@
+# conformance: xfail(rs, reason="openjd-cli 0.7.2 (crates.io) accepts a surrogate escape in a string literal; fixed on openjd-rs main, unreleased", strict=false)
+# conformance: xfail(py, reason="openjd-cli 0.8.0 accepts a surrogate escape in a string literal; fixed in openjd-rs#570 (unreleased, after openjd-expr 0.17), not yet in openjd-model")
 # Expression Language §1.1.5: a \u escape with a surrogate code point is a syntax error
 # wherever the string literal is, including inside a slice bound.
 template:

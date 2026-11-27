@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 leaves relative LIST[PATH] defaults unjoined to the template dir; pure-Python openjd-model joins scalar PATH only")
 runOn: [windows]
 
 # 2.2/2.12: each relative LIST[PATH] default element is joined with the job

@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 accepts an unknown function in an untaken conditional branch; fixed in openjd-rs#462 (openjd-expr 0.13), not yet released", strict=false)
 # Template validation does not know Param.Zero, so either branch may be taken.
 # A branch that fails on the values' types would be suppressed, but strr is not a
 # function, and whether a name exists does not depend on any value, so static

@@ -1,3 +1,5 @@
+# conformance: xfail(rs, reason="openjd-cli 0.7.2 (crates.io) rejects this template at check; fixed on openjd-rs main, unreleased", strict=false)
+# conformance: xfail(py, reason="openjd-cli 0.8.0 rejects path([]) as path(list[nulltype]); fixed in openjd-rs#576 (unreleased, after openjd-expr 0.17)")
 # Each printed value ends with '|', so an output line can't pass by matching a prefix.
 template:
   specificationVersion: jobtemplate-2023-09
