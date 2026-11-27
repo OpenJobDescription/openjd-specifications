@@ -28,6 +28,7 @@ import ast
 import fnmatch
 import io
 import json
+import os
 import re
 import subprocess
 import sys
@@ -36,6 +37,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
+
+# Fixture tasks are python programs that print non-ASCII sentinels. On
+# Windows, a child python writing to a pipe encodes with the locale code page
+# (cp1252) unless told otherwise, so the CLI under test reads bytes that are
+# not UTF-8. Put every child in UTF-8 mode. (From #159.)
+os.environ.setdefault("PYTHONUTF8", "1")
 
 # Ensure UTF-8 output on Windows
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
