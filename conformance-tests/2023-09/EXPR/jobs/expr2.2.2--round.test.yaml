@@ -1,8 +1,19 @@
+# Each value is followed by `|` because the runner matches output lines as
+# substrings: without it, `TENS:1230` would also match `TENS:1230.0`.
+# round(x) and round(x, ndigits) with ndigits <= 0 return int, so they print
+# with no `.0`; positive ndigits returns a float that keeps its places.
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:
   - EXPR
   name: TestJob
+  parameterDefinitions:
+  - name: X
+    type: FLOAT
+    default: 1234.5
+  - name: N
+    type: INT
+    default: -1
   steps:
   - name: Step1
     script:
@@ -12,25 +23,33 @@ template:
           args:
           - -c
           - |
-            print(r'HALF_EVEN:{{ round(2.5) }}')
-            print(r'HALF_EVEN2:{{ round(3.5) }}')
-            print(r'NEG_HALF_EVEN:{{ round(-2.5) }}')
-            print(r'NEG_HALF_EVEN2:{{ round(-3.5) }}')
-            print(r'DIGITS:{{ round(3.14159, 2) }}')
-            print(r'TRAILING:{{ round(3.495, 2) }}')
-            print(r'TENS:{{ round(1234.5, -1) }}')
-            print(r'HUNDREDS:{{ round(1250.0, -2) }}')
-            print(r'ZERO_NDIGITS:{{ round(3.7, 0) }}')
-            print(r'INT_NDIGITS:{{ round(5, 2) }}')
+            print(r'HALF_EVEN:{{ round(2.5) }}|')
+            print(r'HALF_EVEN2:{{ round(3.5) }}|')
+            print(r'NEG_HALF_EVEN:{{ round(-2.5) }}|')
+            print(r'NEG_HALF_EVEN2:{{ round(-3.5) }}|')
+            print(r'DIGITS:{{ round(3.14159, 2) }}|')
+            print(r'TRAILING:{{ round(3.495, 2) }}|')
+            print(r'TENS:{{ round(1234.5, -1) }}|')
+            print(r'NEG_TENS:{{ round(-1234.5, -1) }}|')
+            print(r'HUNDREDS:{{ round(1250.0, -2) }}|')
+            print(r'NEG_HUNDREDS:{{ round(-1350.0, -2) }}|')
+            print(r'ZERO_NDIGITS:{{ round(3.7, 0) }}|')
+            print(r'ZERO_NDIGITS_HALF_EVEN:{{ round(2.5, 0) }}|')
+            print(r'INT_NDIGITS:{{ round(5, 2) }}|')
+            print(r'PARAM_NDIGITS:{{ round(Param.X, Param.N) }}|')
 expected:
   output:
-  - HALF_EVEN:2
-  - HALF_EVEN2:4
-  - NEG_HALF_EVEN:-2
-  - NEG_HALF_EVEN2:-4
-  - DIGITS:3.14
-  - TRAILING:3.50
-  - TENS:1230
-  - HUNDREDS:1200
-  - ZERO_NDIGITS:4
-  - INT_NDIGITS:5
+  - HALF_EVEN:2|
+  - HALF_EVEN2:4|
+  - NEG_HALF_EVEN:-2|
+  - NEG_HALF_EVEN2:-4|
+  - DIGITS:3.14|
+  - TRAILING:3.50|
+  - TENS:1230|
+  - NEG_TENS:-1230|
+  - HUNDREDS:1200|
+  - NEG_HUNDREDS:-1400|
+  - ZERO_NDIGITS:4|
+  - ZERO_NDIGITS_HALF_EVEN:2|
+  - INT_NDIGITS:5|
+  - PARAM_NDIGITS:1230|

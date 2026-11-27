@@ -1,0 +1,16 @@
+# round() rounds the exact value of its input: 5e300 is stored above
+# 5·10^300, so rounding it to a multiple of 10^301 gives 10^301, outside the
+# 64-bit signed range. That is an integer overflow error, not 0.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print(r'{{ round(5e300, -301) }}')"

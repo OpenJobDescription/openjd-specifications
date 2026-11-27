@@ -1,0 +1,37 @@
+# Expression Language §2.2.5: re_sub allows tab, newline and carriage return in a
+# replacement, the control characters a replacement commonly needs, and characters that
+# aren't control characters, such as U+00A0 and U+200B (a format character). Control
+# characters in the input string and the pattern are allowed. Each value ends
+# with '|' so an output line can't pass by matching a prefix.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r"TAB:{{ repr_py(re_sub('a,b', ',', '\t')) }}|")
+            print(r"NEWLINE:{{ repr_py(re_sub('a,b', ',', '\n')) }}|")
+            print(r"CRLF:{{ repr_py(re_sub('a,b', ',', '\r\n')) }}|")
+            print(r"NL_OCTAL:{{ repr_py(re_sub('a,b', ',', '\12')) }}|")
+            print(r"PRINTABLE:{{ re_sub('a,b', ',', '\x7e') }}|")
+            print(r"NBSP:{{ repr_py(re_sub('a,b', ',', '\xa0')) }}|")
+            print(r"CONTROL_IN_INPUT:{{ repr_py(re_sub('a\x01b', 'b', 'c')) }}|{{ repr_py(re_sub('a\x01b', '\x01', '-')) }}|")
+            print(r"ZWSP:{{ len(re_sub('a,b', ',', '\u200b')) }}|{{ re_sub('a,b', ',', '\u200b') == 'a\u200bb' }}|")
+expected:
+  output:
+  - TAB:'a\tb'|
+  - NEWLINE:'a\nb'|
+  - CRLF:'a\r\nb'|
+  - NL_OCTAL:'a\nb'|
+  - PRINTABLE:a~b|
+  - NBSP:'a\xa0b'|
+  - CONTROL_IN_INPUT:'a\x01c'|'a-b'|
+  - ZWSP:3|true|

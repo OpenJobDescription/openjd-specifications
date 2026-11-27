@@ -1,0 +1,17 @@
+# Expression Language §1.1.5: only a triple-quoted string can hold a line break that doesn't
+# follow a backslash, so a lone CR inside a short string is a syntax error. YAML block scalars
+# can't hold a CR, so the script is a double-quoted YAML string, where "\r" is CR.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - "print(r\"VALUE:{{ len('ab\rcd') }}|\")\n"

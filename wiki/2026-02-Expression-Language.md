@@ -446,19 +446,34 @@ At each stage, known values are evaluated concretely while unresolved values pro
    and for conditionals with unknown conditions (above), as [Template Schemas
    §7.6](2023-09-Template-Schemas#76-expression-fields) rule 5 describes.
 
+   The worker host is not known yet either, so neither is its path format (see
+   [Path Format](#path-format)). In host-context scopes (SESSION/TASK), `path()` evaluates to
+   `unresolved[path]` even when its argument is a literal, and `with_number()` on a string,
+   which it reads as a path, to `unresolved[string]`, so the properties of a literal path, and
+   everything computed from them, are not checked until the expression runs on the worker. For
+   example, `int(path("C:\\a\\5").name)` and `path("C:\\a\\b").parts[2]` are accepted
+   because a Windows worker evaluates them, even though a POSIX worker would fail;
+   `path("/a").relative_to(path("/b"))` is also accepted, and fails
+   on the worker. A `path` value computed in TEMPLATE scope, such as by a step-level `let`
+   binding, has the worker's path semantics when a host-context expression uses it, so it is
+   `unresolved[path]` there too. Type errors that the function signatures show, such as
+   `path("/a").startswith("/")`, are still reported. Literal paths in TEMPLATE scope are
+   evaluated concretely, with POSIX semantics.
+
 2. **Job parameter binding** ("submit time"). Job parameter values are now known, so `Param.*`
    symbols are concrete. Expressions in TEMPLATE scope can be fully evaluated. Expressions in
    host-context scopes (SESSION/TASK) still have `Task.Param.*`, `Session.*`, `Task.File.*`,
    and `Env.File.*` as unresolved, but can now type-check operations on the known `Param.*`
-   values combined with the unresolved task/session symbols.
+   values combined with the unresolved task/session symbols. A `path()` in a host-context scope
+   is still `unresolved[path]`, because the worker's path format is still not known.
    With the `ENV_PARAMS` extension, an Environment's *enableIf* is evaluated at this stage with concrete values only.
    It is not evaluated for a Step whose effective value for a parameter it reads is missing, fails to resolve, or
    does not convert ([Template Schemas §3.2.2](2023-09-Template-Schemas#322-effective-environment-parameter-values)
    item 2).
 
 3. **Worker host execution**. All symbols are known — `Task.Param.*`, `Session.*`, file paths,
-   and path mapping rules are all concrete. Every expression is fully evaluated with no
-   unknowns remaining.
+   path mapping rules, and the host's path format are all concrete. Every expression is fully
+   evaluated with no unknowns remaining.
 
 At each stage, the same evaluator is used. The only difference is which symbols in the symbol
 table are concrete values vs `unresolved[T]` placeholders. This means there is no separate type
@@ -557,6 +572,16 @@ The `path_format` parameter controls the behavior of the `path` type during eval
 - **`None`** (default): The `path` type behaves like Python's `PurePath` class,
   using the system's native path semantics. This is appropriate for host contexts
   (SESSION and TASK scopes) where paths should match the worker's OS.
+
+Before the worker host is known, as at template parse time and job parameter binding, the
+path format of host-context expressions is not known either. Checks of those expressions treat
+`path()` as returning `unresolved[path]` for any argument, and `with_number()` on a string as
+returning `unresolved[string]`: these functions read a literal string as a filesystem path,
+and the result depends on the format (`C:\a\b` is one path component in POSIX semantics and
+three in Windows semantics). Checking them in one format would reject expressions that a worker
+using the other format runs. For the same reason, a `path` value computed in TEMPLATE scope is
+`unresolved[path]` when a host-context expression uses it before the host is known. See
+[Progressive Expression Evaluation](#progressive-expression-evaluation).
 
 The `path_format` setting only affects filesystem paths. URI paths (those with a `scheme://`
 prefix) always use URI-aware parsing with forward-slash separators and no normalization,
@@ -699,9 +724,10 @@ To:
 <StringPrefix>      ::= "r" | "R"
 <ShortString>       ::= "'" <ShortStringChar>* "'" | '"' <ShortStringChar>* '"'
 <LongString>        ::= "'''" <LongStringChar>* "'''" | '"""' <LongStringChar>* '"""'
-<ShortStringChar>   ::= <StringEscape> | any character except "\" or newline or the quote
+<ShortStringChar>   ::= <StringEscape> | any character except "\" or a line break or the quote
 <LongStringChar>    ::= <StringEscape> | any character except "\"
-<StringEscape>      ::= "\" any character
+<StringEscape>      ::= "\" <LineBreak> | "\" any character
+<LineBreak>         ::= LF | CR LF | CR
 <BoolLiteral>       ::= "True" | "False"
 <NoneLiteral>       ::= "None"
 ```
@@ -745,24 +771,64 @@ The grammar supports Python's string literal formats:
 | Raw double-quoted | `r"hello\n"` | Raw string (backslashes are literal) |
 | Raw triple-quoted | `r'''hello'''` or `r"""hello"""` | Raw multi-line string |
 
-All Python escape sequences are supported in non-raw strings:
+Non-raw strings use Python's escape sequences. This table is the complete list:
 
 | Escape | Meaning |
 |--------|---------|
+| `\` followed by a line break (LF, CR LF or CR) | Line continuation: the backslash and the line break are both removed |
 | `\\` | Backslash |
 | `\'` | Single quote |
 | `\"` | Double quote |
-| `\n` | Newline |
-| `\r` | Carriage return |
-| `\t` | Tab |
-| `\xhh` | Character with hex value hh |
-| `\uhhhh` | Unicode character with 16-bit hex value |
-| `\Uhhhhhhhh` | Unicode character with 32-bit hex value |
+| `\a` | Bell (U+0007) |
+| `\b` | Backspace (U+0008) |
+| `\f` | Form feed (U+000C) |
+| `\n` | Newline (U+000A) |
+| `\r` | Carriage return (U+000D) |
+| `\t` | Tab (U+0009) |
+| `\v` | Vertical tab (U+000B) |
+| `\ooo` | Character with octal value ooo: as many octal digits as follow, up to 3 |
+| `\xhh` | Character with hex value hh: exactly 2 hex digits |
+| `\uhhhh` | Unicode character with 16-bit hex value: exactly 4 hex digits |
+| `\Uhhhhhhhh` | Unicode character with 32-bit hex value: exactly 8 hex digits |
 | `\N{name}` | Unicode character by name |
+
+These rules complete the table:
+
+- An octal escape reads at most 3 digits, so `'\1234'` is `'S4'`, and `'\18'` is U+0001 followed by
+  `8`. A value above `\377` is the character with that code point, so `'\400'` is U+0100 and `'\777'` is
+  U+01FF.
+- An unrecognized escape keeps its backslash: `'\d'` is the two characters `\d`, and `len('\q')` is 2.
+  This includes `\8`, `\9`, and a backslash before any character not in the table.
+- Python has deprecated both of the forms above: octal values above `\377` since 3.11, with a
+  SyntaxWarning from 3.12, and unrecognized escapes since 3.6. It plans to make both an error. The next
+  major revision of the EXPR specification should consider rejecting them too. Until then, write a
+  regular expression as a raw string (`r'\d+'`) and a literal backslash as `\\`.
+- A malformed escape is a syntax error. That is `\x`, `\u` or `\U` with too few hex digits; `\N`
+  without `{name}`, or with a name that `\N` doesn't accept (see the next item); a `\U` value above
+  `\U0010FFFF`; and a `\u` or `\U` value from U+D800 to U+DFFF. Python allows that last range in a
+  string, but those surrogate code points are not characters, so a string cannot hold them. Two
+  escapes are never combined into one character, so the surrogate pair `'\uD83D\uDE00'` is an error
+  too; write `'\U0001F600'`.
+- `\N{name}` accepts a character's name from the Unicode Character Database, including the names of
+  characters named by rule such as `CJK UNIFIED IDEOGRAPH-4E00` and `HANGUL SYLLABLE GA`, and its
+  name aliases. It doesn't accept a named sequence, a name for a sequence of several characters.
+  Names are compared without regard to case. CPython does this for most names, but CPython 3.12 and
+  earlier, 3.13.0 to 3.13.12, and 3.14.0 to 3.14.3 require upper case for `CJK UNIFIED IDEOGRAPH`
+  and `HANGUL SYLLABLE` names. Which names exist depends on the Unicode version. Implementations
+  should use Unicode 15.0 or later, and may differ on names that later versions add and on names
+  given by rule other than `CJK UNIFIED IDEOGRAPH` and `HANGUL SYLLABLE` names.
+- A digit escape is never a regular expression group reference. `'\1'` is the single character U+0001, so
+  a group reference has to be written raw, as `r'\1'`. `re_sub` rejects both forms: `r'\1'` as a group
+  reference, and `'\1'` because its replacement contains a control character (see §2.2.5).
 
 In raw strings (prefixed with `r` or `R`), backslashes are treated as literal characters
 and escape sequences are not processed. This is useful for regular expressions and
 Windows-style paths.
+
+A line break in a string literal (LF, CR LF or CR) is a single LF, in raw strings too, and in a
+non-raw string a backslash before it continues the line instead. Only a triple-quoted string can hold
+a line break that doesn't follow a backslash. An escape such as `'\r'` is not a line break and still
+gives CR.
 
 #### 1.1.6. Numeric Literal Formats
 
@@ -820,7 +886,8 @@ args:
 The `path` type can have either POSIX or Windows path semantics depending on the evaluation
 context. This affects path separator handling (`/` vs `\`) and case sensitivity. In TEMPLATE
 scope contexts, POSIX semantics are used for consistency. In host contexts (SESSION and TASK
-scopes), the semantics match the host's operating system.
+scopes), the semantics match the host's operating system, so a path built from a literal in a
+host context is `unresolved[path]` until that host is known (see [Path Format](#path-format)).
 
 **URI paths**: When a `path` value contains a URI (detected by a `scheme://` prefix matching
 the pattern `^[a-zA-Z][a-zA-Z0-9+.-]+://`), path operations use URI-aware string parsing
@@ -1170,6 +1237,18 @@ When a float value is only copied without modification, the original string repr
 is preserved in output string interpolation. When an operation is performed on a float value,
 it becomes a 64-bit IEEE floating point number, and string interpolation uses the shortest
 decimal string representation.
+
+The shortest decimal string representation is the one Python's `repr(float)` gives: the fewest
+significant digits that read back as the same 64-bit value, the one nearest the exact value when
+several strings have that many digits, and of two equally near, the one whose last digit is even.
+It uses fixed-point notation with at least one digit after the decimal point when
+`1e-4 <= abs(x) < 1e16` (`2.0`, `0.0001`, `1000000000000000.0`), and otherwise exponent notation
+with a sign and at least two exponent digits (`1e+16`, `1e-05`). Zero is always `0.0` (see below).
+
+A float given as a YAML or JSON number rather than as a string has no original string representation,
+so it is written the same way. A FLOAT parameter with `default: 2` outputs `"2.0"` from
+`{{Param.V}}`, and one with `default: 1.0e+20` outputs `"1e+20"`. This holds for a number item of a
+LIST[FLOAT] default or value, and for a number given as the value of a FLOAT Job Parameter.
 
 For example, if a job submission provides the value `"3.500"` to a float parameter:
 - `{{Param.V}}` outputs `"3.500"` (original form preserved)
@@ -1732,7 +1811,9 @@ rate = Param.Rate if Param.Rate > 0 else fail("must be positive")
 Note: `round(x, ndigits)` with positive `ndigits` preserves trailing zeros in the decimal
 representation. For example, `round(3.5, 2)` produces a value that converts to the string
 `"3.50"`, not `"3.5"`. With non-positive `ndigits`, the result is an integer (e.g.,
-`round(1234.5, -1)` returns `1230`).
+`round(1234.5, -1)` returns `1230`). Rounding is half-to-even on the exact value of `x`, as
+Python's `round` does: `round(2.675, 2)` is `2.67`, because the float 2.675 is slightly less than
+2.675. An `int` result outside the 64-bit signed range is an error.
 
 #### 2.2.3. List Functions
 
@@ -1865,10 +1946,23 @@ semantics of Python's `str.title` and `str.capitalize`:
 | `re_match(s: string, pattern: string) -> list[string]?` | Match at START of string, return captured groups or null |
 | `re_search(s: string, pattern: string) -> list[string]?` | Match ANYWHERE in string, return captured groups or null |
 | `re_findall(s: string, pattern: string) -> list[string] \| list[list[string]]` | Find all non-overlapping matches; returns full matches if no groups, list of captured group values (not full matches) if one group, list of group lists if multiple groups |
-| `re_sub(s: string, pattern: string, repl: string) -> string` | Replace all regex matches with replacement. The `repl` string is literal text — group references (`\1`, `\g<1>`, `$1`, `${1}`) are not supported and are errors. |
+| `re_sub(s: string, pattern: string, repl: string) -> string` | Replace all regex matches with replacement. The `repl` string is literal text — group references (`\1`, `\g<1>`, `$1`, `${1}`) are not supported and are errors. A `repl` that contains a control character is also an error (see the note below). |
 | `re_escape(s: string) -> string` | Escape regex metacharacters for literal matching |
 | `re_split(s: string, pattern: string) -> list[string]` | Split string by regex pattern |
 | `re_split(s: string, pattern: string, maxsplit: int) -> list[string]` | Split string by regex pattern, at most maxsplit times |
+
+The `re_sub` replacement must not contain a control character. A control character is one in the
+Unicode general category `Cc` (U+0000 to U+001F and U+007F to U+009F), except tab (U+0009), newline
+(U+000A) and carriage return (U+000D), which are allowed. Only the replacement is checked, whether or
+not the pattern matches; control characters in `s` and `pattern` are allowed. The rule catches a group
+reference written in a non-raw string: `'\1'` decodes to U+0001 before `re_sub` sees it (§1.1.5), so
+`re_sub("ab", "(a)", "\1")` is an error rather than a replacement with an invisible character. Write
+the replacement text you want literally, as in `re_sub("a,b", ",", "\n")`, which gives `"a\nb"`. A
+non-raw group reference that decodes to an allowed or printable character is not caught: `'\11'`,
+`'\12'` and `'\15'` decode to tab, newline and carriage return, and `'\101'` decodes to `A`.
+
+Write patterns as raw strings. In a non-raw string, `'\b'` is a backspace (§1.1.5) rather than the
+word boundary anchor, and `'\1'` is U+0001.
 
 The regex syntax is the intersection of Python's `re` module and Rust's `regex` crate,
 ensuring cross-platform compatibility. Supported features:
@@ -1951,7 +2045,6 @@ re_escape("file[1].txt")                        # returns "file\\[1\\]\\.txt"
 | `repr_sh(p: path) -> string` | Shell-escape a path for POSIX shells |
 | `repr_sh(args: list[string]) -> string` | Join list into space-separated shell-escaped strings |
 | `repr_sh(args: list[path]) -> string` | Join path list into space-separated shell-escaped strings |
-| `repr_sh(args: list[path]) -> string` | Join path list into space-separated shell-escaped strings |
 | `repr_cmd(s: string) -> string` | Escape a string for Windows CMD |
 | `repr_cmd(args: list[string]) -> string` | Join list into space-separated CMD-escaped strings |
 | `repr_pwsh(s: string) -> string` | Escape a string for PowerShell |
@@ -1970,9 +2063,48 @@ re_escape("file[1].txt")                        # returns "file\\[1\\]\\.txt"
 | `repr_json(p: path) -> string` | JSON string representation of path's string value |
 | `repr_json(value: T) -> string` | Convert to JSON representation (`T` in `bool`, `int`, `float`, `string`, `list`) |
 
-`repr_sh` follows the behavior of Python's
+`repr_sh` quotes its argument for a POSIX shell (the
+[Shell Command Language](https://pubs.opengroup.org/onlinepubs/9799919799/utilities/V3_chap02.html)
+of POSIX.1-2024). Its result is defined by the words a POSIX shell reads back from it, not by its
+exact bytes. When a non-interactive POSIX shell reads the result unquoted, in a command's arguments
+or a `for` loop's word list:
+
+- For a `string` or `path`, the shell reads exactly one word, and after quote removal that word is
+  equal to the input. A `path` is quoted in its string form. No expansion or field splitting changes
+  the word.
+- For a list of N strings or paths, the result is the N quoted items, in order, separated by single
+  spaces. The shell reads exactly N words, and the i-th is equal to the i-th item.
+- An empty string gives a quoted word that the shell reads as one empty word, such as `''`. An empty
+  list gives the empty string, which the shell reads as no words.
+- A string or path containing a NUL character (U+0000) cannot be a shell word, so `repr_sh` of it, or
+  of a list containing it, is an evaluation error.
+- `repr_sh` has no signature for `bool`, `int`, `float`, `nulltype`, `range_expr`, nested lists or
+  lists of anything other than strings or paths, so calling it with one of these is an error, as for
+  any call with no matching signature. To quote
+  a number or a boolean, convert it with `string()` first.
+
+Implementations may choose different quoting forms, so two conforming implementations can return
+different bytes for the same input. Python's
 [shlex.quote](https://docs.python.org/3/library/shlex.html#shlex.quote) and
-[shlex.join](https://docs.python.org/3/library/shlex.html#shlex.join).
+[shlex.join](https://docs.python.org/3/library/shlex.html#shlex.join) produce conforming output for
+any input without a NUL character, but they are not required.
+
+The property covers how the shell splits and unquotes words, in a shell whose locale encodes text
+as UTF-8 or in another encoding where every byte below 0x80 is the ASCII character of that value,
+as the C and POSIX locales do. These cases are outside it:
+
+- A result placed inside quotes in a script.
+- An unquoted word in the position of a command name, where the shell can still recognize a reserved
+  word such as `if` or an assignment such as `a=b`. Writing `command {{repr_sh(...)}}` puts the word
+  in an argument position.
+- An interactive shell, which can apply history expansion or treat control characters specially.
+- Text that is read by the shell a second time, as with `eval`.
+
+Unquoted text written directly next to the result, as in `--out={{repr_sh(Param.File)}}`, joins the
+same word, as it would for any quoted shell word.
+
+`repr_cmd` and `repr_pwsh` are not defined by a property. The rules below give their algorithms,
+because there is no existing library whose output an implementation would follow instead.
 
 `repr_cmd` produces Windows CMD-safe strings suitable for use in `.bat` files.
 Strings containing special characters (`& | < > ^ " ( ) % !` or whitespace) are wrapped in
@@ -2007,7 +2139,8 @@ preserves the nesting.
 [repr](https://docs.python.org/3/library/functions.html#repr).
 
 Examples:
-- `repr_sh(["echo", "hello world"])` returns `"echo 'hello world'"`
+- `repr_sh(["echo", "hello world"])` returns, for example, `"echo 'hello world'"` (one valid output)
+- `repr_sh("it's")` returns, for example, `"'it'\"'\"'s'"` or `"\"it's\""` (two valid outputs)
 - `repr_cmd("a & b")` returns `"\"a & b\""` (quoted, `&` is literal inside quotes)
 - `repr_cmd("a ^ b")` returns `"\"a ^^ b\""` (`^` escaped inside quotes)
 - `repr_cmd("hello!")` returns `"\"hello^^!\""` (`!` escaped as `^^!` for the delayed expansion context)
@@ -2083,6 +2216,7 @@ Examples:
 |-----------|-------------|
 | `path(s: string) -> path` | Convert string to path |
 | `path(parts: list[string]) -> path` | Construct path from components |
+| `path(parts: list[nulltype]) -> path` | Construct path from no components, returns `path(".")` |
 | `with_name(p: path, name: string) -> path` | Return path with the filename changed |
 | `with_stem(p: path, stem: string) -> path` | Return path with the stem changed |
 | `with_suffix(p: path, suffix: string) -> path` | Return path with the suffix changed |

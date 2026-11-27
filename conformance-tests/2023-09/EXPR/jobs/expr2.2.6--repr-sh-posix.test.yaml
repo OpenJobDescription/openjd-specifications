@@ -1,0 +1,126 @@
+# Expression Language §2.2.6: repr_sh output, read by a POSIX shell, gives
+# exactly the input as words: one word for a string or path, and one word per
+# item, in order, for a list. Implementations may quote differently, so this
+# test checks the words the shell reads back rather than the bytes.
+#
+# Each output is put after `set --` in a script that `sh` runs, in an empty
+# directory except for one file, and the shell prints the words it read
+# separated by NUL bytes. Python prints them with
+# ascii() so newlines, tabs and non-ASCII characters are unambiguous. Each
+# line starts with its case name in brackets, so no expected line can match
+# another case's line.
+runOn: [posix]
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    let:
+    - 'v0 = repr_sh("hello")'
+    - 'v1 = repr_sh("hello world")'
+    - 'v2 = repr_sh("it''s")'  # single quote
+    - 'v3 = repr_sh(''say "hi"'')'  # double quote
+    - 'v4 = repr_sh(''a\''b"c'')'  # both quote kinds
+    - 'v5 = repr_sh(''\''\''"'')'  # nothing but quotes
+    - 'v6 = repr_sh("a\\b")'  # backslash
+    - 'v7 = repr_sh("a\\")'  # trailing backslash
+    - 'v8 = repr_sh("$HOME ${x} $(id)")'  # parameter and command substitution
+    - 'v9 = repr_sh("a$b''c")'
+    - 'v10 = repr_sh("`id`")'  # command substitution
+    - 'v11 = repr_sh("!x")'
+    - 'v12 = repr_sh("*")'  # pathname expansion
+    - 'v13 = repr_sh("a?b[cd]{e,f}~g")'
+    - 'v14 = repr_sh("~")'  # tilde expansion at the start of a word
+    - 'v15 = repr_sh("#x")'  # a comment at the start of a word
+    - 'v16 = repr_sh("a;b&c|d>e<f(g)#h")'
+    - 'v17 = repr_sh("a\nb\n")'  # embedded and trailing newline
+    - 'v18 = repr_sh("a\tb")'
+    - 'v19 = repr_sh("")'  # parses as one empty word
+    - 'v20 = repr_sh("-x")'  # leading dash
+    - 'v21 = repr_sh("a=b")'  # looks like an assignment
+    - 'v22 = repr_sh("\u00e9\u65e5\U0001F600")'
+    - 'v23 = repr_sh(path("/tmp/a b/it''s"))'  # a path quotes its string form
+    - 'v24 = repr_sh(["", "it''s", "a b", "", ''x"y'', "$x"])'  # N items give N words, empty items included
+    - 'v25 = repr_sh(["a b"])'
+    - 'v26 = repr_sh([])'  # zero words
+    - 'v27 = repr_sh([path("/a b"), path("c")])'
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            import pathlib
+            import subprocess
+            import sys
+            import tempfile
+            names = ['SIMPLE', 'SPACE', 'SQUOTE', 'DQUOTE', 'MIXED', 'ONLY_QUOTES', 'BACKSLASH', 'TRAIL_BACKSLASH', 'DOLLAR', 'DOLLAR_SQUOTE', 'BACKTICK', 'BANG', 'GLOB', 'GLOB2', 'TILDE', 'HASH', 'OPERATORS', 'NEWLINE', 'TAB', 'EMPTY', 'DASH', 'EQUALS', 'NON_ASCII', 'PATH', 'LIST', 'LIST_ONE', 'LIST_EMPTY', 'LIST_PATH']
+            for name, text in zip(names, sys.argv[1:]):
+                script = "set -- " + text + "\nfor w in \"$@\"; do printf '%s\\0' \"$w\"; done\n"
+                with tempfile.TemporaryDirectory() as tmp:
+                    # A file here makes an unquoted glob expand to something.
+                    pathlib.Path(tmp, "file").touch()
+                    out = subprocess.run(["sh", "-c", script], cwd=tmp, capture_output=True, check=True).stdout
+                words = [w.decode("utf-8") for w in out.split(b"\0")[:-1]]
+                print("[" + name + "]=" + ascii(words))
+          - '{{ v0 }}'
+          - '{{ v1 }}'
+          - '{{ v2 }}'
+          - '{{ v3 }}'
+          - '{{ v4 }}'
+          - '{{ v5 }}'
+          - '{{ v6 }}'
+          - '{{ v7 }}'
+          - '{{ v8 }}'
+          - '{{ v9 }}'
+          - '{{ v10 }}'
+          - '{{ v11 }}'
+          - '{{ v12 }}'
+          - '{{ v13 }}'
+          - '{{ v14 }}'
+          - '{{ v15 }}'
+          - '{{ v16 }}'
+          - '{{ v17 }}'
+          - '{{ v18 }}'
+          - '{{ v19 }}'
+          - '{{ v20 }}'
+          - '{{ v21 }}'
+          - '{{ v22 }}'
+          - '{{ v23 }}'
+          - '{{ v24 }}'
+          - '{{ v25 }}'
+          - '{{ v26 }}'
+          - '{{ v27 }}'
+expected:
+  output:
+  - "[SIMPLE]=['hello']"
+  - "[SPACE]=['hello world']"
+  - "[SQUOTE]=[\"it's\"]"
+  - "[DQUOTE]=['say \"hi\"']"
+  - "[MIXED]=['a\\'b\"c']"
+  - "[ONLY_QUOTES]=['\\'\\'\"']"
+  - "[BACKSLASH]=['a\\\\b']"
+  - "[TRAIL_BACKSLASH]=['a\\\\']"
+  - "[DOLLAR]=['$HOME ${x} $(id)']"
+  - "[DOLLAR_SQUOTE]=[\"a$b'c\"]"
+  - "[BACKTICK]=['`id`']"
+  - "[BANG]=['!x']"
+  - "[GLOB]=['*']"
+  - "[GLOB2]=['a?b[cd]{e,f}~g']"
+  - "[TILDE]=['~']"
+  - "[HASH]=['#x']"
+  - "[OPERATORS]=['a;b&c|d>e<f(g)#h']"
+  - "[NEWLINE]=['a\\nb\\n']"
+  - "[TAB]=['a\\tb']"
+  - "[EMPTY]=['']"
+  - "[DASH]=['-x']"
+  - "[EQUALS]=['a=b']"
+  - "[NON_ASCII]=['\\xe9\\u65e5\\U0001f600']"
+  - "[PATH]=[\"/tmp/a b/it's\"]"
+  - "[LIST]=['', \"it's\", 'a b', '', 'x\"y', '$x']"
+  - "[LIST_ONE]=['a b']"
+  - "[LIST_EMPTY]=[]"
+  - "[LIST_PATH]=['/a b', 'c']"

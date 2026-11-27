@@ -1,0 +1,26 @@
+# round(x, ndigits) with ndigits <= 0 returns int, so its result can be used
+# where only an int is accepted: string repetition and range().
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: X
+    type: FLOAT
+    default: 1234.5
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'REPEAT:{{ 'ab' * round(1.5, 0) }}|')
+            print(r'RANGE:{{ len(range(round(Param.X, -3))) }}|')
+expected:
+  output:
+  - REPEAT:abab|
+  - RANGE:1000|

@@ -412,7 +412,9 @@ frame_rate = Param.FrameRate if Param.FrameRate > 0 else fail("must be positive"
 **Special note about `round`**: `round(x, ndigits)` with positive `ndigits` preserves trailing
 zeros in the decimal representation. For example, `round(3.5, 2)` produces a value that converts
 to the string `"3.50"`, not `"3.5"`. With non-positive `ndigits`, the result is an integer (e.g.,
-`round(1234.5, -1)` returns `1230`).
+`round(1234.5, -1)` returns `1230`). Rounding is half-to-even on the exact value of `x`, as
+Python's `round` does: `round(2.675, 2)` is `2.67`, because the float 2.675 is slightly less than
+2.675. An `int` result outside the 64-bit signed range is an error.
 
 #### List Functions
 
@@ -551,10 +553,23 @@ semantics of Python's `str.title` and `str.capitalize`:
 | `re_match(s: string, pattern: string) -> list[string]?` | Match at START of string, return captured groups or null |
 | `re_search(s: string, pattern: string) -> list[string]?` | Match ANYWHERE in string, return captured groups or null |
 | `re_findall(s: string, pattern: string) -> list[string] \| list[list[string]]` | Find all non-overlapping matches; returns full matches if no groups, list of captured group values (not full matches) if one group, list of group lists if multiple groups |
-| `re_sub(s: string, pattern: string, repl: string) -> string` | Replace all regex matches with replacement. The `repl` string is literal text — group references (`\1`, `\g<1>`, `$1`, `${1}`) are not supported and are errors. |
+| `re_sub(s: string, pattern: string, repl: string) -> string` | Replace all regex matches with replacement. The `repl` string is literal text — group references (`\1`, `\g<1>`, `$1`, `${1}`) are not supported and are errors. A `repl` that contains a control character is also an error (see the note below). |
 | `re_escape(s: string) -> string` | Escape regex metacharacters for literal matching |
 | `re_split(s: string, pattern: string) -> list[string]` | Split string by regex pattern |
 | `re_split(s: string, pattern: string, maxsplit: int) -> list[string]` | Split string by regex pattern, at most maxsplit times |
+
+The `re_sub` replacement must not contain a control character. A control character is one in the
+Unicode general category `Cc` (U+0000 to U+001F and U+007F to U+009F), except tab (U+0009), newline
+(U+000A) and carriage return (U+000D), which are allowed. Only the replacement is checked, whether or
+not the pattern matches; control characters in `s` and `pattern` are allowed. The rule catches a group
+reference written in a non-raw string: `'\1'` decodes to U+0001 before `re_sub` sees it (see String
+Literal Formats in RFC 0005), so `re_sub("ab", "(a)", "\1")` is an error rather than a replacement with
+an invisible character. Write the replacement text you want literally, as in
+`re_sub("a,b", ",", "\n")`, which gives `"a\nb"`. A non-raw group reference that decodes to an allowed or printable character is not caught: `'\11'`,
+`'\12'` and `'\15'` decode to tab, newline and carriage return, and `'\101'` decodes to `A`.
+
+Write patterns as raw strings. In a non-raw string, `'\b'` is a backspace (see String Literal Formats
+in RFC 0005) rather than the word boundary anchor, and `'\1'` is U+0001.
 
 The regex syntax is the intersection of Python's `re` module and Rust's `regex` crate,
 ensuring cross-platform compatibility. Supported features:
@@ -658,11 +673,36 @@ re_escape("file[1].txt")                        # returns "file\\[1\\]\\.txt"
 
 `repr_py` follows the behavior of Python's [repr](https://docs.python.org/3/library/functions.html#repr).
 
-`repr_sh` follows the behavior of Python's
-[shlex.quote](https://docs.python.org/3/library/shlex.html#shlex.quote) and
-[shlex.join](https://docs.python.org/3/library/shlex.html#shlex.join).
+`repr_sh` quotes its argument for a POSIX shell. Its result is defined by the words a POSIX shell
+reads back from it, not by its exact bytes, so that a conformance test can check it and so that
+implementations can use their platform's quoting library. In summary, when a non-interactive POSIX
+shell reads the result unquoted in a command's arguments:
 
-Example: `repr_sh(["echo", "hello world"])` returns `"echo 'hello world'"`.
+- For a `string` or `path`, the shell reads exactly one word equal to the input.
+- For a list of N items, the result is the N quoted items separated by single spaces, which the shell
+  reads as N words, in order, each equal to its item. An empty list gives the empty string.
+- An empty string gives a word the shell reads as the empty string, such as `''`.
+- A NUL character in a string, a path or a list item cannot be a shell word, and is an evaluation
+  error.
+- `bool`, `int`, `float`, `nulltype`, `range_expr`, nested lists and lists of anything other than
+  strings or paths have no `repr_sh` signature.
+
+Section 2.2.6 of the
+[Expression Language](https://github.com/OpenJobDescription/openjd-specifications/wiki/2026-02-Expression-Language)
+specification gives the full rules, including the cases the property doesn't cover, such as a result
+placed inside quotes or in the position of a command name.
+
+Python's [shlex.quote](https://docs.python.org/3/library/shlex.html#shlex.quote) and
+[shlex.join](https://docs.python.org/3/library/shlex.html#shlex.join) produce conforming output for
+inputs without a NUL character, and so does the Rust [shlex](https://crates.io/crates/shlex) crate.
+They quote some inputs differently: for `it's`, `shlex.quote` gives `'it'"'"'s'` and the Rust crate
+gives `"it's"`. A POSIX shell reads both as the one word `it's`.
+
+Example: `repr_sh(["echo", "hello world"])` returns, for example, `"echo 'hello world'"` (one valid
+output).
+
+`repr_cmd` and `repr_pwsh` are not defined by a property. The rules below give their algorithms,
+because there is no existing library whose output an implementation would follow instead.
 
 `repr_cmd` produces Windows CMD-safe strings suitable for use in `.bat` files:
 
@@ -798,6 +838,7 @@ Examples:
 |-----------|-------------|
 | `path(s: string) -> path` | Convert string to path |
 | `path(parts: list[string]) -> path` | Construct path from components (like `Path(*parts)` in Python) |
+| `path(parts: list[nulltype]) -> path` | Construct path from no components, returns `path(".")` (like `Path()` in Python) |
 | `with_name(p: path, name: string) -> path` | `p.with_name(name)` return path with the filename changed |
 | `with_stem(p: path, stem: string) -> path` | `p.with_stem(stem)` return path with the stem changed |
 | `with_suffix(p: path, suffix: string) -> path` | `p.with_suffix(suffix)` return path with the suffix changed |
@@ -935,9 +976,11 @@ path portion verbatim.
 
 ### Python shlex
 
-The `repr_sh` function follows Python's
-[shlex.quote](https://docs.python.org/3/library/shlex.html#shlex.quote) semantics for safe
-shell escaping.
+The `repr_sh` function is modeled on Python's
+[shlex.quote](https://docs.python.org/3/library/shlex.html#shlex.quote) for safe shell escaping.
+The specification states the property `shlex.quote` provides, that the shell reads the result back
+as the input, rather than its exact output, because other quoting libraries provide the same
+property with different bytes.
 
 ### Standard Library Math Functions
 

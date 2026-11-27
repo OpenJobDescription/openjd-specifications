@@ -600,9 +600,10 @@ To:
 <StringPrefix>      ::= "r" | "R"
 <ShortString>       ::= "'" <ShortStringChar>* "'" | '"' <ShortStringChar>* '"'
 <LongString>        ::= "'''" <LongStringChar>* "'''" | '"""' <LongStringChar>* '"""'
-<ShortStringChar>   ::= <StringEscape> | any character except "\" or newline or the quote
+<ShortStringChar>   ::= <StringEscape> | any character except "\" or a line break or the quote
 <LongStringChar>    ::= <StringEscape> | any character except "\"
-<StringEscape>      ::= "\" any character
+<StringEscape>      ::= "\" <LineBreak> | "\" any character
+<LineBreak>         ::= LF | CR LF | CR
 <BoolLiteral>       ::= "True" | "False"
 <NoneLiteral>       ::= "None"
 <ListExpr>          ::= "[" (<ConditionalExpr> ("," <ConditionalExpr>)* ","?)? "]"
@@ -630,24 +631,64 @@ The grammar supports Python's string literal formats:
 | Raw double-quoted | `r"hello\n"` | Raw string (backslashes are literal) |
 | Raw triple-quoted | `r'''hello'''` or `r"""hello"""` | Raw multi-line string |
 
-All Python escape sequences are supported in non-raw strings:
+Non-raw strings use Python's escape sequences. This table is the complete list:
 
 | Escape | Meaning |
 |--------|---------|
+| `\` followed by a line break (LF, CR LF or CR) | Line continuation: the backslash and the line break are both removed |
 | `\\` | Backslash |
 | `\'` | Single quote |
 | `\"` | Double quote |
-| `\n` | Newline |
-| `\r` | Carriage return |
-| `\t` | Tab |
-| `\xhh` | Character with hex value hh |
-| `\uhhhh` | Unicode character with 16-bit hex value |
-| `\Uhhhhhhhh` | Unicode character with 32-bit hex value |
+| `\a` | Bell (U+0007) |
+| `\b` | Backspace (U+0008) |
+| `\f` | Form feed (U+000C) |
+| `\n` | Newline (U+000A) |
+| `\r` | Carriage return (U+000D) |
+| `\t` | Tab (U+0009) |
+| `\v` | Vertical tab (U+000B) |
+| `\ooo` | Character with octal value ooo: as many octal digits as follow, up to 3 |
+| `\xhh` | Character with hex value hh: exactly 2 hex digits |
+| `\uhhhh` | Unicode character with 16-bit hex value: exactly 4 hex digits |
+| `\Uhhhhhhhh` | Unicode character with 32-bit hex value: exactly 8 hex digits |
 | `\N{name}` | Unicode character by name |
+
+These rules complete the table:
+
+- An octal escape reads at most 3 digits, so `'\1234'` is `'S4'`, and `'\18'` is U+0001 followed by
+  `8`. A value above `\377` is the character with that code point, so `'\400'` is U+0100 and `'\777'` is
+  U+01FF.
+- An unrecognized escape keeps its backslash: `'\d'` is the two characters `\d`, and `len('\q')` is 2.
+  This includes `\8`, `\9`, and a backslash before any character not in the table.
+- Python has deprecated both of the forms above: octal values above `\377` since 3.11, with a
+  SyntaxWarning from 3.12, and unrecognized escapes since 3.6. It plans to make both an error. The next
+  major revision of the EXPR specification should consider rejecting them too. Until then, write a
+  regular expression as a raw string (`r'\d+'`) and a literal backslash as `\\`.
+- A malformed escape is a syntax error. That is `\x`, `\u` or `\U` with too few hex digits; `\N`
+  without `{name}`, or with a name that `\N` doesn't accept (see the next item); a `\U` value above
+  `\U0010FFFF`; and a `\u` or `\U` value from U+D800 to U+DFFF. Python allows that last range in a
+  string, but those surrogate code points are not characters, so a string cannot hold them. Two
+  escapes are never combined into one character, so the surrogate pair `'\uD83D\uDE00'` is an error
+  too; write `'\U0001F600'`.
+- `\N{name}` accepts a character's name from the Unicode Character Database, including the names of
+  characters named by rule such as `CJK UNIFIED IDEOGRAPH-4E00` and `HANGUL SYLLABLE GA`, and its
+  name aliases. It doesn't accept a named sequence, a name for a sequence of several characters.
+  Names are compared without regard to case. CPython does this for most names, but CPython 3.12 and
+  earlier, 3.13.0 to 3.13.12, and 3.14.0 to 3.14.3 require upper case for `CJK UNIFIED IDEOGRAPH`
+  and `HANGUL SYLLABLE` names. Which names exist depends on the Unicode version. Implementations
+  should use Unicode 15.0 or later, and may differ on names that later versions add and on names
+  given by rule other than `CJK UNIFIED IDEOGRAPH` and `HANGUL SYLLABLE` names.
+- A digit escape is never a regular expression group reference. `'\1'` is the single character U+0001, so
+  a group reference has to be written raw, as `r'\1'`. `re_sub` rejects both forms: `r'\1'` as a group
+  reference, and `'\1'` because its replacement contains a control character (see `re_sub` in RFC 0006).
 
 In raw strings (prefixed with `r` or `R`), backslashes are treated as literal characters
 and escape sequences are not processed. This is useful for regular expressions and
 Windows-style paths.
+
+A line break in a string literal (LF, CR LF or CR) is a single LF, in raw strings too, and in a
+non-raw string a backslash before it continues the line instead. Only a triple-quoted string can hold
+a line break that doesn't follow a backslash. An escape such as `'\r'` is not a line break and still
+gives CR.
 
 #### Numeric Literal Formats
 
@@ -1249,15 +1290,30 @@ At each stage, known values are evaluated concretely while unresolved values pro
    comprehension over unknown elements), but a name that resolves nowhere is (see Names that
    Resolve Nowhere above).
 
+   The worker host is not known yet either, so neither is its path format (see
+   [Path Format](#path-format)). In host-context scopes (SESSION/TASK), `path()` evaluates to
+   `unresolved[path]` even when its argument is a literal, and `with_number()` on a string,
+   which it reads as a path, to `unresolved[string]`, so the properties of a literal path, and
+   everything computed from them, are not checked until the expression runs on the worker. For
+   example, `int(path("C:\\a\\5").name)` and `path("C:\\a\\b").parts[2]` are accepted
+   because a Windows worker evaluates them, even though a POSIX worker would fail;
+   `path("/a").relative_to(path("/b"))` is also accepted, and fails
+   on the worker. A `path` value computed in TEMPLATE scope, such as by a step-level `let`
+   binding, has the worker's path semantics when a host-context expression uses it, so it is
+   `unresolved[path]` there too. Type errors that the function signatures show, such as
+   `path("/a").startswith("/")`, are still reported. Literal paths in TEMPLATE scope are
+   evaluated concretely, with POSIX semantics.
+
 2. **Job parameter binding** ("submit time"). Job parameter values are now known, so `Param.*`
    symbols are concrete. Expressions in TEMPLATE scope can be fully evaluated. Expressions in
    host-context scopes (SESSION/TASK) still have `Task.Param.*`, `Session.*`, `Task.File.*`,
    and `Env.File.*` as unresolved, but can now type-check operations on the known `Param.*`
-   values combined with the unresolved task/session symbols.
+   values combined with the unresolved task/session symbols. A `path()` in a host-context scope
+   is still `unresolved[path]`, because the worker's path format is still not known.
 
 3. **Worker host execution**. All symbols are known — `Task.Param.*`, `Session.*`, file paths,
-   and path mapping rules are all concrete. Every expression is fully evaluated with no
-   unknowns remaining.
+   path mapping rules, and the host's path format are all concrete. Every expression is fully
+   evaluated with no unknowns remaining.
 
 At each stage, the same evaluator is used. The only difference is which symbols in the symbol
 table are concrete values vs `unresolved[T]` placeholders. This means there is no separate type

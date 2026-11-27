@@ -1,0 +1,17 @@
+# Expression Language §1.1.5: a surrogate escape is a syntax error in any string literal of an
+# expression, not only the first. Here it is in the second operand of a `+` concatenation.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r"VALUE:{{ len('a' + '\ud800') }}|")

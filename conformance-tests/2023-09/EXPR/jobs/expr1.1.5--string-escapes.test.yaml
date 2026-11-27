@@ -1,0 +1,69 @@
+# Expression Language §1.1.5: every escape sequence in a non-raw string. Each value is
+# printed with repr_py (or compared with ==, for characters repr_py prints as themselves)
+# and ends with '|', so an output line can't pass by matching a prefix.
+# Lower- and mixed-case names are in expr1.1.5--string-escape-name-case.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r"BELL:{{ repr_py('\a') }}|")
+            print(r"BACKSPACE:{{ repr_py('\b') }}|")
+            print(r"FORMFEED:{{ repr_py('\f') }}|")
+            print(r"NEWLINE:{{ repr_py('\n') }}|")
+            print(r"CR:{{ repr_py('\r') }}|")
+            print(r"TAB:{{ repr_py('\t') }}|")
+            print(r"VTAB:{{ repr_py('\v') }}|")
+            print(r"BACKSLASH:{{ len('\\') }}|")
+            print(r"QUOTES:{{ len('\'\"') }}|{{ '\'\"' == '\x27\x22' }}|")
+            print(r"OCT1:{{ repr_py('\0') }}|{{ repr_py('\1') }}|{{ repr_py('\7') }}|")
+            print(r"OCT2:{{ repr_py('\12') }}|{{ repr_py('\37') }}|")
+            print(r"OCT3:{{ repr_py('\101') }}|{{ '\377' == '\xff' }}|")
+            print(r"OCT_MAX3:{{ repr_py('\1234') }}|{{ repr_py('\18') }}|{{ repr_py('\08') }}|")
+            print(r"OCT_ABOVE_377:{{ '\400' == '\u0100' }}|{{ '\777' == '\u01ff' }}|{{ len('\400') }}|")
+            print(r"HEX:{{ repr_py('\x41\x7e') }}|")
+            print(r"U16:{{ '\u00e9' == '\xe9' }}|{{ len('\u00e9') }}|")
+            print(r"U32:{{ '\U0001F600' == '\N{GRINNING FACE}' }}|{{ len('\U0001F600') }}|")
+            print(r"NOT_ESCAPES:{{ len(r'\ud800') }}|{{ len('\\ud800') }}|{{ len('\\\U0000d7ff') }}|")
+            print(r"SURROGATE_EDGES:{{ len('\ud7ff\ue000\U0000d7ff\U0000e000') }}|")
+            print(r"NAMED:{{ '\N{BULLET}' == '\u2022' }}|")
+            print(r"CONT:{{ repr_py('ab\
+            cd') }}|")
+            print(r"CONT_TRIPLE:{{ repr_py('''ab\
+            cd''') }}|")
+            print(r"RAW_CONT:{{ len(r'ab\
+            cd') }}|")
+expected:
+  output:
+  - BELL:'\x07'|
+  - BACKSPACE:'\x08'|
+  - FORMFEED:'\x0c'|
+  - NEWLINE:'\n'|
+  - CR:'\r'|
+  - TAB:'\t'|
+  - VTAB:'\x0b'|
+  - BACKSLASH:1|
+  - QUOTES:2|true|
+  - OCT1:'\x00'|'\x01'|'\x07'|
+  - OCT2:'\n'|'\x1f'|
+  - OCT3:'A'|true|
+  - OCT_MAX3:'S4'|'\x018'|'\x008'|
+  - OCT_ABOVE_377:true|true|1|
+  - HEX:'A~'|
+  - U16:true|1|
+  - U32:true|1|
+  - NOT_ESCAPES:6|6|2|
+  - SURROGATE_EDGES:4|
+  - NAMED:true|
+  - CONT:'abcd'|
+  - CONT_TRIPLE:'abcd'|
+  - RAW_CONT:6|

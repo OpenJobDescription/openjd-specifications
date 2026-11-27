@@ -1,0 +1,35 @@
+# Expression Language §1.1.5: \N{name} accepts names given by rule for CJK UNIFIED
+# IDEOGRAPH and HANGUL SYLLABLE, name aliases, and every name in Unicode 15.0, the oldest
+# version implementations should use. Each comparison ends with '|', so an output line
+# can't pass by matching a prefix.
+# - CJK UNIFIED IDEOGRAPH-20000 is the first CJK Extension B ideograph, outside the BMP.
+# - LINE FEED is a control alias of U+000A and BYTE ORDER MARK an alternate alias of
+#   U+FEFF in NameAliases.txt.
+# - SHAKING FACE (U+1FAE8) was added in Unicode 15.0 (DerivedAge.txt).
+# - In a raw string \N{BULLET} is not an escape and stays 10 characters.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r"HANGUL:{{ '\N{HANGUL SYLLABLE GA}' == '\uac00' }}|")
+            print(r"CJK_EXT_B:{{ '\N{CJK UNIFIED IDEOGRAPH-20000}' == '\U00020000' }}|{{ len('\N{CJK UNIFIED IDEOGRAPH-20000}') }}|")
+            print(r"ALIAS:{{ '\N{LINE FEED}' == '\u000a' }}|{{ '\N{BYTE ORDER MARK}' == '\ufeff' }}|")
+            print(r"UNICODE_15_0:{{ '\N{SHAKING FACE}' == '\U0001FAE8' }}|")
+            print(r"RAW:{{ len(r'\N{BULLET}') }}|")
+expected:
+  output:
+  - HANGUL:true|
+  - CJK_EXT_B:true|1|
+  - ALIAS:true|true|
+  - UNICODE_15_0:true|
+  - RAW:10|

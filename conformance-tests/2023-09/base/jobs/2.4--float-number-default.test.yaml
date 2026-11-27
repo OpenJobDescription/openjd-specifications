@@ -1,0 +1,36 @@
+# Template Schemas §2.4: a FLOAT Job Parameter value given as a <float> number is written in a format string as
+# Python's repr(float) writes it, so `default: 2` is 2.0. A value given as a <floatstring> keeps its text (§7.5).
+# Each exponent is written with a decimal point and a signed exponent (1.0e+20) so that a YAML 1.1 reader also reads
+# it as a number.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: A
+    type: FLOAT
+    default: 2
+  - name: B
+    type: FLOAT
+    default: 1.0e+20
+  - name: C
+    type: FLOAT
+    default: 0.00001
+  - name: S
+    type: FLOAT
+    default: "2"
+  - name: V
+    type: FLOAT
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'A=[{{Param.A}}] B=[{{Param.B}}] C=[{{Param.C}}] S=[{{Param.S}}] V=[{{Param.V}}]')
+parameters:
+  V: 3
+expected:
+  output:
+  - 'A=[2.0] B=[1e+20] C=[1e-05] S=[2] V=[3.0]'

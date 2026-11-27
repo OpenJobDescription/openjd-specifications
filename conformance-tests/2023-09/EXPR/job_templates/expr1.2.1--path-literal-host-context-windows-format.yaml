@@ -1,0 +1,30 @@
+# Expression Language 1.2.1 and "Path Format": in a host-context field, a
+# path built from a literal has the worker's path semantics, which are not
+# known when the template is checked. Each expression here fails on a POSIX
+# worker (C:\a\5 is one path component there) but runs on a Windows worker,
+# so check must accept it rather than evaluate it with POSIX semantics. The
+# same holds for a path a step-level let computes in TEMPLATE scope, which
+# has the worker's semantics when a host-context field uses it. See
+# jobs/expr1.2.1--path-literal-host-context-windows.test.yaml for the values.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  let:
+  - root = path("C:\\a\\b")
+  script:
+    let:
+    - frame = int(path("C:\\a\\5").name)
+    actions:
+      onRun:
+        command: python
+        args:
+        - -c
+        - |
+          print(r'INT:[{{ frame }}]')
+          print(r'ABS:[{{ "ok" if path("C:\\a").is_absolute() else fail("relative") }}]')
+          print(r'PART:[{{ path("C:\\a\\b").parts[2] }}]')
+          print(r'RANGE:[{{ range(len(path("C:\\a\\b").parts))[2] }}]')
+          print(r'LET:[{{ root.parts[2] }}]')

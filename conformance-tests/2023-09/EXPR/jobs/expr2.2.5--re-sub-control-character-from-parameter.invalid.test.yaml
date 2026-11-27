@@ -1,0 +1,23 @@
+# Expression Language §2.2.5: re_sub rejects a replacement that contains a control
+# character, wherever the character came from. Here the replacement is a parameter value
+# holding U+007F (DEL), a control character outside the C0 range.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Repl
+    type: STRING
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r"VALUE:{{ repr_py(re_sub('a-b', '-', Param.Repl)) }}|")
+parameters:
+  Repl: "x\x7fy"

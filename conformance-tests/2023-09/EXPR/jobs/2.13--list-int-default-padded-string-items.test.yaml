@@ -1,0 +1,30 @@
+# Template Schemas §2.13 and §7.5: an item of a LIST[INT] default, and an item constraint, may be an <intstring>, as a
+# scalar INT default may. White space around the number is ignored.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: Values
+    type: LIST[INT]
+    default: [1, " 2 ", "\t3\n", "\u00a04"]
+    item:
+      minValue: " 1"
+      maxValue: "4 "
+      allowedValues: [1, " 2", "3 ", 4]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'VALUES:{{ Param.Values }}')
+            print(r'SUM:{{ sum(Param.Values) }}')
+expected:
+  output:
+  - "VALUES:[1, 2, 3, 4]"
+  - SUM:10

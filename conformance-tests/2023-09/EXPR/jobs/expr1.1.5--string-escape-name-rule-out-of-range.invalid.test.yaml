@@ -1,0 +1,17 @@
+# Expression Language §1.1.5: \N with a CJK UNIFIED IDEOGRAPH name for a code point that is
+# not a CJK unified ideograph is a syntax error: U+0041 has no such name.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r"VALUE:{{ len('\N{CJK UNIFIED IDEOGRAPH-0041}') }}|")

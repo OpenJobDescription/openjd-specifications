@@ -1,0 +1,48 @@
+# round() rounds half-to-even on the exact value of its input, as Python's
+# round does, with no intermediate scaling. 2.675 is stored just below 2.675,
+# so it rounds down; 0.125 is exact, so it is a tie and goes to the even 0.12.
+# An int input rounds with integer arithmetic, so a value near the top of the
+# 64-bit range rounds down without overflowing, and a float input can exceed
+# 2^63 while its result fits. Each value is followed by `|` because the runner
+# matches output lines as substrings.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  parameterDefinitions:
+  - name: X
+    type: FLOAT
+    default: 2.675
+  - name: BIG
+    type: INT
+    default: 3550693609029500000
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'BELOW_TIE:{{ round(2.675, 2) }}|')
+            print(r'BELOW_TIE_PARAM:{{ round(Param.X, 2) }}|')
+            print(r'ABOVE_TIE:{{ round(1.05, 1) }}|')
+            print(r'EXACT_TIE:{{ round(0.125, 2) }}|')
+            print(r'ABOVE_2_63:{{ round(9.3e18, -18) }}|')
+            print(r'INT_TIE:{{ round(Param.BIG, -6) }}|')
+            print(r'INT_NEAR_MAX:{{ round(9223372036854775804, -1) }}|')
+            print(r'FLOAT_BELOW_TIE:{{ round(3.5506936090295e18, -6) }}|')
+            print(r'HUGE_TO_ZERO:{{ round(4e300, -301) }}|')
+expected:
+  output:
+  - BELOW_TIE:2.67|
+  - BELOW_TIE_PARAM:2.67|
+  - ABOVE_TIE:1.1|
+  - EXACT_TIE:0.12|
+  - ABOVE_2_63:9000000000000000000|
+  - INT_TIE:3550693609030000000|
+  - INT_NEAR_MAX:9223372036854775800|
+  - FLOAT_BELOW_TIE:3550693609029000000|
+  - HUGE_TO_ZERO:0|
