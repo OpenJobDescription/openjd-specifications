@@ -1,0 +1,16 @@
+# A reference with an empty inner segment ({{Param..X}}) is not a valid Name production and must be rejected.
+# A job parameter X is defined, so collapsing .. to . would not make it fail as an undefined name.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: X
+  type: STRING
+  default: v
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "{{Param..X}}"
