@@ -1,0 +1,54 @@
+# RFC 0008 "Stdout forwarding and macro propagation" requires wrap
+# scripts to forward the wrapped process's stdout and stderr verbatim. That
+# MUST binds the wrap script, which this fixture supplies itself: its
+# subprocess.run inherits stderr. What the fixture checks on the runtime
+# side is that an action's stderr is captured into the session log when
+# the action runs under a wrap hook. The grand-child writes a marker to
+# stderr; the marker must reach the session log.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapStderrForwardedFromGrandChild
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - "-c"
+          - "import sys; print('STDERR_MARKER_FROM_GRAND_CHILD', file=sys.stderr); print('STDOUT_BODY_RAN')"
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        # subprocess.run without capture: the grand-child inherits the
+        # wrap script's stdout and stderr, i.e. verbatim forwarding.
+        # WTASK_HOOK_RAN pins that the wrapped path was actually taken: a
+        # runtime that accepts WRAP_ACTIONS but never fires the hooks would
+        # run onRun directly and still emit both body markers, so without
+        # this sentinel the fixture would pass vacuously.
+        onWrapTaskRun:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; print('WTASK_HOOK_RAN'); sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        onWrapEnvExit:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+expected:
+  output:
+  - WTASK_HOOK_RAN
+  - STDERR_MARKER_FROM_GRAND_CHILD
+  - STDOUT_BODY_RAN
