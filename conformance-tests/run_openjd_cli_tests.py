@@ -67,10 +67,11 @@ def load_yaml_or_json(path: Path):
 # where <impl> is one of IMPLEMENTATIONS. The test still runs. For a listed
 # implementation a failure is reported as XFAIL and does not fail the run, and
 # a pass is reported as XPASS, which fails the run unless strict=false, so a
-# marker is removed once the implementation is fixed. Any comment line in the
-# leading block that starts with "conformance" (any case, after any number of
-# '#') is a marker line, and one that is not a well-formed marker fails the
-# test rather than being ignored, so a typo cannot turn a marker off.
+# marker is removed once the implementation is fixed. A comment line in the
+# leading block whose text starts with "conformance" followed by a colon, or
+# that names "conformance" and "xfail" (any case, after any number of '#'), is
+# a marker line, and one that is not a well-formed marker fails the test rather
+# than being ignored, so a typo cannot turn a marker off.
 # ---------------------------------------------------------------------------
 
 # The implementations a marker may name: "py" is openjd-cli (Python), "rs" is
@@ -78,7 +79,11 @@ def load_yaml_or_json(path: Path):
 IMPLEMENTATIONS = ("py", "rs")
 
 # A comment line that is meant as a marker, well formed or not.
-_MARKER_LINE_RE = re.compile(r"^#+\s*conformance\b", re.IGNORECASE)
+_MARKER_LINE_RE = re.compile(
+    r"^#+\s*conformance\s*:|^#+\s*conformance\b.*\bxfail\b", re.IGNORECASE
+)
+# Longer marker lines are refused before they are parsed.
+_MAX_MARKER_LEN = 1000
 # The one well-formed shape of a marker line.
 _MARKER_RE = re.compile(r"^# conformance: (?P<call>.*?)\s*$")
 
@@ -95,10 +100,12 @@ class MarkerError(ValueError):
 
 
 def _parse_marker(call: str) -> XfailMarker:
+    if len(call) > _MAX_MARKER_LEN:
+        raise MarkerError(f"marker is longer than {_MAX_MARKER_LEN} characters")
     try:
         node = ast.parse(call, mode="eval").body
-    except SyntaxError as e:
-        raise MarkerError(f"not a marker call: {call!r} ({e.msg})") from None
+    except (SyntaxError, ValueError) as e:
+        raise MarkerError(f"not a marker call: {call!r} ({e})") from None
     if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Name):
         raise MarkerError(f"not a marker call: {call!r}")
     if node.func.id != "xfail":
@@ -418,11 +425,11 @@ class Tally:
             self.passed += 1
         elif outcome.status == "XFAIL":
             self.xfailed += 1
-        elif outcome.status == "XPASS":
+        elif outcome.status == "XPASS" and not outcome.strict:
             self.xpassed += 1
-        # A strict XPASS is counted in failed as well as in xpassed: it
-        # fails the run, and failed is the number of entries listed under
-        # "Failed tests".
+        # A strict XPASS counts as failed, as in pytest, and a non-strict one
+        # as xpassed, so the counts sum to the tests run and failed is the
+        # number of entries listed under "Failed tests".
         if outcome.counts_as_failure:
             self.failed += 1
             try:
@@ -511,7 +518,8 @@ def main():
                         help="Pattern: {version}/{component}/{type}/{test} or file path")
     parser.add_argument("--implementation", choices=[*IMPLEMENTATIONS, "auto", "none"], default="auto",
                         help="Which implementation's xfail markers apply: py (openjd-cli), rs (openjd-rs), "
-                             "auto (detect from `openjd` on PATH, the default) or none (ignore markers)")
+                             "auto (detect from `openjd` on PATH, the default) or none (apply none; a "
+                             "malformed marker still fails its test)")
     args = parser.parse_args()
 
     if args.implementation == "auto":

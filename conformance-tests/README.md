@@ -180,15 +180,16 @@ specificationVersion: jobtemplate-2023-09
   names both. An implementation may be named by at most one marker in a file.
 - `reason` is required, and should say what the implementation does wrong and, where there is
   one, link the issue or pull request that tracks the fix. `strict` is `true` or `false`.
-- The test still runs. For a named implementation a failure is reported as `XFAIL` and does not
-  fail the run. A pass is reported as `XPASS`, counts as a failure, and fails the run, so the
-  marker is removed in the change that fixes the implementation. Add `strict=false` to report an
-  `XPASS` without failing the run, for a test whose outcome on that implementation varies.
-- Every comment line in the leading block that starts with `conformance` (in any case, after any
-  number of `#`) is read as a marker line. One that is not exactly
-  `# conformance: xfail(...)` with valid arguments (an unknown marker name or implementation, no
-  `reason`, an argument given twice) fails the test, whichever implementation runs it, so a typo
-  cannot silently turn a marker off.
+- The test still runs. For a named implementation a failure of any kind is reported as `XFAIL`
+  and does not fail the run. A pass is reported as `XPASS`, counted as failed, and fails the
+  run, so the marker is removed in the change that fixes the implementation. Add `strict=false`
+  to report an `XPASS` (counted as xpassed) without failing the run, for a test whose outcome on
+  that implementation varies.
+- A comment line in the leading block whose text starts with `conformance:`, or that names both
+  `conformance` and `xfail`, in any case and after any number of `#`, is read as a marker line.
+  One that does not start with exactly `# conformance: ` followed by a valid `xfail(...)` (an
+  unknown marker name or implementation, no `reason`, an argument given twice) fails the test,
+  whichever implementation runs it, so a typo cannot silently turn a marker off.
 - A marker never changes what the test asserts: a test is correct against the specification or
   it does not belong in the suite. Markers are for implementation defects only.
 - JSON test files cannot carry comments, so they cannot carry markers.
