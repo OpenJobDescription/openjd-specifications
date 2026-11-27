@@ -1,0 +1,16 @@
+# A bare dot-free reference {{MyParam}} names no value defined in base scope and must be rejected.
+# A job parameter MyParam is defined, so the only defect is the missing Param. scope prefix.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: MyParam
+  type: STRING
+  default: v
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "{{MyParam}}"

@@ -1,0 +1,16 @@
+# A reference segment containing a dash ({{Param.a-b}}) is not a valid Identifier and must be rejected.
+# A job parameter a is defined, so Param.a resolves and the dash is the only defect.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: a
+  type: STRING
+  default: v
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "{{Param.a-b}}"

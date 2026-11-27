@@ -1,0 +1,11 @@
+# A reference with a trailing dot ({{Param.}}) has an empty final segment and must be rejected.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: echo
+        args:
+        - "{{Param.}}"

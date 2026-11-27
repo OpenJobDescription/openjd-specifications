@@ -1,0 +1,16 @@
+# An INT parameter minValue of 2^63-1 (largest signed 64-bit integer) is a valid integer value.
+specificationVersion: jobtemplate-2023-09
+name: TestJob
+parameterDefinitions:
+- name: MyParam
+  type: INT
+  minValue: 9223372036854775807
+steps:
+- name: Step1
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - "print('{{Param.MyParam}}')"
