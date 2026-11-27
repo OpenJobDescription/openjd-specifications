@@ -1,0 +1,22 @@
+# Pins the python SimpleAction desugaring contract: argv[0] is the implicitly generated
+# embedded file with a .py extension, and user args follow it.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - FEATURE_BUNDLE_1
+  name: TestJob
+  steps:
+  - name: Step1
+    python:
+      args:
+      - --marker-arg
+      script: |
+        import sys
+        print('EXT_IS_PY:' + str(sys.argv[0].endswith('.py')))
+        print('FIRST_ARG:' + sys.argv[1])
+expected:
+  output:
+  - EXT_IS_PY:True
+  - FIRST_ARG:--marker-arg
+  forbidden:
+  - EXT_IS_PY:False
