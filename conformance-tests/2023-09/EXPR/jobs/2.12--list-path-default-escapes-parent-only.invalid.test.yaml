@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 accepts a LIST[PATH] default item that walks out of the template dir; pure-Python openjd-model checks scalar PATH only")
 # 2.12: a default element of ".." resolves to the parent of the job
 # template's directory (2.2). The bad element is last, after two valid ones.
 # The script prints a constant so the default is the only thing that can fail.

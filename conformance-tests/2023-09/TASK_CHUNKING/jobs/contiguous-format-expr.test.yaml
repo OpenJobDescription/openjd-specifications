@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-sessions (Python) types a CHUNK[INT] Task.Param as string, so list(Task.Param.Frame) has no matching signature")
 # Template Schemas §3.4.1.5 (rangeConstraint) and Expression Language §1.2.2: with EXPR, a CONTIGUOUS chunk value
 # keeps its <N>-<M> form wherever it is written as a string, even with one value; a range_expr computed from it is
 # written in canonical form.

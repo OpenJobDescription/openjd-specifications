@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-sessions (Python) rejects white space around a format-string timeout value; strict regex in _runner_base.py")
 # Template Schemas §5 and §7.5: an action's timeout written as a Format String is a <posintstring>, so white space
 # around the integer it resolves to is ignored.
 template:

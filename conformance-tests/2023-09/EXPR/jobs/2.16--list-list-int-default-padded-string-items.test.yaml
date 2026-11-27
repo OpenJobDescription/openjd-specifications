@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 rejects numeric-string items in a LIST[LIST[INT]] parameter (pure-Python openjd-model); openjd-rs accepts them since #538")
 # Template Schemas §2.16 and §7.5: an integer in an inner list of a LIST[LIST[INT]] default, and an inner item
 # constraint, may be an <intstring>. White space around the number is ignored.
 template:

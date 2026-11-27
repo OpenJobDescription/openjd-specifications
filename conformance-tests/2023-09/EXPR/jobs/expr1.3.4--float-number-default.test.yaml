@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli writes a FLOAT default given as a number as 2, 1E+20, 0.00001, not repr form 2.0, 1e+20, 1e-05; Rust fixed in openjd-rs#539")
 # Expression Language §1.3.4: a FLOAT given as a YAML or JSON number has no original string representation, so it is
 # written as the shortest decimal string, as Python's repr(float) writes it. `default: 2` outputs 2.0, as
 # `{{ Param.A * 1.0 }}` does. F is a tie between two equally near shortest strings, which repr breaks to the even

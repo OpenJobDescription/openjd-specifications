@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 accepts a surrogate u or U escape in a string literal; fixed in openjd-rs#570, not yet in an openjd-expr release")
 # Expression Language §1.1.5: a \u escape with a surrogate code point (U+D800 to U+DFFF) is a
 # syntax error, because a string can't hold one. The edges U+D7FF and U+E000 are valid; see
 # expr1.1.5--string-escapes.

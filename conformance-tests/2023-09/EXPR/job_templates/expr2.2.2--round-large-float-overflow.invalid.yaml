@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 accepts round(x, n<=0) beyond int64; fixed in openjd-rs#567 (openjd-expr 0.17), not yet in openjd-model")
 # round() rounds the exact value of its input: 5e300 is stored above
 # 5·10^300, so rounding it to a multiple of 10^301 gives 10^301, outside the
 # 64-bit signed range. That is an integer overflow error, not 0.

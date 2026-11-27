@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 round(x, ndigits) is not exact and overflows; fixed in openjd-rs#567 (openjd-expr 0.17), not in openjd-model")
 # round() rounds half-to-even on the exact value of its input, as Python's
 # round does, with no intermediate scaling. 2.675 is stored just below 2.675,
 # so it rounds down; 0.125 is exact, so it is a tie and goes to the even 0.12.

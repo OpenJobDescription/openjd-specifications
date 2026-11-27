@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-model (Python) _create_job joins a relative PATH value with the cwd without lexical normalization (sub/../other)")
 # 2.2: a relative submitted PATH value is joined with the current working
 # directory and lexically normalized. Cwd is submitted as ".", so it resolves
 # to the working directory and the script can check the other values against

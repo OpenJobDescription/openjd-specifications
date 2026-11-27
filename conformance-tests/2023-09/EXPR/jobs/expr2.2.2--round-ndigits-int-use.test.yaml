@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 round(x, 0) returns float, so int-only uses fail; fixed in openjd-rs#567 (openjd-expr 0.17), not in openjd-model")
 # round(x, ndigits) with ndigits <= 0 returns int, so its result can be used
 # where only an int is accepted: string repetition and range().
 template:

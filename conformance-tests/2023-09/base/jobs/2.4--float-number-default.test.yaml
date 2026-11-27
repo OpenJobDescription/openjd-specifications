@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-model (Python) writes a FLOAT given as a number as Decimal text (2, 1E+20), not as Python repr(float) (2.0, 1e+20)")
 # Template Schemas §2.4: a FLOAT Job Parameter value given as a <float> number is written in a format string as
 # Python's repr(float) writes it, so `default: 2` is 2.0. A value given as a <floatstring> keeps its text (§7.5).
 # Each exponent is written with a decimal point and a signed exponent (1.0e+20) so that a YAML 1.1 reader also reads

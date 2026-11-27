@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 accepts a surrogate u or U escape in a string literal; fixed in openjd-rs#570, not yet in an openjd-expr release")
 # Expression Language §1.1.5: a surrogate escape is a syntax error in a triple-quoted string too.
 template:
   specificationVersion: jobtemplate-2023-09

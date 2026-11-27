@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 rejects numeric-string items in a LIST[INT] parameter (pure-Python openjd-model); openjd-rs accepts them since #538")
 # Template Schemas §2.13 and §7.5: an item of a LIST[INT] value given as a string is an <intstring>, so white space
 # around the number is ignored. U+00A0 (no-break space) is white space. item.maxValue applies to the parsed integers.
 template:

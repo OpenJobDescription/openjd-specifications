@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 checks LIST[PATH] item allowedValues on the unjoined default; pure-Python openjd-model never joins it to the template dir")
 # 2.12: item.allowedValues is checked after each default element is joined
 # with the job template's directory, as for a PATH default (2.2). The joined
 # absolute paths are not in the list, so job creation fails even though the

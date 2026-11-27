@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 accepts a re_sub replacement with a NUL control character; fixed in openjd-rs#570 (unreleased, after openjd-expr 0.17)")
 # Expression Language §2.2.5: re_sub rejects a replacement that contains a control character,
 # which includes U+0000. Here '\0', which decodes to it.
 # The rest of the template is valid; expr2.2.5--re-sub-tab-newline is the accepted side.

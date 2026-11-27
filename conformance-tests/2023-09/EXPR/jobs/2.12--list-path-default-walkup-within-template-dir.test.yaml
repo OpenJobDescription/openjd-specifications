@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 does not join LIST[PATH] default items to the template dir or check walk-up; pure-Python openjd-model only does scalar PATH")
 # 2.12: default elements that contain ".." but normalize to the job
 # template's directory or a path within it are accepted (2.2). Companion to
 # base/jobs/1.1--validation-valid-path-default-walkup-within-template-dir.
