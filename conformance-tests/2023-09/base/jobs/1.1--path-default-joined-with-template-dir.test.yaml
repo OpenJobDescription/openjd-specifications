@@ -1,0 +1,41 @@
+# §7.4 L2151 states that at job creation "PATH and `LIST[PATH]` parameter defaults must be
+# relative and are joined with the job template directory", and §2.2 L264 gives the join rule.
+# That join is a value transform, so the raw template and the resolved job differ, and a
+# consumer reading the raw default gets a relative path.
+#
+# The existing fixture 1.1--validation-valid-path-default-within-template-dir.test.yaml checks
+# the join for a default with a `./` prefix (`./output`). This fixture covers a default without
+# a `./` prefix. The default is `inputs/scene`, so `RESULT:inputs/` (or `RESULT:inputs\` on
+# Windows) appears only if the value was not joined, and it is forbidden. Only the path suffix is
+# asserted, because the absolute prefix is the temporary directory the runner writes the
+# template into, which differs on every run.
+#
+# Spec references, Template Schemas 2023-09:
+#   §7.4 L2151  PATH parameter defaults are joined with the job template directory at job creation
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L2151
+#   §2.2 L264  the default is joined with the directory containing the Job Template
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L264
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: InputDir
+    type: PATH
+    default: inputs/scene
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print(r'RESULT:{{Param.InputDir}}')"]
+expected:
+  output_posix:
+  - "/inputs/scene"
+  output_windows:
+  - '\inputs\scene'
+  forbidden:
+  - "RESULT:inputs/"
+  - "RESULT:./"
+  forbidden_windows:
+  - 'RESULT:inputs\'

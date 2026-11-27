@@ -1,0 +1,21 @@
+# Template Schemas §5 (Action): "A zero exit code indicates success, and
+# any non-zero exit code indicates failure." A task whose onRun exits 42
+# must surface a task failure, and the failing action's exit code must be
+# 42. No extension is used. This is also the UNWRAPPED twin of
+# WRAP_ACTIONS/jobs/wrap-exit-status-python (RFC 0008 "Failure semantics":
+# "The session handles each failure exactly as it would in the unwrapped
+# case"): both must surface a task failure with the identical exit code,
+# so a divergence breaks exactly one of the two fixtures.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TaskNonzeroExitPropagates
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import sys; sys.exit(42)"]
+expected:
+  taskFailure:
+    exitCode: 42
