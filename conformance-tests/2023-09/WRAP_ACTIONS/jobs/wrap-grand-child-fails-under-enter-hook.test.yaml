@@ -1,0 +1,65 @@
+# RFC 0008 "Failure semantics": "A failed onWrapEnvEnter is an inner
+# onEnter failure", and exit-status propagation applies at env-lifecycle
+# positions too — the existing propagation fixtures only fail a task's
+# onRun, and the existing failed-enter fixture fails the HOOK itself.
+# Here the hook is healthy and the GRAND-CHILD (the wrapped onEnter's
+# process) exits 9; the wrap script propagates it, making the enter fail
+# with the grand-child's code. Cleanup then follows scenario row 1:
+# onWrapEnvExit for the entered-attempted inner env runs, and the wrapping
+# env's own onExit runs. The task must never start. Catches a runtime that
+# treats a wrapped env-enter's propagated failure differently from a
+# direct hook failure, or that loses the grand-child's specific exit code.
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: WrapGrandChildFailsUnderEnterHook
+  jobEnvironments:
+  - name: InnerEnv
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "import sys; print('INNER_ENTER_STARTED'); sys.exit(9)"]
+        onExit:
+          command: python
+          args: ["-c", "print('INNER_EXIT_BODY')"]
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "print('TASK_BODY_RAN')"]
+environments:
+- specificationVersion: environment-2023-09
+  extensions:
+  - WRAP_ACTIONS
+  - EXPR
+  environment:
+    name: WrapEnv
+    script:
+      actions:
+        onWrapEnvEnter:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        onWrapTaskRun:
+          command: python
+          args:
+          - "-c"
+          - "import subprocess,sys; sys.exit(subprocess.run([{{repr_py(WrappedAction.Command)}}]+{{repr_py(WrappedAction.Args)}}).returncode)"
+        onWrapEnvExit:
+          command: python
+          args: ["-c", "print('WRAP_EXIT_RAN_FOR_'+{{repr_py(WrappedEnv.Name)}})"]
+        onExit:
+          command: python
+          args: ["-c", "print('WRAPENV_OWN_EXIT_RAN')"]
+expected:
+  taskFailure:
+    exitCode: 9
+  output:
+  - INNER_ENTER_STARTED
+  - WRAP_EXIT_RAN_FOR_InnerEnv
+  - WRAPENV_OWN_EXIT_RAN
+  forbidden:
+  - TASK_BODY_RAN

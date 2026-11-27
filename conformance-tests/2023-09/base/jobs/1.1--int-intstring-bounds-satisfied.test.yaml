@@ -1,0 +1,41 @@
+# <JobIntParameterDefinition>.minValue and .maxValue are `<integer> | <intstring>` in base
+# 2023-09 (§2.3 L330-331). When the bound is written as a string and the submitted value arrives
+# as a number, the comparison must be numeric. A naive implementation that compares the string
+# bound against the value lexically accepts and rejects the wrong things.
+#
+# Bounds here are the strings '010' and '100', and the submitted value is the number 50, which
+# satisfies both.
+#
+# The upper bound '100' is what makes the two paths distinguishable: lexically '50' > '100', so
+# a lexical comparison rejects 50, while numerically 50 <= 100. The lower bound does not
+# distinguish them, because '010' < '50' lexically and 10 < 50 numerically.
+#
+# Spec references, Template Schemas 2023-09:
+#   §2.3 L330  minValue is `<integer> | <intstring>`
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L330
+#   §2.3 L331  maxValue is `<integer> | <intstring>`
+#     https://github.com/OpenJobDescription/openjd-specifications/blob/mainline/wiki/2023-09-Template-Schemas.md?plain=1#L331
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Count
+    type: INT
+    minValue: '010'
+    maxValue: '100'
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'COUNT:{{Param.Count}}')
+parameters:
+  Count: 50
+expected:
+  output:
+  - 'COUNT:50'
+  forbidden:
+  - '{{Param.'

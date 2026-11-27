@@ -1,0 +1,37 @@
+# A merged job parameter definition must be internally consistent, so its
+# default has to satisfy the merged constraints (section 1.2.1).
+#
+# The environment template sets [10, 100] and the job template, processed
+# last, sets no minValue or maxValue and default 5. The job template's own
+# definition has no constraint the default breaks, so only the merged minimum
+# makes it invalid.
+#
+# Job creation must refuse it. An implementation that checks a default only
+# against the template declaring it runs the job and prints COUNT[5].
+template:
+  specificationVersion: jobtemplate-2023-09
+  name: TestJob
+  parameterDefinitions:
+  - name: Count
+    type: INT
+    default: 5
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - print(r'COUNT[{{Param.Count}}]')
+environments:
+- specificationVersion: environment-2023-09
+  parameterDefinitions:
+  - name: Count
+    type: INT
+    minValue: 10
+    maxValue: 100
+  environment:
+    name: TestEnv
+    variables:
+      COUNT: '{{Param.Count}}'

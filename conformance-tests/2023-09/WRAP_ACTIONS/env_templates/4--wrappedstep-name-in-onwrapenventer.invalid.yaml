@@ -1,0 +1,25 @@
+# RFC 0008 Template variables: WrappedStep.Name is available only in
+# onWrapTaskRun. "Templates MUST NOT reference ... WrappedStep.* outside
+# onWrapTaskRun. Schedulers MUST reject templates that violate this scope
+# rule." Referencing it in onWrapEnvEnter must be rejected at validation
+# time — an environment's lifecycle action has no associated step. Catches
+# a validator that injects WrappedStep.* into all three hook scopes.
+# Single defect: the template is valid except for the WrappedStep.Name
+# reference in onWrapEnvEnter.
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- EXPR
+environment:
+  name: WrapStepNameInEnter
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: python
+        args: ["-c", "print(r'{{WrappedStep.Name}}')"]
+      onWrapTaskRun:
+        command: python
+        args: ["-c", "print(r'{{WrappedStep.Name}}')"]
+      onWrapEnvExit:
+        command: python
+        args: ["-c", "print(r'{{WrappedEnv.Name}}')"]

@@ -1,0 +1,40 @@
+# RFC 0008 Cancelation behavior + Template Schemas 5/5.3 (FEATURE_BUNDLE_1):
+# the positive twin of 4.2--wrap-fmtstring-timeout-no-feature-bundle and
+# wrap-cancelation-fmtstring-mode-no-feature-bundle. A format-string
+# `timeout` and a format-string `cancelation.mode` on a wrap hook are the
+# FEATURE_BUNDLE_1-gated forms of the round-trip forwarding pattern; with
+# the extension listed, validation MUST ACCEPT them. Catches a validator
+# that rejects the format-string forms unconditionally ("format strings in
+# timeout are not allowed") instead of gating them on the extension — the
+# reject-side fixtures alone cannot distinguish "gated" from "never
+# permitted".
+#
+# NOTE: unlike its WRAP_ACTIONS siblings, this valid fixture additionally
+# requires FEATURE_BUNDLE_1 support. The runner does not gate fixtures by
+# declared extensions, so an implementation with WRAP_ACTIONS+EXPR but no
+# FEATURE_BUNDLE_1 will (correctly, per its own capabilities) reject this
+# template and fail the fixture.
+specificationVersion: environment-2023-09
+extensions:
+- WRAP_ACTIONS
+- EXPR
+- FEATURE_BUNDLE_1
+environment:
+  name: WrapFmtStringGatedAccepted
+  script:
+    actions:
+      onWrapEnvEnter:
+        command: echo
+        args: ["{{WrappedEnv.Name}}"]
+        timeout: "{{WrappedAction.Timeout}}"
+      onWrapTaskRun:
+        command: echo
+        args: ["{{WrappedAction.Command}}"]
+        timeout: "{{WrappedAction.Timeout}}"
+        cancelation:
+          mode: "{{WrappedAction.Cancelation.Mode}}"
+          notifyPeriodInSeconds: "{{WrappedAction.Cancelation.NotifyPeriodInSeconds}}"
+      onWrapEnvExit:
+        command: echo
+        args: ["{{WrappedEnv.Name}}"]
+        timeout: "{{WrappedAction.Timeout}}"

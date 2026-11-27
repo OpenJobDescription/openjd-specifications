@@ -1,0 +1,36 @@
+# Expression Language §2.2.1: bool() string conversion is case-insensitive.
+# The spec lists "1"/"true"/"on"/"yes" -> true and "0"/"false"/"off"/"no" -> false,
+# matched case-insensitively. The existing bool-conversion fixture covers only
+# lowercase word forms; this pins the numeric forms and mixed/upper case.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions:
+  - EXPR
+  name: TestJob
+  steps:
+  - name: Step1
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - |
+            print(r'ONE:{{ bool("1") }}')
+            print(r'ZERO:{{ bool("0") }}')
+            print(r'TRUE_UC:{{ bool("TRUE") }}')
+            print(r'FALSE_UC:{{ bool("FALSE") }}')
+            print(r'YES_MIXED:{{ bool("YeS") }}')
+            print(r'NO_MIXED:{{ bool("No") }}')
+            print(r'ON_MIXED:{{ bool("On") }}')
+            print(r'OFF_UC:{{ bool("OFF") }}')
+expected:
+  output:
+  - ONE:true
+  - ZERO:false
+  - TRUE_UC:true
+  - FALSE_UC:false
+  - YES_MIXED:true
+  - NO_MIXED:false
+  - ON_MIXED:true
+  - OFF_UC:false

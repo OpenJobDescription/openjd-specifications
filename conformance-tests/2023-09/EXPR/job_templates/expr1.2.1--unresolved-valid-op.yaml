@@ -1,0 +1,27 @@
+# At template parse time (openjd check), host-context symbols like
+# Task.Param.* and Session.* are unresolved[T] placeholders (Expression
+# Language §1.2.1; Static Type Checking via Unresolved Values; Template
+# Schemas §7.4). Valid operations on unresolved values must type-check and
+# the template must validate — a checker that rejects any expression it
+# cannot fully evaluate over-rejects.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- EXPR
+name: TestJob
+steps:
+- name: Step1
+  parameterSpace:
+    taskParameterDefinitions:
+    - name: Frame
+      type: INT
+      range: "1-5"
+  script:
+    actions:
+      onRun:
+        command: python
+        args:
+        - "-c"
+        - |
+          print(r'NEXT:{{ Task.Param.Frame + 1 }}')
+          print(r'OUT:{{ Session.WorkingDirectory / "out" }}')
+          print(r'HASWD:{{ len(string(Session.WorkingDirectory)) > 0 }}')
