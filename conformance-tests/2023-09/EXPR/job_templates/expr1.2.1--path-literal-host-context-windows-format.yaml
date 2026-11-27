@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 resolves a Windows path literal against the POSIX host in checks, so it passes on a Windows host; fixed in openjd-rs#611 (unreleased), not in openjd-model", strict=false)
 # Expression Language 1.2.1 and "Path Format": in a host-context field, a
 # path built from a literal has the worker's path semantics, which are not
 # known when the template is checked. Each expression here fails on a POSIX

@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 round(x, -1) beyond i64 returns a float instead of an overflow error; fixed in openjd-rs#567 (openjd-expr 0.17)")
 # round(x, ndigits) with ndigits <= 0 returns int, so a result outside the
 # 64-bit signed range is an integer overflow error, as for round(x). The value
 # comes from a parameter, so the error fires when the job is evaluated.

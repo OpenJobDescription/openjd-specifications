@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 folds a literal path().with_number in a host-context field and fails check; fixed in openjd-rs#611 (unreleased)")
 # Expression Language §2.3.2: `with_number` rejects a padding width over its maximum.
 # In a host-context field (here a step's onRun args) a literal path is
 # unresolved[path] until the worker's path format is known (Expression

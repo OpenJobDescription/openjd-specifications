@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 does not write range_expr in canonical form or compare by value; fixed in openjd-rs#469 (openjd-expr 0.13), not yet released", strict=false)
 # Template Schemas §3.4.1.1.1 (canonical form): two spellings of one list of values have the same canonical form,
 # and the canonical form of the parse of a canonical form is the same string.
 template:

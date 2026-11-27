@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-model (Python) does not check that an INT range list format-string element resolves to an integer; runs a task with X=abc")
 # Template Schemas §3.4.1.1: a <TaskParameterStringValue> element of an <IntRangeList> must resolve to the string
 # representation of an integer value in base-10. "abc" does not, so the job cannot be created. The template itself is
 # valid.

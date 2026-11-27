@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 joins onto an empty path as root (/k), not the other operand; fixed in openjd-rs#516 (openjd-expr 0.14), not yet released", strict=false)
 template:
   specificationVersion: jobtemplate-2023-09
   extensions:

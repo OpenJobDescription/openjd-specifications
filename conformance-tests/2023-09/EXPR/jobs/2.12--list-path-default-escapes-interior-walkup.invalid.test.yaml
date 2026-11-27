@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 accepts a LIST[PATH] default item that walks out of the template dir; pure-Python openjd-model checks scalar PATH only")
 # 2.12: each default element is normalized before the within-directory check
 # (2.2), so a/../../b escapes even though it does not begin with "..". The bad
 # element is second, so checking only the first element does not reject this.

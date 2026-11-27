@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 reads C:// as a URI; fixed in openjd-rs#424 (openjd-expr 0.11), but openjd-cli 0.8.0 pins openjd-model below 0.14", strict=false)
 # URI path: scheme detection (Expression Language §1.2.1)
 # URI detection uses the pattern ^[a-zA-Z][a-zA-Z0-9+.-]+://
 # The scheme must be at least two characters: a single letter followed by "://"

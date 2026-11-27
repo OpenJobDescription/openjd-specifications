@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli rejects bool(path(literal)) at check in a host-context field instead of failing the task; fixed in openjd-rs#611, not yet released")
 # Expression Language §2.2.1: `bool()` of a path is an error.
 # In a host-context field (here a step's onRun args) a literal path is
 # unresolved[path] until the worker's path format is known (Expression

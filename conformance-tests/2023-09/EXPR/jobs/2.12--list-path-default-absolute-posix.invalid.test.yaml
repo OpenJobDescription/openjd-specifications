@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 accepts an absolute LIST[PATH] default item; pure-Python openjd-model applies PATH default rules to scalar PATH only")
 runOn: [posix]
 
 # 2.12: each element of a LIST[PATH] default follows the PATH default rules

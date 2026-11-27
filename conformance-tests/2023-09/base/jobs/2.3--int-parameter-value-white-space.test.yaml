@@ -1,3 +1,4 @@
+# conformance: xfail(py, reason="openjd-cli 0.8.0 rejects an INT parameter value with white space; fixed in openjd-rs#530 (openjd-expr 0.15); Python mainline then writes it untrimmed")
 # Template Schemas §2.3 and §7.5: an INT Job Parameter's value given as a string is an <intstring>, so white space
 # around the integer is ignored, in the submitted value and in the default and minValue.
 template:
