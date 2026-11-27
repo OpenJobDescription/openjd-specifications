@@ -162,6 +162,44 @@ Use `taskFailure` instead of the `.invalid.test.yaml` suffix when you also want 
 
 The `runOn` field restricts a test to run only on the listed operating systems. If omitted, the test runs on all platforms. Use this when a test requires a platform-specific command (e.g., `cmd` or `powershell` on Windows, `bash` on POSIX).
 
+### Expected failures
+
+A test that is correct but that an implementation does not pass yet can say so, in the way
+pytest's `xfail` marker does, with a line in the file's leading comment block (the comment and
+blank lines before its first line of YAML):
+
+```yaml
+# Expression Language §2.1.7 defines no subscript of a path.
+# conformance: xfail(rs, reason="openjd-rs accepts the subscript at check time and fails at run time")
+specificationVersion: jobtemplate-2023-09
+```
+
+- The arguments before `reason` name the implementations the marker applies to: `py` for
+  [openjd-cli](https://github.com/OpenJobDescription/openjd-cli) (Python) and `rs` for the
+  [openjd-rs](https://github.com/OpenJobDescription/openjd-rs) CLI. `xfail(py, rs, reason="...")`
+  names both. An implementation may be named by at most one marker in a file.
+- `reason` is required, and should say what the implementation does wrong and, where there is
+  one, link the issue or pull request that tracks the fix. `strict` is `true` or `false`.
+- The test still runs. For a named implementation a failure of any kind is reported as `XFAIL`
+  and does not fail the run. A pass is reported as `XPASS`, counted as failed, and fails the
+  run, so the marker is removed in the change that fixes the implementation. Add `strict=false`
+  to report an `XPASS` (counted as xpassed) without failing the run, for a test whose outcome on
+  that implementation varies.
+- A comment line in the leading block whose text starts with `conformance:`, or that names both
+  `conformance` and `xfail`, in any case and after any number of `#`, is read as a marker line.
+  One that does not start with exactly `# conformance: ` followed by a valid `xfail(...)` (an
+  unknown marker name or implementation, no `reason`, an argument given twice) fails the test,
+  whichever implementation runs it, so a typo cannot silently turn a marker off.
+- A marker never changes what the test asserts: a test is correct against the specification or
+  it does not belong in the suite. Markers are for implementation defects only.
+- JSON test files cannot carry comments, so they cannot carry markers.
+
+The runner applies the markers for the implementation given by `--implementation py|rs`. By
+default (`--implementation auto`) it detects which `openjd` is on `PATH` from the CLI's own banner
+(the Rust CLI's `--help` heading, openjd-cli's `--version` line), and when it cannot tell it says
+so and applies none. `--implementation none` applies none. A malformed marker fails its test in
+every mode.
+
 ## Writing Your Own Test Runner
 
 To validate your OpenJD library against these tests:
@@ -182,4 +220,5 @@ uv run run_openjd_cli_tests.py 2023-09/base             # Run base spec tests on
 uv run run_openjd_cli_tests.py 2023-09/TASK_CHUNKING    # Run TASK_CHUNKING extension tests
 uv run run_openjd_cli_tests.py 2023-09/*/jobs           # Run all job execution tests
 uv run run_openjd_cli_tests.py '*/*/jobs/*param*'       # Pattern match test names
+uv run run_openjd_cli_tests.py --implementation rs      # Apply the xfail markers for openjd-rs
 ```

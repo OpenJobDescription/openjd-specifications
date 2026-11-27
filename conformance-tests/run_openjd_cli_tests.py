@@ -15,19 +15,34 @@ Examples:
   uv run run_openjd_cli_tests.py 2023-09/*/jobs           # run all job tests
   uv run run_openjd_cli_tests.py '*/*/jobs/*param*'       # pattern match test names
   uv run run_openjd_cli_tests.py 2023-09/base/jobs/1.1--basic-job-creation.test.yaml  # run single test
+  uv run run_openjd_cli_tests.py --implementation rs      # apply the xfail markers for openjd-rs
+
+A test file may mark itself as an expected failure for one implementation with a
+comment in its leading comment block (see "Expected failures" in README.md):
+
+  # conformance: xfail(rs, reason="openjd-rs accepts this at check time")
 """
 
 import argparse
+import ast
 import fnmatch
 import io
 import json
+import os
 import re
 import subprocess
 import sys
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
+
+# Fixture tasks are python programs that print non-ASCII sentinels. On
+# Windows, a child python writing to a pipe encodes with the locale code page
+# (cp1252) unless told otherwise, so the CLI under test reads bytes that are
+# not UTF-8. Put every child in UTF-8 mode. (From #159.)
+os.environ.setdefault("PYTHONUTF8", "1")
 
 # Ensure UTF-8 output on Windows
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -46,6 +61,194 @@ def load_yaml_or_json(path: Path):
     if path.suffix == ".json":
         return json.loads(content)
     return yaml.safe_load(content)
+
+
+# ---------------------------------------------------------------------------
+# Expected-failure markers
+#
+# A test file's leading comment block (the comment and blank lines before its
+# first line of YAML) may hold lines of the form
+#
+#   # conformance: xfail(<impl>[, <impl>...], reason="<why>"[, strict=false])
+#
+# where <impl> is one of IMPLEMENTATIONS. The test still runs. For a listed
+# implementation a failure is reported as XFAIL and does not fail the run, and
+# a pass is reported as XPASS, which fails the run unless strict=false, so a
+# marker is removed once the implementation is fixed. A comment line in the
+# leading block whose text starts with "conformance" followed by a colon, or
+# that names "conformance" and "xfail" (any case, after any number of '#'), is
+# a marker line, and one that is not a well-formed marker fails the test rather
+# than being ignored, so a typo cannot turn a marker off.
+# ---------------------------------------------------------------------------
+
+# The implementations a marker may name: "py" is openjd-cli (Python), "rs" is
+# the openjd-rs CLI.
+IMPLEMENTATIONS = ("py", "rs")
+
+# A comment line that is meant as a marker, well formed or not.
+_MARKER_LINE_RE = re.compile(
+    r"^#+\s*conformance\s*:|^#+\s*conformance\b.*\bxfail\b", re.IGNORECASE
+)
+# Longer marker lines are refused before they are parsed.
+_MAX_MARKER_LEN = 1000
+# The one well-formed shape of a marker line.
+_MARKER_RE = re.compile(r"^# conformance: (?P<call>.*?)\s*$")
+
+
+@dataclass(frozen=True)
+class XfailMarker:
+    implementations: tuple[str, ...]
+    reason: str
+    strict: bool = True
+
+
+class MarkerError(ValueError):
+    """A `# conformance:` line that is not a well-formed marker."""
+
+
+def _parse_marker(call: str) -> XfailMarker:
+    if len(call) > _MAX_MARKER_LEN:
+        raise MarkerError(f"marker is longer than {_MAX_MARKER_LEN} characters")
+    try:
+        node = ast.parse(call, mode="eval").body
+    except (SyntaxError, ValueError) as e:
+        raise MarkerError(f"not a marker call: {call!r} ({e})") from None
+    if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Name):
+        raise MarkerError(f"not a marker call: {call!r}")
+    if node.func.id != "xfail":
+        raise MarkerError(f"unknown marker {node.func.id!r} (expected 'xfail')")
+    impls = []
+    for arg in node.args:
+        if not isinstance(arg, ast.Name) or arg.id not in IMPLEMENTATIONS:
+            raise MarkerError(
+                f"xfail takes implementations from {IMPLEMENTATIONS}, got {ast.unparse(arg)!r}"
+            )
+        impls.append(arg.id)
+    if not impls:
+        raise MarkerError("xfail names no implementation")
+    if len(set(impls)) != len(impls):
+        raise MarkerError("xfail names an implementation twice")
+    reason = None
+    strict = True
+    seen = set()
+    for kw in node.keywords:
+        if kw.arg in seen:
+            raise MarkerError(f"xfail gives {kw.arg}= twice")
+        seen.add(kw.arg)
+        value = kw.value
+        if kw.arg == "reason" and isinstance(value, ast.Constant) and isinstance(value.value, str):
+            reason = value.value
+        elif kw.arg == "strict" and isinstance(value, ast.Name) and value.id in ("true", "false"):
+            strict = value.id == "true"
+        else:
+            raise MarkerError(
+                f"unknown or ill-typed xfail argument {kw.arg}={ast.unparse(value)} "
+                '(expected reason="..." or strict=true|false)'
+            )
+    if not reason or not reason.strip():
+        raise MarkerError('xfail needs a non-empty reason="..."')
+    return XfailMarker(tuple(impls), reason, strict)
+
+
+def read_markers(path: Path) -> list[XfailMarker]:
+    """The xfail markers in `path`'s leading comment block. JSON test files
+    have no comments, so they carry no markers. A byte-order mark is skipped,
+    and bytes that are not UTF-8 are replaced, so a file the runner cannot
+    decode still runs and fails or passes on the CLI's own reading of it."""
+    if path.suffix == ".json":
+        return []
+    markers = []
+    with open(path, encoding="utf-8-sig", errors="replace") as f:
+        for line in f:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if not stripped.startswith("#"):
+                break
+            if not _MARKER_LINE_RE.match(stripped):
+                continue
+            m = _MARKER_RE.match(stripped)
+            if not m:
+                raise MarkerError(f"a marker line must read '# conformance: xfail(...)', got {stripped!r}")
+            markers.append(_parse_marker(m.group("call")))
+    named = [impl for marker in markers for impl in marker.implementations]
+    for impl in IMPLEMENTATIONS:
+        if named.count(impl) > 1:
+            raise MarkerError(f"more than one marker names {impl}")
+    return markers
+
+
+def marker_for(markers: list[XfailMarker], implementation: str | None) -> XfailMarker | None:
+    """The marker that applies to `implementation`, if any."""
+    if implementation is None:
+        return None
+    for marker in markers:
+        if implementation in marker.implementations:
+            return marker
+    return None
+
+
+def detect_implementation() -> str | None:
+    """Which CLI `openjd` on PATH is: "rs" when its help names the Rust CLI,
+    "py" when `--version` names openjd-cli, else None."""
+    # Detection reads two banners: the Rust CLI's help heading and
+    # openjd-cli's --version line. If either changes, detection says it
+    # cannot tell rather than guessing, and --implementation is needed.
+    def run(arg: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            ["openjd", arg], capture_output=True, encoding="utf-8", errors="replace", timeout=60
+        )
+
+    try:
+        help_text = run("--help")
+        if "Open Job Description CLI (Rust)" in help_text.stdout + help_text.stderr:
+            return "rs"
+        version = run("--version")
+        if version.returncode == 0 and version.stdout.startswith("Open Job Description CLI "):
+            return "py"
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return None
+
+
+# Set by main(): the implementation whose markers apply, or None.
+IMPLEMENTATION: str | None = None
+
+
+@dataclass
+class Outcome:
+    status: str  # "PASS", "FAIL", "XFAIL", "XPASS" or "SKIP"
+    output: str = ""
+    detail: str = ""  # why it failed, or the xfail reason
+    strict: bool = True  # for XPASS: whether the marker makes a pass fail the run
+
+    @property
+    def counts_as_failure(self) -> bool:
+        return self.status == "FAIL" or (self.status == "XPASS" and self.strict)
+
+
+def evaluate(path: Path, is_job: bool) -> Outcome:
+    """Run one test file, a job test when `is_job` and otherwise a template
+    check, and classify the result, applying its markers."""
+    try:
+        marker = marker_for(read_markers(path), IMPLEMENTATION)
+    except MarkerError as e:
+        return Outcome("FAIL", "", f"Bad conformance marker: {e}")
+    expect_failure = ".invalid." in path.name
+    if is_job:
+        result = run_job(path)
+        if result is None:
+            return Outcome("SKIP")
+        success, output = result
+    else:
+        success, output = run_check(path)
+    ok = success != expect_failure
+    detail = "" if ok else f"Expected {'failure' if expect_failure else 'success'}, got {'success' if success else 'failure'}"
+    if marker is None:
+        return Outcome("PASS" if ok else "FAIL", output, detail)
+    if ok:
+        return Outcome("XPASS", output, marker.reason, marker.strict)
+    return Outcome("XFAIL", output, marker.reason)
 
 
 def run_check(template_path: Path) -> tuple[bool, str]:
@@ -183,89 +386,120 @@ def run_job(test_path: Path) -> tuple[bool, str] | None:
         return True, output
 
 
-def run_template_tests(directory: Path, pattern: str = None) -> tuple[int, int, list[str]]:
-    passed = failed = 0
-    failed_tests = []
+def display_name(path: Path) -> str:
+    name = path.name
+    if ".test.yaml" in name:
+        return name.replace(".invalid.test.yaml", "").replace(".test.yaml", "")
+    return name
 
+
+def report(path: Path, outcome: Outcome, output_chars: int) -> None:
+    """Print one test's result line, and detail for anything but a plain pass."""
+    name = display_name(path)
+    if outcome.status == "PASS":
+        print(f"  ✓ {name}", flush=True)
+    elif outcome.status == "SKIP":
+        print(f"  ⊘ {name} (skipped, not for {OPERATING_SYSTEM})", flush=True)
+    elif outcome.status == "XFAIL":
+        print(f"  x {name} (xfail: {outcome.detail})", flush=True)
+    elif outcome.status == "XPASS":
+        if outcome.strict:
+            print(f"  ✗ {name} (XPASS: marked xfail for {IMPLEMENTATION} but passed; remove the marker)", flush=True)
+        else:
+            print(f"  ! {name} (XPASS, non-strict marker: consider removing it)", flush=True)
+    else:
+        print(f"  ✗ {name}", flush=True)
+        if outcome.detail:
+            print(f"    {outcome.detail}")
+        if output_chars and outcome.output:
+            print(f"    {outcome.output[:output_chars]}")
+
+
+@dataclass
+class Tally:
+    passed: int = 0
+    failed: int = 0
+    xfailed: int = 0
+    xpassed: int = 0
+    failed_tests: list = None
+
+    def __post_init__(self):
+        if self.failed_tests is None:
+            self.failed_tests = []
+
+    def add(self, path: Path, outcome: Outcome) -> None:
+        if outcome.status == "PASS":
+            self.passed += 1
+        elif outcome.status == "XFAIL":
+            self.xfailed += 1
+        elif outcome.status == "XPASS" and not outcome.strict:
+            self.xpassed += 1
+        # A strict XPASS counts as failed, as in pytest, and a non-strict one
+        # as xpassed, so the counts sum to the tests run and failed is the
+        # number of entries listed under "Failed tests".
+        if outcome.counts_as_failure:
+            self.failed += 1
+            try:
+                rel = path.relative_to(CONFORMANCE_DIR)
+            except ValueError:
+                rel = path
+            self.failed_tests.append(f"{rel}" + (" (XPASS)" if outcome.status == "XPASS" else ""))
+
+    def extend(self, other: "Tally") -> None:
+        self.passed += other.passed
+        self.failed += other.failed
+        self.xfailed += other.xfailed
+        self.xpassed += other.xpassed
+        self.failed_tests.extend(other.failed_tests)
+
+    def summary(self) -> str:
+        text = f"{self.passed} passed, {self.failed} failed"
+        if self.xfailed or self.xpassed:
+            text += f", {self.xfailed} xfailed, {self.xpassed} xpassed"
+        return text
+
+    @property
+    def ok(self) -> bool:
+        return not self.failed_tests
+
+
+def run_template_tests(directory: Path, pattern: str = None) -> Tally:
+    tally = Tally()
     templates = sorted(list(directory.glob("*.yaml")) + list(directory.glob("*.json")))
     for template in templates:
         if pattern and not fnmatch.fnmatch(template.name, pattern):
             continue
-        expect_failure = ".invalid." in template.name
-        success, output = run_check(template)
-        ok = success != expect_failure
-
-        if ok:
-            passed += 1
-            print(f"  ✓ {template.name}", flush=True)
-        else:
-            failed += 1
-            failed_tests.append(str(template.relative_to(CONFORMANCE_DIR)))
-            print(f"  ✗ {template.name}", flush=True)
-            print(f"    Expected {'failure' if expect_failure else 'success'}, got {'success' if success else 'failure'}")
-            print(f"    {output[:200]}")
-
-    return passed, failed, failed_tests
+        outcome = evaluate(template, is_job=False)
+        report(template, outcome, 200)
+        tally.add(template, outcome)
+    return tally
 
 
-def run_job_tests(directory: Path, pattern: str = None) -> tuple[int, int, list[str]]:
-    passed = failed = 0
-    failed_tests = []
-
+def run_job_tests(directory: Path, pattern: str = None) -> Tally:
+    tally = Tally()
     for test_path in sorted(directory.glob("*.test.yaml")):
-        name = test_path.name.replace(".invalid.test.yaml", "").replace(".test.yaml", "")
         if pattern and not fnmatch.fnmatch(test_path.name, pattern):
             continue
-        result = run_job(test_path)
-        if result is None:
-            print(f"  ⊘ {name} (skipped, not for {OPERATING_SYSTEM})", flush=True)
-            continue
-        expect_failure = ".invalid." in test_path.name
-        success, output = result
-        ok = success != expect_failure
-
-        if ok:
-            passed += 1
-            print(f"  ✓ {name}", flush=True)
-        else:
-            failed += 1
-            failed_tests.append(str(test_path.relative_to(CONFORMANCE_DIR)))
-            print(f"  ✗ {name}", flush=True)
-            print(f"    Expected {'failure' if expect_failure else 'success'}, got {'success' if success else 'failure'}")
-            print(f"    {output[:300]}")
-
-    return passed, failed, failed_tests
+        outcome = evaluate(test_path, is_job=True)
+        report(test_path, outcome, 300)
+        tally.add(test_path, outcome)
+    return tally
 
 
-def run_single_file(file_path: Path) -> tuple[int, int, list[str]]:
+def run_single_file(file_path: Path) -> Tally:
     """Run a single test file directly."""
+    tally = Tally()
     if not file_path.exists():
         print(f"File not found: {file_path}")
-        return 0, 1, [str(file_path)]
-
-    name = file_path.name
-    if ".test.yaml" in name:
-        result = run_job(file_path)
-        if result is None:
-            print(f"  ⊘ {name} (skipped, not for {OPERATING_SYSTEM})")
-            return 0, 0, []
-        expect_failure = ".invalid." in name
-        success, output = result
-        display_name = name.replace(".invalid.test.yaml", "").replace(".test.yaml", "")
-    else:
-        expect_failure = ".invalid." in name
-        success, output = run_check(file_path)
-        display_name = name
-
-    ok = success != expect_failure
-    if ok:
-        print(f"  ✓ {display_name}")
-    else:
-        print(f"  ✗ {display_name}")
-        print(f"    Expected {'failure' if expect_failure else 'success'}, got {'success' if success else 'failure'}")
-
-    print(f"\n--- Output ---\n{output}")
-    return (1, 0, []) if ok else (0, 1, [str(file_path)])
+        tally.failed += 1
+        tally.failed_tests.append(str(file_path))
+        return tally
+    outcome = evaluate(file_path, is_job=".test.yaml" in file_path.name)
+    report(file_path, outcome, 0)
+    tally.add(file_path, outcome)
+    if outcome.status != "SKIP":
+        print(f"\n--- Output ---\n{outcome.output}")
+    return tally
 
 
 def discover_test_dirs(base: Path) -> list[tuple[Path, str]]:
@@ -285,17 +519,32 @@ def discover_test_dirs(base: Path) -> list[tuple[Path, str]]:
 
 
 def main():
+    global IMPLEMENTATION
     parser = argparse.ArgumentParser(description="Run OpenJD conformance tests")
     parser.add_argument("pattern", nargs="?", default="*/*/*",
                         help="Pattern: {version}/{component}/{type}/{test} or file path")
+    parser.add_argument("--implementation", choices=[*IMPLEMENTATIONS, "auto", "none"], default="auto",
+                        help="Which implementation's xfail markers apply: py (openjd-cli), rs (openjd-rs), "
+                             "auto (detect from `openjd` on PATH, the default) or none (apply none; a "
+                             "malformed marker still fails its test)")
     args = parser.parse_args()
+
+    if args.implementation == "auto":
+        IMPLEMENTATION = detect_implementation()
+        if IMPLEMENTATION is None:
+            print("Note: could not tell which openjd CLI is on PATH; xfail markers are not applied. "
+                  "Pass --implementation py|rs to apply them.")
+    elif args.implementation != "none":
+        IMPLEMENTATION = args.implementation
+    if IMPLEMENTATION:
+        print(f"Applying xfail markers for implementation: {IMPLEMENTATION}")
 
     # Check if it's a direct file path
     potential_path = CONFORMANCE_DIR / args.pattern
     if potential_path.is_file():
-        passed, failed, failed_tests = run_single_file(potential_path)
-        print(f"\nTotal: {passed} passed, {failed} failed")
-        sys.exit(0 if failed == 0 else 1)
+        tally = run_single_file(potential_path)
+        print(f"\nTotal: {tally.summary()}")
+        sys.exit(0 if tally.ok else 1)
 
     # Parse pattern: version/component/type/test_pattern
     parts = args.pattern.strip("/").split("/")
@@ -304,8 +553,7 @@ def main():
     type_pat = parts[2] if len(parts) > 2 else "*"
     test_pat = parts[3] if len(parts) > 3 else None
 
-    total_passed = total_failed = 0
-    all_failed_tests = []
+    total = Tally()
 
     for test_dir, test_type in discover_test_dirs(CONFORMANCE_DIR):
         rel_path = test_dir.relative_to(CONFORMANCE_DIR)
@@ -321,23 +569,21 @@ def main():
         print(f"\n{rel_path}:", flush=True)
 
         if test_type == "jobs":
-            passed, failed, failed_tests = run_job_tests(test_dir, test_pat)
+            tally = run_job_tests(test_dir, test_pat)
         else:
-            passed, failed, failed_tests = run_template_tests(test_dir, test_pat)
+            tally = run_template_tests(test_dir, test_pat)
 
-        total_passed += passed
-        total_failed += failed
-        all_failed_tests.extend(failed_tests)
-        print(f"  {passed} passed, {failed} failed")
+        total.extend(tally)
+        print(f"  {tally.summary()}")
 
-    print(f"\nTotal: {total_passed} passed, {total_failed} failed")
+    print(f"\nTotal: {total.summary()}")
 
-    if all_failed_tests:
-        print(f"\nFailed tests ({len(all_failed_tests)}):")
-        for name in all_failed_tests:
+    if total.failed_tests:
+        print(f"\nFailed tests ({len(total.failed_tests)}):")
+        for name in total.failed_tests:
             print(f"  - {name}")
 
-    sys.exit(0 if total_failed == 0 else 1)
+    sys.exit(0 if total.ok else 1)
 
 
 if __name__ == "__main__":
