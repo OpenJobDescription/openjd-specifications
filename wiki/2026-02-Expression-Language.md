@@ -431,9 +431,9 @@ Expressions are checked and evaluated progressively as more information becomes 
 At each stage, known values are evaluated concretely while unresolved values propagate as
 `unresolved[T]`, catching as many errors as possible with the information available:
 
-1. **Template parse time** (e.g., `openjd check`). The values that the [Template Schemas §7.4
+1. **Template parse time** (e.g., `openjd check`). The symbols that the [Template Schemas §7.4
    stage table](2023-09-Template-Schemas#74-template-processing-stages) lists as not yet known at
-   template validation, such as the Job parameters (`Param.*`), are `unresolved[T]` based on their
+   template validation, such as the Job parameters (`Param.*`), are `unresolved[T]` of their
    declared types, because the template is not yet bound to particular parameter values.
    Let bindings that depend only on literals may evaluate concretely. Catches syntax errors,
    type errors in constant subexpressions, and structural issues like undefined symbols. Errors
@@ -461,13 +461,13 @@ At each stage, known values are evaluated concretely while unresolved values pro
    `path("/a").startswith("/")`, are still reported. Literal paths in TEMPLATE scope are
    evaluated concretely, with POSIX semantics.
 
-2. **Job parameter binding** ("submit time"). Job parameter values are now known, so `Param.*`
-   symbols are concrete. Expressions in TEMPLATE scope can be fully evaluated. Expressions in
-   host-context scopes (SESSION/TASK) still have the values that the Template Schemas §7.4 stage
-   table lists as not yet known at Job creation, such as `Task.Param.*` and `Session.*`, as
-   unresolved, but can now type-check operations on the known `Param.*` values combined with the
-   unresolved task/session symbols. A `path()` in a host-context scope
-   is still `unresolved[path]`, because the worker's path format is still not known.
+2. **Job parameter binding** ("submit time"). Job parameter values are now bound, so `Param.*`
+   symbols other than PATH and LIST[PATH] are concrete. Expressions in TEMPLATE scope can be fully
+   evaluated. Expressions in host-context scopes (SESSION/TASK) still have the symbols that the
+   Template Schemas §7.4 stage table lists as not yet known at Job creation, such as `Task.Param.*`
+   and `Session.*`, as unresolved, but can now type-check operations on the known `Param.*` values
+   combined with the unresolved task/session symbols. A `path()` in a host-context scope is still
+   `unresolved[path]`, because the worker's path format is still not known.
    With the `ENV_PARAMS` extension, an Environment's *enableIf* is evaluated at this stage with concrete values only.
    It is not evaluated for a Step whose effective value for a parameter it reads is missing, fails to resolve, or
    does not convert ([Template Schemas §3.2.2](2023-09-Template-Schemas#322-effective-environment-parameter-values)

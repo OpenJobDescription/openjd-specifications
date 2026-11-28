@@ -438,7 +438,7 @@ lists the extensions the document under test declares, where it matters (`EP` = 
 | JT-102 | `3.2--on-request-required-param-not-supplied.invalid.yaml` | EP | A Step that requests an `ON_REQUEST` Job Environment without supplying its required parameter is rejected. |
 | JT-103 | `3.2--by-default-entry-disabled-literal-declines.yaml` | EP, EX | An entry with `enableIf: false` for a `BY_DEFAULT` Job Environment declines it, so constraint 7 does not apply and the Environment's required parameter need not be supplied; valid. |
 | JT-104 | `3.2--on-request-entry-disabled-literal.yaml` | EP, EX | An entry with `enableIf: false` for an `ON_REQUEST` Job Environment requests nothing, so its required parameter is not needed. |
-| JT-152 | `3.2--constraint-7-constant-expression-enable-if-known.invalid.yaml` | EP, EX | An entry with `enableIf: "true"`, a constant expression, requests an `ON_REQUEST` Job Environment without supplying its required parameter. The expression reads nothing unknown, so it is known at template validation to be `true` (§7.6 rule 5), and constraint 7 rejects the template; JB-102 rejects it at job creation. |
+| JT-152 | `3.2--constraint-7-constant-expression-enable-if-known.invalid.yaml` | EP, EX | An entry with `enableIf: "true"`, a constant expression, requests an `ON_REQUEST` Job Environment without supplying its required parameter. The expression reads nothing unknown, so it is known at template validation to be `true` (§7.4, §7.6 rule 5), and constraint 7 rejects the template; JB-102 rejects it at job creation. |
 | JT-158 | `3.2--required-param-env-enable-if-expression-still-required.invalid.yaml` | EP, EX | The same as JT-148 with an expression `enableIf` over a Job Parameter: the Environment applies to the Step whatever the `enableIf`, so constraint 7 rejects the template. JB-113 rejects it at job creation. |
 | JT-162 | `3.2.2--env-enable-if-reads-missing-param.invalid.yaml` | EP, EX | The `enableIf` reads the unsupplied parameter itself. The missing value is a constraint 7 error of the Step, whatever the `enableIf`, so the template is rejected (§3.2, §3.2.2). Replaces JB-114. |
 | JT-190 | `3.2--required-param-env-enable-if-and-false.invalid.yaml` | EP, EX | A `BY_DEFAULT` Job Environment whose `enableIf` is `"not Param.F and Env.Param.X == 'a'"`, false with `F`'s default whatever `X` is, and a Step with no entry for it that does not supply `X`: rejected under constraint 7, whatever the `enableIf` (§3.2, §3.2.2). |
@@ -546,7 +546,7 @@ value of `F` lets Job creation succeed.
 | ET-48 | `4--exclusive-group.yaml` | EP, EX | An Environment Template's Environment may have an `exclusiveGroup`. |
 | ET-49 | `4--exclusive-group-always.invalid.yaml` | EP, EX | `exclusiveGroup` on an `ALWAYS` Environment is rejected (§4 item 7 constraint 1). |
 | ET-50 | `4--exclusive-group-without-extension.invalid.yaml` | — | `exclusiveGroup` is rejected without `ENV_PARAMS`. |
-| ET-51 | `7.6--activation-always-enable-if-known-false.invalid.yaml` | EP, EX | An `ALWAYS` Environment whose `enableIf` `"Env.Param.X == 1 and false"` is known to be `false` at template validation is rejected, as for a Job Environment (§7.6 rule 5, JT-194). |
+| ET-51 | `7.6--activation-always-enable-if-known-false.invalid.yaml` | EP, EX | An `ALWAYS` Environment whose `enableIf` `"Env.Param.X == 1 and false"` is known to be `false` at template validation is rejected, as for a Job Environment (§7.4, §7.6 rule 5, JT-194). |
 
 #### Environment `enableIf` in an Environment Template (§4 item 6)
 
@@ -1031,21 +1031,20 @@ These rules, or parts of rules, have no planned test with a definite expected ou
     JB-104 passes whether or not an implementation follows the rule; it distinguishes the rule only on a runner whose
     host or submission path format is Windows. Path mapping is not tested separately: an `enableIf` cannot read
     `Param.<PATH>` (JT-122), and `RawParam.*` is unmapped in every scope.
-18. **When a certain failure is reported.** §7.6 rule 6 says which errors an implementation *should* report before
-    the Job is created, and which it *must not*. For JT-150, JT-151, JT-157, JT-195, JT-197, JT-199, and JT-201, some
-    Job Parameter values let Job creation succeed, so the *must not* applies and they must pass template validation. So
-    must JT-212 and JT-214, which some attached Environment Templates make valid. Job creation rejects JB-65, JB-68,
-    JB-105–JB-107, JB-128 and JB-147, for example, for every value, and each check depends on something not yet known:
-    the Step's whole Environment set, which includes Environments a validator is not given, in JB-65 and JB-68 (combined
-    host requirements), the third wrapper's `enableIf` in JB-105, the Environments a validator is not given in JB-106,
-    the entry's `enableIf`, which constraint 7 reads to decide whether the entry supplies its values, in JB-107, the
-    Environment's `enableIf`, which reads an effective value, in JB-128, and a format string, whose value is not known
-    before it is resolved, in JB-147. So the *should* applies, and it is a preference, not a requirement: they are
-    `jobs/` tests, which pass whichever stage rejects them. Checks for which everything they depend on is known at
-    template validation, where §7.4 says they are made, are tested by `job_templates/` tests: JT-152, JT-194, JT-196,
-    JT-198, JT-200, and JT-202 to JT-205. So is constraint 7 for a Step and an Environment where the `enableIf` of each
-    of the Step's entries for it is known, which does not depend on any Environment's `enableIf` (JT-148, JT-158,
-    JT-162, JT-189–JT-191).
+18. **When a certain failure is reported.** §7.6 rule 6 says which errors an implementation *should* report before the
+    Job is created, and which it *must not*. For JT-150, JT-151, JT-157, JT-195, JT-197, JT-199, and JT-201, some Job
+    Parameter values let Job creation succeed, so the *must not* applies and they must pass template validation. So must
+    JT-212 and JT-214, which some attached Environment Templates make valid. Job creation rejects JB-65, JB-68,
+    JB-105–JB-107, JB-128 and JB-147, for example, for every value, and each check depends on something the §7.4 stage
+    table lists as not yet known: the Step's whole Environment set in JB-65 and JB-68 (combined host requirements), the
+    third wrapper's `enableIf` in JB-105, the attached Environments in JB-106, the entry's `enableIf`, which constraint
+    7 reads to decide whether the entry supplies its values, in JB-107, the Environment's `enableIf`, which reads an
+    effective value, in JB-128, and a format string in JB-147. So the *should* applies, and it is a preference, not a
+    requirement: they are `jobs/` tests, which pass whichever stage rejects them. Checks for which everything they
+    depend on is known at template validation, where §7.4 says they are made, are tested by `job_templates/` tests:
+    JT-152, JT-194, JT-196, JT-198, JT-200, and JT-202 to JT-205. So is constraint 7 for a Step and an Environment where
+    the `enableIf` of each of the Step's entries for it is known, which does not depend on any Environment's `enableIf`
+    (JT-148, JT-158, JT-162, JT-189–JT-191).
 19. **Environments from documents without `ENV_PARAMS` in combinations that cannot be written.** §4 item 4 makes an
     Environment without `ENV_PARAMS` active behave as `ALWAYS`, and has every Session enter the Job Environments of a
     Job Template that does not list `ENV_PARAMS` and every attached Environment from an Environment Template that does
