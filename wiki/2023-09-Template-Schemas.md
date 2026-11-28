@@ -1122,9 +1122,9 @@ only to an enabled entry, and constraint 6 only where the Environment is not dis
 2. When the Job is created, for every entry whose *enableIf* is absent or resolves to `true`, once format strings are
    resolved and external Environments are known.
 
-An entry whose *enableIf* is not known at template validation may be enabled or disabled when the Job is created, so an
-error in its keys and values is reported before then only as [§7.6](#76-expression-fields) rule 6 says. The keys and
-values of an entry that is enabled when the Job is created are checked then (item 2).
+The keys and values of an entry that is enabled when the Job is created are checked then (item 2). For an entry whose
+*enableIf* is not known at template validation, an error in them is reported before then only as
+[§7.6](#76-expression-fields) rule 6 says.
 
 Constraint 7 depends only on the Step's entries, the Environments' *activation*, and which parameters have a `default`.
 It is checked at template validation for the *jobEnvironments* entries, and when the Job is created for every
@@ -2802,17 +2802,17 @@ different sets of values are known, which determines which format strings can be
 | Stage | When | Known Values | Unknown Values | What Happens |
 |-------|------|-------------|----------------|--------------|
 | **Template validation** | `openjd check` or equivalent | Literal values, parameter type declarations, and the documents the validator is given | Every Job Parameter (`Param.*`, `RawParam.*`), `Job.Name`, `Job.EnvNames`, `Step.Name`, `Task.*`, `Session.*`, and every `Env.*` value; the value of every format string that contains a `{{ }}` expression; the documents of the submission that the validator is not given, such as the Environment Templates to be attached when it validates a Job Template; the Worker Host and its path mapping rules | Syntax validation, structural checks. With the `EXPR` extension: type checking of expressions using declared parameter types. `Job.Name` and `Step.Name` are available as `unresolved[string]`. With the `ENV_PARAMS` extension: `Env.Param.*` is type-checked against the Environment's *envParameterDefinitions* and `Job.EnvNames` is `unresolved[list[string]]`; literal Environment parameter `default`s, and literal `environment:` values for Job Environments in entries whose *enableIf* is absent or known to be `true`, for an Environment known not to be disabled for the Step ([§7.6](#76-expression-fields) rule 5, and for an Environment with an *exclusiveGroup* the bullets of [&lt;Environment&gt;](#4-environment) on what is known before the Job is created), are checked against their definitions. |
-| **Job creation** | Job submission with parameter values | Every document of the submission, `RawParam.*`, `Param.*` other than PATH and LIST[PATH], `Job.Name`, `Step.Name`, and the value of each format string not annotated `@fmtstring[host]` once it is resolved; with `ENV_PARAMS`, `Job.EnvNames` once the attached Environments are known, and, once [§7.4.1](#741-job-creation-with-env_params) step 5 resolves them, each Step's Environment parameter effective values (`Env.RawParam.*`, and `Env.Param.*` other than PATH and LIST[PATH]) | `Task.*`, `Session.*`, `Env.File.*`; `Param.*` and `Env.Param.*` of PATH and LIST[PATH] type; the value of each format string annotated `@fmtstring[host]` that contains a `{{ }}` expression; the Worker Host and its path mapping rules | Parameter values are bound. Format strings not annotated `@fmtstring[host]` are resolved (e.g., `name`, `parameterSpace` ranges). PATH and `LIST[PATH]` Job Parameter defaults must be relative and are joined with the job template directory (see [§2.2](#22-jobpathparameterdefinition)); relative PATH and `LIST[PATH]` parameter values are joined with the current working directory. With the `EXPR` extension: `let` bindings in `<StepTemplate>` are evaluated; expressions in TEMPLATE scope are fully evaluated; `Job.Name` and `Step.Name` are concrete. With the `ENV_PARAMS` extension, the steps of [§7.4.1](#741-job-creation-with-env_params) are taken. |
+| **Job creation** | Job submission with parameter values | Every document of the submission, `RawParam.*`, `Param.*` other than PATH and LIST[PATH], `Job.Name`, `Step.Name`, and the value of each format string not annotated `@fmtstring[host]` once it is resolved; with `ENV_PARAMS`, `Job.EnvNames` once [§7.4.1](#741-job-creation-with-env_params) step 1 determines the attached Environments, and, once [§7.4.1](#741-job-creation-with-env_params) step 5 resolves them, each Step's Environment parameter effective values (`Env.RawParam.*`, and `Env.Param.*` other than PATH and LIST[PATH]) | `Task.*`, `Session.*`, `Env.File.*`; `Param.*` and `Env.Param.*` of PATH and LIST[PATH] type; the value of each format string annotated `@fmtstring[host]` that contains a `{{ }}` expression; the Worker Host and its path mapping rules | Parameter values are bound. Format strings not annotated `@fmtstring[host]` are resolved (e.g., `name`, `parameterSpace` ranges). PATH and `LIST[PATH]` Job Parameter defaults must be relative and are joined with the job template directory (see [§2.2](#22-jobpathparameterdefinition)); relative PATH and `LIST[PATH]` parameter values are joined with the current working directory. With the `EXPR` extension: `let` bindings in `<StepTemplate>` are evaluated; expressions in TEMPLATE scope are fully evaluated; `Job.Name` and `Step.Name` are concrete. With the `ENV_PARAMS` extension, the steps of [§7.4.1](#741-job-creation-with-env_params) are taken. |
 | **Task execution** | On the worker host | All values, including `Task.*`, `Session.*`, `Env.File.*`, `Env.Param.*`, `Env.RawParam.*`, and path mapping rules | *(none)* | Format strings annotated `@fmtstring[host]` are resolved. Path mapping rules are applied to PATH-type parameters, including PATH and LIST[PATH] Environment parameters (`ENV_PARAMS`). Embedded files are written. With the `EXPR` extension: `let` bindings in `<StepScript>` and `<EnvironmentScript>` are evaluated; all remaining expressions are fully evaluated. |
 
 A check that depends on an [expression field](#76-expression-fields) is made, and an error it finds is reported, at the
-first stage at which all its inputs are known. So one whose inputs are all known at template validation, such as literal
-values and an *enableIf* known there, is made there. A check's inputs include what decides whether it applies, such as
-an *enableIf*, and, for a check that depends on which Environments a Step's Sessions enter, whether they are known to
-enter or known not to enter each Environment the check depends on, as [&lt;Environment&gt;](#4-environment) says. Such a
-check, with an input that is not known at a stage, need not be made there, even when its result is already certain.
-[§7.6](#76-expression-fields) rule 5 says when an expression field's value is known, and rule 6 says which other errors
-an implementation should report before the Job is created, and which it must not.
+first stage at which all its inputs are known. So such a check is made at template validation when all its inputs, such
+as literal values and an *enableIf*, are known there. A check's inputs include what decides whether it applies, such as
+an *enableIf*, and, where it depends on whether a Step's Sessions enter an Environment, whether they are known to enter
+it or known not to enter it, as [&lt;Environment&gt;](#4-environment) says. Such a check, with an input that is not
+known at a stage, need not be made there, even when its result is already certain. [§7.6](#76-expression-fields) rule 5
+says when an expression field's value is known, and rule 6 says which other errors an implementation should report
+before the Job is created, and which it must not.
 
 The `@fmtstring` and `@fmtstring[host]` annotations in this specification indicate which stage
 a format string is resolved in. An expression field, marked `@expr <type>` (see [§7.6](#76-expression-fields)),
@@ -2954,8 +2954,8 @@ Rules:
    binding has the value its expression has with them, so one computed only from literals is known.
 6. Before the Job is created, an implementation should report an error once it can show that Job creation fails for it
    whatever values are supplied for what is not yet known. It must not report an error that some of those values would
-   avoid. A check on a field that is not known is made, or made again, when the field is evaluated, with its value then.
-   When an expression field is evaluated at its own stage, every value it reads is concrete.
+   avoid. A check that depends on a field that is not known is made, or made again, when the field is evaluated, with
+   its value then. When an expression field is evaluated at its own stage, every value it reads is concrete.
 
 > **NOTE:** With a BOOL Job Parameter `F`, at template validation `"true"` and `"Param.F or true"` are known to be
 > `true`, `"Param.F and false"` and `"false if Param.F else false"` are known to be `false`, and `"Param.F"`,

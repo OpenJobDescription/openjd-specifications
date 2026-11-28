@@ -552,14 +552,14 @@ creation may read. All of it is known then, so effective values are a static pro
 ### Processing stages and expression fields
 
 The [§7.4](../wiki/2023-09-Template-Schemas.md#74-template-processing-stages) stage table lists what is not yet known at
-each stage and what the extension checks there, and says which checks are made when. The new
+each stage and what the extension checks there, and the text under it says which checks are made when. The new
 [§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params) orders the work done at Job creation. The
 new [§7.6](../wiki/2023-09-Template-Schemas.md#76-expression-fields) defines expression fields, which both *enableIf*
 fields are: one typed expression with no `{{ }}` and no implicit conversion other than widening `int` to `float`. Its
 rule 5 says that before it is evaluated, its value is known when it is a boolean, integer, or float scalar, or when the
 Expression Language's rules for unknown operands give a result with the values not yet known. Rule 6 says that before
-the Job is created an implementation should report an error once it can show that Job creation fails whatever values are
-supplied for what is not yet known, and must not report one that some of those values would avoid.
+the Job is created an implementation should report an error once it can show that Job creation fails for it whatever
+values are supplied for what is not yet known, and must not report one that some of those values would avoid.
 
 ### Expression Language
 
@@ -907,8 +907,8 @@ already controls, decides precedence. The group is applied as each *enableIf* is
 first Environment nothing to do falls through to the next, and an Environment that is superseded is not evaluated, so
 its *enableIf* need not be resolvable for Steps it never serves. A group can include a Job Template's own Environment,
 which an attached one then supersedes; a validator without the Environment Templates cannot know that, so for it a
-Step's Sessions are never known to enter such an Environment. An `ALWAYS` Environment cannot be in a group, because the
-group could leave it out of a Step's Sessions.
+Step's Sessions are never known to enter such an Environment ([§4](../wiki/2023-09-Template-Schemas.md#4-environment)).
+An `ALWAYS` Environment cannot be in a group, because the group could leave it out of a Step's Sessions.
 
 ### `hostRequirements` on the Environment
 

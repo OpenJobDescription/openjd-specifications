@@ -1,4 +1,4 @@
-# RFC 0010 / Template Schemas §4 item 4 (activation), §3.2 constraint 7, §7.6 rule 6, with RFC 0008 (single-layer
+# RFC 0010 / Template Schemas §4 item 4 (activation), §3.2 constraint 7, §7.4.1 step 7, with RFC 0008 (single-layer
 # rule, §4.3 constraint 2): the Job Template lists WRAP_ACTIONS but not ENV_PARAMS, and each of its Steps has a
 # wrapping Step Environment. The attached Environment Template lists ENV_PARAMS, so Job creation takes the steps of
 # §7.4.1. A Step Environment of a Job Template that does not list ENV_PARAMS is still entered only by its own Step's

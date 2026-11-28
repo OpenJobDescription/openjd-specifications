@@ -408,7 +408,7 @@ lists the extensions the document under test declares, where it matters (`EP` = 
 | JT-156 | `3.2--literal-value-violation-env-enable-if-false.yaml` | EP, EX | A literal value outside `allowedValues` for a Job Environment whose `enableIf` is the literal `false` is valid: values are checked only for an Environment whose `enableIf` is not `false` (§3.2.2). |
 | JT-157 | `3.2--literal-value-violation-env-enable-if-undetermined.yaml` | EP, EX | The same with an expression `enableIf`: the check depends on it, and with it `false` the Job is valid, so template validation reports nothing (§7.6 rule 6). JB-108 and JB-109 run it. |
 | JT-206 | `3.2--fifty-environment-entries.yaml` | EP, EX | A Step with 50 `required: false` `environment:` entries is valid: an implementation that limits *dependencies* must accept at least 50 such entries (§3 *dependencies*). |
-| JT-212 | `3.2.2--grouped-job-environment-literal-value-deferred.yaml` | EP, EX | A Job Environment with an `exclusiveGroup` is never known to be entered at template validation, so a Step's literal value outside its `allowedValues` is not checked there, and the template is valid (§3.2.2 item 1, §4, §7.6 rule 6). |
+| JT-212 | `3.2.2--grouped-job-environment-literal-value-deferred.yaml` | EP, EX | A Job Environment with an `exclusiveGroup` is never known to be entered at template validation, so a Step's literal value outside its `allowedValues` is not checked there, and the template is valid (§3.2.2 item 1, §4, §7.4, §7.6 rule 6). |
 | JT-213 | `3.2--expression-entry-value-deferred.yaml` | EP, EX | `"{{ abs('5') }}"` for an INT parameter, in an entry whose `enableIf` is not known at template validation, is valid: when the Job is created its values are checked if the entry is enabled, and the value then resolves to 5 with the parameter's type as its target type (§3.2, §7.6 rule 6). |
 | JT-214 | `3.2--external-entry-value-not-type-checked.yaml` | EP, EX | The same value in an entry that names an external Environment is valid: the Environment's parameter types are not known before the Job is created, so template validation does not check the value against one (§3.2). |
 
@@ -453,7 +453,7 @@ lists the extensions the document under test declares, where it matters (`EP` = 
 | JT-168 | `4.5--literal-default-checked-when-disabled.invalid.yaml` | EP, EX | An INT literal `default: 0` with `minValue: 1` on a Job Environment whose `enableIf` is the literal `false` is rejected: a literal `default` is checked whatever any `enableIf` decides (§4.5). |
 | JT-169 | `4--env-enable-if-reads-env-raw-path-param.yaml` | EP, EX | A Job Environment's `enableIf` may read its own `Env.RawParam.<PATH>` (§7.3.2). |
 
-#### Known `enableIf` values at template validation (§7.6 rule 5, Expression Language §2.1.6)
+#### Known `enableIf` values at template validation (§7.4, §7.6 rules 5 and 6, Expression Language §2.1.6)
 
 The BOOL Job Parameter `F` is `unresolved[bool]`, `U`, at template validation. An `ALWAYS` Environment whose `enableIf`
 is known there to be `false` is an error, and so is an entry known to be disabled for one; an entry known to be enabled
@@ -1035,16 +1035,16 @@ These rules, or parts of rules, have no planned test with a definite expected ou
     Job is created, and which it *must not*. For JT-150, JT-151, JT-157, JT-195, JT-197, JT-199, and JT-201, some Job
     Parameter values let Job creation succeed, so the *must not* applies and they must pass template validation. So must
     JT-212 and JT-214, which some attached Environment Templates make valid. Job creation rejects JB-65, JB-68,
-    JB-105–JB-107, JB-128 and JB-147, for example, for every value, and each check depends on something the §7.4 stage
-    table lists as not yet known: the Step's whole Environment set in JB-65 and JB-68 (combined host requirements), the
-    third wrapper's `enableIf` in JB-105, the attached Environments in JB-106, the entry's `enableIf`, which constraint
-    7 reads to decide whether the entry supplies its values, in JB-107, the Environment's `enableIf`, which reads an
-    effective value, in JB-128, and a format string in JB-147. So the *should* applies, and it is a preference, not a
-    requirement: they are `jobs/` tests, which pass whichever stage rejects them. Checks for which everything they
-    depend on is known at template validation, where §7.4 says they are made, are tested by `job_templates/` tests:
-    JT-152, JT-194, JT-196, JT-198, JT-200, and JT-202 to JT-205. So is constraint 7 for a Step and an Environment where
-    the `enableIf` of each of the Step's entries for it is known, which does not depend on any Environment's `enableIf`
-    (JT-148, JT-158, JT-162, JT-189–JT-191).
+    JB-105–JB-107, JB-128 and JB-147, for example, for every value, and each check depends on something not yet known
+    (§7.4, §7.6 rule 5, §4): the Step's whole Environment set, which includes the attached Environments, in JB-65 and
+    JB-68 (combined host requirements), the third wrapper's `enableIf` in JB-105, the attached Environments in JB-106,
+    the entry's `enableIf`, which constraint 7 reads to decide whether the entry supplies its values, in JB-107, the
+    Environment's `enableIf`, which reads an effective value, in JB-128, and a format string in JB-147. So the *should*
+    applies, and it is a preference, not a requirement: they are `jobs/` tests, which pass whichever stage rejects them.
+    Checks for which everything they depend on is known at template validation, where §7.4 says they are made, are
+    tested by `job_templates/` tests: JT-152, JT-194, JT-196, JT-198, JT-200, and JT-202 to JT-205. So is constraint 7
+    for a Step and an Environment where the `enableIf` of each of the Step's entries for it is known, which does not
+    depend on any Environment's `enableIf` (JT-148, JT-158, JT-162, JT-189–JT-191).
 19. **Environments from documents without `ENV_PARAMS` in combinations that cannot be written.** §4 item 4 makes an
     Environment without `ENV_PARAMS` active behave as `ALWAYS`, and has every Session enter the Job Environments of a
     Job Template that does not list `ENV_PARAMS` and every attached Environment from an Environment Template that does
