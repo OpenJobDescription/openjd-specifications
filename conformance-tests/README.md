@@ -185,11 +185,13 @@ specificationVersion: jobtemplate-2023-09
   run, so the marker is removed in the change that fixes the implementation. Add `strict=false`
   to report an `XPASS` (counted as xpassed) without failing the run, for a test whose outcome on
   that implementation varies.
-- A comment line in the leading block whose text starts with `conformance:`, or that names both
-  `conformance` and `xfail`, in any case and after any number of `#`, is read as a marker line.
+- A comment line in the leading block whose text starts with `conformance`, followed by a colon
+  or later by the word `xfail`, in any case and after any number of `#`, is read as a marker line.
+  Text that does not start with `conformance` (`# TODO xfail rs`) is an ordinary comment.
   One that does not start with exactly `# conformance: ` followed by a valid `xfail(...)` (an
   unknown marker name or implementation, no `reason`, an argument given twice) fails the test,
-  whichever implementation runs it, so a typo cannot silently turn a marker off.
+  whichever implementation runs it, so a typo after the leading `conformance` cannot silently
+  turn a marker off.
 - A marker never changes what the test asserts: a test is correct against the specification or
   it does not belong in the suite. Markers are for implementation defects only.
 - JSON test files cannot carry comments, so they cannot carry markers.

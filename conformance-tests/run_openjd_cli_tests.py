@@ -68,10 +68,11 @@ def load_yaml_or_json(path: Path):
 # implementation a failure is reported as XFAIL and does not fail the run, and
 # a pass is reported as XPASS, which fails the run unless strict=false, so a
 # marker is removed once the implementation is fixed. A comment line in the
-# leading block whose text starts with "conformance" followed by a colon, or
-# that names "conformance" and "xfail" (any case, after any number of '#'), is
-# a marker line, and one that is not a well-formed marker fails the test rather
-# than being ignored, so a typo cannot turn a marker off.
+# leading block whose text starts with "conformance", followed by a colon or
+# later by the word "xfail" (any case, after any number of '#'), is a marker
+# line, and one that is not a well-formed marker fails the test rather
+# than being ignored, so a typo after the leading word cannot turn a marker
+# off.
 # ---------------------------------------------------------------------------
 
 # The implementations a marker may name: "py" is openjd-cli (Python), "rs" is
