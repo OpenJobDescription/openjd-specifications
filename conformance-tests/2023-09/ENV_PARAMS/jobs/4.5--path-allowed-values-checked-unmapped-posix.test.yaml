@@ -1,0 +1,44 @@
+# RFC 0010 / Template Schemas §4.5 (string constraints of a PATH value are
+# checked against the unmapped value; path mapping does not re-check them):
+# allowedValues lists the unmapped path, a mapping rule changes it on the host,
+# and the Job runs with the mapped path in Env.Param.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: PathAllowedValuesUnmapped
+  parameterDefinitions:
+  - name: D
+    type: PATH
+  jobEnvironments:
+  - name: Mnt
+    envParameterDefinitions:
+    - name: Dir
+      type: PATH
+      allowedValues: [/original/data]
+    script:
+      actions:
+        onEnter:
+          command: python
+          args: ["-c", "print(r'ENV_DIR:{{Env.Param.Dir}}')"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Mnt
+      parameters:
+        Dir: "{{RawParam.D}}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+parameters:
+  D: /original/data
+pathMapping:
+- source_path_format: POSIX
+  source_path: /original
+  destination_path: /mapped
+runOn: [posix]
+expected:
+  output:
+  - ENV_DIR:/mapped/data
+  - TASK A

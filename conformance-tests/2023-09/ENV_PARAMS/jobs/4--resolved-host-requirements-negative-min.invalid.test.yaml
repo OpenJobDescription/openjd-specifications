@@ -1,0 +1,40 @@
+# RFC 0010 / Template Schemas §7.3.2 and §3.3.1 item 2 (Validation row "An
+# Environment's hostRequirements, resolved for a Step, satisfy §3.3.1 and
+# §3.3.2"): an attached Environment's amount min "{{Env.Param.N}}" resolves to
+# -1 with the Step's value, which is not a <nonnegativefloatstring>, so the
+# submission is rejected at job creation.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ResolvedNegativeMin
+  steps:
+  - name: A
+    dependencies:
+    - environment: Gpu
+      parameters:
+        N: -1
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR, FEATURE_BUNDLE_1]
+  environment:
+    name: Gpu
+    activation: ON_REQUEST
+    envParameterDefinitions:
+    - name: N
+      type: INT
+      default: 1
+    hostRequirements:
+      amounts:
+      - name: conformance:amount.widgets
+        min: "{{Env.Param.N}}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Gpu, "N={{Env.Param.N}}"]
+runOn: [posix, windows]

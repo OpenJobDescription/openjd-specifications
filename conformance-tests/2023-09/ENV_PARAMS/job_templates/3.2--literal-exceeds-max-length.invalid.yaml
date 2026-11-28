@@ -1,0 +1,30 @@
+# Template Schemas §3.2 constraint 6 (RFC 0010): every value must satisfy its parameter's maxLength; a
+# literal value for a Job Environment is checked at template validation.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: License
+  envParameterDefinitions:
+  - name: Renderer
+    type: STRING
+    maxLength: 4
+    default: abc
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  dependencies:
+  - environment: License
+    parameters:
+      Renderer: redshift
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

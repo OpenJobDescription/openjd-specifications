@@ -1,0 +1,48 @@
+# Template Schemas §4 item 7, §3.2 constraint 7, and §7.4.1 step 5 (RFC 0010): whether an Environment applies to a Step
+# does not depend on its exclusiveGroup. Docker is BY_DEFAULT and its Image has no default, which the Step does not
+# supply. Conda, attached first, would supersede Docker for the Step, but constraint 7 is checked before the group rule,
+# so the submission is rejected.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: GroupJob
+  steps:
+  - name: S
+    dependencies:
+    - environment: Conda
+      parameters:
+        Packages: colmap=3.11
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, S]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    exclusiveGroup: SoftwareProvider
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: ""
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda]
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Docker
+    exclusiveGroup: SoftwareProvider
+    envParameterDefinitions:
+    - name: Image
+      type: STRING
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Docker]
+runOn: [posix, windows]

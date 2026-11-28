@@ -1,0 +1,36 @@
+# Template Schemas §3.2.2 and §3.2 constraint 5 (RFC 0010): Lic's enableIf is the literal false, so no Step enters it,
+# but A's entry supplies Seats, which Lic does not declare. Constraint 5 checks the entry as written and applies to a
+# disabled Environment, so the template is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: DisabledEnvUndeclaredKey
+parameterDefinitions:
+- name: Use
+  type: STRING
+  allowedValues: ["yes", "no"]
+  default: "yes"
+jobEnvironments:
+- name: Lic
+  activation: ON_REQUEST
+  enableIf: false
+  envParameterDefinitions:
+  - name: Product
+    type: STRING
+    allowedValues: [arnold, redshift]
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Lic, "Product={{Env.Param.Product}}"]
+steps:
+- name: A
+  dependencies:
+  - environment: Lic
+    parameters:
+      Product: arnold
+      Seats: 2
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

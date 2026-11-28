@@ -1,0 +1,32 @@
+# Template Schemas §4.5 item 3 (RFC 0010): an Environment parameter PATH value is used as given, so a relative literal
+# PATH default is not an error. A Step that supplies nothing takes it, and Env.RawParam reads it unchanged.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: RelativeLiteralPathDefault
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Mnt
+    envParameterDefinitions:
+    - name: Dir
+      type: PATH
+      default: relative/dir
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Mnt, "Dir={{Env.RawParam.Dir}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Mnt Dir=relative/dir
+  - TASK A

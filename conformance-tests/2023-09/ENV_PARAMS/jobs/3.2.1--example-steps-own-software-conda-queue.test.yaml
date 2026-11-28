@@ -1,0 +1,76 @@
+# RFC 0010 §Basic Examples, "A Job Template whose Steps each ask for their own
+# software" (Template Schemas §3.2.1): on a queue that attaches only Conda, each
+# Step's Session enters Conda with its own Packages, and the required: false
+# Docker entries are ignored.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: VideoToCompositeCondaQueue
+  steps:
+  - name: DecodeFrames
+    dependencies:
+    - environment: Conda
+      required: false
+      parameters:
+        Packages: ffmpeg=7
+    - environment: Docker
+      required: false
+      parameters:
+        Image: docker.io/linuxserver/ffmpeg:latest
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, DecodeFrames]
+  - name: SolveSfM
+    dependencies:
+    - dependsOn: DecodeFrames
+    - environment: Conda
+      required: false
+      parameters:
+        Packages: colmap=3.11
+    - environment: Docker
+      required: false
+      parameters:
+        Image: docker.io/colmap/colmap:latest
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, SolveSfM]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  parameterDefinitions:
+  - name: CondaPackages
+    type: STRING
+    default: jobwide
+  - name: CondaChannels
+    type: STRING
+    default: conda-forge
+  environment:
+    name: Conda
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: "{{Param.CondaPackages}}"
+    - name: Channels
+      type: STRING
+      default: "{{Param.CondaChannels}}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Packages={{Env.Param.Packages}}", "Channels={{Env.Param.Channels}}"]
+        onExit:
+          command: echo
+          args: [EXIT, Conda, "Packages={{Env.Param.Packages}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda Packages=ffmpeg=7 Channels=conda-forge
+  - ENTER Conda Packages=colmap=3.11 Channels=conda-forge
+  - TASK DecodeFrames
+  - TASK SolveSfM
+  forbidden:
+  - ENTER Conda Packages=jobwide

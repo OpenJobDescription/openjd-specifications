@@ -372,8 +372,12 @@ would accept — that would fail a template at validation time that would have r
 When the condition of an `if`/`else` expression evaluates to `unresolved[bool]`, the evaluator
 does not know which branch will be taken at runtime. Both branches are evaluated:
 
-- If both branches succeed, the result is `unresolved[T | S]` where `T` and `S` are the result
-  types of the two branches (since either could be the runtime result).
+- If both branches succeed with the same known value, the result is that value, since it is
+  the runtime result either way: `c if U else c` is `c`. The values are the same when they have
+  the same type and are equal, and two floats are the same only when they are also written with
+  the same text ([§1.3.4](#134-float-value-pass-through)).
+- If both branches succeed otherwise, the result is `unresolved[T | S]` where `T` and `S` are the
+  result types of the two branches (since either could be the runtime result).
 - If one branch succeeds and the other fails, the result is the type from the succeeding
   branch (wrapped in `unresolved` since the condition is unresolved). The failing branch's error
   is suppressed — that branch would always fail at runtime, so it can never produce a value —
@@ -427,16 +431,21 @@ Expressions are checked and evaluated progressively as more information becomes 
 At each stage, known values are evaluated concretely while unresolved values propagate as
 `unresolved[T]`, catching as many errors as possible with the information available:
 
-1. **Template parse time** (e.g., `openjd check`). Job parameters (`Param.*`) are `unresolved[T]`
-   based on their declared types, because the template is not yet bound to particular parameter
-   values. Task parameters (`Task.Param.*`) and session symbols (`Session.*`) are also unresolved.
+1. **Template parse time** (e.g., `openjd check`). The symbols that the [Template Schemas §7.4
+   stage table](2023-09-Template-Schemas#74-template-processing-stages) lists as not yet known at
+   template validation, such as the Job parameters (`Param.*`), are `unresolved[T]` of their
+   declared types, because the template is not yet bound to particular parameter values.
    Let bindings that depend only on literals may evaluate concretely. Catches syntax errors,
    type errors in constant subexpressions, and structural issues like undefined symbols. Errors
    that depend on values are not reported in parts a run may not evaluate (the untaken branch
    of a conditional with an unknown condition, `and`/`or` operands and chained-comparison links
    after one whose value is not known, and the condition and element expression of a list
    comprehension over unknown elements), but a name that resolves nowhere is (see Names that
-   Resolve Nowhere above).
+   Resolve Nowhere above). Where Template Schemas uses the value of an expression field at this
+   stage to decide which errors to report early, the value is known when the evaluation gives one
+   that is not unresolved, by the rules for unknown operands ([§2.1.6](#216-logical-operators))
+   and for conditionals with unknown conditions (above), as [Template Schemas
+   §7.6](2023-09-Template-Schemas#76-expression-fields) rule 5 describes.
 
    The worker host is not known yet either, so neither is its path format (see
    [Path Format](#path-format)). In host-context scopes (SESSION/TASK), `path()` evaluates to
@@ -452,12 +461,17 @@ At each stage, known values are evaluated concretely while unresolved values pro
    `path("/a").startswith("/")`, are still reported. Literal paths in TEMPLATE scope are
    evaluated concretely, with POSIX semantics.
 
-2. **Job parameter binding** ("submit time"). Job parameter values are now known, so `Param.*`
-   symbols are concrete. Expressions in TEMPLATE scope can be fully evaluated. Expressions in
-   host-context scopes (SESSION/TASK) still have `Task.Param.*`, `Session.*`, `Task.File.*`,
-   and `Env.File.*` as unresolved, but can now type-check operations on the known `Param.*`
-   values combined with the unresolved task/session symbols. A `path()` in a host-context scope
-   is still `unresolved[path]`, because the worker's path format is still not known.
+2. **Job parameter binding** ("submit time"). Job parameter values are now bound, so `Param.*`
+   symbols other than PATH and LIST[PATH] are concrete. Expressions in TEMPLATE scope can be fully
+   evaluated. Expressions in host-context scopes (SESSION/TASK) still have the symbols that the
+   Template Schemas §7.4 stage table lists as not yet known at Job creation, such as `Task.Param.*`
+   and `Session.*`, as unresolved, but can now type-check operations on the known `Param.*` values
+   combined with the unresolved task/session symbols. A `path()` in a host-context scope is still
+   `unresolved[path]`, because the worker's path format is still not known.
+   With the `ENV_PARAMS` extension, an Environment's *enableIf* is evaluated at this stage with concrete values only.
+   It is not evaluated for a Step whose effective value for a parameter it reads is missing, fails to resolve, or
+   does not convert ([Template Schemas §3.2.2](2023-09-Template-Schemas#322-effective-environment-parameter-values)
+   item 2).
 
 3. **Worker host execution**. All symbols are known — `Task.Param.*`, `Session.*`, file paths,
    path mapping rules, and the host's path format are all concrete. Every expression is fully
@@ -993,6 +1007,7 @@ or `range_expr()` for example, is written in canonical form.
 | Symbol | Type | Description |
 |--------|------|-------------|
 | `Job.Name` | `string` | The resolved job name |
+| `Job.EnvNames` | `list[string]` | The names of the Job's Environments, with `ENV_PARAMS` (see [Template Schemas §7.3.1](2023-09-Template-Schemas#731-value-references)) |
 | `Step.Name` | `string` | The name of the current step |
 | `Session.WorkingDirectory` | `path` | The session's temporary working directory |
 | `Session.PathMappingRulesFile` | `path` | Path to the JSON file containing path mapping rules |
@@ -1004,6 +1019,17 @@ or `range_expr()` for example, is written in canonical form.
 |--------|------|-------------|
 | `Task.File.<name>` | `path` | Location of the embedded file within a Step Script |
 | `Env.File.<name>` | `path` | Location of the embedded file within an Environment |
+
+##### Environment Parameter Symbols
+
+With the `ENV_PARAMS` extension, an Environment that declares *envParameterDefinitions* (see
+[Template Schemas](2023-09-Template-Schemas#45-environmentparameterdefinition-extension-env_params)) can read their
+values within that Environment only:
+
+| Symbol | Type | Description |
+|--------|------|-------------|
+| `Env.Param.<name>` | As `Param.<name>` for a Job Parameter of its type (table above) | The value with which the Session entered the Environment, or at Job creation the Step's effective value |
+| `Env.RawParam.<name>` | As `RawParam.<name>` for a Job Parameter of its type (table above) | The same value, read as `RawParam.<name>` reads a Job Parameter |
 
 #### 1.2.3. Implicit Type Coercion
 
@@ -1172,6 +1198,10 @@ type is determined by the schema context in which the expression appears:
     - "{{ '--verbose' if Param.Verbose else null }}"  # Dropped when false
     - "{{ ['--quality', Param.Quality] if Param.Quality > 0 else null }}"  # Flattened or dropped
   ```
+
+Some fields of the Template Schemas are *expression fields*, marked `@expr <type>`, whose value is one expression
+written without `{{ }}` and whose target type is `<type>` (see
+[Template Schemas §7.6](2023-09-Template-Schemas#76-expression-fields) for how the result must fit it).
 
 When a format string is exactly `"{{<expr>}}"` with no surrounding text, the target type is
 inherited from the field context — the format string is transparent and the expression can
@@ -1456,6 +1486,10 @@ resolves to without EXPR.
     - "{{ 100 if Param.IncludeHundred else null }}"  # dropped when false
 ```
 
+With the `ENV_PARAMS` extension, the *anyOf* and *allOf* fields of an `<AttributeRequirement>` also accept a
+`<ListExpressionString>`, evaluated with the target type `list[string]?`
+([Template Schemas §3.3.2](2023-09-Template-Schemas#332-attributerequirement)).
+
 ---
 
 ## 2. Function Library
@@ -1612,6 +1646,42 @@ falsy), and serves a similar role to null-coalescing operators in other language
 JavaScript (`??`), Kotlin (`?:`), and Swift (`??`).
 
 Note: `not` remains strictly boolean — it requires a `bool` operand and returns `bool`.
+
+**Unknown operands.** During [progressive evaluation](#progressive-expression-evaluation), an
+operand may be a `bool` whose value is not yet known, `unresolved[bool]`, written `U` here. The
+logical operators then give:
+
+| Expression | Result |
+|------------|--------|
+| `U and false`, `false and U` | `false` |
+| `U and true`, `true and U` | `U` |
+| `U or true`, `true or U` | `true` |
+| `U or false`, `false or U` | `U` |
+| `U and U`, `U or U` | `U` |
+| `not U` | `U` |
+
+An unknown operand of another type may still decide the result, because `and` and `or` look only at
+whether an operand is `null` or `false`. An unknown `string`, `int`, `float`, `path`, or list,
+`unresolved[string]` for example, is never `null` or `false`: `and` always passes on from it, and
+`or` always returns it. So with `S` of type `unresolved[string]`, `S and false` is `false` and
+`S and true` is `true`, while `S or true` is `S`, which is not known. An unknown operand of a type
+that admits `null`, such as `unresolved[string?]`, or of type `any`, may be `null`, which `and`
+returns: with `O` of type `unresolved[string?]`, `O and false` is `null` or `false`, so it is not
+known.
+
+For `and`, `or`, and `not`, then, the table and the paragraph above give the result one operator at
+a time: an operator's result is known when every value that its unknown operands could take, given
+their types and each taken on its own, gives the same result. Results are not compared across
+operators, so with a BOOL Job Parameter `F`, `Param.F and not Param.F` is `U and U`, which is not
+known, although every value of `F` makes it `false`. A conditional whose branches give the same
+value is treated the same way: `c if U else c` is `c` (see Conditional Expressions with Unknown
+Conditions). Other operators do not use this rule: an arithmetic or comparison operator with an
+unknown operand gives an unknown result, so `Param.N * 0 == 0` is not known. Template Schemas uses
+these results only before the values are known, to decide which errors to report early
+([§7.4](2023-09-Template-Schemas#74-template-processing-stages) and
+[§7.6](2023-09-Template-Schemas#76-expression-fields) rules 5 and 6). Once the values are known, the
+expression is evaluated again, and its result is what that evaluation gives. So `U and false`, which
+is known to be `false` early, still fails when it is evaluated if evaluating `U` fails.
 
 #### 2.1.7. Subscript Operator
 

@@ -1,0 +1,64 @@
+# Template Schemas §4 item 7, §7.4.1 step 6 (RFC 0010): once an Environment of a group is entered for a Step, the
+# enableIf of the later ones is not evaluated. Docker's enableIf reads Seats, and the Step's value for the INT Seats
+# resolves to "many", which does not convert, so evaluating it would be an error (§3.2.2 item 2). Conda, attached
+# first, is entered, so Docker is superseded: disabled for the Step, its enableIf is not evaluated and its values are
+# not checked, and the Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: GroupJob
+  parameterDefinitions:
+  - name: N
+    type: STRING
+    default: many
+  steps:
+  - name: S
+    dependencies:
+    - environment: Conda
+      parameters:
+        Packages: colmap=3.11
+    - environment: Docker
+      parameters:
+        Seats: "{{Param.N}}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, S]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    exclusiveGroup: SoftwareProvider
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: ""
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda]
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Docker
+    activation: ON_REQUEST
+    enableIf: "Env.Param.Seats > 0"
+    exclusiveGroup: SoftwareProvider
+    envParameterDefinitions:
+    - name: Seats
+      type: INT
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Docker]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda
+  - TASK S
+  forbidden:
+  - ENTER Docker

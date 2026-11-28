@@ -1,0 +1,17 @@
+# Template Schemas §3.3 constraint 1 (RFC 0010): in a document that lists ENV_PARAMS, a Step's
+# hostRequirements whose amounts and attributes are empty lists are valid and mean no requirements.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+steps:
+- name: Render
+  hostRequirements:
+    amounts: []
+    attributes: []
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

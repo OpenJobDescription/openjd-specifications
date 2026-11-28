@@ -1,0 +1,19 @@
+# Template Schemas §4 item 4 (RFC 0010): activation: BY_DEFAULT on an Environment Template's environment is valid,
+# with or without an enableIf that may be false.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Conda
+  activation: BY_DEFAULT
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: ""
+  enableIf: "Env.Param.Packages != ''"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]

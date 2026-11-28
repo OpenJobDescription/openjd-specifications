@@ -1,0 +1,36 @@
+# RFC 0010 / Template Schemas §3.3.3 and §4 item 6: an Environment whose enableIf is false for a Step adds none
+# of its hostRequirements to that Step. Hw requires anyOf [b] and is disabled for Step A, which requires
+# anyOf [a]; there is no conflict and the Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnvEnableIfRequirements
+  jobEnvironments:
+  - name: Hw
+    enableIf: false
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.flavor
+        anyOf: [b]
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Hw]
+  steps:
+  - name: A
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.flavor
+        anyOf: [a]
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A
+  forbidden:
+  - ENTER Hw

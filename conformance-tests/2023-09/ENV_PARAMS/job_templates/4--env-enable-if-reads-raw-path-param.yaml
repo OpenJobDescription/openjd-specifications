@@ -1,0 +1,23 @@
+# Template Schemas §7.3.2 (RFC 0010): a Job Environment's enableIf may read RawParam.* of any type,
+# including a PATH Job Parameter, whose RawParam value is the unmapped string.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: TestJob
+parameterDefinitions:
+- name: Dir
+  type: PATH
+jobEnvironments:
+- name: Cache
+  enableIf: "RawParam.Dir != ''"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

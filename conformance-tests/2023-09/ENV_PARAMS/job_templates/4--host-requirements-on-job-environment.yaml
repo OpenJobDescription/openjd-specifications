@@ -1,0 +1,28 @@
+# Template Schemas §4 item 5 (RFC 0010): a Job Environment may have literal hostRequirements, with the
+# shape of a <HostRequirements> (§3.3).
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Gpu
+  hostRequirements:
+    amounts:
+    - name: conformance:amount.widgets
+      min: 1
+    attributes:
+    - name: conformance:attr.flavor
+      anyOf: [vanilla]
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

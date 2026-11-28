@@ -1,0 +1,14 @@
+# Template Schemas §4 item 4 (RFC 0010): activation: ON_REQUEST on an Environment Template's environment
+# is valid.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Conda
+  activation: ON_REQUEST
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]

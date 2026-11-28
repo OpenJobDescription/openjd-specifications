@@ -1,0 +1,31 @@
+# Template Schemas §3.2 <EnvironmentParameterValue> and §3.6.2 <StepTemplate>.let (RFC 0010): with EXPR, a
+# parameters value may reference the names bound by the Step's let.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Tag
+    type: STRING
+    default: none
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  let:
+  - tag = Step.Name + '-v2'
+  dependencies:
+  - environment: Conda
+    parameters:
+      Tag: "{{ tag }}"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

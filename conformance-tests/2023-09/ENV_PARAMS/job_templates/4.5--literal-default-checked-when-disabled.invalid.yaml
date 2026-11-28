@@ -1,0 +1,28 @@
+# Template Schemas §4.5 "A default is checked" item 1 (RFC 0010): a literal default is checked at template
+# validation even when the Environment's enableIf disables it for every Step that would take it. Here default 0 is
+# below minValue 1, the only Step does not supply Seats, and License's enableIf is the literal false.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: License
+  enableIf: false
+  envParameterDefinitions:
+  - name: Seats
+    type: INT
+    minValue: 1
+    default: 0
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

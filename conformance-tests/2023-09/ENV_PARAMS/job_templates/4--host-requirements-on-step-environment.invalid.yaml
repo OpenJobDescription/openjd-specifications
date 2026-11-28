@@ -1,0 +1,24 @@
+# Template Schemas §4 (the paragraph after the list) (RFC 0010): hostRequirements are not permitted on a stepEnvironments entry.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+steps:
+- name: Render
+  stepEnvironments:
+  - name: Gpu
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.flavor
+        anyOf: [vanilla]
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: ["enter"]
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

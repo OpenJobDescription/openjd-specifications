@@ -1,0 +1,21 @@
+# Template Schemas §7.6 (RFC 0010): a null value for an expression field is an error; it is not read as an omitted
+# field. The entry's enableIf is null.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Conda
+  variables:
+    V: x
+steps:
+- name: Render
+  dependencies:
+  - environment: Conda
+    enableIf: null
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

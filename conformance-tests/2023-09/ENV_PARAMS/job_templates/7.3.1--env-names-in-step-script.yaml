@@ -1,0 +1,14 @@
+# Template Schemas §7.3.1 Job.EnvNames (RFC 0010): with ENV_PARAMS and EXPR, Job.EnvNames is available in
+# every format string resolved at job creation or later, including a Step's onRun args.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["{{ Job.EnvNames.join(',') }}"]

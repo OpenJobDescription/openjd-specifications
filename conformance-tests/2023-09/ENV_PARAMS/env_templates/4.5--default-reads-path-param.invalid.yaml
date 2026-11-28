@@ -1,0 +1,20 @@
+# Template Schemas §4.5 item 1 (RFC 0010): a default may reference Param.* only for Job Parameters not of
+# type PATH or LIST[PATH].
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+parameterDefinitions:
+- name: Dir
+  type: PATH
+environment:
+  name: Conda
+  envParameterDefinitions:
+  - name: CacheDir
+    type: PATH
+    default: "{{Param.Dir}}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]

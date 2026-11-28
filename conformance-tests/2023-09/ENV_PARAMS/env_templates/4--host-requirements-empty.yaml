@@ -1,0 +1,15 @@
+# Template Schemas §4 item 5 and §3.3 constraint 1 (RFC 0010): in a document that lists ENV_PARAMS,
+# constraint 1 does not apply, so an Environment Template's empty hostRequirements object is valid and
+# means no requirements, as on a Job Environment (JT-117).
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Gpu
+  hostRequirements: {}
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]

@@ -1,0 +1,17 @@
+# Template Schemas §7.3.2 (RFC 0010): Step.Name is not available in an Environment's
+# hostRequirements, even with EXPR.
+specificationVersion: environment-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+environment:
+  name: Gpu
+  hostRequirements:
+    attributes:
+    - name: conformance:attr.flavor
+      anyOf: ["{{Step.Name}}"]
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]

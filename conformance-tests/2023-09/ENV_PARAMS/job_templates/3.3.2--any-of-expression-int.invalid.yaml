@@ -1,0 +1,30 @@
+# Template Schemas §3.3.2 (RFC 0010): an anyOf written as one expression has the target type list[string]?,
+# and its static type is checked at template validation. An Environment parameter of type INT does not
+# coerce to a list, so the template is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Hw
+  envParameterDefinitions:
+  - name: Count
+    type: INT
+    default: 1
+  hostRequirements:
+    attributes:
+    - name: conformance:attr.flavor
+      anyOf: "{{ Env.Param.Count }}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

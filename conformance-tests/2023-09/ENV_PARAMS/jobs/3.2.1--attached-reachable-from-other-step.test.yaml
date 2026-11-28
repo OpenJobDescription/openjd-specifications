@@ -1,0 +1,55 @@
+# RFC 0010 / Template Schemas §3.2.1 item 5: an attached Environment that shares
+# its name with Step S's Step Environment is unreachable from S, but Step T's
+# entry for that name resolves to the attached Environment as usual. The
+# attached Environment is BY_DEFAULT, so S's Session also enters it, with its default.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: AttachedReachableFromOtherStep
+  steps:
+  - name: S
+    stepEnvironments:
+    - name: X
+      script:
+        actions:
+          onEnter:
+            command: echo
+            args: [ENTER, StepX]
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, S]
+  - name: T
+    dependencies:
+    - dependsOn: S
+    - environment: X
+      parameters:
+        P: tvalue
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, T]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: X
+    envParameterDefinitions:
+    - name: P
+      type: STRING
+      default: pdefault
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, AttachedX, "P={{Env.Param.P}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER StepX
+  - ENTER AttachedX P=tvalue
+  - ENTER AttachedX P=pdefault
+  - TASK S
+  - TASK T

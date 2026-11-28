@@ -1,0 +1,48 @@
+# RFC 0010 / Template Schemas §4 item 4 and item 6: with an explicit activation: BY_DEFAULT, as when activation is
+# omitted (JB-93), an Environment's enableIf that is false for a Step leaves that Step out. Step A supplies Packages
+# and enters Conda; Step B takes the default none, for which enableIf is false, so B's Session never enters Conda,
+# and the Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ByDefaultEnableIfFalse
+  jobEnvironments:
+  - name: Conda
+    activation: BY_DEFAULT
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: none
+    enableIf: "Env.Param.Packages != 'none'"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      parameters:
+        Packages: colmap
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+  - name: B
+    dependencies:
+    - step: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, B]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda Packages=colmap
+  - TASK A
+  - TASK B
+  forbidden:
+  - ENTER Conda Packages=none

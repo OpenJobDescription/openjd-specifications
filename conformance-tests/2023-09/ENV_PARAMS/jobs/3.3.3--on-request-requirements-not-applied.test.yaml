@@ -1,0 +1,54 @@
+# RFC 0010 / Template Schemas §3.3.3 ("An Environment's hostRequirements
+# apply only to Sessions that enter it"): an ON_REQUEST Environment requires
+# anyOf [b]; Step B, which does not request it, requires anyOf [a]. B gets none
+# of the Environment's requirements, so there is no conflict and the Job runs.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: OnRequestRequirementsNotApplied
+  jobEnvironments:
+  - name: Hw
+    activation: ON_REQUEST
+    envParameterDefinitions:
+    - name: Flavor
+      type: STRING
+      default: a
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.flavor
+        anyOf: [b]
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Hw, "Flavor={{Env.Param.Flavor}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Hw
+      parameters:
+        Flavor: b
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+  - name: B
+    dependencies:
+    - dependsOn: A
+    hostRequirements:
+      attributes:
+      - name: conformance:attr.flavor
+        anyOf: [a]
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, B]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Hw Flavor=b
+  - TASK B
+  forbidden:
+  - ENTER Hw Flavor=a

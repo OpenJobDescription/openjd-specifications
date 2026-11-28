@@ -1,0 +1,38 @@
+# RFC 0010 / Template Schemas §3.2 item 3, §3.2.1 item 1: an entry naming no
+# jobEnvironments entry resolves to the one attached Environment of that name,
+# which receives the entry's value.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalReceivesValues
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      parameters:
+        Packages: ffmpeg=7
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: pkgdefault
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda Packages=ffmpeg=7
+  forbidden:
+  - ENTER Conda Packages=pkgdefault

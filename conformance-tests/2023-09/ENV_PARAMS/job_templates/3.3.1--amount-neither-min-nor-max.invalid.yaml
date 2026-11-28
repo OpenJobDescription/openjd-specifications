@@ -1,0 +1,18 @@
+# Template Schemas §3.3 and §3.3.1 (RFC 0010): literal text keeps the base rules under ENV_PARAMS, so an
+# amount written with neither min nor max is rejected at template validation; only a min or max that
+# resolves to null is discarded.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+steps:
+- name: Render
+  hostRequirements:
+    amounts:
+    - name: conformance:amount.widgets
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

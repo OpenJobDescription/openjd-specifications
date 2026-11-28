@@ -1,0 +1,24 @@
+# Template Schemas §7.3.2 (RFC 0010): an Environment's enableIf may not read Env.Param.* of a
+# PATH parameter, since path mapping is applied on the Worker Host.
+specificationVersion: jobtemplate-2023-09
+extensions: [ENV_PARAMS, EXPR]
+name: TestJob
+jobEnvironments:
+- name: Data
+  envParameterDefinitions:
+  - name: Root
+    type: PATH
+    default: /data
+  enableIf: "Env.Param.Root != '/none'"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Data]
+steps:
+- name: A
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: [TASK, A]

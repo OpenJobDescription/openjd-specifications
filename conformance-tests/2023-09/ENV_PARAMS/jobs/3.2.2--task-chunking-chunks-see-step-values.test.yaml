@@ -1,0 +1,48 @@
+# Template Schemas §3.2.2 (RFC 0010) with TASK_CHUNKING: effective values are fixed for the Step, so every chunk of
+# the Step's Tasks runs in an Environment entered with the Step's value.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR, TASK_CHUNKING]
+  name: ChunksSeeStepValues
+  jobEnvironments:
+  - name: Tool
+    envParameterDefinitions:
+    - name: Version
+      type: STRING
+      default: none
+    variables:
+      TOOL_VERSION: "{{Env.Param.Version}}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Tool, "Version={{Env.Param.Version}}"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Tool
+      parameters:
+        Version: v2
+    parameterSpace:
+      taskParameterDefinitions:
+      - name: Frame
+        type: CHUNK[INT]
+        range: 1-4
+        chunks:
+          defaultTaskCount: 2
+          rangeConstraint: CONTIGUOUS
+    script:
+      actions:
+        onRun:
+          command: python
+          args:
+          - -c
+          - import os; print('CHUNK:' + '{{Task.Param.Frame}}' + ' VERSION=[' + os.environ['TOOL_VERSION'] + ']')
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Tool Version=v2
+  - CHUNK:1-2 VERSION=[v2]
+  - CHUNK:3-4 VERSION=[v2]
+  forbidden:
+  - VERSION=[none]

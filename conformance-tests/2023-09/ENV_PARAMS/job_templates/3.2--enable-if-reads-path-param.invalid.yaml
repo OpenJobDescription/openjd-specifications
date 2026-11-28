@@ -1,0 +1,32 @@
+# Template Schemas §3.2 *enableIf* (RFC 0010): enableIf may read Param.* only of Job Parameters not of type PATH
+# or LIST[PATH], so an enableIf reading Param.<PATH> is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Dir
+  type: PATH
+  default: data
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: numpy
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["{{Env.Param.Packages}}"]
+steps:
+- name: Render
+  dependencies:
+  - environment: Conda
+    enableIf: "len(Param.Dir) > 0"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

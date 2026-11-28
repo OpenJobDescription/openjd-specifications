@@ -1,0 +1,33 @@
+# Template Schemas §7.3.2 (RFC 0010): a Job Environment's enableIf reads RawParam of a PATH Job
+# Parameter. Dir's relative default is joined with the template directory, so its unmapped value ends with leaf and
+# the Environment is entered.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnableIfReadsRawPath
+  parameterDefinitions:
+  - name: Dir
+    type: PATH
+    default: leaf
+  jobEnvironments:
+  - name: Cache
+    enableIf: "RawParam.Dir.endswith('leaf')"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Cache]
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+parameters:
+  {}
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Cache
+  - TASK A

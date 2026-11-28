@@ -1,0 +1,48 @@
+# RFC 0010 / Template Schemas §3.2 (<EnvironmentParameterValue> scope), §3.6.2:
+# with EXPR, a parameters value may read Step.Name and the Step's let bindings,
+# so each Step's Sessions enter the Environment with that Step's own value.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ValueFromStepLet
+  jobEnvironments:
+  - name: Tagger
+    envParameterDefinitions:
+    - name: Label
+      type: STRING
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Tagger, "Label={{Env.Param.Label}}"]
+  steps:
+  - name: A
+    let:
+    - tag = 'x'
+    dependencies:
+    - environment: Tagger
+      parameters:
+        Label: "{{ Step.Name + '-' + tag }}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+  - name: B
+    let:
+    - tag = 'y'
+    dependencies:
+    - dependsOn: A
+    - environment: Tagger
+      parameters:
+        Label: "{{ Step.Name + '-' + tag }}"
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, B]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Tagger Label=A-x
+  - ENTER Tagger Label=B-y

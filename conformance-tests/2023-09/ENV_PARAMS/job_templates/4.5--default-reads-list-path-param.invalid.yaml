@@ -1,0 +1,29 @@
+# Template Schemas §4.5 item 1 (RFC 0010): a default may reference Param.<name> only for a Job Parameter
+# not of type PATH or LIST[PATH], so a LIST[PATH] default reading Param.<LIST[PATH]> is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Dirs
+  type: LIST[PATH]
+  default: []
+jobEnvironments:
+- name: Docker
+  envParameterDefinitions:
+  - name: Mounts
+    type: LIST[PATH]
+    default: "{{ Param.Dirs }}"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

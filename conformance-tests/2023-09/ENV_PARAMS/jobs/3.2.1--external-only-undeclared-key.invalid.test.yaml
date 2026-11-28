@@ -1,0 +1,35 @@
+# RFC 0010 / Template Schemas §3.2.1 item 1, §3.2 constraint 5: an attached
+# Environment that declares parameters rejects a key it does not declare, even
+# from a required: false entry whose keys are all undeclared. Only an
+# Environment that declares no parameters ignores an entry's parameters.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: ExternalOnlyUndeclaredKey
+  steps:
+  - name: A
+    dependencies:
+    - environment: Conda
+      required: false
+      parameters:
+        Pkgs: ffmpeg=7
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Conda
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: pkgdefault
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]
+runOn: [posix, windows]

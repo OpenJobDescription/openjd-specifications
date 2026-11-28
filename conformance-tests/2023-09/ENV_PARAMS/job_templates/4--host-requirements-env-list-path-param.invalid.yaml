@@ -1,0 +1,29 @@
+# Template Schemas §7.3.2 (RFC 0010): an Environment's hostRequirements may not reference its own
+# Env.Param.* of type LIST[PATH], so an expression over a LIST[PATH] parameter is rejected.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+jobEnvironments:
+- name: Gpu
+  envParameterDefinitions:
+  - name: Mounts
+    type: LIST[PATH]
+    default: []
+  hostRequirements:
+    attributes:
+    - name: conformance:attr.flavor
+      anyOf: ["{{ 'a' if len(Env.Param.Mounts) > 0 else 'b' }}"]
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

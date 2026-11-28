@@ -1,0 +1,35 @@
+# RFC 0010 / Template Schemas §7.3.1 Job.EnvNames ("it appears twice if two
+# attached Environments share it"): two attached Environments named X, and no
+# entry naming X, give X,X. See README ambiguity 9.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: EnvNamesRepeatsShared
+  steps:
+  - name: A
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A, "NAMES=[{{ Job.EnvNames.join(',') }}]"]
+environments:
+- specificationVersion: environment-2023-09
+  environment:
+    name: X
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, X1]
+- specificationVersion: environment-2023-09
+  environment:
+    name: X
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, X2]
+runOn: [posix, windows]
+expected:
+  output:
+  - TASK A NAMES=[X,X]

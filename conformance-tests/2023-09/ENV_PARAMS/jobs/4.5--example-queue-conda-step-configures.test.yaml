@@ -1,0 +1,58 @@
+# RFC 0010 §Basic Examples, "A queue Conda Environment that each Step
+# configures" (Template Schemas §4.5, §3.2.2): with the queue's BY_DEFAULT Conda
+# Environment, a Step with no entry gets the job-wide CondaPackages through the
+# default, and a Step with an entry gets its own Packages.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: QueueCondaStepConfigures
+  steps:
+  - name: Plain
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, Plain]
+  - name: Sfm
+    dependencies:
+    - dependsOn: Plain
+    - environment: Conda
+      parameters:
+        Packages: colmap=3.11
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, Sfm]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  parameterDefinitions:
+  - name: CondaPackages
+    type: STRING
+    default: jobwide
+  - name: CondaChannels
+    type: STRING
+    default: conda-forge
+  environment:
+    name: Conda
+    envParameterDefinitions:
+    - name: Packages
+      type: STRING
+      default: "{{Param.CondaPackages}}"
+    - name: Channels
+      type: STRING
+      default: "{{Param.CondaChannels}}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Conda, "Packages={{Env.Param.Packages}}", "Channels={{Env.Param.Channels}}"]
+        onExit:
+          command: echo
+          args: [EXIT, Conda, "Packages={{Env.Param.Packages}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Conda Packages=jobwide Channels=conda-forge
+  - ENTER Conda Packages=colmap=3.11 Channels=conda-forge

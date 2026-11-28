@@ -1,0 +1,20 @@
+# Template Schemas §7.3.2 (RFC 0010): an Environment Template's enableIf has no Step scope,
+# so Step.Name is rejected.
+specificationVersion: environment-2023-09
+extensions: [ENV_PARAMS, EXPR]
+parameterDefinitions:
+- name: CondaPackages
+  type: STRING
+  default: ""
+environment:
+  name: Conda
+  envParameterDefinitions:
+  - name: Packages
+    type: STRING
+    default: "{{Param.CondaPackages}}"
+  enableIf: "Step.Name != ''"
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: [ENTER, Conda, "Packages={{Env.Param.Packages}}"]

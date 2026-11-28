@@ -1,0 +1,33 @@
+# Template Schemas §3.2 <EnvironmentParameterValue> (RFC 0010): a parameters value may reference Param.*
+# for a Job Parameter not of type PATH or LIST[PATH] of the same document.
+specificationVersion: jobtemplate-2023-09
+extensions:
+- ENV_PARAMS
+- EXPR
+name: TestJob
+parameterDefinitions:
+- name: Shot
+  type: STRING
+  default: sh010
+jobEnvironments:
+- name: Conda
+  envParameterDefinitions:
+  - name: Tag
+    type: STRING
+    default: none
+  script:
+    actions:
+      onEnter:
+        command: echo
+        args: ["enter"]
+steps:
+- name: Render
+  dependencies:
+  - environment: Conda
+    parameters:
+      Tag: "{{Param.Shot}}"
+  script:
+    actions:
+      onRun:
+        command: echo
+        args: ["render"]

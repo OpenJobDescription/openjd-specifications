@@ -1,0 +1,50 @@
+# RFC 0010 / Template Schemas §4 activation ("The Environments a Session does
+# enter keep their relative order"): with BY_DEFAULT J1, ON_REQUEST J2, BY_DEFAULT J3, a
+# requesting Step enters J1, J2, J3 in order and a non-requesting Step enters
+# J1, J3. Each onEnter appends its name to ORDER through openjd_env.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: OnRequestKeepsOrder
+  jobEnvironments:
+  - name: J1
+    script:
+      actions:
+        onEnter:
+          command: bash
+          args: ["-c", "echo \"openjd_env: ORDER=${ORDER:-}J1\""]
+  - name: J2
+    activation: ON_REQUEST
+    script:
+      actions:
+        onEnter:
+          command: bash
+          args: ["-c", "echo \"openjd_env: ORDER=${ORDER:-}J2\""]
+  - name: J3
+    script:
+      actions:
+        onEnter:
+          command: bash
+          args: ["-c", "echo \"openjd_env: ORDER=${ORDER:-}J3\""]
+  steps:
+  - name: A
+    dependencies:
+    - environment: J2
+    script:
+      actions:
+        onRun:
+          command: bash
+          args: ["-c", "echo \"A_ORDER=[$ORDER]\""]
+  - name: B
+    dependencies:
+    - dependsOn: A
+    script:
+      actions:
+        onRun:
+          command: bash
+          args: ["-c", "echo \"B_ORDER=[$ORDER]\""]
+runOn: [posix]
+expected:
+  output:
+  - A_ORDER=[J1J2J3]
+  - B_ORDER=[J1J3]

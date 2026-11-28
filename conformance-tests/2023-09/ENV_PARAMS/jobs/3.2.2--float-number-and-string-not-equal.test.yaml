@@ -1,0 +1,56 @@
+# RFC 0010 / Template Schemas §3.2.2 (equal values): a FLOAT given as a YAML or JSON number rather than a string has
+# no text it was written with, so it is written as the Expression Language writes a computed float. Step A's number
+# 1.50 is written 1.5, and Step B's string "1.50" keeps its text, so the values are not equal: B's Task does not run
+# in the Environment entered with A's value, and it sees 1.50.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: FloatNumberAndString
+  jobEnvironments:
+  - name: Py
+    envParameterDefinitions:
+    - name: Version
+      type: FLOAT
+    variables:
+      PY_VERSION: "{{Env.Param.Version}}"
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Py, "Version=[{{Env.Param.Version}}]"]
+        onExit:
+          command: echo
+          args: [EXIT, Py, "Version=[{{Env.Param.Version}}]"]
+  steps:
+  - name: A
+    dependencies:
+    - environment: Py
+      parameters:
+        Version: 1.50
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_A_VERSION=['+os.environ['PY_VERSION']+']')"]
+  - name: B
+    dependencies:
+    - dependsOn: A
+    - environment: Py
+      parameters:
+        Version: "1.50"
+    script:
+      actions:
+        onRun:
+          command: python
+          args: ["-c", "import os;print('TASK_B_VERSION=['+os.environ['PY_VERSION']+']')"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Py Version=[1.5]
+  - EXIT Py Version=[1.5]
+  - ENTER Py Version=[1.50]
+  - EXIT Py Version=[1.50]
+  - TASK_A_VERSION=[1.5]
+  - TASK_B_VERSION=[1.50]
+  forbidden:
+  - TASK_B_VERSION=[1.5]

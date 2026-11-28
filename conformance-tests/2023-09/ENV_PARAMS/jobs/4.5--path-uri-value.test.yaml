@@ -1,0 +1,35 @@
+# RFC 0010 / Template Schemas §4.5 ("absolute in that format or, with the EXPR
+# extension, a URI"): a PATH value s3://bucket/key is accepted, and
+# Env.RawParam prints it unchanged. Both documents list EXPR (README ambiguity 10).
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: PathUriValue
+  steps:
+  - name: A
+    dependencies:
+    - environment: Mnt
+      parameters:
+        Dir: s3://bucket/key
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+environments:
+- specificationVersion: environment-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  environment:
+    name: Mnt
+    envParameterDefinitions:
+    - name: Dir
+      type: PATH
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Mnt, "Dir={{Env.RawParam.Dir}}"]
+runOn: [posix, windows]
+expected:
+  output:
+  - ENTER Mnt Dir=s3://bucket/key

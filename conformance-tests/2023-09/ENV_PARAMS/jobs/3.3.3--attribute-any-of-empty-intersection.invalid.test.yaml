@@ -1,0 +1,35 @@
+# RFC 0010 / Template Schemas §3.3.3 item 2.1: the Step requires anyOf [linux] and an Environment its Sessions enter
+# requires anyOf [windows] of attr.worker.os.family, of which a host has exactly one value. No value is in both, so
+# the submission is rejected at job creation.
+template:
+  specificationVersion: jobtemplate-2023-09
+  extensions: [ENV_PARAMS, EXPR]
+  name: AttributeAnyOfEmptyIntersection
+  jobEnvironments:
+  - name: Hw
+    activation: ALWAYS
+    envParameterDefinitions:
+    - name: Flavor
+      type: STRING
+      default: a
+    hostRequirements:
+      attributes:
+      - name: attr.worker.os.family
+        anyOf: [windows]
+    script:
+      actions:
+        onEnter:
+          command: echo
+          args: [ENTER, Hw, "Flavor={{Env.Param.Flavor}}"]
+  steps:
+  - name: A
+    hostRequirements:
+      attributes:
+      - name: attr.worker.os.family
+        anyOf: [linux]
+    script:
+      actions:
+        onRun:
+          command: echo
+          args: [TASK, A]
+runOn: [posix, windows]
