@@ -1676,7 +1676,7 @@ value is treated the same way: `c if U else c` is `c` (see Conditional Expressio
 Conditions). Other operators do not use this rule: an arithmetic or comparison operator with an
 unknown operand gives an unknown result, so `Param.N * 0 == 0` is not known. Template Schemas uses
 these results only before the values are known, to decide which errors to report early
-([§7.6](2023-09-Template-Schemas#76-expression-fields) rule 5). Once the values are known, the
+([§7.6](2023-09-Template-Schemas#76-expression-fields) rules 5 and 6). Once the values are known, the
 expression is evaluated again, and its result is what that evaluation gives. So `U and false`, which
 is known to be `false` early, still fails when it is evaluated if evaluating `U` fails.
 

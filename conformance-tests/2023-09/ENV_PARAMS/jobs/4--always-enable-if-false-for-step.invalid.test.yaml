@@ -2,7 +2,7 @@
 # Its enableIf reads Env.Param.Product, so it is not known at template validation (JT-172). When the Job is created it
 # is false for Step B, which takes the default none. That is an error naming B and Lic, so the Job is rejected. B always
 # takes the default, so the Job fails for every value, and an implementation should already report it at template
-# validation (§7.6 rule 5); the test passes whichever stage rejects it (README item 18).
+# validation (§7.6 rule 6); the test passes whichever stage rejects it (README item 18).
 template:
   specificationVersion: jobtemplate-2023-09
   extensions: [ENV_PARAMS, EXPR]

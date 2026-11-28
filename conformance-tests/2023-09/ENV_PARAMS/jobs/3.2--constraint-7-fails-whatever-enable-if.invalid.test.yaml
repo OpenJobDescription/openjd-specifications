@@ -1,9 +1,9 @@
-# Template Schemas §3.2 (checked-at paragraph) and §7.6 rule 5, constraint 7 and item 5: Conda is an ALWAYS Job
+# Template Schemas §3.2 (checked-at paragraph) and §7.6 rule 6, constraint 7 and item 5: Conda is an ALWAYS Job
 # Environment with two parameters without default. A's only entry has an expression enableIf and supplies only Packages.
 # Enabled or disabled, the entry leaves Channels unsupplied (constraint 7), and disabled it is also an error, because no
 # Step can leave an ALWAYS Environment out (§3.2 *enableIf*). Constraint 7 reads the entry's enableIf, which is not
 # known, to decide whether the entry supplies its values. The Job fails for every value, so it is rejected, and an
-# implementation should already report it at template validation (§7.6 rule 5); the test passes whichever stage rejects
+# implementation should already report it at template validation (§7.6 rule 6); the test passes whichever stage rejects
 # it (README item 18).
 template:
   specificationVersion: jobtemplate-2023-09

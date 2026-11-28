@@ -1,7 +1,7 @@
-# Template Schemas §4 item 6 (enableIf tail) and §7.6 rule 5, with RFC 0008 (single-layer rule, §4.3 constraint 2):
+# Template Schemas §4 item 6 (enableIf tail) and §7.6 rule 6, with RFC 0008 (single-layer rule, §4.3 constraint 2):
 # WrapA and WrapB have no enableIf, so every Session certainly enters both; WrapC's enableIf is an expression,
-# undetermined until the Job is created. The rule is violated whatever WrapC resolves to, so the Job is rejected, and an
-# implementation should already report it at template validation (§7.6 rule 5); the test passes whichever stage rejects
+# not known until the Job is created. The rule is violated whatever WrapC resolves to, so the Job is rejected, and an
+# implementation should already report it at template validation (§7.6 rule 6); the test passes whichever stage rejects
 # it (README item 18).
 template:
   specificationVersion: jobtemplate-2023-09

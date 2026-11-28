@@ -1,4 +1,4 @@
-# Template Schemas §4 item 4, §7.6 rule 5, and Expression Language §2.1.6 (RFC 0010): at template validation
+# Template Schemas §4 item 4, §7.4, §7.6 rule 5, and Expression Language §2.1.6 (RFC 0010): at template validation
 # Env.Param.X is unknown, but "Env.Param.X == 1 and false" is known to be false. An Environment whose activation is
 # ALWAYS cannot be disabled, so the Environment Template is rejected, as JT-194 rejects a Job Environment.
 specificationVersion: environment-2023-09

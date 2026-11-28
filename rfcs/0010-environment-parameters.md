@@ -551,14 +551,16 @@ creation may read. All of it is known then, so effective values are a static pro
 
 ### Processing stages and expression fields
 
-The [§7.4](../wiki/2023-09-Template-Schemas.md#74-template-processing-stages) stage table adds what the extension checks
-at each stage, and the new [§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params) orders the
+The [§7.4](../wiki/2023-09-Template-Schemas.md#74-template-processing-stages) stage table lists what is not yet known
+at each stage and adds what the extension checks there. A check whose inputs are all known at template validation is
+made there. The new [§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params) orders the
 work done at Job creation. The new [§7.6](../wiki/2023-09-Template-Schemas.md#76-expression-fields) defines expression
 fields, which both *enableIf* fields are: one typed expression with no `{{ }}` and no implicit conversion other than
-widening `int` to `float`. Before it is evaluated, its value is known when it is a boolean, integer, or float scalar, or
-when the Expression Language's rules for unknown operands give a result with the values not yet known. §7.6 rule 5
-also says when a check is made before the field is evaluated, which errors an implementation should report before the
-Job is created, and which it must not.
+widening `int` to `float`. Its rule 5 says that before it is evaluated, its value is known when it is a boolean,
+integer, or float scalar, or when the Expression Language's rules for unknown operands give a result with the values not
+yet known. Rule 6 says that before the Job is created an implementation should report an error once it can show that
+Job creation fails whatever values are supplied for what is not yet known, and must not report one that some of those
+values would avoid.
 
 ### Expression Language
 
@@ -905,9 +907,9 @@ A shared name keeps each *enableIf* about the Environment's own values, and the 
 already controls, decides precedence. The group is applied as each *enableIf* is evaluated, so a Step that gives the
 first Environment nothing to do falls through to the next, and an Environment that is superseded is not evaluated, so
 its *enableIf* need not be resolvable for Steps it never serves. A group can include a Job Template's own Environment,
-which an attached one then supersedes; a validator without the Environment Templates cannot know that, so it treats such
-an Environment as undetermined. An `ALWAYS` Environment cannot be in a group, because the group could leave it out of a
-Step's Sessions.
+which an attached one then supersedes; a validator without the Environment Templates cannot know that, so for it whether
+a Step's Sessions enter such an Environment is not known. An `ALWAYS` Environment cannot be in a group, because the
+group could leave it out of a Step's Sessions.
 
 ### `hostRequirements` on the Environment
 
