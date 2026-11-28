@@ -431,9 +431,10 @@ Expressions are checked and evaluated progressively as more information becomes 
 At each stage, known values are evaluated concretely while unresolved values propagate as
 `unresolved[T]`, catching as many errors as possible with the information available:
 
-1. **Template parse time** (e.g., `openjd check`). Job parameters (`Param.*`) are `unresolved[T]`
-   based on their declared types, because the template is not yet bound to particular parameter
-   values. Task parameters (`Task.Param.*`) and session symbols (`Session.*`) are also unresolved.
+1. **Template parse time** (e.g., `openjd check`). The values that the [Template Schemas §7.4
+   stage table](2023-09-Template-Schemas#74-template-processing-stages) lists as not yet known at
+   template validation, such as the Job parameters (`Param.*`), are `unresolved[T]` based on their
+   declared types, because the template is not yet bound to particular parameter values.
    Let bindings that depend only on literals may evaluate concretely. Catches syntax errors,
    type errors in constant subexpressions, and structural issues like undefined symbols. Errors
    that depend on values are not reported in parts a run may not evaluate (the untaken branch
@@ -462,9 +463,10 @@ At each stage, known values are evaluated concretely while unresolved values pro
 
 2. **Job parameter binding** ("submit time"). Job parameter values are now known, so `Param.*`
    symbols are concrete. Expressions in TEMPLATE scope can be fully evaluated. Expressions in
-   host-context scopes (SESSION/TASK) still have `Task.Param.*`, `Session.*`, `Task.File.*`,
-   and `Env.File.*` as unresolved, but can now type-check operations on the known `Param.*`
-   values combined with the unresolved task/session symbols. A `path()` in a host-context scope
+   host-context scopes (SESSION/TASK) still have the values that the Template Schemas §7.4 stage
+   table lists as not yet known at Job creation, such as `Task.Param.*` and `Session.*`, as
+   unresolved, but can now type-check operations on the known `Param.*` values combined with the
+   unresolved task/session symbols. A `path()` in a host-context scope
    is still `unresolved[path]`, because the worker's path format is still not known.
    With the `ENV_PARAMS` extension, an Environment's *enableIf* is evaluated at this stage with concrete values only.
    It is not evaluated for a Step whose effective value for a parameter it reads is missing, fails to resolve, or

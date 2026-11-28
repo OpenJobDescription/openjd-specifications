@@ -551,16 +551,15 @@ creation may read. All of it is known then, so effective values are a static pro
 
 ### Processing stages and expression fields
 
-The [§7.4](../wiki/2023-09-Template-Schemas.md#74-template-processing-stages) stage table lists what is not yet known
-at each stage and adds what the extension checks there. A check whose inputs are all known at template validation is
-made there. The new [§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params) orders the
-work done at Job creation. The new [§7.6](../wiki/2023-09-Template-Schemas.md#76-expression-fields) defines expression
-fields, which both *enableIf* fields are: one typed expression with no `{{ }}` and no implicit conversion other than
-widening `int` to `float`. Its rule 5 says that before it is evaluated, its value is known when it is a boolean,
-integer, or float scalar, or when the Expression Language's rules for unknown operands give a result with the values not
-yet known. Rule 6 says that before the Job is created an implementation should report an error once it can show that
-Job creation fails whatever values are supplied for what is not yet known, and must not report one that some of those
-values would avoid.
+The [§7.4](../wiki/2023-09-Template-Schemas.md#74-template-processing-stages) stage table lists what is not yet known at
+each stage and what the extension checks there, and says which checks are made when. The new
+[§7.4.1](../wiki/2023-09-Template-Schemas.md#741-job-creation-with-env_params) orders the work done at Job creation. The
+new [§7.6](../wiki/2023-09-Template-Schemas.md#76-expression-fields) defines expression fields, which both *enableIf*
+fields are: one typed expression with no `{{ }}` and no implicit conversion other than widening `int` to `float`. Its
+rule 5 says that before it is evaluated, its value is known when it is a boolean, integer, or float scalar, or when the
+Expression Language's rules for unknown operands give a result with the values not yet known. Rule 6 says that before
+the Job is created an implementation should report an error once it can show that Job creation fails whatever values are
+supplied for what is not yet known, and must not report one that some of those values would avoid.
 
 ### Expression Language
 
@@ -751,9 +750,9 @@ define, so two implementations could accept different Jobs.
 Now a missing value is an error of the Step, whatever the *enableIf* is, and an *enableIf* that reads a value that does
 not resolve or convert is not evaluated, and the value is an error. Whether a value is read is a property of the text,
 so it does not depend on evaluation order. At Job creation the *enableIf* is then an ordinary evaluation of concrete
-values. Unknown values remain only at template validation, where Job Parameters are not yet known, and there they only
-decide which errors are reported early. The Expression Language now defines their results, such as
-`U and false = false`, so validators agree on which values are known.
+values. Unknown values remain only at template validation, where the values the §7.4 stage table lists are not yet
+known, and there they only decide which errors are reported early. The Expression Language now defines their results,
+such as `U and false = false`, so validators agree on which values are known.
 
 A value that the *enableIf* does not read still need not convert when the Environment is disabled: an entry
 `Seats: "{{Param.N}}"` for an INT parameter, with the Job Parameter `N` set to `"many"`, is not an error for a Step for
@@ -907,8 +906,8 @@ A shared name keeps each *enableIf* about the Environment's own values, and the 
 already controls, decides precedence. The group is applied as each *enableIf* is evaluated, so a Step that gives the
 first Environment nothing to do falls through to the next, and an Environment that is superseded is not evaluated, so
 its *enableIf* need not be resolvable for Steps it never serves. A group can include a Job Template's own Environment,
-which an attached one then supersedes; a validator without the Environment Templates cannot know that, so for it whether
-a Step's Sessions enter such an Environment is not known. An `ALWAYS` Environment cannot be in a group, because the
+which an attached one then supersedes; a validator without the Environment Templates cannot know that, so for it a
+Step's Sessions are never known to enter such an Environment. An `ALWAYS` Environment cannot be in a group, because the
 group could leave it out of a Step's Sessions.
 
 ### `hostRequirements` on the Environment
